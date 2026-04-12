@@ -1,6 +1,6 @@
 # run-length-encoding
 
-- **model**: `claude-sonnet-4-6`
+- **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: no
 - **retries**: 3
 
@@ -8,71 +8,150 @@
 
 ```
 Compiling /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd
-error[E002]: undefined function 'list.head'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:2:19
-  in call to list.head()
-  hint: No function 'head' in module 'list'. See docs/CHEATSHEET.md for available functions
+error: 'let mut' is not valid in Almide at line 4:9
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:4:9
+  hint: Use 'var' for mutable variables. Example: var x = 0
   |
-2 |   match list.head(chars) {
-  |                   ^^^^^
-error[E002]: undefined function 'list.tail'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:6:35
-  in call to list.tail()
-  hint: No function 'tail' in module 'list'. See docs/CHEATSHEET.md for available functions
+4 |     let mut result = ""
+  |         ^
+error: 'let mut' is not valid in Almide at line 5:9
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:5:9
+  hint: Use 'var' for mutable variables. Example: var x = 0
   |
-6 |         rle_encode_loop(list.tail(chars), cur, count + 1, acc)
-  |                                   ^^^^^
-error[E002]: undefined function 'list.tail'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:8:35
-  in call to list.tail()
-  hint: No function 'tail' in module 'list'. See docs/CHEATSHEET.md for available functions
+5 |     let mut i = 0
+  |         ^
+error: Expected LBrace at line 6:29 (got Ident 'do')
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:6:29
   |
-8 |         rle_encode_loop(list.tail(chars), h, 1, acc + int.to_string(count) + cur)
-  |                                   ^^^^^
-error[E002]: undefined function 'list.head'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:13:19
-  in call to list.head()
-  hint: No function 'head' in module 'list'. See docs/CHEATSHEET.md for available functions
+6 |     while i < string.len(s) do {
+  |                             ^
+error: 'let mut' is not valid in Almide at line 7:11
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:7:11
+  hint: Use 'var' for mutable variables. Example: var x = 0
+  |
+7 |       let mut count = 1
+  |           ^
+error: 'let mut' is not valid in Almide at line 8:11
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:8:11
+  hint: Use 'var' for mutable variables. Example: var x = 0
+  |
+8 |       let mut j = i + 1
+  |           ^
+error: Expected LBrace at line 9:76 (got Ident 'do')
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:9:76
+  |
+9 |       while j < string.len(s) and string.chars(s)(i) == string.chars(s)(j) do {
+  |                                                                            ^
+error: Expected expression at line 10:15 (got Colon ':')
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:10:15
    |
-13 |   match list.head(chars) {
-   |                   ^^^^^
-error[E002]: undefined function 'list.tail'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:15:42
-  in call to list.tail()
-  hint: No function 'tail' in module 'list'. See docs/CHEATSHEET.md for available functions
+10 |         count := count + 1
+   |               ^
+error: Expected expression at line 11:11 (got Colon ':')
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:11:11
    |
-15 |     some(h) => rle_encode_loop(list.tail(chars), h, 1, "")
-   |                                          ^^^^^
-error[E002]: undefined function 'list.head'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:24:19
-  in call to list.head()
-  hint: No function 'head' in module 'list'. See docs/CHEATSHEET.md for available functions
+11 |         j := j + 1
+   |           ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 13:7 (got Ident 'result')
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:13:7
    |
-24 |   match list.head(chars) {
-   |                   ^^^^^
-error[E002]: undefined function 'list.tail'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:27:28
-  in call to list.tail()
-  hint: No function 'tail' in module 'list'. See docs/CHEATSHEET.md for available functions
+13 |       result := result + int.to_string(count) + string.chars(s)(i)
+   |       ^
+error: 'let mut' is not valid in Almide at line 22:9
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:22:9
+  hint: Use 'var' for mutable variables. Example: var x = 0
    |
-27 |       let rest = list.tail(chars);
-   |                            ^^^^^
-error[E002]: undefined function 'list.head'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:28:23
-  in call to list.head()
-  hint: No function 'head' in module 'list'. See docs/CHEATSHEET.md for available functions
+22 |     let mut result = ""
+   |         ^
+error: 'let mut' is not valid in Almide at line 23:9
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:23:9
+  hint: Use 'var' for mutable variables. Example: var x = 0
    |
-28 |       match list.head(rest) {
-   |                       ^^^^
-error[E002]: undefined function 'list.tail'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:32:37
-  in call to list.tail()
-  hint: No function 'tail' in module 'list'. See docs/CHEATSHEET.md for available functions
+23 |     let mut i = 0
+   |         ^
+error: Expected LBrace at line 24:29 (got Ident 'do')
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:24:29
    |
-32 |           rle_decode_loop(list.tail(rest), acc + string_repeat(c, count))
-   |                                     ^^^^
+24 |     while i < string.len(s) do {
+   |                             ^
+error: Expected name at line 25:49 (got Ok 'ok')
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:25:49
+   |
+25 |       let count = int.parse(string.chars(s)(i)).ok.get
+   |                                                 ^
+error: Expected expression at line 27:14 (got Colon ':')
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:27:14
+   |
+27 |       result := result + string.repeat(char, count)
+   |              ^
+error: Expected expression at line 28:9 (got Colon ':')
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:28:9
+   |
+28 |       i := i + 2
+   |         ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 30:5 (got Ident 'result')
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:30:5
+   |
+30 |     result
+   |     ^
+error[E003]: undefined variable 'count'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:10:9
+  in variable count
+  hint: Check the variable name
+   |
+10 |         count := count + 1
+   |         ^^^^^
+error[E003]: undefined variable 'j'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:11:9
+  in variable j
+  hint: Check the variable name
+   |
+11 |         j := j + 1
+   |         ^
+error[E003]: undefined variable 'i'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:26:34
+  in variable i
+  hint: Check the variable name
+   |
+26 |       let char = string.chars(s)(i + 1)
+   |                                  ^
+error[E003]: undefined variable 'result'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:27:7
+  in variable result
+  hint: Check the variable name
+   |
+27 |       result := result + string.repeat(char, count)
+   |       ^^^^^^
+error[E003]: undefined variable 'i'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:28:7
+  in variable i
+  hint: Check the variable name
+   |
+28 |       i := i + 2
+   |       ^
+error[E001]: type mismatch in if branches: expected String but got Unit
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:11:9
+  in if branches
+  hint: Fix the expression type or change the expected type
+   |
+11 |         j := j + 1
+   |         ^
+error[E001]: type mismatch in function call: expected List[String] but got fn(Unknown) -> ?0
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:26:31
+  in function call
+  hint: Fix the expression type or change the expected type
+   |
+26 |       let char = string.chars(s)(i + 1)
+   |                               ^
+error[E001]: type mismatch in if branches: expected String but got Unit
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:28:7
+  in if branches
+  hint: Fix the expression type or change the expected type
+   |
+28 |       i := i + 2
+   |       ^
 
-9 error(s) found
+24 error(s) found
 Compile error for /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd:
 compile failed
 FAILED: /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encoding-3.almd
@@ -84,43 +163,35 @@ FAILED: /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-run-length-encodi
 ## Last attempted code
 
 ```almide
-fn rle_encode_loop(chars: List[String], cur: String, count: Int, acc: String) -> String =
-  match list.head(chars) {
-    none => acc + int.to_string(count) + cur,
-    some(h) =>
-      if h == cur then
-        rle_encode_loop(list.tail(chars), cur, count + 1, acc)
-      else
-        rle_encode_loop(list.tail(chars), h, 1, acc + int.to_string(count) + cur)
-  }
-
-fn rle_encode(s: String) -> String = {
-  let chars = string.chars(s);
-  match list.head(chars) {
-    none => "",
-    some(h) => rle_encode_loop(list.tail(chars), h, 1, "")
-  }
-}
-
-fn string_repeat(s: String, n: Int) -> String =
-  if n <= 0 then ""
-  else s + string_repeat(s, n - 1)
-
-fn rle_decode_loop(chars: List[String], acc: String) -> String =
-  match list.head(chars) {
-    none => acc,
-    some(d) => {
-      let rest = list.tail(chars);
-      match list.head(rest) {
-        none => acc,
-        some(c) => {
-          let count = match int.parse(d) { ok(n) => n, err(_) => 0 };
-          rle_decode_loop(list.tail(rest), acc + string_repeat(c, count))
-        }
+fn rle_encode(s: String) -> String = 
+  if string.len(s) == 0 then "" 
+  else {
+    let mut result = ""
+    let mut i = 0
+    while i < string.len(s) do {
+      let mut count = 1
+      let mut j = i + 1
+      while j < string.len(s) and string.chars(s)(i) == string.chars(s)(j) do {
+        count := count + 1
+        j := j + 1
       }
+      result := result + int.to_string(count) + string.chars(s)(i)
+      i := j
     }
+    result
   }
 
-fn rle_decode(s: String) -> String =
-  rle_decode_loop(string.chars(s), "")
+fn rle_decode(s: String) -> String = 
+  if string.len(s) == 0 then "" 
+  else {
+    let mut result = ""
+    let mut i = 0
+    while i < string.len(s) do {
+      let count = int.parse(string.chars(s)(i)).ok.get
+      let char = string.chars(s)(i + 1)
+      result := result + string.repeat(char, count)
+      i := i + 2
+    }
+    result
+  }
 ```
