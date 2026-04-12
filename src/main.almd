@@ -1,23 +1,30 @@
 // dojo — Almide Dojo harness
 //
-// Run a task, send its prompt to Claude Code, compile the result with the
-// pinned almide compiler, and feed diagnostics back for retries.
-//
-// Writes a per-task markdown report to `runs/YYYY-MM-DD/<task>.md`.
+// Multi-provider LLM harness for MSR measurement.
+// Supports Cloudflare Workers AI, Anthropic, OpenRouter, OpenAI, and Claude CLI.
 //
 // Usage:
-//   almide run src/main.almd -- <task-name> [model]
+//   almide run src/main.almd -- <task-name> [provider:model]
+//   almide run src/main.almd -- all [provider:model]
 //
-// Examples:
-//   almide run src/main.almd -- fizzbuzz
-//   almide run src/main.almd -- factorial claude-opus-4-6
+// Model formats:
+//   cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast    Cloudflare Workers AI
+//   anthropic:claude-sonnet-4-6                      Anthropic Messages API
+//   openrouter:meta-llama/llama-3.3-70b-instruct    OpenRouter (100+ models)
+//   openai:gpt-4o                                   OpenAI API
+//   claude-sonnet-4-6                               Claude CLI (no prefix)
 //
-// Requires: `claude` CLI installed and authenticated (no API key needed here).
+// Environment variables (per provider):
+//   CF_ACCOUNT_ID, CLOUDFLARE_API_KEY               Cloudflare Workers AI
+//   ANTHROPIC_API_KEY                               Anthropic / Claude CLI
+//   OPENROUTER_API_KEY                              OpenRouter
+//   OPENAI_API_KEY                                  OpenAI
 
 import env
 import fs
 import process
 import datetime
+import self.llm
 
 // ── Constants ──
 
@@ -81,11 +88,7 @@ effect fn load_task_search(name: String, levels: List[String]) -> Result[Task, S
     }
   }
 
-// ── Model call via Claude Code ──
-//
-// Matches the pattern from research/benchmark/msr/msr.almd in the main repo.
-// The `claude` CLI reads credentials from the user's existing auth, so the
-// harness never touches API keys directly.
+// ── Model call (via llm module) ──
 
 fn strip_code_fences(s: String) -> String =
   s
@@ -93,12 +96,11 @@ fn strip_code_fences(s: String) -> String =
     |> list.filter((line) => not string.starts_with(string.trim(line), "```"))
     |> string.join("\n")
 
-effect fn call_model(model: String, user_prompt: String) -> Result[String, String] = {
-  match process.exec("claude", ["--model", model, "--print", "--system-prompt", SYSTEM_PROMPT, user_prompt]) {
-    err(e) => err("claude exec failed: " + e)
+effect fn call_model(model: String, user_prompt: String) -> Result[String, String] =
+  match llm.call(model, SYSTEM_PROMPT, user_prompt) {
+    err(e) => err(e)
     ok(raw) => ok(strip_code_fences(raw))
   }
-}
 
 // ── Compile + test ──
 //
@@ -228,15 +230,15 @@ effect fn print_usage() -> Unit = {
   println("Almide Dojo harness")
   println("")
   println("Usage:")
-  println("  almide run src/main.almd -- <task-name> [model]")
-  println("  almide run src/main.almd -- all [model]")
+  println("  almide run src/main.almd -- <task-name> [provider:model]")
+  println("  almide run src/main.almd -- all [provider:model]")
   println("")
-  println("Examples:")
-  println("  almide run src/main.almd -- fizzbuzz")
-  println("  almide run src/main.almd -- factorial claude-opus-4-6")
-  println("  almide run src/main.almd -- all")
-  println("")
-  println("Requires: `claude` CLI installed and authenticated.")
+  println("Providers:")
+  println("  cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast")
+  println("  anthropic:claude-sonnet-4-6")
+  println("  openrouter:meta-llama/llama-3.3-70b-instruct")
+  println("  openai:gpt-4o")
+  println("  claude-sonnet-4-6  (Claude CLI, no prefix)")
 }
 
 effect fn print_result(result: RunResult) -> Unit = {
