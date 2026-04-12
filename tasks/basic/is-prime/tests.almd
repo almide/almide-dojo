@@ -1,0 +1,11 @@
+test "is_prime -1 is false" { assert_eq(is_prime(-1), false) }
+test "is_prime 0 is false" { assert_eq(is_prime(0), false) }
+test "is_prime 1 is false" { assert_eq(is_prime(1), false) }
+test "is_prime 2 is true" { assert_eq(is_prime(2), true) }
+test "is_prime 3 is true" { assert_eq(is_prime(3), true) }
+test "is_prime 4 is false" { assert_eq(is_prime(4), false) }
+test "is_prime 7 is true" { assert_eq(is_prime(7), true) }
+test "is_prime 9 is false" { assert_eq(is_prime(9), false) }
+test "is_prime 17 is true" { assert_eq(is_prime(17), true) }
+test "is_prime 25 is false" { assert_eq(is_prime(25), false) }
+test "is_prime 97 is true" { assert_eq(is_prime(97), true) }

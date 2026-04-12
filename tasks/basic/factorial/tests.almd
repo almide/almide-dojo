@@ -1,0 +1,6 @@
+test "factorial 0 is 1" { assert_eq(factorial(0), 1) }
+test "factorial 1 is 1" { assert_eq(factorial(1), 1) }
+test "factorial 2 is 2" { assert_eq(factorial(2), 2) }
+test "factorial 3 is 6" { assert_eq(factorial(3), 6) }
+test "factorial 5 is 120" { assert_eq(factorial(5), 120) }
+test "factorial 10 is 3628800" { assert_eq(factorial(10), 3628800) }

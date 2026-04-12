@@ -1,0 +1,4 @@
+difficulty = "basic"
+expected_loc = 10
+timeout_sec = 30
+tags = ["string", "boundary"]

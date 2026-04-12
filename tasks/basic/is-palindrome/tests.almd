@@ -1,0 +1,7 @@
+test "empty is palindrome" { assert_eq(is_palindrome(""), true) }
+test "single char is palindrome" { assert_eq(is_palindrome("x"), true) }
+test "racecar is palindrome" { assert_eq(is_palindrome("racecar"), true) }
+test "hello is not palindrome" { assert_eq(is_palindrome("hello"), false) }
+test "abba is palindrome" { assert_eq(is_palindrome("abba"), true) }
+test "case sensitive Aa is not palindrome" { assert_eq(is_palindrome("Aa"), false) }
+test "a b a with spaces is palindrome" { assert_eq(is_palindrome("a b a"), true) }

@@ -1,0 +1,9 @@
+test "fizzbuzz 1 is \"1\"" { assert_eq(fizzbuzz(1), "1") }
+test "fizzbuzz 2 is \"2\"" { assert_eq(fizzbuzz(2), "2") }
+test "fizzbuzz 3 is Fizz" { assert_eq(fizzbuzz(3), "Fizz") }
+test "fizzbuzz 5 is Buzz" { assert_eq(fizzbuzz(5), "Buzz") }
+test "fizzbuzz 9 is Fizz" { assert_eq(fizzbuzz(9), "Fizz") }
+test "fizzbuzz 10 is Buzz" { assert_eq(fizzbuzz(10), "Buzz") }
+test "fizzbuzz 15 is FizzBuzz" { assert_eq(fizzbuzz(15), "FizzBuzz") }
+test "fizzbuzz 30 is FizzBuzz" { assert_eq(fizzbuzz(30), "FizzBuzz") }
+test "fizzbuzz 7 is \"7\"" { assert_eq(fizzbuzz(7), "7") }

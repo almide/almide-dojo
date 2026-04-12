@@ -1,0 +1,36 @@
+name: Daily MSR Run
+
+on:
+  # Scheduled runs are disabled during Phase 1.
+  # Enable once the harness is battle-tested and API cost is agreed upon.
+  # schedule:
+  #   - cron: '0 3 * * *'  # 03:00 UTC daily
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Almide
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Phase 1 placeholder
+        run: |
+          echo "Phase 1: the harness supports single-task runs only."
+          echo "Phase 2 will enable the full daily loop across all tasks + models."
+          almide --version || true
+          exit 0
+
+      # Phase 2: iterate tasks, run harness, commit summaries.
+      # - name: Run all tasks against Sonnet
+      #   env:
+      #     ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      #   run: |
+      #     for task in tasks/basic/*/; do
+      #       name=$(basename "$task")
+      #       almide run src/main.almd -- "$name" || true
+      #     done

@@ -1,0 +1,4 @@
+difficulty = "basic"
+expected_loc = 6
+timeout_sec = 30
+tags = ["int", "recursion"]

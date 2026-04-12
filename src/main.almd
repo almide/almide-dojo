@@ -1,0 +1,292 @@
+// dojo — Almide Dojo harness
+//
+// Run a task, send its prompt to an LLM, compile the result with the pinned
+// almide compiler, and feed diagnostics back for retries.
+//
+// Phase 1 scaffold: single-task runs only. The daily-loop, per-task metrics
+// file, dashboard rendering, and malicious-hint detection come in Phase 2.
+//
+// Usage:
+//   almide run src/main.almd -- <task-name>
+//
+// Required environment:
+//   ANTHROPIC_API_KEY — used to authenticate against the Messages API
+
+import env
+import fs
+import http
+import json
+import process
+
+// ── Constants ──
+
+let API_URL = "https://api.anthropic.com/v1/messages"
+let API_VERSION = "2023-06-01"
+let DEFAULT_MODEL = "claude-sonnet-4-6"
+let DEFAULT_MAX_RETRIES = 3
+let MAX_TOKENS = 4096
+
+let SYSTEM_PROMPT = """
+  You are writing code in Almide, a statically-typed language designed for LLM code generation.
+  Output ONLY the Almide source code for the requested function. No markdown fences, no prose, no explanation.
+  Almide has no `return` keyword — the last expression of a block is its value.
+  Use `fn name(x: T) -> R = expr` or `fn name(x: T) -> R = { ...; last }`.
+  Use `match v { Pattern => expr, ... }` for pattern matching.
+  Use `int.to_string(n)` to convert int to string; there is no implicit coercion.
+  `Option[T]` replaces null. `Result[T, E]` replaces exceptions.
+  """
+
+// ── Types ──
+
+type Task = {
+  name: String,
+  prompt: String,
+  tests: String,
+  dir: String,
+}
+
+type RunResult = {
+  task: String,
+  model: String,
+  success: Bool,
+  retries: Int,
+  final_diagnostic: String,
+}
+
+type AttemptResult = {
+  success: Bool,
+  code: String,
+  diagnostic: String,
+}
+
+// ── Task loading ──
+
+effect fn load_task(name: String) -> Result[Task, String] = {
+  let dir = "tasks/basic/" + name
+  match fs.read_text(dir + "/prompt.md") {
+    err(_) => err("failed to read " + dir + "/prompt.md")
+    ok(prompt) => match fs.read_text(dir + "/tests.almd") {
+      err(_) => err("failed to read " + dir + "/tests.almd")
+      ok(tests) => ok(Task { name: name, prompt: prompt, tests: tests, dir: dir })
+    }
+  }
+}
+
+// ── Anthropic API call ──
+
+fn build_messages(history: List[(String, String)], user: String) -> Value = {
+  let prior = history |> list.flat_map((turn) => {
+    let (u, a) = turn
+    [
+      json.object([
+        ("role", json.from_string("user")),
+        ("content", json.from_string(u)),
+      ]),
+      json.object([
+        ("role", json.from_string("assistant")),
+        ("content", json.from_string(a)),
+      ]),
+    ]
+  })
+  json.array(prior + [
+    json.object([
+      ("role", json.from_string("user")),
+      ("content", json.from_string(user)),
+    ])
+  ])
+}
+
+fn build_body(model: String, user: String, history: List[(String, String)]) -> String =
+  json.stringify(json.object([
+    ("model", json.from_string(model)),
+    ("max_tokens", json.from_int(MAX_TOKENS)),
+    ("system", json.from_string(SYSTEM_PROMPT)),
+    ("messages", build_messages(history, user)),
+  ]))
+
+effect fn call_model(model: String, user: String, history: List[(String, String)]) -> Result[String, String] = {
+  match env.get("ANTHROPIC_API_KEY") {
+    none => err("ANTHROPIC_API_KEY not set")
+    some(api_key) => {
+      let body = build_body(model, user, history)
+      let headers = [
+        "x-api-key": api_key,
+        "anthropic-version": API_VERSION,
+        "content-type": "application/json",
+      ]
+      match http.request("POST", API_URL, body, headers) {
+        err(e) => err("http error: " + e)
+        ok(resp) => match json.parse(resp) {
+          err(e) => err("json parse error: " + e)
+          ok(parsed) => {
+            let content = json.get_array(parsed, "content") |> option.unwrap_or([])
+            let first = list.get(content, 0) |> option.unwrap_or(json.null())
+            let text = json.get_string(first, "text") |> option.unwrap_or("")
+            ok(text)
+          }
+        }
+      }
+    }
+  }
+}
+
+// ── Compile + test ──
+//
+// `process.exec` returns Err on non-zero exit (stderr is the error string).
+// So a non-zero `almide test` run shows up as an Err with the diagnostic,
+// which we translate into a successful `AttemptResult { success: false }`.
+
+effect fn compile_and_test(task: Task, solution: String, attempt: Int) -> Result[AttemptResult, String] = {
+  let tmp = env.temp_dir() + "/dojo-" + task.name + "-" + int.to_string(attempt) + ".almd"
+  let combined = solution + "\n\n" + task.tests
+  match fs.write(tmp, combined) {
+    err(_) => err("failed to write temp file: " + tmp)
+    ok(_) => match process.exec("almide", ["test", tmp]) {
+      ok(_) => ok(AttemptResult { success: true, code: solution, diagnostic: "" })
+      err(diag) => ok(AttemptResult { success: false, code: solution, diagnostic: diag })
+    }
+  }
+}
+
+// ── Fix loop ──
+//
+// fix_loop_step distinguishes:
+//   - err(_)  — genuine harness failure (API down, fs broken). Abort the run.
+//   - ok(RunResult { success: false, ... }) — model couldn't produce passing code.
+//     Not an error; record and continue to the next task in Phase 2.
+
+effect fn attempt_once(
+  task: Task,
+  model: String,
+  user_prompt: String,
+  history: List[(String, String)],
+  attempt: Int,
+) -> Result[AttemptResult, String] = {
+  match call_model(model, user_prompt, history) {
+    err(e) => err("call_model: " + e)
+    ok(code) => compile_and_test(task, code, attempt)
+  }
+}
+
+effect fn fix_loop_step(
+  task: Task,
+  model: String,
+  max_retries: Int,
+  attempt: Int,
+  history: List[(String, String)],
+  last_diag: String,
+) -> Result[RunResult, String] = {
+  if attempt > max_retries then
+    ok(RunResult {
+      task: task.name,
+      model: model,
+      success: false,
+      retries: max_retries,
+      final_diagnostic: last_diag,
+    })
+  else {
+    let user_prompt =
+      if attempt == 0 then task.prompt
+      else "The previous code failed to compile or test. Diagnostic output:\n\n" + last_diag + "\n\nFix the code and return ONLY the corrected Almide source."
+    match attempt_once(task, model, user_prompt, history, attempt) {
+      err(e) => err("attempt " + int.to_string(attempt) + ": " + e)
+      ok(result) =>
+        if result.success then
+          ok(RunResult {
+            task: task.name,
+            model: model,
+            success: true,
+            retries: attempt,
+            final_diagnostic: "",
+          })
+        else {
+          let new_history = history + [(user_prompt, result.code)]
+          fix_loop_step(task, model, max_retries, attempt + 1, new_history, result.diagnostic)
+        }
+    }
+  }
+}
+
+effect fn fix_loop(task: Task, model: String, max_retries: Int) -> Result[RunResult, String] =
+  fix_loop_step(task, model, max_retries, 0, [], "")
+
+// ── CLI ──
+
+fn bool_str(b: Bool) -> String =
+  if b then "yes" else "no"
+
+effect fn print_usage() -> Unit = {
+  println("Almide Dojo harness — Phase 1")
+  println("")
+  println("Usage:")
+  println("  almide run src/main.almd -- <task-name>")
+  println("")
+  println("Example:")
+  println("  export ANTHROPIC_API_KEY=sk-ant-...")
+  println("  almide run src/main.almd -- fizzbuzz")
+  println("")
+  println("Available tasks (basic):")
+  println("  fizzbuzz   factorial   is-prime   string-reverse   is-palindrome")
+}
+
+effect fn print_result(result: RunResult) -> Unit = {
+  println("")
+  println("── Result ──")
+  println("  task:    " + result.task)
+  println("  model:   " + result.model)
+  println("  success: " + bool_str(result.success))
+  println("  retries: " + int.to_string(result.retries))
+  if not result.success then {
+    println("")
+    println("Final diagnostic:")
+    println(result.final_diagnostic)
+  } else {
+    println("")
+    println("Task passed.")
+  }
+}
+
+effect fn run_task(task_name: String) -> Unit = {
+  println("Loading task: " + task_name)
+  match load_task(task_name) {
+    err(e) => {
+      println("Failed to load task: " + e)
+      process.exit(1)
+    }
+    ok(task) => {
+      println("Model:    " + DEFAULT_MODEL)
+      println("Retries:  " + int.to_string(DEFAULT_MAX_RETRIES))
+      println("")
+      match fix_loop(task, DEFAULT_MODEL, DEFAULT_MAX_RETRIES) {
+        err(e) => {
+          println("Harness error: " + e)
+          process.exit(1)
+        }
+        ok(result) => {
+          print_result(result)
+          if not result.success then process.exit(1) else {}
+        }
+      }
+    }
+  }
+}
+
+effect fn main() -> Unit = {
+  let args = env.args()
+  if list.len(args) < 1 then
+    print_usage()
+  else {
+    let task_name = list.get(args, 0) |> option.unwrap_or("")
+    run_task(task_name)
+  }
+}
+
+// ── Tests ──
+
+test "bool_str true is yes" {
+  assert_eq(bool_str(true), "yes")
+}
+
+test "bool_str false is no" {
+  assert_eq(bool_str(false), "no")
+}

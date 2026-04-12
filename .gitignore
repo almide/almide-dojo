@@ -1,0 +1,8 @@
+target/
+.almide/
+/runs/**/raw/
+.DS_Store
+*.swp
+*.swo
+.env
+.env.*

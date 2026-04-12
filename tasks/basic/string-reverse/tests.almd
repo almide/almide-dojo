@@ -1,0 +1,5 @@
+test "reverse empty string" { assert_eq(reverse(""), "") }
+test "reverse single char" { assert_eq(reverse("a"), "a") }
+test "reverse hello" { assert_eq(reverse("hello"), "olleh") }
+test "reverse racecar is itself" { assert_eq(reverse("racecar"), "racecar") }
+test "reverse abcde" { assert_eq(reverse("abcde"), "edcba") }
