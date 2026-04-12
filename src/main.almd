@@ -24,7 +24,7 @@ import env
 import fs
 import process
 import datetime
-import self.llm
+import almai
 
 // ── Constants ──
 
@@ -93,11 +93,28 @@ fn strip_code_fences(s: String) -> String =
     |> list.filter((line) => not string.starts_with(string.trim(line), "```"))
     |> string.join("\n")
 
-effect fn call_model(model: String, user_prompt: String) -> Result[String, String] =
-  match llm.call(model, SYSTEM_PROMPT, user_prompt) {
-    err(e) => err(e)
-    ok(raw) => ok(strip_code_fences(raw))
+fn to_almai_spec(model: String) -> String = {
+  // "cf:@cf/meta/..." → "cf/@cf/meta/..."
+  // "anthropic:claude-..." → "anthropic/claude-..."
+  // "claude-sonnet-4-6" (no prefix) → "anthropic/claude-sonnet-4-6"
+  let colon = string.index_of(model, ":")
+  match colon {
+    some(i) => string.take(model, i) + "/" + string.drop(model, i + 1)
+    none => if string.starts_with(model, "claude") then "anthropic/" + model
+      else if string.starts_with(model, "gpt") then "openai/" + model
+      else "openai/" + model
   }
+}
+
+effect fn call_model(model: String, user_prompt: String) -> Result[String, String] = {
+  let spec = to_almai_spec(model)
+  let opts = almai.defaults() |> almai.with_system(SYSTEM_PROMPT)
+  let msgs = [almai.user(user_prompt)]
+  match almai.call_with(spec, msgs, opts) {
+    err(e) => err(e)
+    ok(r) => ok(strip_code_fences(r.content))
+  }
+}
 
 // ── Compile + test ──
 //
