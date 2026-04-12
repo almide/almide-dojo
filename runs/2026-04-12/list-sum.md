@@ -1,6 +1,6 @@
 # list-sum
 
-- **model**: `claude-sonnet-4-6`
+- **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: yes
 - **retries**: 0
 

@@ -1,23 +1,23 @@
 # expression-eval
 
-- **model**: `claude-sonnet-4-6`
+- **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: yes
-- **retries**: 0
+- **retries**: 2
 
 ## Final code
 
 ```almide
-type Expr =
+type Expr = 
   | Num(Int)
   | Add(Expr, Expr)
   | Mul(Expr, Expr)
   | Neg(Expr)
 
-fn eval(expr: Expr) -> Int =
+fn eval(expr: Expr) -> Int = 
   match expr {
-    Num(n) => n,
-    Add(a, b) => eval(a) + eval(b),
-    Mul(a, b) => eval(a) * eval(b),
-    Neg(e) => 0 - eval(e),
+    Num(n) => n
+    Add(a, b) => eval(a) + eval(b)
+    Mul(a, b) => eval(a) * eval(b)
+    Neg(a) => -eval(a)
   }
 ```

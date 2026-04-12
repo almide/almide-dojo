@@ -1,11 +1,14 @@
 # repeat-string
 
-- **model**: `claude-sonnet-4-6`
+- **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: yes
-- **retries**: 0
+- **retries**: 1
 
 ## Final code
 
 ```almide
-fn repeat(s: String, n: Int) -> String = string.repeat(s, n)
+fn repeat(s: String, n: Int) -> String = 
+  if n == 0 then "" 
+  else if n == 1 then s 
+  else s + repeat(s, n - 1)
 ```

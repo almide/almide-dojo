@@ -7,40 +7,47 @@
 ## Final diagnostic
 
 ```
-Compiling /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-matrix-ops-3.almd
-error[E005]: argument 'xs' expects List[A] but got Option[List[Int]]
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-matrix-ops-3.almd:7:52
-  in call to list.len()
+Compiling /tmp/dojo-matrix-ops-3.almd
+error: operator '+' requires numeric, String, or List types but got ?2 and Option[Int]
+  --> /tmp/dojo-matrix-ops-3.almd:4:66
+  in operator +
+  hint: Use + with numeric types, String, or List
+  |
+4 |             x + list.get(list.get(b, i) |> option.unwrap_or([]), j) |> option.unwrap_or(0)
+  |                                                                  ^
+error[E005]: argument 'f' expects fn(A) -> B but got fn(Option[Int], Int) -> Int
+  --> /tmp/dojo-matrix-ops-3.almd:4:89
+  in call to list.map()
   hint: Fix the argument type
   |
-7 |   else if list.len(m) > 0 and list.len(list.get(m, 0)) == 0 then
-  |                                                    ^
-error[E005]: argument 'xs' expects List[A] but got Option[List[Int]]
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-matrix-ops-3.almd:10:40
-  in call to list.len()
+4 |             x + list.get(list.get(b, i) |> option.unwrap_or([]), j) |> option.unwrap_or(0)
+  |                                                                                         ^
+error[E005]: argument 'f' expects fn(List[Int]) -> B but got fn(List[A], Int) -> List[?6]
+  --> /tmp/dojo-matrix-ops-3.almd:4:89
+  in call to list.map()
   hint: Fix the argument type
-   |
-10 |     list.range(0, list.len(list.get(m, 0))) |> list.map((x) => list.map(m, (y) => list.get(y, x) |> option.unwrap_or(0)))
-   |                                        ^
-error[E001]: type mismatch in call to list.len(): expected List[A] but got Option[List[Int]]
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-matrix-ops-3.almd:7:52
-  in call to list.len()
+  |
+4 |             x + list.get(list.get(b, i) |> option.unwrap_or([]), j) |> option.unwrap_or(0)
+  |                                                                                         ^
+error[E001]: type mismatch in call to list.map(): expected fn(A) -> B but got fn(Option[Int], Int) -> Int
+  --> /tmp/dojo-matrix-ops-3.almd:4:89
+  in call to list.map()
   hint: Fix the expression type or change the expected type
   |
-7 |   else if list.len(m) > 0 and list.len(list.get(m, 0)) == 0 then
-  |                                                    ^
-error[E001]: type mismatch in call to list.len(): expected List[A] but got Option[List[Int]]
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-matrix-ops-3.almd:10:40
-  in call to list.len()
+4 |             x + list.get(list.get(b, i) |> option.unwrap_or([]), j) |> option.unwrap_or(0)
+  |                                                                                         ^
+error[E001]: type mismatch in call to list.map(): expected fn(List[Int]) -> B but got fn(List[A], Int) -> List[?6]
+  --> /tmp/dojo-matrix-ops-3.almd:4:89
+  in call to list.map()
   hint: Fix the expression type or change the expected type
-   |
-10 |     list.range(0, list.len(list.get(m, 0))) |> list.map((x) => list.map(m, (y) => list.get(y, x) |> option.unwrap_or(0)))
-   |                                        ^
+  |
+4 |             x + list.get(list.get(b, i) |> option.unwrap_or([]), j) |> option.unwrap_or(0)
+  |                                                                                         ^
 
-4 error(s) found
-Compile error for /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-matrix-ops-3.almd:
+5 error(s) found
+Compile error for /tmp/dojo-matrix-ops-3.almd:
 compile failed
-FAILED: /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-matrix-ops-3.almd
+FAILED: /tmp/dojo-matrix-ops-3.almd
 
 1/1 test file(s) failed
 
@@ -50,19 +57,23 @@ FAILED: /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-matrix-ops-3.almd
 
 ```almide
 fn mat_add(a: List[List[Int]], b: List[List[Int]]) -> List[List[Int]] = 
-  list.map(list.zip(a, b), (x) => list.map(list.zip(x.0, x.1), (y) => y.0 + y.1))
+    list.map(a, (row, i) => 
+        list.map(row, (x, j) => 
+            x + list.get(list.get(b, i) |> option.unwrap_or([]), j) |> option.unwrap_or(0)
+        )
+    )
 
 fn mat_transpose(m: List[List[Int]]) -> List[List[Int]] = 
-  if list.len(m) == 0 then 
-    [] 
-  else if list.len(m) > 0 and list.len(list.get(m, 0)) == 0 then 
-    [] 
-  else 
-    list.range(0, list.len(list.get(m, 0))) |> list.map((x) => list.map(m, (y) => list.get(y, x) |> option.unwrap_or(0)))
+    if m == [] then [] else 
+    list.range(0, list.len(list.get(m, 0) |> option.unwrap_or([]))).map((i) => 
+        list.map(m, (x) => list.get(x, i) |> option.unwrap_or(0))
+    )
 
 fn mat_scale(m: List[List[Int]], s: Int) -> List[List[Int]] = 
-  list.map(m, (x) => list.map(x, (y) => y * s))
+    list.map(m, (row) => 
+        list.map(row, (x) => x * s)
+    )
 
 fn mat_dot_row(row_a: List[Int], col_b: List[Int]) -> Int = 
-  list.fold(list.zip(row_a, col_b), 0, (acc, x) => acc + x.0 * x.1)
+    list.fold(list.zip(row_a, col_b), 0, (acc, x) => acc + x.0 * x.1)
 ```

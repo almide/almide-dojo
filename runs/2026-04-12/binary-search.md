@@ -7,47 +7,63 @@
 ## Final diagnostic
 
 ```
-Compiling /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-binary-search-3.almd
-error: Expected Then at line 7:43 (got FatArrow '=>')
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-binary-search-3.almd:7:43
-  hint: if requires 'then'. Write: if condition then expr else expr
+Compiling /tmp/dojo-binary-search-3.almd
+error: Expected Then at line 9:45 (got FatArrow '=>')
+  --> /tmp/dojo-binary-search-3.almd:9:45
+  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
   |
-7 |       case some(value) if value == target => some(mid)
-  |                                           ^
-error: Expected Then at line 8:42 (got FatArrow '=>')
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-binary-search-3.almd:8:42
-  hint: if requires 'then'. Write: if condition then expr else expr
-  |
-8 |       case some(value) if value < target => left = mid + 1
-  |                                          ^
-error: Expected Then at line 9:42 (got FatArrow '=>')
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-binary-search-3.almd:9:42
-  hint: if requires 'then'. Write: if condition then expr else expr
-  |
-9 |       case some(value) if value > target => right = mid - 1
-  |                                          ^
-error: Expected expression at line 10:17 (got FatArrow '=>')
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-binary-search-3.almd:10:17
+9 |         case some(value) if value == target => some(mid)
+  |                                             ^
+error: Expected Then at line 10:44 (got FatArrow '=>')
+  --> /tmp/dojo-binary-search-3.almd:10:44
+  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
    |
-10 |       case none => break
-   |                 ^
-error: Expected LBrace at line 12:3 (got RBrace '}')
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-binary-search-3.almd:12:3
+10 |         case some(value) if value < target => { left = mid + 1; while left <= right {
+   |                                            ^
+error: Expected Then at line 13:41 (got FatArrow '=>')
+  --> /tmp/dojo-binary-search-3.almd:13:41
+  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
    |
-12 |   }
-   |   ^
-error[E001]: type mismatch in fn 'binary_search': expected Option[Int] but got Unit
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-binary-search-3.almd:3:30
-  in fn 'binary_search'
+13 |             case some(v) if v == target => some(mid)
+   |                                         ^
+error: Expected Then at line 14:40 (got FatArrow '=>')
+  --> /tmp/dojo-binary-search-3.almd:14:40
+  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+   |
+14 |             case some(v) if v < target => left = mid + 1
+   |                                        ^
+error: Expected expression at line 15:20 (got FatArrow '=>')
+  --> /tmp/dojo-binary-search-3.almd:15:20
+   |
+15 |             case _ => right = mid - 1
+   |                    ^
+error: Expected LBrace at line 17:9 (got RBrace '}')
+  --> /tmp/dojo-binary-search-3.almd:17:9
+   |
+17 |         }; none }
+   |         ^
+error: Expected LBrace at line 17:10 (got Semicolon ';')
+  --> /tmp/dojo-binary-search-3.almd:17:10
+   |
+17 |         }; none }
+   |          ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 18:9 (got Ident 'case')
+  --> /tmp/dojo-binary-search-3.almd:18:9
+   |
+18 |         case _ => { right = mid - 1; while left <= right {
+   |         ^
+error[E001]: type mismatch in if branches: expected Option[Int] but got Unit
+  --> /tmp/dojo-binary-search-3.almd:5:32
+  in if branches
   hint: Fix the expression type or change the expected type
   |
-3 |   var right = list.len(xs) - 1
-  |                              ^
+5 |     var right = list.len(xs) - 1
+  |                                ^
 
-6 error(s) found
-Compile error for /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-binary-search-3.almd:
+9 error(s) found
+Compile error for /tmp/dojo-binary-search-3.almd:
 compile failed
-FAILED: /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-binary-search-3.almd
+FAILED: /tmp/dojo-binary-search-3.almd
 
 1/1 test file(s) failed
 
@@ -57,16 +73,25 @@ FAILED: /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-binary-search-3.a
 
 ```almide
 fn binary_search(xs: List[Int], target: Int) -> Option[Int] = 
-  var left = 0
-  var right = list.len(xs) - 1
-  while (left <= right) {
-    val mid = left + (right - left) / 2
-    list.get(xs, mid) match {
-      case some(value) if value == target => some(mid)
-      case some(value) if value < target => left = mid + 1
-      case some(value) if value > target => right = mid - 1
-      case none => break
-    }
-  }
-  none
+  if list.len(xs) == 0 then none
+  else {
+    var left = 0
+    var right = list.len(xs) - 1
+    while left <= right {
+      val mid = left + (right - left) / 2
+      list.get(xs, mid) match {
+        case some(value) if value == target => some(mid)
+        case some(value) if value < target => { left = mid + 1; while left <= right {
+          val mid = left + (right - left) / 2
+          list.get(xs, mid) match {
+            case some(v) if v == target => some(mid)
+            case some(v) if v < target => left = mid + 1
+            case _ => right = mid - 1
+          }
+        }; none }
+        case _ => { right = mid - 1; while left <= right {
+          val mid = left + (right - left) / 2
+          list.get(xs, mid) match {
+            case some(v) if v == target => some(mid)
+            case some(v) if v < target => left = mid
 ```
