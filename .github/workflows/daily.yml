@@ -5,8 +5,8 @@ on:
     - cron: '0 3 * * *'  # 03:00 UTC daily (12:00 JST)
   workflow_dispatch:
     inputs:
-      model:
-        description: 'Model spec (e.g. cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast)'
+      models:
+        description: 'Comma-separated model specs'
         required: false
         default: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast'
 
@@ -14,12 +14,9 @@ permissions:
   contents: write
 
 jobs:
-  run:
+  build-compiler:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v4
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
@@ -28,8 +25,39 @@ jobs:
           git clone --depth 1 --branch develop https://github.com/almide/almide.git /tmp/almide-src
           cd /tmp/almide-src
           cargo build --release
+          mkdir -p /tmp/almide-bin
+          cp target/release/almide /tmp/almide-bin/almide
+
+      - name: Upload compiler
+        uses: actions/upload-artifact@v4
+        with:
+          name: almide-bin
+          path: /tmp/almide-bin/almide
+
+  run-msr:
+    needs: build-compiler
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        model:
+          - 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast'
+          - 'cf:@cf/meta/llama-3.1-8b-instruct'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download compiler
+        uses: actions/download-artifact@v4
+        with:
+          name: almide-bin
+          path: /tmp/almide-bin
+
+      - name: Setup Almide
+        run: |
+          chmod +x /tmp/almide-bin/almide
           mkdir -p "$HOME/.local/bin"
-          cp target/release/almide "$HOME/.local/bin/almide"
+          cp /tmp/almide-bin/almide "$HOME/.local/bin/almide"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           almide --version
 
@@ -41,9 +69,41 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          MODEL="${{ github.event.inputs.model || 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast' }}"
+          MODEL="${{ matrix.model }}"
           echo "Running MSR with model: $MODEL"
           almide run src/main.almd -- all "$MODEL" || true
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: runs-${{ strategy.job-index }}
+          path: runs/
+
+  commit-results:
+    needs: run-msr
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download compiler
+        uses: actions/download-artifact@v4
+        with:
+          name: almide-bin
+          path: /tmp/almide-bin
+
+      - name: Setup Almide
+        run: |
+          chmod +x /tmp/almide-bin/almide
+          mkdir -p "$HOME/.local/bin"
+          cp /tmp/almide-bin/almide "$HOME/.local/bin/almide"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: runs-*
+          merge-multiple: true
+          path: runs/
 
       - name: Regenerate dashboard
         run: |
@@ -56,5 +116,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add runs/ docs/index.html dashboards/index.html
-          git diff --cached --quiet || git commit -m "Daily MSR run $DATE"
+          git diff --cached --quiet || git commit -m "Daily MSR run $DATE (multi-model)"
           git push || true
