@@ -23,13 +23,13 @@ type ModelSpec = {
 
 // ── Parsing ──
 
-fn parse_model(model_spec: String) -> ModelSpec = {
-  let colon = string.index_of(model_spec, ":")
+fn parse_model(spec: String) -> ModelSpec = {
+  let colon = string.index_of(spec, ":")
   match colon {
-    none => ModelSpec { provider: "claude", model: model_spec }
-    some(idx) => ModelSpec {
-      provider: string.take(model_spec, idx),
-      model: string.drop(model_spec, idx + 1),
+    none => ModelSpec { provider: "claude", model: spec }
+    some(i) => ModelSpec {
+      provider: string.take(spec, i),
+      model: string.drop(spec, i + 1),
     }
   }
 }
