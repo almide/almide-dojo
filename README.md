@@ -38,16 +38,21 @@ The harness is deliberately written in Almide itself — Dojo is the first place
 
 ## Running the harness
 
+Requires the [`claude` CLI](https://docs.claude.com/en/docs/claude-code) to be installed and authenticated. The harness calls it via `process.exec`, so no API key handling is needed in the harness itself.
+
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...
+# single task
 almide run src/main.almd -- fizzbuzz
+
+# all tasks, writes runs/YYYY-MM-DD/summary.md
+almide run src/main.almd -- all
 ```
 
 Available basic tasks: `fizzbuzz`, `factorial`, `is-prime`, `string-reverse`, `is-palindrome`.
 
 ## Current phase
 
-**Phase 1** — scaffolding. Single-task runs only. Per-day metrics, dashboards, scheduled runs, and malicious-hint detection land in Phase 2.
+**Phase 2** — harness runs end-to-end against `claude` CLI, writes per-task reports and a daily summary to `runs/YYYY-MM-DD/`. Next: expand the task bank from 5 to 30, add GitHub Actions daily workflow, build the dashboards.
 
 See [`docs/roadmap/active/almide-dojo.md`](https://github.com/almide/almide/blob/main/docs/roadmap/active/almide-dojo.md) in the main Almide repo for the full roadmap.
 

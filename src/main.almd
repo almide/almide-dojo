@@ -1,30 +1,28 @@
 // dojo — Almide Dojo harness
 //
-// Run a task, send its prompt to an LLM, compile the result with the pinned
-// almide compiler, and feed diagnostics back for retries.
+// Run a task, send its prompt to Claude Code, compile the result with the
+// pinned almide compiler, and feed diagnostics back for retries.
 //
-// Phase 1 scaffold: single-task runs only. The daily-loop, per-task metrics
-// file, dashboard rendering, and malicious-hint detection come in Phase 2.
+// Writes a per-task markdown report to `runs/YYYY-MM-DD/<task>.md`.
 //
 // Usage:
-//   almide run src/main.almd -- <task-name>
+//   almide run src/main.almd -- <task-name> [model]
 //
-// Required environment:
-//   ANTHROPIC_API_KEY — used to authenticate against the Messages API
+// Examples:
+//   almide run src/main.almd -- fizzbuzz
+//   almide run src/main.almd -- factorial claude-opus-4-6
+//
+// Requires: `claude` CLI installed and authenticated (no API key needed here).
 
 import env
 import fs
-import http
-import json
 import process
+import datetime
 
 // ── Constants ──
 
-let API_URL = "https://api.anthropic.com/v1/messages"
-let API_VERSION = "2023-06-01"
 let DEFAULT_MODEL = "claude-sonnet-4-6"
 let DEFAULT_MAX_RETRIES = 3
-let MAX_TOKENS = 4096
 
 let SYSTEM_PROMPT = """
   You are writing code in Almide, a statically-typed language designed for LLM code generation.
@@ -34,6 +32,7 @@ let SYSTEM_PROMPT = """
   Use `match v { Pattern => expr, ... }` for pattern matching.
   Use `int.to_string(n)` to convert int to string; there is no implicit coercion.
   `Option[T]` replaces null. `Result[T, E]` replaces exceptions.
+  Use `guard cond else err("...")` for early exit inside effect fn.
   """
 
 // ── Types ──
@@ -51,6 +50,7 @@ type RunResult = {
   success: Bool,
   retries: Int,
   final_diagnostic: String,
+  final_code: String,
 }
 
 type AttemptResult = {
@@ -72,61 +72,22 @@ effect fn load_task(name: String) -> Result[Task, String] = {
   }
 }
 
-// ── Anthropic API call ──
+// ── Model call via Claude Code ──
+//
+// Matches the pattern from research/benchmark/msr/msr.almd in the main repo.
+// The `claude` CLI reads credentials from the user's existing auth, so the
+// harness never touches API keys directly.
 
-fn build_messages(history: List[(String, String)], user: String) -> Value = {
-  let prior = history |> list.flat_map((turn) => {
-    let (u, a) = turn
-    [
-      json.object([
-        ("role", json.from_string("user")),
-        ("content", json.from_string(u)),
-      ]),
-      json.object([
-        ("role", json.from_string("assistant")),
-        ("content", json.from_string(a)),
-      ]),
-    ]
-  })
-  json.array(prior + [
-    json.object([
-      ("role", json.from_string("user")),
-      ("content", json.from_string(user)),
-    ])
-  ])
-}
+fn strip_code_fences(s: String) -> String =
+  s
+    |> string.split("\n")
+    |> list.filter((line) => not string.starts_with(string.trim(line), "```"))
+    |> string.join("\n")
 
-fn build_body(model: String, user: String, history: List[(String, String)]) -> String =
-  json.stringify(json.object([
-    ("model", json.from_string(model)),
-    ("max_tokens", json.from_int(MAX_TOKENS)),
-    ("system", json.from_string(SYSTEM_PROMPT)),
-    ("messages", build_messages(history, user)),
-  ]))
-
-effect fn call_model(model: String, user: String, history: List[(String, String)]) -> Result[String, String] = {
-  match env.get("ANTHROPIC_API_KEY") {
-    none => err("ANTHROPIC_API_KEY not set")
-    some(api_key) => {
-      let body = build_body(model, user, history)
-      let headers = [
-        "x-api-key": api_key,
-        "anthropic-version": API_VERSION,
-        "content-type": "application/json",
-      ]
-      match http.request("POST", API_URL, body, headers) {
-        err(e) => err("http error: " + e)
-        ok(resp) => match json.parse(resp) {
-          err(e) => err("json parse error: " + e)
-          ok(parsed) => {
-            let content = json.get_array(parsed, "content") |> option.unwrap_or([])
-            let first = list.get(content, 0) |> option.unwrap_or(json.null())
-            let text = json.get_string(first, "text") |> option.unwrap_or("")
-            ok(text)
-          }
-        }
-      }
-    }
+effect fn call_model(model: String, user_prompt: String) -> Result[String, String] = {
+  match process.exec("claude", ["--model", model, "--print", "--system-prompt", SYSTEM_PROMPT, user_prompt]) {
+    err(e) => err("claude exec failed: " + e)
+    ok(raw) => ok(strip_code_fences(raw))
   }
 }
 
@@ -151,18 +112,23 @@ effect fn compile_and_test(task: Task, solution: String, attempt: Int) -> Result
 // ── Fix loop ──
 //
 // fix_loop_step distinguishes:
-//   - err(_)  — genuine harness failure (API down, fs broken). Abort the run.
-//   - ok(RunResult { success: false, ... }) — model couldn't produce passing code.
-//     Not an error; record and continue to the next task in Phase 2.
+//   - err(_)  — genuine harness failure (claude CLI missing, fs broken). Abort.
+//   - ok(RunResult { success: false, ... }) — model couldn't produce passing
+//     code within max_retries. Not an error; gets recorded and we move on.
+
+fn build_retry_prompt(original: String, prev_code: String, diag: String) -> String =
+  "Original task:\n\n" + original + "\n\n" +
+  "You previously wrote this code:\n\n" + prev_code + "\n\n" +
+  "It failed to compile or test. Diagnostic output:\n\n" + diag + "\n\n" +
+  "Fix the code and return ONLY the corrected Almide source. No markdown fences, no explanation."
 
 effect fn attempt_once(
   task: Task,
   model: String,
   user_prompt: String,
-  history: List[(String, String)],
   attempt: Int,
 ) -> Result[AttemptResult, String] = {
-  match call_model(model, user_prompt, history) {
+  match call_model(model, user_prompt) {
     err(e) => err("call_model: " + e)
     ok(code) => compile_and_test(task, code, attempt)
   }
@@ -173,7 +139,7 @@ effect fn fix_loop_step(
   model: String,
   max_retries: Int,
   attempt: Int,
-  history: List[(String, String)],
+  last_code: String,
   last_diag: String,
 ) -> Result[RunResult, String] = {
   if attempt > max_retries then
@@ -183,12 +149,13 @@ effect fn fix_loop_step(
       success: false,
       retries: max_retries,
       final_diagnostic: last_diag,
+      final_code: last_code,
     })
   else {
     let user_prompt =
       if attempt == 0 then task.prompt
-      else "The previous code failed to compile or test. Diagnostic output:\n\n" + last_diag + "\n\nFix the code and return ONLY the corrected Almide source."
-    match attempt_once(task, model, user_prompt, history, attempt) {
+      else build_retry_prompt(task.prompt, last_code, last_diag)
+    match attempt_once(task, model, user_prompt, attempt) {
       err(e) => err("attempt " + int.to_string(attempt) + ": " + e)
       ok(result) =>
         if result.success then
@@ -198,17 +165,50 @@ effect fn fix_loop_step(
             success: true,
             retries: attempt,
             final_diagnostic: "",
+            final_code: result.code,
           })
-        else {
-          let new_history = history + [(user_prompt, result.code)]
-          fix_loop_step(task, model, max_retries, attempt + 1, new_history, result.diagnostic)
-        }
+        else
+          fix_loop_step(task, model, max_retries, attempt + 1, result.code, result.diagnostic)
     }
   }
 }
 
 effect fn fix_loop(task: Task, model: String, max_retries: Int) -> Result[RunResult, String] =
-  fix_loop_step(task, model, max_retries, 0, [], "")
+  fix_loop_step(task, model, max_retries, 0, "", "")
+
+// ── Metrics recording ──
+//
+// Per-task markdown report at runs/YYYY-MM-DD/<task>.md.
+// Summaries only — raw model outputs are not committed by convention.
+
+fn fence_block(lang: String, body: String) -> String =
+  "```" + lang + "\n" + body + "\n```\n"
+
+fn render_report(result: RunResult) -> String =
+  "# " + result.task + "\n\n" +
+  "- **model**: `" + result.model + "`\n" +
+  "- **success**: " + (if result.success then "yes" else "no") + "\n" +
+  "- **retries**: " + int.to_string(result.retries) + "\n\n" +
+  (if result.success then
+    "## Final code\n\n" + fence_block("almide", result.final_code)
+  else
+    "## Final diagnostic\n\n" + fence_block("", result.final_diagnostic) +
+    "\n## Last attempted code\n\n" + fence_block("almide", result.final_code))
+
+effect fn write_metrics(result: RunResult) -> Result[String, String] = {
+  let date = datetime.format(env.unix_timestamp(), "YYYY-MM-DD")
+  let dir = "runs/" + date
+  match fs.mkdir_p(dir) {
+    err(_) => err("failed to create " + dir)
+    ok(_) => {
+      let path = dir + "/" + result.task + ".md"
+      match fs.write(path, render_report(result)) {
+        err(_) => err("failed to write " + path)
+        ok(_) => ok(path)
+      }
+    }
+  }
+}
 
 // ── CLI ──
 
@@ -216,17 +216,18 @@ fn bool_str(b: Bool) -> String =
   if b then "yes" else "no"
 
 effect fn print_usage() -> Unit = {
-  println("Almide Dojo harness — Phase 1")
+  println("Almide Dojo harness")
   println("")
   println("Usage:")
-  println("  almide run src/main.almd -- <task-name>")
+  println("  almide run src/main.almd -- <task-name> [model]")
+  println("  almide run src/main.almd -- all [model]")
   println("")
-  println("Example:")
-  println("  export ANTHROPIC_API_KEY=sk-ant-...")
+  println("Examples:")
   println("  almide run src/main.almd -- fizzbuzz")
+  println("  almide run src/main.almd -- factorial claude-opus-4-6")
+  println("  almide run src/main.almd -- all")
   println("")
-  println("Available tasks (basic):")
-  println("  fizzbuzz   factorial   is-prime   string-reverse   is-palindrome")
+  println("Requires: `claude` CLI installed and authenticated.")
 }
 
 effect fn print_result(result: RunResult) -> Unit = {
@@ -236,48 +237,173 @@ effect fn print_result(result: RunResult) -> Unit = {
   println("  model:   " + result.model)
   println("  success: " + bool_str(result.success))
   println("  retries: " + int.to_string(result.retries))
-  if not result.success then {
+  if result.success then {
+    println("")
+    println("Task passed.")
+  } else {
     println("")
     println("Final diagnostic:")
     println(result.final_diagnostic)
-  } else {
-    println("")
-    println("Task passed.")
   }
 }
 
-effect fn run_task(task_name: String) -> Unit = {
+effect fn run_task(task_name: String, model: String) -> Result[RunResult, String] = {
   println("Loading task: " + task_name)
   match load_task(task_name) {
-    err(e) => {
-      println("Failed to load task: " + e)
-      process.exit(1)
-    }
+    err(e) => err("load task: " + e)
     ok(task) => {
-      println("Model:    " + DEFAULT_MODEL)
+      println("Model:    " + model)
       println("Retries:  " + int.to_string(DEFAULT_MAX_RETRIES))
       println("")
-      match fix_loop(task, DEFAULT_MODEL, DEFAULT_MAX_RETRIES) {
-        err(e) => {
-          println("Harness error: " + e)
-          process.exit(1)
-        }
+      match fix_loop(task, model, DEFAULT_MAX_RETRIES) {
+        err(e) => err("fix_loop: " + e)
         ok(result) => {
           print_result(result)
-          if not result.success then process.exit(1) else {}
+          match write_metrics(result) {
+            ok(path) => println("\nReport: " + path)
+            err(e) => println("\nWarning: failed to write report: " + e)
+          }
+          ok(result)
         }
       }
     }
   }
 }
 
+// ── Run all tasks ──
+
+effect fn list_basic_tasks() -> Result[List[String], String] = {
+  match fs.list_dir("tasks/basic") {
+    err(_) => err("failed to list tasks/basic")
+    ok(entries) => ok(list.filter(entries, (e) => not string.starts_with(e, ".")))
+  }
+}
+
+fn render_summary(date: String, model: String, results: List[RunResult]) -> String = {
+  let total = list.len(results)
+  let passed = list.count(results, (r) => r.success)
+  let one_shot = list.count(results, (r) => r.success and r.retries == 0)
+  let total_retries = results
+    |> list.map((r) => r.retries)
+    |> list.sum
+  let rows = results
+    |> list.map((r) => {
+      let success_mark = if r.success then "pass" else "FAIL"
+      "| `" + r.task + "` | " + success_mark + " | " + int.to_string(r.retries) + " |"
+    })
+    |> string.join("\n")
+
+  "# MSR run " + date + "\n\n" +
+  "- **model**: `" + model + "`\n" +
+  "- **tasks**: " + int.to_string(total) + "\n" +
+  "- **passed**: " + int.to_string(passed) + " / " + int.to_string(total) + "\n" +
+  "- **1-shot passes**: " + int.to_string(one_shot) + " / " + int.to_string(total) + "\n" +
+  "- **total retries**: " + int.to_string(total_retries) + "\n\n" +
+  "## Per-task\n\n" +
+  "| task | result | retries |\n" +
+  "|---|---|---|\n" +
+  rows + "\n"
+}
+
+effect fn write_summary(date: String, model: String, results: List[RunResult]) -> Result[String, String] = {
+  let dir = "runs/" + date
+  match fs.mkdir_p(dir) {
+    err(_) => err("failed to create " + dir)
+    ok(_) => {
+      let path = dir + "/summary.md"
+      match fs.write(path, render_summary(date, model, results)) {
+        err(_) => err("failed to write " + path)
+        ok(_) => ok(path)
+      }
+    }
+  }
+}
+
+effect fn run_all(model: String) -> Unit = {
+  match list_basic_tasks() {
+    err(e) => {
+      println("Failed to list tasks: " + e)
+      process.exit(1)
+    }
+    ok(tasks) => {
+      let sorted = list.sort(tasks)
+      println("Running " + int.to_string(list.len(sorted)) + " tasks against " + model)
+      println("")
+      match run_all_loop(sorted, model, []) {
+        err(e) => {
+          println("Harness error: " + e)
+          process.exit(1)
+        }
+        ok(results) => {
+          let date = datetime.format(env.unix_timestamp(), "YYYY-MM-DD")
+          run_all_finish(date, model, results)
+        }
+      }
+    }
+  }
+}
+
+effect fn run_all_finish(date: String, model: String, results: List[RunResult]) -> Unit = {
+  match write_summary(date, model, results) {
+    ok(path) => {
+      println("")
+      println("Summary: " + path)
+      let passed = list.count(results, (r) => r.success)
+      let total = list.len(results)
+      println(int.to_string(passed) + "/" + int.to_string(total) + " tasks passed")
+      if passed < total then process.exit(1) else {}
+    }
+    err(e) => {
+      println("Warning: failed to write summary: " + e)
+      process.exit(1)
+    }
+  }
+}
+
+effect fn run_all_loop(tasks: List[String], model: String, acc: List[RunResult]) -> Result[List[RunResult], String] = {
+  if list.is_empty(tasks) then ok(acc)
+  else {
+    let task_name = list.get(tasks, 0) |> option.unwrap_or("")
+    let rest = list.drop(tasks, 1)
+    println("=== " + task_name + " ===")
+    let next_acc = match run_task(task_name, model) {
+      ok(r) => acc + [r]
+      err(e) => {
+        println("  harness error: " + e)
+        acc + [RunResult {
+          task: task_name,
+          model: model,
+          success: false,
+          retries: 0,
+          final_diagnostic: e,
+          final_code: "",
+        }]
+      }
+    }
+    println("")
+    run_all_loop(rest, model, next_acc)
+  }
+}
+
 effect fn main() -> Unit = {
   let args = env.args()
-  if list.len(args) < 1 then
+  let argc = list.len(args)
+  if argc < 1 then
     print_usage()
   else {
-    let task_name = list.get(args, 0) |> option.unwrap_or("")
-    run_task(task_name)
+    let first = list.get(args, 0) |> option.unwrap_or("")
+    let model = list.get(args, 1) |> option.unwrap_or(DEFAULT_MODEL)
+    if first == "all" then
+      run_all(model)
+    else {
+      match run_task(first, model) {
+        ok(r) => if not r.success then process.exit(1) else {}
+        err(e) => {
+          println("Harness error: " + e)
+          process.exit(1)
+        }
+      }
+    }
   }
 }
 
@@ -289,4 +415,28 @@ test "bool_str true is yes" {
 
 test "bool_str false is no" {
   assert_eq(bool_str(false), "no")
+}
+
+test "strip_code_fences removes triple backtick lines" {
+  let raw = "```almide\nfn f() = 1\n```"
+  assert_eq(strip_code_fences(raw), "fn f() = 1")
+}
+
+test "strip_code_fences leaves non-fenced text alone" {
+  assert_eq(strip_code_fences("plain text"), "plain text")
+}
+
+test "render_report contains task name and model" {
+  let r = RunResult {
+    task: "fizzbuzz",
+    model: "claude-sonnet-4-6",
+    success: true,
+    retries: 0,
+    final_diagnostic: "",
+    final_code: "fn fizzbuzz(n: Int) -> String = \"1\"",
+  }
+  let out = render_report(r)
+  assert(string.contains(out, "fizzbuzz"))
+  assert(string.contains(out, "claude-sonnet-4-6"))
+  assert(string.contains(out, "success"))
 }
