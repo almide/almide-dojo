@@ -8,17 +8,9 @@
 
 ```
 Compiling /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-word-count-3.almd
-error[E003]: undefined variable 'map'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-word-count-3.almd:4:5
-  in variable map
-  hint: Check the variable name
-  |
-4 |     map.empty,
-  |     ^^^
-
-1 error(s) found
 Compile error for /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-word-count-3.almd:
-compile failed
+error: could not compile `almide-out` (bin "almide-out" test) due to 1 previous error; 1 warning emitted
+
 FAILED: /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-word-count-3.almd
 
 1/1 test file(s) failed
@@ -29,9 +21,7 @@ FAILED: /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-word-count-3.almd
 
 ```almide
 fn word_count(s: String) -> Map[String, Int] = 
-  list.fold(
-    list.filter(string.split(s, " "), (x) => x != ""), 
-    map.empty, 
-    (acc, word) => map.set(acc, word, map.get_or(acc, word, 0) + 1)
+  list.fold(list.filter(string.split(s, " "), (w: String) => w != ""), Map.empty, (acc, w) => 
+    map.set(acc, w, map.get_or(acc, w, 0) + 1)
   )
 ```

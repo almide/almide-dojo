@@ -8,142 +8,132 @@
 
 ```
 Compiling /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd
-error: Expected ')' to close parenthesized expression opened at line 5:19
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:5:22
-  hint: Add ')' or check for a missing delimiter inside the parenthesized expression
-  |
-5 |   val pairsList = (0 to 12).map(pairs)
-  |                   --------------- '(' opened here
-  |
-5 |   val pairsList = (0 to 12).map(pairs)
-  |                      ^^
-error: Expected ')' to close parenthesized expression opened at line 5:19 at line 5:22
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:5:19
-  |
-5 |   val pairsList = (0 to 12).map(pairs)
-  |                   ^
-error: Expected expression at line 8:22 (got FatArrow '=>')
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:8:22
-  |
-8 |     case (0, _, acc) => acc
-  |                      ^
-error: Expected expression at line 9:23 (got FatArrow '=>')
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:9:23
-  |
-9 |     case (n, [], acc) => acc
-  |                       ^
-error: Expected ')' to close parenthesized expression opened at line 10:14
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:10:17
-  hint: Add ')' or check for a missing delimiter inside the parenthesized expression
+error: Expected expression at line 19:25 (got Eq '=')
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:19:25
    |
-10 |     case (n, (v :: vs), acc) if n >= v._1 => to_roman(n - v._1, vs, acc + v._2)
-   |              --------------- '(' opened here
-   |
-10 |     case (n, (v :: vs), acc) if n >= v._1 => to_roman(n - v._1, vs, acc + v._2)
-   |                 ^
-error: Expected ')' to close parenthesized expression opened at line 10:14 at line 10:17
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:10:14
-   |
-10 |     case (n, (v :: vs), acc) if n >= v._1 => to_roman(n - v._1, vs, acc + v._2)
-   |              ^
-error: Expected ')' to close parenthesized expression opened at line 11:14
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:11:17
-  hint: Add ')' or check for a missing delimiter inside the parenthesized expression
-   |
-11 |     case (n, (_ :: vs), acc) => to_roman(n, vs, acc)
-   |              --------------- '(' opened here
-   |
-11 |     case (n, (_ :: vs), acc) => to_roman(n, vs, acc)
-   |                 ^
-error: Expected ')' to close parenthesized expression opened at line 11:14 at line 11:17
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:11:14
-   |
-11 |     case (n, (_ :: vs), acc) => to_roman(n, vs, acc)
-   |              ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 13:1 (got RBrace '}')
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:13:1
-   |
-13 | }
-   | ^
+19 |     val (value, symbol) = values.head
+   |                         ^
 error[E003]: undefined variable 'val'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:2:3
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:4:5
   in variable val
   hint: Check the variable name
   |
-2 |   val values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
-  |   ^^^
+4 |     val values = list.of(
+  |     ^^^
+error[E002]: undefined function 'list.of'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:17:11
+  in call to list.of()
+  hint: No function 'of' in module 'list'. See docs/CHEATSHEET.md for available functions
+   |
+17 |       (1, "I")
+   |           ^^^
+error[E003]: undefined variable 'value'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:19:10
+  in variable value
+  hint: Check the variable name
+   |
+19 |     val (value, symbol) = values.head
+   |          ^^^^^
+error[E003]: undefined variable 'symbol'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:19:17
+  in variable symbol
+  hint: Check the variable name
+   |
+19 |     val (value, symbol) = values.head
+   |                 ^^^^^^
+error[E002]: undefined function 'val'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:19:17
+  in call to val()
+  hint: Check the function name
+   |
+19 |     val (value, symbol) = values.head
+   |                 ^^^^^^
 error[E003]: undefined variable 'val'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:3:3
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:20:5
   in variable val
   hint: Check the variable name
-  |
-3 |   val symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
-  |   ^^^
+   |
+20 |     val count = n / value
+   |     ^^^
+error[E003]: undefined variable 'value'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:20:21
+  in variable value
+  hint: Check the variable name
+   |
+20 |     val count = n / value
+   |                     ^^^^^
 error[E003]: undefined variable 'val'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:4:3
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:21:5
   in variable val
   hint: Check the variable name
-  |
-4 |   val pairs = (i) => (values(i), symbols(i))
-  |   ^^^
-error[E002]: undefined function 'values'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:4:30
-  in call to values()
-  hint: Check the function name
-  |
-4 |   val pairs = (i) => (values(i), symbols(i))
-  |                              ^
-error[E002]: undefined function 'symbols'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:4:42
-  in call to symbols()
-  hint: Check the function name
-  |
-4 |   val pairs = (i) => (values(i), symbols(i))
-  |                                          ^
+   |
+21 |     val rest = n % value
+   |     ^^^
+error[E003]: undefined variable 'value'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:21:20
+  in variable value
+  hint: Check the variable name
+   |
+21 |     val rest = n % value
+   |                    ^^^^^
 error[E003]: undefined variable 'val'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:5:3
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:22:5
   in variable val
   hint: Check the variable name
-  |
-5 |   val pairsList = (0 to 12).map(pairs)
-  |   ^^^
-error[E003]: undefined variable 'acc'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:8:17
-  in variable acc
+   |
+22 |     val symbols = string.repeat(symbol, count)
+   |     ^^^
+error[E003]: undefined variable 'symbol'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:22:33
+  in variable symbol
   hint: Check the variable name
-  |
-8 |     case (0, _, acc) => acc
-  |                 ^^^
-error[E002]: undefined function 'case'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:8:17
-  in call to case()
-  hint: Check the function name
-  |
-8 |     case (0, _, acc) => acc
-  |                 ^^^
-error[E003]: undefined variable 'acc'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:9:18
-  in variable acc
+   |
+22 |     val symbols = string.repeat(symbol, count)
+   |                                 ^^^^^^
+error[E003]: undefined variable 'count'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:22:41
+  in variable count
   hint: Check the variable name
-  |
-9 |     case (n, [], acc) => acc
-  |                  ^^^
-error[E002]: undefined function 'case'
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:9:18
-  in call to case()
-  hint: Check the function name
-  |
-9 |     case (n, [], acc) => acc
-  |                  ^^^
-error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:9:18
-  in fn 'to_roman'
-  hint: Fix the expression type or change the expected type
-  |
-9 |     case (n, [], acc) => acc
-  |                  ^^^
+   |
+22 |     val symbols = string.repeat(symbol, count)
+   |                                         ^^^^^
+error[E003]: undefined variable 'values'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:23:18
+  in variable values
+  hint: Check the variable name
+   |
+23 |     if list.size(values) == 1 then symbols
+   |                  ^^^^^^
+error[E002]: undefined function 'list.size'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:23:18
+  in call to list.size()
+  hint: Did you mean `list.len`?
+   |
+23 |     if list.size(values) == 1 then symbols
+   |                  ^^^^^^
+error[E003]: undefined variable 'symbols'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:23:36
+  in variable symbols
+  hint: Check the variable name
+   |
+23 |     if list.size(values) == 1 then symbols
+   |                                    ^^^^^^^
+error[E003]: undefined variable 'symbols'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:24:10
+  in variable symbols
+  hint: Check the variable name
+   |
+24 |     else symbols + to_roman(rest)
+   |          ^^^^^^^
+error[E003]: undefined variable 'rest'
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:24:29
+  in variable rest
+  hint: Check the variable name
+   |
+24 |     else symbols + to_roman(rest)
+   |                             ^^^^
 
-20 error(s) found
+18 error(s) found
 Compile error for /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd:
 compile failed
 FAILED: /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.almd
@@ -155,17 +145,29 @@ FAILED: /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-roman-numeral-3.a
 ## Last attempted code
 
 ```almide
-fn to_roman(n: Int) -> String = {
-  val values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
-  val symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
-  val pairs = (i) => (values(i), symbols(i))
-  val pairsList = (0 to 12).map(pairs)
-
-  (n, pairsList, "") match {
-    case (0, _, acc) => acc
-    case (n, [], acc) => acc
-    case (n, (v :: vs), acc) if n >= v._1 => to_roman(n - v._1, vs, acc + v._2)
-    case (n, (_ :: vs), acc) => to_roman(n, vs, acc)
+fn to_roman(n: Int) -> String = 
+  if n == 0 then ""
+  else {
+    val values = list.of(
+      (1000, "M"),
+      (900, "CM"),
+      (500, "D"),
+      (400, "CD"),
+      (100, "C"),
+      (90, "XC"),
+      (50, "L"),
+      (40, "XL"),
+      (10, "X"),
+      (9, "IX"),
+      (5, "V"),
+      (4, "IV"),
+      (1, "I")
+    )
+    val (value, symbol) = values.head
+    val count = n / value
+    val rest = n % value
+    val symbols = string.repeat(symbol, count)
+    if list.size(values) == 1 then symbols
+    else symbols + to_roman(rest)
   }
-}
 ```
