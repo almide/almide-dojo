@@ -50,6 +50,12 @@ type Task = {
   dir: String,
 }
 
+type Attempt = {
+  code: String,
+  diagnostic: String,
+  passed: Bool,
+}
+
 type RunResult = {
   task: String,
   model: String,
@@ -57,6 +63,7 @@ type RunResult = {
   retries: Int,
   final_diagnostic: String,
   final_code: String,
+  attempts: List[Attempt],
 }
 
 type AttemptResult = {
@@ -168,15 +175,13 @@ effect fn fix_loop_step(
   attempt: Int,
   last_code: String,
   last_diag: String,
+  acc: List[Attempt],
 ) -> Result[RunResult, String] = {
   if attempt > max_retries then
     ok(RunResult {
-      task: task.name,
-      model: model,
-      success: false,
-      retries: max_retries,
-      final_diagnostic: last_diag,
-      final_code: last_code,
+      task: task.name, model: model, success: false,
+      retries: max_retries, final_diagnostic: last_diag, final_code: last_code,
+      attempts: acc,
     })
   else {
     let user_prompt =
@@ -184,24 +189,24 @@ effect fn fix_loop_step(
       else build_retry_prompt(task.prompt, last_code, last_diag)
     match attempt_once(task, model, user_prompt, attempt) {
       err(e) => err("attempt " + int.to_string(attempt) + ": " + e)
-      ok(result) =>
+      ok(result) => {
+        let this_attempt = Attempt { code: result.code, diagnostic: result.diagnostic, passed: result.success }
+        let new_acc = acc + [this_attempt]
         if result.success then
           ok(RunResult {
-            task: task.name,
-            model: model,
-            success: true,
-            retries: attempt,
-            final_diagnostic: "",
-            final_code: result.code,
+            task: task.name, model: model, success: true,
+            retries: attempt, final_diagnostic: "", final_code: result.code,
+            attempts: new_acc,
           })
         else
-          fix_loop_step(task, model, max_retries, attempt + 1, result.code, result.diagnostic)
+          fix_loop_step(task, model, max_retries, attempt + 1, result.code, result.diagnostic, new_acc)
+      }
     }
   }
 }
 
 effect fn fix_loop(task: Task, model: String, max_retries: Int) -> Result[RunResult, String] =
-  fix_loop_step(task, model, max_retries, 0, "", "")
+  fix_loop_step(task, model, max_retries, 0, "", "", [])
 
 // ── Metrics recording ──
 //
@@ -211,16 +216,31 @@ effect fn fix_loop(task: Task, model: String, max_retries: Int) -> Result[RunRes
 fn fence_block(lang: String, body: String) -> String =
   "```" + lang + "\n" + body + "\n```\n"
 
+fn render_attempt(idx: Int, attempt: Attempt) -> String = {
+  let header = "### Attempt " + int.to_string(idx + 1) +
+    (if attempt.passed then " (PASS)" else " (FAIL)") + "\n\n"
+  let code_section = fence_block("almide", attempt.code)
+  if attempt.passed then header + code_section
+  else if attempt.diagnostic == "" then header + code_section
+  else header + code_section + "\n**Diagnostic:**\n\n" + fence_block("", attempt.diagnostic)
+}
+
+fn render_attempts(attempts: List[Attempt]) -> String =
+  if list.is_empty(attempts) then ""
+  else {
+    let body = attempts
+      |> list.enumerate
+      |> list.map((entry) => render_attempt(entry.0, entry.1))
+      |> string.join("\n")
+    "## Attempts\n\n" + body
+  }
+
 fn render_report(result: RunResult) -> String =
   "# " + result.task + "\n\n" +
   "- **model**: `" + result.model + "`\n" +
   "- **success**: " + (if result.success then "yes" else "no") + "\n" +
   "- **retries**: " + int.to_string(result.retries) + "\n\n" +
-  (if result.success then
-    "## Final code\n\n" + fence_block("almide", result.final_code)
-  else
-    "## Final diagnostic\n\n" + fence_block("", result.final_diagnostic) +
-    "\n## Last attempted code\n\n" + fence_block("almide", result.final_code))
+  render_attempts(result.attempts)
 
 effect fn write_metrics(result: RunResult) -> Result[String, String] = {
   let date = datetime.format(env.unix_timestamp(), "YYYY-MM-DD")
@@ -418,6 +438,7 @@ effect fn run_all_loop(tasks: List[String], model: String, acc: List[RunResult])
           retries: 0,
           final_diagnostic: e,
           final_code: "",
+          attempts: [],
         }]
       }
     }
@@ -475,6 +496,7 @@ test "render_report contains task name and model" {
     retries: 0,
     final_diagnostic: "",
     final_code: "fn fizzbuzz(n: Int) -> String = \"1\"",
+    attempts: [Attempt { code: "fn fizzbuzz(n: Int) -> String = \"1\"", diagnostic: "", passed: true }],
   }
   let out = render_report(r)
   assert(string.contains(out, "fizzbuzz"))
