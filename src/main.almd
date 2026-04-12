@@ -242,9 +242,17 @@ fn render_report(result: RunResult) -> String =
   "- **retries**: " + int.to_string(result.retries) + "\n\n" +
   render_attempts(result.attempts)
 
+fn model_slug(model: String) -> String =
+  model
+    |> string.replace("/", "_")
+    |> string.replace(":", "_")
+    |> string.replace("@", "")
+    |> string.replace(".", "-")
+
 effect fn write_metrics(result: RunResult) -> Result[String, String] = {
   let date = datetime.format(env.unix_timestamp(), "YYYY-MM-DD")
-  let dir = "runs/" + date
+  let slug = model_slug(result.model)
+  let dir = "runs/" + date + "/" + slug
   match fs.mkdir_p(dir) {
     err(_) => err("failed to create " + dir)
     ok(_) => {
@@ -367,7 +375,8 @@ fn render_summary(date: String, model: String, results: List[RunResult]) -> Stri
 }
 
 effect fn write_summary(date: String, model: String, results: List[RunResult]) -> Result[String, String] = {
-  let dir = "runs/" + date
+  let slug = model_slug(model)
+  let dir = "runs/" + date + "/" + slug
   match fs.mkdir_p(dir) {
     err(_) => err("failed to create " + dir)
     ok(_) => {
@@ -502,4 +511,10 @@ test "render_report contains task name and model" {
   assert(string.contains(out, "fizzbuzz"))
   assert(string.contains(out, "claude-sonnet-4-6"))
   assert(string.contains(out, "success"))
+}
+
+test "model_slug sanitizes provider string" {
+  assert_eq(model_slug("cf:@cf/meta/llama-3.3-70b"), "cf_cf_meta_llama-3-3-70b")
+  assert_eq(model_slug("claude-sonnet-4-6"), "claude-sonnet-4-6")
+  assert_eq(model_slug("anthropic/claude-sonnet-4-6"), "anthropic_claude-sonnet-4-6")
 }
