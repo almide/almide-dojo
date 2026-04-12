@@ -32,14 +32,11 @@ let DEFAULT_MODEL = "claude-sonnet-4-6"
 let DEFAULT_MAX_RETRIES = 3
 
 let SYSTEM_PROMPT = """
-  You are writing code in Almide, a statically-typed language designed for LLM code generation.
-  Output ONLY the Almide source code for the requested function. No markdown fences, no prose, no explanation.
-  Almide has no `return` keyword — the last expression of a block is its value.
-  Use `fn name(x: T) -> R = expr` or `fn name(x: T) -> R = { ...; last }`.
-  Use `match v { Pattern => expr, ... }` for pattern matching.
-  Use `int.to_string(n)` to convert int to string; there is no implicit coercion.
-  `Option[T]` replaces null. `Result[T, E]` replaces exceptions.
-  Use `guard cond else err("...")` for early exit inside effect fn.
+  You are writing Almide. Output ONLY source code, no fences or prose.
+  fn name(x: T) -> R = expr. No return; last expression is the value.
+  if cond then a else b. match v { P => e, ... }. (x) => expr for lambdas.
+  Modules use dot: list.map, string.len. Option[T]: some(v)/none. Result[T,E]: ok(v)/err(e).
+  int.to_string(n) for int-to-string. No Char type; single characters are String.
   """
 
 // ── Types ──
