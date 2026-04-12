@@ -28,6 +28,7 @@ jobs:
           git clone --depth 1 --branch develop https://github.com/almide/almide.git /tmp/almide-src
           cd /tmp/almide-src
           cargo build --release
+          mkdir -p "$HOME/.local/bin"
           cp target/release/almide "$HOME/.local/bin/almide"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           almide --version
