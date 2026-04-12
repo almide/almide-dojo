@@ -1,15 +1,22 @@
 name: Daily MSR Run
 
 on:
-  # Scheduled runs are disabled during Phase 1.
-  # Enable once the harness is battle-tested and API cost is agreed upon.
-  # schedule:
-  #   - cron: '0 3 * * *'  # 03:00 UTC daily
+  schedule:
+    - cron: '0 3 * * *'  # 03:00 UTC daily (12:00 JST)
   workflow_dispatch:
+    inputs:
+      model:
+        description: 'Model to test against'
+        required: false
+        default: 'claude-sonnet-4-6'
+
+permissions:
+  contents: write
 
 jobs:
   run:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -18,19 +25,25 @@ jobs:
           curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Phase 1 placeholder
-        run: |
-          echo "Phase 1: the harness supports single-task runs only."
-          echo "Phase 2 will enable the full daily loop across all tasks + models."
-          almide --version || true
-          exit 0
+      - name: Install Claude CLI
+        run: npm install -g @anthropic-ai/claude-code
 
-      # Phase 2: iterate tasks, run harness, commit summaries.
-      # - name: Run all tasks against Sonnet
-      #   env:
-      #     ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      #   run: |
-      #     for task in tasks/basic/*/; do
-      #       name=$(basename "$task")
-      #       almide run src/main.almd -- "$name" || true
-      #     done
+      - name: Run all tasks
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          MODEL="${{ github.event.inputs.model || 'claude-sonnet-4-6' }}"
+          almide run src/main.almd -- all "$MODEL" || true
+
+      - name: Commit summary
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          if [ -d "runs/$DATE" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add "runs/$DATE/"
+            git diff --cached --quiet || git commit -m "Daily MSR run $DATE"
+            git push
+          else
+            echo "No results generated for $DATE"
+          fi
