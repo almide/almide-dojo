@@ -1,0 +1,7 @@
+test "sum_digits 0" { assert_eq(sum_digits(0), 0) }
+test "sum_digits 5" { assert_eq(sum_digits(5), 5) }
+test "sum_digits 123" { assert_eq(sum_digits(123), 6) }
+test "sum_digits 9999" { assert_eq(sum_digits(9999), 36) }
+test "sum_digits negative" { assert_eq(sum_digits(-42), 6) }
+test "sum_digits 10" { assert_eq(sum_digits(10), 1) }
+test "sum_digits 100" { assert_eq(sum_digits(100), 1) }

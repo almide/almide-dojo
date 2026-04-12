@@ -1,0 +1,6 @@
+test "list_sum empty" { assert_eq(list_sum([]), 0) }
+test "list_sum single" { assert_eq(list_sum([7]), 7) }
+test "list_sum multiple" { assert_eq(list_sum([1, 2, 3, 4, 5]), 15) }
+test "list_sum negatives" { assert_eq(list_sum([-1, -2, -3]), -6) }
+test "list_sum mixed" { assert_eq(list_sum([10, -5, 3, -8]), 0) }
+test "list_sum zeros" { assert_eq(list_sum([0, 0, 0]), 0) }

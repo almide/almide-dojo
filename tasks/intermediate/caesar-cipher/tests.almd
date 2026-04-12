@@ -1,0 +1,10 @@
+test "encrypt abc by 1" { assert_eq(encrypt("abc", 1), "bcd") }
+test "encrypt xyz by 3" { assert_eq(encrypt("xyz", 3), "abc") }
+test "encrypt hello by 13" { assert_eq(encrypt("hello", 13), "uryyb") }
+test "encrypt preserves non-lowercase" { assert_eq(encrypt("Hello, World!", 5), "Hjqqt, Wtwqi!") }
+test "encrypt by 0 is identity" { assert_eq(encrypt("test", 0), "test") }
+test "encrypt by 26 is identity" { assert_eq(encrypt("test", 26), "test") }
+test "decrypt bcd by 1" { assert_eq(decrypt("bcd", 1), "abc") }
+test "decrypt abc by 3" { assert_eq(decrypt("abc", 3), "xyz") }
+test "decrypt uryyb by 13" { assert_eq(decrypt("uryyb", 13), "hello") }
+test "encrypt then decrypt roundtrip" { assert_eq(decrypt(encrypt("almide", 7), 7), "almide") }

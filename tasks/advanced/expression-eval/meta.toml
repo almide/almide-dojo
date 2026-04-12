@@ -1,0 +1,4 @@
+difficulty = "advanced"
+expected_loc = 20
+timeout_sec = 30
+tags = ["adt", "pattern-match", "recursion"]

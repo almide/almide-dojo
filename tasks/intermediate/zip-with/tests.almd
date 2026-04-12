@@ -1,0 +1,7 @@
+test "zip_with add" { assert_eq(zip_with([1, 2, 3], [10, 20, 30], (a, b) => a + b), [11, 22, 33]) }
+test "zip_with multiply" { assert_eq(zip_with([2, 3], [4, 5], (a, b) => a * b), [8, 15]) }
+test "zip_with shorter left" { assert_eq(zip_with([1, 2], [10, 20, 30], (a, b) => a + b), [11, 22]) }
+test "zip_with shorter right" { assert_eq(zip_with([1, 2, 3], [10, 20], (a, b) => a + b), [11, 22]) }
+test "zip_with empty left" { assert_eq(zip_with([], [1, 2], (a, b) => a + b), []) }
+test "zip_with empty right" { assert_eq(zip_with([1, 2], [], (a, b) => a + b), []) }
+test "zip_with both empty" { assert_eq(zip_with([], [], (a, b) => a + b), []) }

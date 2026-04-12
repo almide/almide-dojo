@@ -1,0 +1,10 @@
+test "to_roman 1" { assert_eq(to_roman(1), "I") }
+test "to_roman 4" { assert_eq(to_roman(4), "IV") }
+test "to_roman 9" { assert_eq(to_roman(9), "IX") }
+test "to_roman 14" { assert_eq(to_roman(14), "XIV") }
+test "to_roman 42" { assert_eq(to_roman(42), "XLII") }
+test "to_roman 99" { assert_eq(to_roman(99), "XCIX") }
+test "to_roman 399" { assert_eq(to_roman(399), "CCCXCIX") }
+test "to_roman 500" { assert_eq(to_roman(500), "D") }
+test "to_roman 1994" { assert_eq(to_roman(1994), "MCMXCIV") }
+test "to_roman 3999" { assert_eq(to_roman(3999), "MMMCMXCIX") }

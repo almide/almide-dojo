@@ -1,0 +1,4 @@
+difficulty = "intermediate"
+expected_loc = 35
+timeout_sec = 30
+tags = ["string", "recursion", "int-parse"]

@@ -1,0 +1,4 @@
+difficulty = "advanced"
+expected_loc = 35
+timeout_sec = 30
+tags = ["list", "nested-list", "map", "fold", "math"]

@@ -1,0 +1,7 @@
+test "clamp in range" { assert_eq(clamp(5, 0, 10), 5) }
+test "clamp below low" { assert_eq(clamp(-5, 0, 10), 0) }
+test "clamp above high" { assert_eq(clamp(15, 0, 10), 10) }
+test "clamp at low" { assert_eq(clamp(0, 0, 10), 0) }
+test "clamp at high" { assert_eq(clamp(10, 0, 10), 10) }
+test "clamp negative range" { assert_eq(clamp(0, -10, -5), -5) }
+test "clamp single point" { assert_eq(clamp(3, 7, 7), 7) }

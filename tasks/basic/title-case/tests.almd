@@ -1,0 +1,7 @@
+test "title_case empty" { assert_eq(title_case(""), "") }
+test "title_case single word" { assert_eq(title_case("hello"), "Hello") }
+test "title_case two words" { assert_eq(title_case("hello world"), "Hello World") }
+test "title_case already titled" { assert_eq(title_case("Hello World"), "Hello World") }
+test "title_case all upper" { assert_eq(title_case("HELLO WORLD"), "Hello World") }
+test "title_case mixed" { assert_eq(title_case("hELLO wORLD"), "Hello World") }
+test "title_case single char words" { assert_eq(title_case("a b c"), "A B C") }

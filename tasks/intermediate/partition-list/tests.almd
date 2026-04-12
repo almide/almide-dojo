@@ -1,0 +1,5 @@
+test "partition evens" { assert_eq(partition([1, 2, 3, 4, 5], (x) => x % 2 == 0), ([2, 4], [1, 3, 5])) }
+test "partition empty" { assert_eq(partition([], (x) => x > 0), ([], [])) }
+test "partition all match" { assert_eq(partition([2, 4, 6], (x) => x % 2 == 0), ([2, 4, 6], [])) }
+test "partition none match" { assert_eq(partition([1, 3, 5], (x) => x % 2 == 0), ([], [1, 3, 5])) }
+test "partition positives" { assert_eq(partition([-1, 0, 1, 2, -3], (x) => x > 0), ([1, 2], [-1, 0, -3])) }

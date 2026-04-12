@@ -1,0 +1,11 @@
+test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
+test "from_list empty" { assert_eq(to_list(from_list([])), []) }
+test "my_len empty" { assert_eq(my_len(Nil), 0) }
+test "my_len three" { assert_eq(my_len(from_list([1, 2, 3])), 3) }
+test "my_map double" { assert_eq(to_list(my_map(from_list([1, 2, 3]), (x) => x * 2)), [2, 4, 6]) }
+test "my_map on nil" { assert_eq(to_list(my_map(Nil, (x) => x + 1)), []) }
+test "my_filter evens" { assert_eq(to_list(my_filter(from_list([1, 2, 3, 4, 5]), (x) => x % 2 == 0)), [2, 4]) }
+test "my_filter none" { assert_eq(to_list(my_filter(from_list([1, 3, 5]), (x) => x % 2 == 0)), []) }
+test "my_reverse" { assert_eq(to_list(my_reverse(from_list([1, 2, 3]))), [3, 2, 1]) }
+test "my_reverse empty" { assert_eq(to_list(my_reverse(Nil)), []) }
+test "my_reverse single" { assert_eq(to_list(my_reverse(from_list([42]))), [42]) }

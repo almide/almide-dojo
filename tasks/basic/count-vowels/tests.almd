@@ -1,0 +1,7 @@
+test "count_vowels empty" { assert_eq(count_vowels(""), 0) }
+test "count_vowels hello" { assert_eq(count_vowels("hello"), 2) }
+test "count_vowels aeiou" { assert_eq(count_vowels("aeiou"), 5) }
+test "count_vowels no vowels" { assert_eq(count_vowels("rhythm"), 0) }
+test "count_vowels uppercase ignored" { assert_eq(count_vowels("HELLO"), 0) }
+test "count_vowels mixed case" { assert_eq(count_vowels("Hello World"), 3) }
+test "count_vowels single vowel" { assert_eq(count_vowels("a"), 1) }

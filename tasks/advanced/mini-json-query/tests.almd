@@ -1,0 +1,15 @@
+test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
+test "jget not found" { assert_eq(jget(JObj([("a", JNum(1))]), "z"), none) }
+test "jget not obj" { assert_eq(jget(JNum(1), "a"), none) }
+test "jget empty obj" { assert_eq(jget(JObj([]), "a"), none) }
+test "jcount leaf num" { assert_eq(jcount(JNum(1)), 1) }
+test "jcount leaf null" { assert_eq(jcount(JNull), 1) }
+test "jcount leaf str" { assert_eq(jcount(JStr("x")), 1) }
+test "jcount arr" { assert_eq(jcount(JArr([JNum(1), JNum(2), JNum(3)])), 3) }
+test "jcount nested" { assert_eq(jcount(JObj([("a", JArr([JNum(1), JNull])), ("b", JStr("x"))])), 3) }
+test "jcount empty arr" { assert_eq(jcount(JArr([])), 0) }
+test "jflatten_strings leaf str" { assert_eq(jflatten_strings(JStr("hi")), ["hi"]) }
+test "jflatten_strings leaf num" { assert_eq(jflatten_strings(JNum(1)), []) }
+test "jflatten_strings arr mixed" { assert_eq(jflatten_strings(JArr([JStr("a"), JNum(1), JStr("b")])), ["a", "b"]) }
+test "jflatten_strings nested" { assert_eq(jflatten_strings(JObj([("x", JStr("hello")), ("y", JArr([JStr("world"), JNull]))])), ["hello", "world"]) }
+test "jflatten_strings empty" { assert_eq(jflatten_strings(JArr([])), []) }

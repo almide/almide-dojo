@@ -61,16 +61,25 @@ type AttemptResult = {
 
 // ── Task loading ──
 
-effect fn load_task(name: String) -> Result[Task, String] = {
-  let dir = "tasks/basic/" + name
-  match fs.read_text(dir + "/prompt.md") {
-    err(_) => err("failed to read " + dir + "/prompt.md")
-    ok(prompt) => match fs.read_text(dir + "/tests.almd") {
-      err(_) => err("failed to read " + dir + "/tests.almd")
-      ok(tests) => ok(Task { name: name, prompt: prompt, tests: tests, dir: dir })
+let DIFFICULTIES = ["basic", "intermediate", "advanced"]
+
+effect fn load_task(name: String) -> Result[Task, String] =
+  load_task_search(name, DIFFICULTIES)
+
+effect fn load_task_search(name: String, levels: List[String]) -> Result[Task, String] =
+  if list.is_empty(levels) then
+    err("task not found: " + name)
+  else {
+    let level = list.get(levels, 0) |> option.unwrap_or("")
+    let dir = "tasks/" + level + "/" + name
+    match fs.read_text(dir + "/prompt.md") {
+      err(_) => load_task_search(name, list.drop(levels, 1))
+      ok(prompt) => match fs.read_text(dir + "/tests.almd") {
+        err(_) => load_task_search(name, list.drop(levels, 1))
+        ok(tests) => ok(Task { name: name, prompt: prompt, tests: tests, dir: dir })
+      }
     }
   }
-}
 
 // ── Model call via Claude Code ──
 //
@@ -272,11 +281,25 @@ effect fn run_task(task_name: String, model: String) -> Result[RunResult, String
 
 // ── Run all tasks ──
 
-effect fn list_basic_tasks() -> Result[List[String], String] = {
-  match fs.list_dir("tasks/basic") {
-    err(_) => err("failed to list tasks/basic")
-    ok(entries) => ok(list.filter(entries, (e) => not string.starts_with(e, ".")))
+fn filter_dotfiles(entries: List[String]) -> List[String] =
+  list.filter(entries, (e) => not string.starts_with(e, "."))
+
+effect fn list_all_tasks() -> Result[List[String], String] = {
+  let basic = match fs.list_dir("tasks/basic") {
+    err(_) => []
+    ok(entries) => filter_dotfiles(entries)
   }
+  let intermediate = match fs.list_dir("tasks/intermediate") {
+    err(_) => []
+    ok(entries) => filter_dotfiles(entries)
+  }
+  let advanced = match fs.list_dir("tasks/advanced") {
+    err(_) => []
+    ok(entries) => filter_dotfiles(entries)
+  }
+  let all = (basic + intermediate + advanced) |> list.sort
+  if list.is_empty(all) then err("no tasks found")
+  else ok(all)
 }
 
 fn render_summary(date: String, model: String, results: List[RunResult]) -> String = {
@@ -320,7 +343,7 @@ effect fn write_summary(date: String, model: String, results: List[RunResult]) -
 }
 
 effect fn run_all(model: String) -> Unit = {
-  match list_basic_tasks() {
+  match list_all_tasks() {
     err(e) => {
       println("Failed to list tasks: " + e)
       process.exit(1)

@@ -1,0 +1,12 @@
+test "mat_add 2x2" { assert_eq(mat_add([[1, 2], [3, 4]], [[5, 6], [7, 8]]), [[6, 8], [10, 12]]) }
+test "mat_add 1x1" { assert_eq(mat_add([[1]], [[2]]), [[3]]) }
+test "mat_add zeros" { assert_eq(mat_add([[0, 0], [0, 0]], [[1, 2], [3, 4]]), [[1, 2], [3, 4]]) }
+test "mat_transpose 2x3" { assert_eq(mat_transpose([[1, 2, 3], [4, 5, 6]]), [[1, 4], [2, 5], [3, 6]]) }
+test "mat_transpose 1x1" { assert_eq(mat_transpose([[5]]), [[5]]) }
+test "mat_transpose empty" { assert_eq(mat_transpose([]), []) }
+test "mat_scale 2x2" { assert_eq(mat_scale([[1, 2], [3, 4]], 3), [[3, 6], [9, 12]]) }
+test "mat_scale by 0" { assert_eq(mat_scale([[1, 2], [3, 4]], 0), [[0, 0], [0, 0]]) }
+test "mat_scale by 1" { assert_eq(mat_scale([[5, 6]], 1), [[5, 6]]) }
+test "mat_dot_row" { assert_eq(mat_dot_row([1, 2, 3], [4, 5, 6]), 32) }
+test "mat_dot_row single" { assert_eq(mat_dot_row([3], [4]), 12) }
+test "mat_dot_row empty" { assert_eq(mat_dot_row([], []), 0) }

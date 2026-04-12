@@ -1,0 +1,10 @@
+test "eval Num" { assert_eq(eval(Num(42)), 42) }
+test "eval Add" { assert_eq(eval(Add(Num(1), Num(2))), 3) }
+test "eval Mul" { assert_eq(eval(Mul(Num(3), Num(4))), 12) }
+test "eval Neg" { assert_eq(eval(Neg(Num(5))), -5) }
+test "eval nested add mul" { assert_eq(eval(Add(Mul(Num(2), Num(3)), Num(1))), 7) }
+test "eval double neg" { assert_eq(eval(Neg(Neg(Num(10)))), 10) }
+test "eval complex" { assert_eq(eval(Mul(Add(Num(1), Num(2)), Add(Num(3), Num(4)))), 21) }
+test "eval neg in add" { assert_eq(eval(Add(Num(10), Neg(Num(3)))), 7) }
+test "eval zero" { assert_eq(eval(Num(0)), 0) }
+test "eval deep nesting" { assert_eq(eval(Add(Add(Add(Num(1), Num(2)), Num(3)), Num(4))), 10) }

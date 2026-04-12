@@ -1,0 +1,10 @@
+test "balanced empty" { assert_eq(is_balanced(""), true) }
+test "balanced simple parens" { assert_eq(is_balanced("()"), true) }
+test "balanced nested" { assert_eq(is_balanced("([{}])"), true) }
+test "balanced sequential" { assert_eq(is_balanced("()[]{}"), true) }
+test "balanced with text" { assert_eq(is_balanced("fn foo(x: Int) -> { x }"), true) }
+test "unbalanced cross" { assert_eq(is_balanced("([)]"), false) }
+test "unbalanced open" { assert_eq(is_balanced("("), false) }
+test "unbalanced close" { assert_eq(is_balanced(")"), false) }
+test "unbalanced extra close" { assert_eq(is_balanced("())"), false) }
+test "unbalanced mismatch" { assert_eq(is_balanced("(]"), false) }

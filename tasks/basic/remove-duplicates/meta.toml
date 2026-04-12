@@ -1,0 +1,4 @@
+difficulty = "basic"
+expected_loc = 4
+timeout_sec = 30
+tags = ["list", "unique"]

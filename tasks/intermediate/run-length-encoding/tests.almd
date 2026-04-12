@@ -1,0 +1,10 @@
+test "rle_encode empty" { assert_eq(rle_encode(""), "") }
+test "rle_encode single char" { assert_eq(rle_encode("a"), "1a") }
+test "rle_encode no repeats" { assert_eq(rle_encode("abc"), "1a1b1c") }
+test "rle_encode repeats" { assert_eq(rle_encode("aaabbc"), "3a2b1c") }
+test "rle_encode all same" { assert_eq(rle_encode("aaaa"), "4a") }
+test "rle_decode empty" { assert_eq(rle_decode(""), "") }
+test "rle_decode single" { assert_eq(rle_decode("1a"), "a") }
+test "rle_decode multiple" { assert_eq(rle_decode("3a2b1c"), "aaabbc") }
+test "rle_decode all same" { assert_eq(rle_decode("4a"), "aaaa") }
+test "roundtrip" { assert_eq(rle_decode(rle_encode("aabbccdd")), "aabbccdd") }

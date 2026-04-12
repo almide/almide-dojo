@@ -1,0 +1,4 @@
+difficulty = "intermediate"
+expected_loc = 15
+timeout_sec = 30
+tags = ["string", "map", "fold"]

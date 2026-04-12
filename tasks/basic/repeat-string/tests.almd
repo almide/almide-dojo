@@ -1,0 +1,5 @@
+test "repeat 3 times" { assert_eq(repeat("ab", 3), "ababab") }
+test "repeat 0 times" { assert_eq(repeat("x", 0), "") }
+test "repeat 1 time" { assert_eq(repeat("hello", 1), "hello") }
+test "repeat empty string" { assert_eq(repeat("", 5), "") }
+test "repeat single char" { assert_eq(repeat("a", 4), "aaaa") }

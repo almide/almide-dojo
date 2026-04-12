@@ -1,0 +1,4 @@
+difficulty = "basic"
+expected_loc = 8
+timeout_sec = 30
+tags = ["list", "option", "fold"]

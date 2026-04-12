@@ -1,0 +1,4 @@
+difficulty = "advanced"
+expected_loc = 30
+timeout_sec = 30
+tags = ["result", "flat-map", "error-handling", "pipeline"]

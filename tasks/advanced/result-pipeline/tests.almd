@@ -1,0 +1,15 @@
+test "parse_int valid" { assert_eq(parse_int("42"), ok(42)) }
+test "parse_int negative" { assert_eq(parse_int("-5"), ok(-5)) }
+test "parse_int invalid" { assert_eq(parse_int("abc"), err("not a number: abc")) }
+test "validate_positive ok" { assert_eq(validate_positive(5), ok(5)) }
+test "validate_positive zero" { assert_eq(validate_positive(0), err("must be positive: 0")) }
+test "validate_positive negative" { assert_eq(validate_positive(-1), err("must be positive: -1")) }
+test "validate_range in" { assert_eq(validate_range(5, 1, 10), ok(5)) }
+test "validate_range out" { assert_eq(validate_range(15, 1, 10), err("out of range: 15")) }
+test "validate_range low" { assert_eq(validate_range(0, 1, 10), err("out of range: 0")) }
+test "process valid" { assert_eq(process("42"), ok("valid: 42")) }
+test "process invalid parse" { assert_eq(process("abc"), err("not a number: abc")) }
+test "process negative" { assert_eq(process("-5"), err("must be positive: -5")) }
+test "process out of range" { assert_eq(process("200"), err("out of range: 200")) }
+test "process boundary 1" { assert_eq(process("1"), ok("valid: 1")) }
+test "process boundary 100" { assert_eq(process("100"), ok("valid: 100")) }

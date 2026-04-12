@@ -1,0 +1,9 @@
+test "binary_search empty" { assert_eq(binary_search([], 1), none) }
+test "binary_search single found" { assert_eq(binary_search([5], 5), some(0)) }
+test "binary_search single not found" { assert_eq(binary_search([5], 3), none) }
+test "binary_search first" { assert_eq(binary_search([1, 3, 5, 7, 9], 1), some(0)) }
+test "binary_search middle" { assert_eq(binary_search([1, 3, 5, 7, 9], 5), some(2)) }
+test "binary_search last" { assert_eq(binary_search([1, 3, 5, 7, 9], 9), some(4)) }
+test "binary_search not found low" { assert_eq(binary_search([1, 3, 5, 7, 9], 0), none) }
+test "binary_search not found mid" { assert_eq(binary_search([1, 3, 5, 7, 9], 4), none) }
+test "binary_search not found high" { assert_eq(binary_search([1, 3, 5, 7, 9], 10), none) }

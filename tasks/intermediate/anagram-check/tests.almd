@@ -1,0 +1,8 @@
+test "anagram empty" { assert_eq(is_anagram("", ""), true) }
+test "anagram simple" { assert_eq(is_anagram("listen", "silent"), true) }
+test "anagram case insensitive" { assert_eq(is_anagram("Listen", "Silent"), true) }
+test "anagram with spaces" { assert_eq(is_anagram("a b c", "cba"), true) }
+test "not anagram different chars" { assert_eq(is_anagram("hello", "world"), false) }
+test "not anagram different lengths" { assert_eq(is_anagram("abc", "abcd"), false) }
+test "anagram same word" { assert_eq(is_anagram("test", "test"), true) }
+test "not anagram subset" { assert_eq(is_anagram("abc", "ab"), false) }

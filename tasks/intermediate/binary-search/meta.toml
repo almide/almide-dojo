@@ -1,0 +1,4 @@
+difficulty = "intermediate"
+expected_loc = 20
+timeout_sec = 30
+tags = ["list", "option", "recursion", "algorithm"]

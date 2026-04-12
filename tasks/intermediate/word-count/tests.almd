@@ -1,0 +1,6 @@
+test "word_count empty" { assert_eq(word_count(""), [:]) }
+test "word_count single word" { assert_eq(word_count("hello"), ["hello": 1]) }
+test "word_count two different" { assert_eq(word_count("a b"), ["a": 1, "b": 1]) }
+test "word_count repeated" { assert_eq(word_count("the cat and the dog"), ["the": 2, "cat": 1, "and": 1, "dog": 1]) }
+test "word_count all same" { assert_eq(word_count("x x x"), ["x": 3]) }
+test "word_count case sensitive" { assert_eq(word_count("Go go GO"), ["Go": 1, "go": 1, "GO": 1]) }

@@ -1,0 +1,8 @@
+test "gcd 0 0 is 0" { assert_eq(gcd(0, 0), 0) }
+test "gcd 5 0 is 5" { assert_eq(gcd(5, 0), 5) }
+test "gcd 0 7 is 7" { assert_eq(gcd(0, 7), 7) }
+test "gcd 12 8 is 4" { assert_eq(gcd(12, 8), 4) }
+test "gcd 17 13 is 1" { assert_eq(gcd(17, 13), 1) }
+test "gcd 100 75 is 25" { assert_eq(gcd(100, 75), 25) }
+test "gcd 54 24 is 6" { assert_eq(gcd(54, 24), 6) }
+test "gcd same number" { assert_eq(gcd(7, 7), 7) }

@@ -1,0 +1,4 @@
+difficulty = "intermediate"
+expected_loc = 25
+timeout_sec = 30
+tags = ["string", "list-as-stack", "recursion"]

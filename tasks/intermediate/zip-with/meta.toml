@@ -1,0 +1,4 @@
+difficulty = "intermediate"
+expected_loc = 12
+timeout_sec = 30
+tags = ["list", "higher-order", "zip"]
