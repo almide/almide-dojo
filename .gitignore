@@ -6,3 +6,4 @@ target/
 *.swo
 .env
 .env.*
+.almide/cache/
