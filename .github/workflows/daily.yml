@@ -20,10 +20,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Almide
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Almide from develop
         run: |
-          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh
+          git clone --depth 1 --branch develop https://github.com/almide/almide.git /tmp/almide-src
+          cd /tmp/almide-src
+          cargo build --release
+          cp target/release/almide "$HOME/.local/bin/almide"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          almide --version
 
       - name: Run all tasks
         env:
