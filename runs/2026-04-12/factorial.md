@@ -1,15 +1,12 @@
 # factorial
 
-- **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **model**: `claude-sonnet-4-6`
 - **success**: yes
 - **retries**: 0
 
 ## Final code
 
 ```almide
-fn factorial(n: Int) -> Int = 
-  match n {
-    0 => 1,
-    _ => n * factorial(n - 1)
-  }
+fn factorial(n: Int) -> Int =
+  if n == 0 then 1 else n * factorial(n - 1)
 ```

@@ -1,16 +1,14 @@
 # fibonacci
 
-- **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **model**: `claude-sonnet-4-6`
 - **success**: yes
 - **retries**: 0
 
 ## Final code
 
 ```almide
-fn fibonacci(n: Int) -> Int = 
-  match n {
-    0 => 0,
-    1 => 1,
-    _ => fibonacci(n - 1) + fibonacci(n - 2)
-  }
+fn fibonacci(n: Int) -> Int =
+  if n == 0 then 0
+  else if n == 1 then 1
+  else fibonacci(n - 1) + fibonacci(n - 2)
 ```

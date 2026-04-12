@@ -1,6 +1,6 @@
 # expression-eval
 
-- **model**: `claude-sonnet-4-6`
+- **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: yes
 - **retries**: 0
 
@@ -18,6 +18,6 @@ fn eval(expr: Expr) -> Int =
     Num(n) => n,
     Add(a, b) => eval(a) + eval(b),
     Mul(a, b) => eval(a) * eval(b),
-    Neg(e) => 0 - eval(e),
+    Neg(a) => -eval(a)
   }
 ```

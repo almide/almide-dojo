@@ -1,56 +1,24 @@
 # binary-search
 
-- **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
-- **success**: no
-- **retries**: 3
+- **model**: `claude-sonnet-4-6`
+- **success**: yes
+- **retries**: 1
 
-## Final diagnostic
-
-```
-Compiling /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-binary-search-3.almd
-error[E001]: type mismatch in if branches: expected Option[Int] but got Unit
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-binary-search-3.almd:13:34
-  in if branches
-  hint: Fix the expression type or change the expected type
-   |
-13 |                     high = mid - 1,
-   |                                  ^
-error[E001]: type mismatch in match arm: expected Option[Int] but got Unit
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-binary-search-3.almd:14:21
-  in match arm
-  hint: Fix the expression type or change the expected type
-   |
-14 |             none => break
-   |                     ^^^^^
-
-2 error(s) found
-Compile error for /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-binary-search-3.almd:
-compile failed
-FAILED: /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-binary-search-3.almd
-
-1/1 test file(s) failed
-
-```
-
-## Last attempted code
+## Final code
 
 ```almide
-fn binary_search(xs: List[Int], target: Int) -> Option[Int] = {
-    var low = 0;
-    var high = list.len(xs) - 1;
-    while low <= high {
-        var mid = (low + high) / 2;
-        match list.get(xs, mid) {
-            some(val) =>
-                if val == target then
-                    some(mid)
-                else if val < target then
-                    low = mid + 1
-                else
-                    high = mid - 1,
-            none => break
-        }
-    };
+fn binary_search_loop(xs: List[Int], target: Int, lo: Int, hi: Int) -> Option[Int] =
+  let mid = lo + (hi - lo) / 2
+  let val = option.unwrap_or(list.get(xs, mid), target + 1)
+  if lo > hi then
     none
-}
+  else if val == target then
+    some(mid)
+  else if val < target then
+    binary_search_loop(xs, target, mid + 1, hi)
+  else
+    binary_search_loop(xs, target, lo, mid - 1)
+
+fn binary_search(xs: List[Int], target: Int) -> Option[Int] =
+  binary_search_loop(xs, target, 0, list.len(xs) - 1)
 ```

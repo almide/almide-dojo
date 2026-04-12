@@ -2,14 +2,10 @@
 
 - **model**: `claude-sonnet-4-6`
 - **success**: yes
-- **retries**: 1
+- **retries**: 0
 
 ## Final code
 
 ```almide
-fn is_palindrome(s: String) -> Bool = {
-  let cs = string.chars(s);
-  cs == list.reverse(cs)
-}
-
+fn is_palindrome(s: String) -> Bool = s == string.reverse(s)
 ```

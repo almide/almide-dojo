@@ -1,20 +1,19 @@
 # sum-digits
 
-- **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **model**: `claude-sonnet-4-6`
 - **success**: yes
-- **retries**: 1
+- **retries**: 2
 
 ## Final code
 
 ```almide
 fn sum_digits(n: Int) -> Int = {
-    var abs_n = int.abs(n);
-    var sum = 0;
-    var num = abs_n;
-    while num > 0 {
-        sum = sum + (num % 10);
-        num = num / 10;
-    }
-    sum
+  var remaining = int.abs(n)
+  var acc = 0
+  while remaining > 0 {
+    acc = acc + remaining % 10
+    remaining = remaining / 10
+  }
+  acc
 }
 ```
