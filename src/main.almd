@@ -37,6 +37,8 @@ let SYSTEM_PROMPT = """
   if cond then a else b. match v { P => e, ... }. (x) => expr for lambdas.
   Modules use dot: list.map, string.len. Option[T]: some(v)/none. Result[T,E]: ok(v)/err(e).
   int.to_string(n) for int-to-string. No Char type; single characters are String.
+  Lists are immutable: use xs + [item] to append, not list.push (which mutates var and returns Unit).
+  list.fold(xs, init, (acc, x) => ...) for reduce. No foldLeft/foldRight.
   """
 
 // ── Types ──
