@@ -5,4 +5,4 @@
 
 [compiler]
 repo = "github.com/almide/almide"
-ref = "5d2e40aebecf9c916982625a833c5850040cc513"  # develop 2026-04-12: MSR diagnostic improvements + codegen fixes
+ref = "v0.13.3"  # 2026-04-12: MSR diagnostic improvements, codegen fixes, WASM json escape

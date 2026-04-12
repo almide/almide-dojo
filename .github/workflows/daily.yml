@@ -14,28 +14,7 @@ permissions:
   contents: write
 
 jobs:
-  build-compiler:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Build Almide from develop
-        run: |
-          git clone --depth 1 --branch develop https://github.com/almide/almide.git /tmp/almide-src
-          cd /tmp/almide-src
-          cargo build --release
-          mkdir -p /tmp/almide-bin
-          cp target/release/almide /tmp/almide-bin/almide
-
-      - name: Upload compiler
-        uses: actions/upload-artifact@v4
-        with:
-          name: almide-bin
-          path: /tmp/almide-bin/almide
-
   run-msr:
-    needs: build-compiler
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -47,17 +26,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download compiler
-        uses: actions/download-artifact@v4
-        with:
-          name: almide-bin
-          path: /tmp/almide-bin
-
-      - name: Setup Almide
+      - name: Install Almide
         run: |
-          chmod +x /tmp/almide-bin/almide
-          mkdir -p "$HOME/.local/bin"
-          cp /tmp/almide-bin/almide "$HOME/.local/bin/almide"
+          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           almide --version
 
@@ -85,17 +56,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download compiler
-        uses: actions/download-artifact@v4
-        with:
-          name: almide-bin
-          path: /tmp/almide-bin
-
-      - name: Setup Almide
+      - name: Install Almide
         run: |
-          chmod +x /tmp/almide-bin/almide
-          mkdir -p "$HOME/.local/bin"
-          cp /tmp/almide-bin/almide "$HOME/.local/bin/almide"
+          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Download all results
