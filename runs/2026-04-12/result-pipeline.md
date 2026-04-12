@@ -20,7 +20,7 @@ FAILED: /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-result-pipeline-3
 fn parse_int(s: String) -> Result[Int, String] = int.parse(s)
 
 fn validate_positive(n: Int) -> Result[Int, String] = 
-  if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
+  if n > 0 then ok(n) else err(int.to_string(n) + " must be positive: " + int.to_string(n))
 
 fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = 
   if lo <= n and n <= hi then ok(n) else err("out of range: " + int.to_string(n))
