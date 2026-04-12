@@ -1,9 +1,8 @@
 # Pin the Almide compiler commit to evaluate against.
-# Update manually, or via CI from github.com/almide/almide main.
-#
-# During Phase 1 this is just `main`. In Phase 2 the harness will lock this
-# to a specific SHA so that MSR numbers are reproducible day-to-day.
+# Update manually when cutting a new MSR baseline.
+# Pinning ensures day-to-day MSR numbers are comparable — compiler changes
+# only affect results when you deliberately bump this.
 
 [compiler]
 repo = "github.com/almide/almide"
-ref = "main"
+ref = "bbcdd4fc684d64b8dacf713326e7695b01377b2b"  # develop 2026-04-12: stdlib audit fixes
