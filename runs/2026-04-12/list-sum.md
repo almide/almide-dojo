@@ -1,4 +1,4 @@
-# factorial
+# list-sum
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: yes
@@ -7,9 +7,5 @@
 ## Final code
 
 ```almide
-fn factorial(n: Int) -> Int = 
-  match n {
-    0 => 1,
-    _ => n * factorial(n - 1)
-  }
+fn list_sum(xs: List[Int]) -> Int = list.sum(xs)
 ```

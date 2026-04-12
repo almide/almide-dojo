@@ -1,4 +1,4 @@
-# factorial
+# gcd
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: yes
@@ -7,9 +7,8 @@
 ## Final code
 
 ```almide
-fn factorial(n: Int) -> Int = 
-  match n {
-    0 => 1,
-    _ => n * factorial(n - 1)
-  }
+fn gcd(a: Int, b: Int) -> Int = {
+    if b == 0 then a
+    else gcd(b, a % b)
+}
 ```

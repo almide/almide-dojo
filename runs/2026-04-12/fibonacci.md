@@ -1,4 +1,4 @@
-# factorial
+# fibonacci
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: yes
@@ -7,9 +7,10 @@
 ## Final code
 
 ```almide
-fn factorial(n: Int) -> Int = 
+fn fibonacci(n: Int) -> Int = 
   match n {
-    0 => 1,
-    _ => n * factorial(n - 1)
+    0 => 0,
+    1 => 1,
+    _ => fibonacci(n - 1) + fibonacci(n - 2)
   }
 ```

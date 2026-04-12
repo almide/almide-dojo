@@ -65,33 +65,51 @@ fn chat_messages(system: String, user: String) -> Value =
 // ── Cloudflare Workers AI ──
 //
 // POST https://api.cloudflare.com/client/v4/accounts/{id}/ai/run/{model}
-// Authorization: Bearer {key}
+// Auth: Global API Key (X-Auth-Key + X-Auth-Email) or API Token (Authorization: Bearer)
 // Response: {"result": {"response": "..."}}
+
+effect fn cf_auth_headers() -> Result[Map[String, String], String] = {
+  // Try API Token first, fall back to Global API Key + Email
+  let token = env.get("CF_API_TOKEN") |> option.unwrap_or("")
+  if token != "" then
+    ok(["Authorization": "Bearer " + token, "Content-Type": "application/json"])
+  else
+    match require_env("CLOUDFLARE_API_KEY") {
+      err(e) => err(e)
+      ok(api_key) => match require_env("CLOUDFLARE_EMAIL") {
+        err(e) => err(e)
+        ok(email) => ok(["X-Auth-Key": api_key, "X-Auth-Email": email, "Content-Type": "application/json"])
+      }
+    }
+}
 
 effect fn call_cf(model: String, system: String, user_prompt: String) -> Result[String, String] = {
   match require_env("CF_ACCOUNT_ID") {
+    err(e) => match require_env("CLOUDFLARE_ACCOUNT_ID") {
+      err(_) => err(e)
+      ok(account_id) => call_cf_with_account(account_id, model, system, user_prompt)
+    }
+    ok(account_id) => call_cf_with_account(account_id, model, system, user_prompt)
+  }
+}
+
+effect fn call_cf_with_account(account_id: String, model: String, system: String, user_prompt: String) -> Result[String, String] = {
+  match cf_auth_headers() {
     err(e) => err(e)
-    ok(account_id) => match require_env("CLOUDFLARE_API_KEY") {
-      err(e) => err(e)
-      ok(api_key) => {
-        let url = "https://api.cloudflare.com/client/v4/accounts/" + account_id + "/ai/run/" + model
-        let body = json.stringify(json.object([
-          ("messages", chat_messages(system, user_prompt)),
-        ]))
-        let headers: Map[String, String] = [
-          "Authorization": "Bearer " + api_key,
-          "Content-Type": "application/json",
-        ]
-        match http.request("POST", url, body, headers) {
-          err(e) => err("cf http error: " + e)
-          ok(raw) => match json.parse(raw) {
-            err(e) => err("cf json parse error: " + e)
-            ok(parsed) =>
-              json.get(parsed, "result")
-                |> option.flat_map((r) => json.get_string(r, "response"))
-                |> option.map((s) => string.trim(s))
-                |> option_to_result("cf: no result.response in response")
-          }
+    ok(headers) => {
+      let url = "https://api.cloudflare.com/client/v4/accounts/" + account_id + "/ai/run/" + model
+      let body = json.stringify(json.object([
+        ("messages", chat_messages(system, user_prompt)),
+      ]))
+      match http.request("POST", url, body, headers) {
+        err(e) => err("cf http error: " + e)
+        ok(raw) => match json.parse(raw) {
+          err(e) => err("cf json parse error: " + e)
+          ok(parsed) =>
+            json.get(parsed, "result")
+              |> option.flat_map((r) => json.get_string(r, "response"))
+              |> option.map((s) => string.trim(s))
+              |> option_to_result("cf: no result.response")
         }
       }
     }
