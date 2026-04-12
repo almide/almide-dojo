@@ -5,4 +5,4 @@
 
 [compiler]
 repo = "github.com/almide/almide"
-ref = "bbcdd4fc684d64b8dacf713326e7695b01377b2b"  # develop 2026-04-12: stdlib audit fixes
+ref = "5d2e40aebecf9c916982625a833c5850040cc513"  # develop 2026-04-12: MSR diagnostic improvements + codegen fixes
