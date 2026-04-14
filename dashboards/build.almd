@@ -3,7 +3,9 @@
 // Usage:
 //   almide run dashboards/build.almd
 //
-// Reads runs/YYYY-MM-DD/summary.md files and generates dashboards/index.html.
+// Reads runs/YYYY-MM-DD/[<model>/]summary.md files and generates dashboards/index.html.
+// Supports both legacy single-model layout (runs/<date>/summary.md) and
+// multi-model layout (runs/<date>/<model-slug>/summary.md).
 
 import fs
 import process
@@ -112,38 +114,58 @@ fn generate_html(runs: List[DayRun]) -> String = {
     ".pass { color: #3fb950; } .fail { color: #f85149; } " +
     ".tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.75rem; font-weight: 600; } " +
     ".tag.pass { background: #0d2818; } .tag.fail { background: #3d1418; } " +
+    ".card .sub { color: #8b949e; font-size: 0.8rem; margin-top: 0.5rem; } " +
+    ".model-head { margin: 1rem 0 0.5rem; color: #8b949e; font-size: 0.9rem; font-weight: 600; } " +
+    ".model-head:first-child { margin-top: 0; } " +
     "canvas { max-height: 300px; }"
 
   // JS uses no template literals to avoid Almide interpolation conflicts
   let js = "var DATA = [" + data_json + "];" +
-    "var L = DATA[DATA.length - 1];" +
-    "if (L) {" +
-    "  var pct = L.total > 0 ? Math.round(100 * L.passed / L.total) : 0;" +
-    "  var os = L.total > 0 ? Math.round(100 * L.oneShot / L.total) : 0;" +
-    "  document.getElementById('metrics').innerHTML = " +
-    "    '<div class=\"card\"><h2>Pass Rate</h2><div class=\"metric green\">' + pct + '%</div><div>' + L.passed + '/' + L.total + ' tasks</div></div>' +" +
-    "    '<div class=\"card\"><h2>1-Shot Rate</h2><div class=\"metric yellow\">' + os + '%</div><div>' + L.oneShot + '/' + L.total + ' tasks</div></div>' +" +
-    "    '<div class=\"card\"><h2>Total Retries</h2><div class=\"metric blue\">' + L.totalRetries + '</div><div>Model: ' + L.model + '</div></div>';" +
+    "var PALETTE = ['#3fb950','#58a6ff','#d29922','#f85149','#a371f7','#ff7b72','#79c0ff','#ffa657'];" +
+    "var byModel = {};" +
+    "DATA.forEach(function(d){ if(!byModel[d.model]) byModel[d.model]=[]; byModel[d.model].push(d); });" +
+    "var allDates = Array.from(new Set(DATA.map(function(d){return d.date;}))).sort();" +
+    "var models = Object.keys(byModel).sort();" +
+    "var latestDate = allDates[allDates.length - 1];" +
+    "var latestEntries = DATA.filter(function(d){ return d.date === latestDate; })" +
+    "  .sort(function(a,b){ return a.model < b.model ? -1 : 1; });" +
+    "if (latestEntries.length > 0) {" +
+    "  document.getElementById('metrics').innerHTML = latestEntries.map(function(d){" +
+    "    var pct = d.total > 0 ? Math.round(100 * d.passed / d.total) : 0;" +
+    "    var os = d.total > 0 ? Math.round(100 * d.oneShot / d.total) : 0;" +
+    "    return '<div class=\"card\"><h2>' + d.model + '</h2>' +" +
+    "      '<div class=\"metric green\">' + pct + '%</div>' +" +
+    "      '<div class=\"sub\">' + d.passed + '/' + d.total + ' pass · 1-shot ' + os + '% · retries ' + d.totalRetries + '</div></div>';" +
+    "  }).join('');" +
     "}" +
     "if (DATA.length > 0) {" +
+    "  var passDatasets = models.map(function(model, i){" +
+    "    var byDate = {};" +
+    "    byModel[model].forEach(function(d){ byDate[d.date] = d; });" +
+    "    return {" +
+    "      label: model," +
+    "      data: allDates.map(function(dt){ var d = byDate[dt]; return d && d.total > 0 ? Math.round(100 * d.passed / d.total) : null; })," +
+    "      borderColor: PALETTE[i % PALETTE.length]," +
+    "      backgroundColor: PALETTE[i % PALETTE.length]," +
+    "      tension: 0.3," +
+    "      spanGaps: true" +
+    "    };" +
+    "  });" +
     "  new Chart(document.getElementById('passChart'), {" +
     "    type: 'line'," +
-    "    data: {" +
-    "      labels: DATA.map(function(d){return d.date})," +
-    "      datasets: [" +
-    "        { label: 'Pass %', data: DATA.map(function(d){return d.total>0?Math.round(100*d.passed/d.total):0}), borderColor: '#3fb950', tension: 0.3 }," +
-    "        { label: '1-Shot %', data: DATA.map(function(d){return d.total>0?Math.round(100*d.oneShot/d.total):0}), borderColor: '#d29922', tension: 0.3 }" +
-    "      ]" +
-    "    }," +
+    "    data: { labels: allDates, datasets: passDatasets }," +
     "    options: { scales: { y: { min: 0, max: 100, ticks: { color: '#8b949e' } }, x: { ticks: { color: '#8b949e' } } }, plugins: { legend: { labels: { color: '#c9d1d9' } } } }" +
     "  });" +
     "}" +
-    "if (L && L.tasks.length > 0) {" +
-    "  var rows = L.tasks.map(function(t){" +
-    "    var cls = t.result === 'pass' ? 'pass' : 'fail';" +
-    "    return '<tr><td>' + t.name + '</td><td><span class=\"tag ' + cls + '\">' + t.result + '</span></td><td>' + t.retries + '</td></tr>';" +
+    "if (latestEntries.length > 0) {" +
+    "  document.getElementById('taskTable').innerHTML = latestEntries.map(function(d){" +
+    "    var rows = d.tasks.map(function(t){" +
+    "      var cls = t.result === 'pass' ? 'pass' : 'fail';" +
+    "      return '<tr><td>' + t.name + '</td><td><span class=\"tag ' + cls + '\">' + t.result + '</span></td><td>' + t.retries + '</td></tr>';" +
+    "    }).join('');" +
+    "    return '<h3 class=\"model-head\">' + d.model + '</h3>' +" +
+    "      '<table><thead><tr><th>Task</th><th>Result</th><th>Retries</th></tr></thead><tbody>' + rows + '</tbody></table>';" +
     "  }).join('');" +
-    "  document.getElementById('taskTable').innerHTML = '<table><thead><tr><th>Task</th><th>Result</th><th>Retries</th></tr></thead><tbody>' + rows + '</tbody></table>';" +
     "}"
 
   "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n" +
@@ -174,10 +196,19 @@ effect fn main() -> Unit = {
         |> list.filter((e) => not string.starts_with(e, ".") and e != "README.md")
         |> list.sort
       let runs = dates
-        |> list.filter_map((date) =>
+        |> list.flat_map((date) =>
           match fs.read_text("runs/" + date + "/summary.md") {
-            ok(content) => some(parse_summary(date, content))
-            err(_) => none
+            ok(content) => [parse_summary(date, content)]
+            err(_) =>
+              match fs.list_dir("runs/" + date) {
+                err(_) => []
+                ok(subs) => subs
+                  |> list.filter_map((sub) =>
+                    match fs.read_text("runs/" + date + "/" + sub + "/summary.md") {
+                      ok(content) => some(parse_summary(date, content))
+                      err(_) => none
+                    })
+              }
           })
       if list.is_empty(runs) then {
         println("No summary files found")
