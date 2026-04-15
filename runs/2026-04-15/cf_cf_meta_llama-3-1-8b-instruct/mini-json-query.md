@@ -19,48 +19,47 @@ type JVal =
   | JObj(List[(String, JVal)])
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
-  match obj
-  | JObj(xs) =>
-    list.find(xs, (k, v) => k == key) >>= (k, v) => some(v)
-  | _ => none
+  match obj {
+    JObj(xs) =>
+      list.find(xs, (x) => x.0 == key)
+      |> Option.map((x) => x.1)
+    _ => none
+  }
 
 fn jcount(val: JVal) -> Int =
-  match val
-  | JNull => 1
-  | JBool(_) => 1
-  | JNum(_) => 1
-  | JStr(_) => 1
-  | JArr(xs) => list.sum(xs, jcount)
-  | JObj(xs) => list.sum(xs, (k, v) => jcount(v))
+  match val {
+    JNull | JBool(_) | JNum(_) | JStr(_) => 1
+    JArr(xs) => list.sum(xs, jcount)
+    JObj(xs) => list.sum(xs, (x) => jcount(x.1))
+  }
 
 fn jflatten_strings(val: JVal) -> List[String] =
-  match val
-  | JStr(s) => [s]
-  | JArr(xs) => list.flat_map(xs, jflatten_strings)
-  | JObj(xs) => list.flat_map(xs, (k, v
+  match val {
+    JStr(s) => [s]
+    JArr(xs) => list.flat_map(xs, jflatten_strings)
+    JObj(xs) => list.flat_map(xs, (x) => jflatten_strings(x.1))
+    _ => []
+  }
+
+effect fn main()
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-0.almd
-error: Expected LBrace at line 11:3 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-0.almd:11:3
+error: Expected FatArrow at line 19:11 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-0.almd:19:11
    |
-11 |   | JObj(xs) =>
-   |   ^
-error: Expected LBrace at line 17:3 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-0.almd:17:3
+19 |     JNull | JBool(_) | JNum(_) | JStr(_) => 1
+   |           ^
+error: Expected Arrow at line 32:17 (got Newline '')
+  --> /tmp/dojo-mini-json-query-0.almd:32:17
    |
-17 |   | JNull => 1
-   |   ^
-error: Expected LBrace at line 26:3 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-0.almd:26:3
-   |
-26 |   | JStr(s) => [s]
-   |   ^
+32 | effect fn main()
+   |                 ^
 
-3 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-mini-json-query-0.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-0.almd
@@ -81,48 +80,47 @@ type JVal =
   | JObj(List[(String, JVal)])
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
-  match obj
-  | JObj(xs) =>
-    list.find(xs, (k, v) => k == key) >>= (k, v) => some(v)
-  | _ => none
+  match obj {
+    JObj(xs) =>
+      list.find(xs, (x) => x.0 == key)
+      |> Option.map((x) => x.1)
+    _ => none
+  }
 
 fn jcount(val: JVal) -> Int =
-  match val
-  | JNull => 1
-  | JBool(_) => 1
-  | JNum(_) => 1
-  | JStr(_) => 1
-  | JArr(xs) => list.sum(xs, jcount)
-  | JObj(xs) => list.sum(xs, (k, v) => jcount(v))
+  match val {
+    JNull | JBool(_) | JNum(_) | JStr(_) => 1
+    JArr(xs) => list.sum(xs, jcount)
+    JObj(xs) => list.sum(xs, (x) => jcount(x.1))
+  }
 
 fn jflatten_strings(val: JVal) -> List[String] =
-  match val
-  | JStr(s) => [s]
-  | JArr(xs) => list.flat_map(xs, jflatten_strings)
-  | JObj(xs) => list.flat_map(xs, (k, v) => jflatten
+  match val {
+    JStr(s) => [s]
+    JArr(xs) => list.flat_map(xs, jflatten_strings)
+    JObj(xs) => list.flat_map(xs, (x) => jflatten_strings(x.1))
+    _ => []
+  }
+
+effect fn main() -> Unit =
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-1.almd
-error: Expected LBrace at line 11:3 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-1.almd:11:3
+error: Expected FatArrow at line 19:11 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-1.almd:19:11
    |
-11 |   | JObj(xs) =>
-   |   ^
-error: Expected LBrace at line 17:3 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-1.almd:17:3
+19 |     JNull | JBool(_) | JNum(_) | JStr(_) => 1
+   |           ^
+error: Expected expression at line 34:1 (got Test 'test')
+  --> /tmp/dojo-mini-json-query-1.almd:34:1
    |
-17 |   | JNull => 1
-   |   ^
-error: Expected LBrace at line 26:3 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-1.almd:26:3
-   |
-26 |   | JStr(s) => [s]
-   |   ^
+34 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
+   | ^
 
-3 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-mini-json-query-1.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-1.almd
@@ -143,48 +141,47 @@ type JVal =
   | JObj(List[(String, JVal)])
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
-  match obj
-  | JObj(xs) =>
-    list.find(xs, (k, v) => k == key) >>= (k, v) => some(v)
-  | _ => none
+  match obj {
+    JObj(xs) =>
+      list.find(xs, (x) => x.0 == key)
+      |> Option.map((x) => x.1)
+    _ => none
+  }
 
 fn jcount(val: JVal) -> Int =
-  match val
-  | JNull => 1
-  | JBool(_) => 1
-  | JNum(_) => 1
-  | JStr(_) => 1
-  | JArr(xs) => list.sum(xs, jcount)
-  | JObj(xs) => list.sum(xs, (k, v) => jcount(v))
+  match val {
+    JNull | JBool(_) | JNum(_) | JStr(_) => 1
+    JArr(xs) => list.sum(xs, jcount)
+    JObj(xs) => list.sum(xs, (x) => jcount(x.1))
+  }
 
 fn jflatten_strings(val: JVal) -> List[String] =
-  match val
-  | JStr(s) => [s]
-  | JArr(xs) => list.flat_map(xs, jflatten_strings)
-  | JObj(xs) => list.flat_map(xs, (k, v) => jflatten
+  match val {
+    JStr(s) => [s]
+    JArr(xs) => list.flat_map(xs, jflatten_strings)
+    JObj(xs) => list.flat_map(xs, (x) => jflatten_strings(x.1))
+    _ => []
+  }
+
+effect fn main() -> Unit =
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-2.almd
-error: Expected LBrace at line 11:3 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-2.almd:11:3
+error: Expected FatArrow at line 19:11 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-2.almd:19:11
    |
-11 |   | JObj(xs) =>
-   |   ^
-error: Expected LBrace at line 17:3 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-2.almd:17:3
+19 |     JNull | JBool(_) | JNum(_) | JStr(_) => 1
+   |           ^
+error: Expected expression at line 34:1 (got Test 'test')
+  --> /tmp/dojo-mini-json-query-2.almd:34:1
    |
-17 |   | JNull => 1
-   |   ^
-error: Expected LBrace at line 26:3 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-2.almd:26:3
-   |
-26 |   | JStr(s) => [s]
-   |   ^
+34 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
+   | ^
 
-3 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-mini-json-query-2.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-2.almd
@@ -205,51 +202,47 @@ type JVal =
   | JObj(List[(String, JVal)])
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
-  match obj
-  | JObj(xs) =>
-    let found = list.find(xs, (k, v) => k == key)
-    match found
-    | some((k, v)) => some(v)
-    | none => none
-  | _ => none
+  match obj {
+    JObj(xs) =>
+      list.find(xs, (x) => x.0 == key)
+      |> Option.map((x) => x.1)
+    _ => none
+  }
 
 fn jcount(val: JVal) -> Int =
-  match val
-  | JNull => 1
-  | JBool(_) => 1
-  | JNum(_) => 1
-  | JStr(_) => 1
-  | JArr(xs) => list.sum(xs, jcount)
-  | JObj(xs) => list.sum(xs, (k, v) => jcount(v))
+  match val {
+    JNull | JBool(_) | JNum(_) | JStr(_) => 1
+    JArr(xs) => list.sum(xs, jcount)
+    JObj(xs) => list.sum(xs, (x) => jcount(x.1))
+  }
 
 fn jflatten_strings(val: JVal) -> List[String] =
-  match val
-  | JStr(s) => [s]
-  | JArr(xs) => list.flat_map(xs, jflatten_strings)
-  | JObj(xs
+  match val {
+    JStr(s) => [s]
+    JArr(xs) => list.flat_map(xs, jflatten_strings)
+    JObj(xs) => list.flat_map(xs, (x) => jflatten_strings(x.1))
+    _ => []
+  }
+
+effect fn main() -> Unit =
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-3.almd
-error: Expected LBrace at line 11:3 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-3.almd:11:3
+error: Expected FatArrow at line 19:11 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-3.almd:19:11
    |
-11 |   | JObj(xs) =>
-   |   ^
-error: Expected LBrace at line 20:3 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-3.almd:20:3
+19 |     JNull | JBool(_) | JNum(_) | JStr(_) => 1
+   |           ^
+error: Expected expression at line 34:1 (got Test 'test')
+  --> /tmp/dojo-mini-json-query-3.almd:34:1
    |
-20 |   | JNull => 1
-   |   ^
-error: Expected LBrace at line 29:3 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-3.almd:29:3
-   |
-29 |   | JStr(s) => [s]
-   |   ^
+34 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
+   | ^
 
-3 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-mini-json-query-3.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-3.almd

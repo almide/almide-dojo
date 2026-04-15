@@ -3,48 +3,39 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: type-error
-- **diagnostic code**: `E002`
+- **category**: parse-error
 
 ## Attempts
 
 ### Attempt 1 (FAIL)
 
 ```almide
-fn is_prime(n: Int) -> Bool = 
-  if n <= 1 then false
-  else if n == 2 then true
-  else if n % 2 == 0 then false
-  else list.for_each(list.range(3, int.sqrt(n) + 1, 2), (x) => if n % x == 0 then false else true)
+fn is_prime(n: Int) -> Bool {
+  if n <= 1 {
+    false
+  } else if n == 2 {
+    true
+  } else if n % 2 == 0 {
+    false
+  } else {
+    let sqrt_n = int.sqrt(n)
+    (2..=sqrt_n).all((d) => n % d != 0)
+  }
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-prime-0.almd
-error[E002]: undefined function 'int.sqrt'
-  --> /tmp/dojo-is-prime-0.almd:5:45
-  in call to int.sqrt()
-  hint: No function 'sqrt' in module 'int'. See docs/CHEATSHEET.md for available functions
+error: Missing '=' before function body at line 1:29
+  --> /tmp/dojo-is-prime-0.almd:1:29
+  hint: Almide requires '=' before the body. Write: fn is_prime(...) -> Type = { ... }
   |
-5 |   else list.for_each(list.range(3, int.sqrt(n) + 1, 2), (x) => if n % x == 0 then false else true)
-  |                                             ^
-error[E004]: list.range() expects 2 argument(s) but got 3
-  --> /tmp/dojo-is-prime-0.almd:5:53
-  in call to list.range()
-  hint: Check the number of arguments
-  |
-5 |   else list.for_each(list.range(3, int.sqrt(n) + 1, 2), (x) => if n % x == 0 then false else true)
-  |                                                     ^
-error[E002]: undefined function 'list.for_each'
-  --> /tmp/dojo-is-prime-0.almd:5:94
-  in call to list.for_each()
-  hint: No function 'for_each' in module 'list'. See docs/CHEATSHEET.md for available functions
-  |
-5 |   else list.for_each(list.range(3, int.sqrt(n) + 1, 2), (x) => if n % x == 0 then false else true)
-  |                                                                                              ^^^^
+1 | fn is_prime(n: Int) -> Bool {
+  |                             ^
 
-3 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-is-prime-0.almd:
 compile failed
 FAILED: /tmp/dojo-is-prime-0.almd
@@ -56,33 +47,44 @@ FAILED: /tmp/dojo-is-prime-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn is_prime(n: Int) -> Bool = 
-  if n < 1 then false
-  else if n == 2 then true
-  else if n % 2 == 0 then false
-  else list.fold(list.range(3, int.sqrt(n) + 1, 2), true, (acc, x) => if n % x == 0 then false else acc)
+fn is_prime(n: Int) -> Bool = {
+  if n < 1 {
+    false
+  } else if n == 2 {
+    true
+  } else if n % 2 == 0 {
+    false
+  } else {
+    let sqrt_n = int.sqrt(n)
+    (2..=sqrt_n).all((d) => n % d != 0)
+  }
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-prime-1.almd
-error[E002]: undefined function 'int.sqrt'
-  --> /tmp/dojo-is-prime-1.almd:5:41
-  in call to int.sqrt()
-  hint: No function 'sqrt' in module 'int'. See docs/CHEATSHEET.md for available functions
+error: Expected Then at line 2:12 (got LBrace '{')
+  --> /tmp/dojo-is-prime-1.almd:2:12
+  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
   |
-5 |   else list.fold(list.range(3, int.sqrt(n) + 1, 2), true, (acc, x) => if n % x == 0 then false else acc)
-  |                                         ^
-error[E004]: list.range() expects 2 argument(s) but got 3
-  --> /tmp/dojo-is-prime-1.almd:5:49
-  in call to list.range()
-  hint: Check the number of arguments
+2 |   if n < 1 {
+  |            ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 4:5 (got Else 'else')
+  --> /tmp/dojo-is-prime-1.almd:4:5
   |
-5 |   else list.fold(list.range(3, int.sqrt(n) + 1, 2), true, (acc, x) => if n % x == 0 then false else acc)
-  |                                                 ^
+4 |   } else if n == 2 {
+  |     ^
+error[E001]: type mismatch in fn 'is_prime': expected Bool but got Unit
+  --> /tmp/dojo-is-prime-1.almd:1:31
+  in fn 'is_prime'
+  hint: Fix the expression type or change the expected type
+  |
+1 | fn is_prime(n: Int) -> Bool = {
+  |                               ^
 
-2 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-is-prime-1.almd:
 compile failed
 FAILED: /tmp/dojo-is-prime-1.almd
@@ -94,33 +96,44 @@ FAILED: /tmp/dojo-is-prime-1.almd
 ### Attempt 3 (FAIL)
 
 ```almide
-fn is_prime(n: Int) -> Bool = 
-  if n < 1 then false
-  else if n == 2 then true
-  else if n % 2 == 0 then false
-  else list.fold(list.range(3, math.sqrt(n) + 1, 2), true, (acc, x) => if n % x == 0 then false else acc)
+fn is_prime(n: Int) -> Bool = {
+  if n < 1 {
+    false
+  } else if n == 2 {
+    true
+  } else if n % 2 == 0 {
+    false
+  } else {
+    let sqrt_n = int.sqrt(n)
+    (2..=sqrt_n).all((d) => n % d != 0)
+  }
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-prime-2.almd
-error[E003]: undefined variable 'math'
-  --> /tmp/dojo-is-prime-2.almd:5:32
-  in variable math
-  hint: Did you mean `math.e`?
+error: Expected Then at line 2:12 (got LBrace '{')
+  --> /tmp/dojo-is-prime-2.almd:2:12
+  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
   |
-5 |   else list.fold(list.range(3, math.sqrt(n) + 1, 2), true, (acc, x) => if n % x == 0 then false else acc)
-  |                                ^^^^
-error[E004]: list.range() expects 2 argument(s) but got 3
-  --> /tmp/dojo-is-prime-2.almd:5:50
-  in call to list.range()
-  hint: Check the number of arguments
+2 |   if n < 1 {
+  |            ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 4:5 (got Else 'else')
+  --> /tmp/dojo-is-prime-2.almd:4:5
   |
-5 |   else list.fold(list.range(3, math.sqrt(n) + 1, 2), true, (acc, x) => if n % x == 0 then false else acc)
-  |                                                  ^
+4 |   } else if n == 2 {
+  |     ^
+error[E001]: type mismatch in fn 'is_prime': expected Bool but got Unit
+  --> /tmp/dojo-is-prime-2.almd:1:31
+  in fn 'is_prime'
+  hint: Fix the expression type or change the expected type
+  |
+1 | fn is_prime(n: Int) -> Bool = {
+  |                               ^
 
-2 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-is-prime-2.almd:
 compile failed
 FAILED: /tmp/dojo-is-prime-2.almd
@@ -132,33 +145,44 @@ FAILED: /tmp/dojo-is-prime-2.almd
 ### Attempt 4 (FAIL)
 
 ```almide
-fn is_prime(n: Int) -> Bool = 
-  if n < 1 then false
-  else if n == 2 then true
-  else if n % 2 == 0 then false
-  else list.fold(list.range(3, int.sqrt(n) + 1, 2), true, (acc, x) => if n % x == 0 then false else acc)
+fn is_prime(n: Int) -> Bool = {
+  if n < 1 {
+    false
+  } else if n == 2 {
+    true
+  } else if n % 2 == 0 {
+    false
+  } else {
+    let sqrt_n = int.sqrt(n)
+    (2..=sqrt_n).all((d) => n % d != 0)
+  }
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-prime-3.almd
-error[E002]: undefined function 'int.sqrt'
-  --> /tmp/dojo-is-prime-3.almd:5:41
-  in call to int.sqrt()
-  hint: No function 'sqrt' in module 'int'. See docs/CHEATSHEET.md for available functions
+error: Expected Then at line 2:12 (got LBrace '{')
+  --> /tmp/dojo-is-prime-3.almd:2:12
+  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
   |
-5 |   else list.fold(list.range(3, int.sqrt(n) + 1, 2), true, (acc, x) => if n % x == 0 then false else acc)
-  |                                         ^
-error[E004]: list.range() expects 2 argument(s) but got 3
-  --> /tmp/dojo-is-prime-3.almd:5:49
-  in call to list.range()
-  hint: Check the number of arguments
+2 |   if n < 1 {
+  |            ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 4:5 (got Else 'else')
+  --> /tmp/dojo-is-prime-3.almd:4:5
   |
-5 |   else list.fold(list.range(3, int.sqrt(n) + 1, 2), true, (acc, x) => if n % x == 0 then false else acc)
-  |                                                 ^
+4 |   } else if n == 2 {
+  |     ^
+error[E001]: type mismatch in fn 'is_prime': expected Bool but got Unit
+  --> /tmp/dojo-is-prime-3.almd:1:31
+  in fn 'is_prime'
+  hint: Fix the expression type or change the expected type
+  |
+1 | fn is_prime(n: Int) -> Bool = {
+  |                               ^
 
-2 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-is-prime-3.almd:
 compile failed
 FAILED: /tmp/dojo-is-prime-3.almd

@@ -3,43 +3,60 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: type-error
-- **diagnostic code**: `E005`
+- **category**: parse-error
 
 ## Attempts
 
 ### Attempt 1 (FAIL)
 
 ```almide
-fn encrypt(text: String, shift: Int) -> String =
-  string.from_codepoint(
-    list.map(
-      string.chars(text),
-      (c) => match c {
-        some(c) => if c >= 'a' && c <= 'z' then
-          string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-        else c
-        none => none
+fn encrypt(text: String, shift: Int) -> String {
+  text.chars()
+    |> list.map((c) => {
+      let code = string.codepoint(c);
+      if code >= 97 && code <= 122 {
+        let new_code = (code - 97 + shift) % 26 + 97;
+        string.from_codepoint(new_code)
+      } else {
+        c
       }
-    )
-  )
+    })
+    |> list.join("")
+}
 
-fn decrypt(text: String, shift: Int) -> String =
-  encrypt(text, -shift)
+fn decrypt(text: String, shift: Int) -> String {
+  text.chars()
+    |> list.map((c) => {
+      let code = string.codepoint(c);
+      if code >= 97 && code <= 122 {
+        let new_code = (code - 97 - shift + 26) % 26 + 97;
+        string.from_codepoint(new_code)
+      } else {
+        c
+      }
+    })
+    |> list.join("")
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-caesar-cipher-0.almd
-error: '&&' is not valid in Almide at line 6:32
-  --> /tmp/dojo-caesar-cipher-0.almd:6:32
-  hint: Use 'and' for logical AND. Example: if a and b then ...
+error: Missing '=' before function body at line 1:48
+  --> /tmp/dojo-caesar-cipher-0.almd:1:48
+  hint: Almide requires '=' before the body. Write: fn encrypt(...) -> Type = { ... }
   |
-6 |         some(c) => if c >= 'a' && c <= 'z' then
-  |                                ^
+1 | fn encrypt(text: String, shift: Int) -> String {
+  |                                                ^
+error: Missing '=' before function body at line 15:48
+  --> /tmp/dojo-caesar-cipher-0.almd:15:48
+  hint: Almide requires '=' before the body. Write: fn decrypt(...) -> Type = { ... }
+   |
+15 | fn decrypt(text: String, shift: Int) -> String {
+   |                                                ^
 
-1 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-caesar-cipher-0.almd:
 compile failed
 FAILED: /tmp/dojo-caesar-cipher-0.almd
@@ -51,92 +68,95 @@ FAILED: /tmp/dojo-caesar-cipher-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn encrypt(text: String, shift: Int) -> String =
-  string.from_codepoint(
-    list.map(
-      string.chars(text),
-      (c) => match c {
-        some(c) => if c >= 'a' and c < 'z' then
-          string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-        else c
-        none => none
+fn encrypt(text: String, shift: Int) -> String = {
+  text.chars()
+    |> list.map((c) => {
+      let code = string.codepoint(c);
+      if code >= 97 && code < 122 {
+        let new_code = (code - 97 + shift) % 26 + 97;
+        string.from_codepoint(new_code)
+      } else {
+        c
       }
-    )
-  )
+    })
+    |> list.join("")
+}
 
-fn decrypt(text: String, shift: Int) -> String =
-  encrypt(text, shift)
+fn decrypt(text: String, shift: Int) -> String = {
+  text.chars()
+    |> list.map((c) => {
+      let code = string.codepoint(c);
+      if code >= 97 && code < 122 {
+        let new_code = (code - 97 - shift + 26) % 26 + 97;
+        string.from_codepoint(new_code)
+      } else {
+        c
+      }
+    })
+    |> list.join("")
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-caesar-cipher-1.almd
-error: operator '-' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-1.almd:7:56
-  in operator -
-  hint: Use numeric types (Int or Float)
+error: '&&' is not valid in Almide at line 5:21
+  --> /tmp/dojo-caesar-cipher-1.almd:5:21
+  hint: Use 'and' for logical AND. Example: if a and b then ...
   |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                        ^^
-error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-1.almd:7:61
-  in operator +
-  hint: Use + with numeric types, String, or List
+5 |       if code >= 97 && code < 122 {
+  |                     ^
+error: Expected ')' to close function call opened at line 3:16
+  --> /tmp/dojo-caesar-cipher-1.almd:8:9
+  hint: Add ')' or check for a missing delimiter inside the function call
   |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                             ^^^^^
-error: operator '%' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-1.almd:7:70
-  in operator %
-  hint: Use numeric types (Int or Float)
+3 |     |> list.map((c) => {
+  |                --------------- '(' opened here
+...
+8 |       } else {
+  |         ^^^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 11:5 (got RBrace '}')
+  --> /tmp/dojo-caesar-cipher-1.almd:11:5
+   |
+11 |     })
+   |     ^
+error: '&&' is not valid in Almide at line 19:21
+  --> /tmp/dojo-caesar-cipher-1.almd:19:21
+  hint: Use 'and' for logical AND. Example: if a and b then ...
+   |
+19 |       if code >= 97 && code < 122 {
+   |                     ^
+error: Expected ')' to close function call opened at line 17:16
+  --> /tmp/dojo-caesar-cipher-1.almd:22:9
+  hint: Add ')' or check for a missing delimiter inside the function call
+   |
+17 |     |> list.map((c) => {
+   |                --------------- '(' opened here
+...
+22 |       } else {
+   |         ^^^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 25:5 (got RBrace '}')
+  --> /tmp/dojo-caesar-cipher-1.almd:25:5
+   |
+25 |     })
+   |     ^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-caesar-cipher-1.almd:9:9
+  in variable c
+  hint: Check the variable name
   |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                                      ^^
-error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-1.almd:7:75
-  in operator +
-  hint: Use + with numeric types, String, or List
-  |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                                           ^^
-error[E005]: argument 'n' expects Int but got Option[Int]
-  --> /tmp/dojo-caesar-cipher-1.almd:7:75
-  in call to string.from_codepoint()
-  hint: Fix the argument type
-  |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                                           ^^
-error[E005]: argument 'n' expects Int but got List[String]
-  --> /tmp/dojo-caesar-cipher-1.almd:9:17
-  in call to string.from_codepoint()
-  hint: Fix the argument type
-  |
-9 |         none => none
-  |                 ^^^^
-error[E001]: type mismatch in call to string.from_codepoint(): expected Int but got Option[Int]
-  --> /tmp/dojo-caesar-cipher-1.almd:7:75
-  in call to string.from_codepoint()
-  hint: Fix the expression type or change the expected type
-  |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                                           ^^
-error[E001]: type mismatch in match arm: expected String but got Option[?1]
-  --> /tmp/dojo-caesar-cipher-1.almd:9:17
-  in match arm
-  hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
-  |
-9 |         none => none
-  |                 ^^^^
-error[E001]: type mismatch in call to string.from_codepoint(): expected Int but got List[String]
-  --> /tmp/dojo-caesar-cipher-1.almd:9:17
-  in call to string.from_codepoint()
-  hint: Fix the expression type or change the expected type
-  |
-9 |         none => none
-  |                 ^^^^
+9 |         c
+  |         ^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-caesar-cipher-1.almd:23:9
+  in variable c
+  hint: Check the variable name
+   |
+23 |         c
+   |         ^
 
-9 error(s) found
+8 error(s) found
 Compile error for /tmp/dojo-caesar-cipher-1.almd:
 compile failed
 FAILED: /tmp/dojo-caesar-cipher-1.almd
@@ -148,82 +168,93 @@ FAILED: /tmp/dojo-caesar-cipher-1.almd
 ### Attempt 3 (FAIL)
 
 ```almide
-fn encrypt(text: String, shift: Int) -> String =
-  string.from_codepoint(
-    list.map(
-      string.chars(text),
-      (c) => match c {
-        some(c) => if c >= 'a' and c < 'z' then
-          string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-        else c
+fn encrypt(text: String, shift: Int) -> String = {
+  text.chars()
+    |> list.map((char) => {
+      let code = string.codepoint(char);
+      if code >= 97 && code < 122 {
+        let new_code = (code - 97 + shift) % 26 + 97;
+        string.from_codepoint(new_code)
+      } else {
+        char
       }
-    )
-  )
+    })
+    |> list.join("")
+}
 
-fn decrypt(text: String, shift: Int) -> String =
-  encrypt(text, 26 - shift)
+fn decrypt(text: String, shift: Int) -> String = {
+  text.chars()
+    |> list.map((char) => {
+      let code = string.codepoint(char);
+      if code >= 97 && code < 122 {
+        let new_code = (code - 97 - shift + 26) % 26 + 97;
+        string.from_codepoint(new_code)
+      } else {
+        char
+      }
+    })
+    |> list.join("")
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-caesar-cipher-2.almd
-error: operator '-' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-2.almd:7:56
-  in operator -
-  hint: Use numeric types (Int or Float)
+error: '&&' is not valid in Almide at line 5:21
+  --> /tmp/dojo-caesar-cipher-2.almd:5:21
+  hint: Use 'and' for logical AND. Example: if a and b then ...
   |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                        ^^
-error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-2.almd:7:61
-  in operator +
-  hint: Use + with numeric types, String, or List
+5 |       if code >= 97 && code < 122 {
+  |                     ^
+error: Expected ')' to close function call opened at line 3:16
+  --> /tmp/dojo-caesar-cipher-2.almd:8:9
+  hint: Add ')' or check for a missing delimiter inside the function call
   |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                             ^^^^^
-error: operator '%' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-2.almd:7:70
-  in operator %
-  hint: Use numeric types (Int or Float)
+3 |     |> list.map((char) => {
+  |                --------------- '(' opened here
+...
+8 |       } else {
+  |         ^^^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 11:5 (got RBrace '}')
+  --> /tmp/dojo-caesar-cipher-2.almd:11:5
+   |
+11 |     })
+   |     ^
+error: '&&' is not valid in Almide at line 19:21
+  --> /tmp/dojo-caesar-cipher-2.almd:19:21
+  hint: Use 'and' for logical AND. Example: if a and b then ...
+   |
+19 |       if code >= 97 && code < 122 {
+   |                     ^
+error: Expected ')' to close function call opened at line 17:16
+  --> /tmp/dojo-caesar-cipher-2.almd:22:9
+  hint: Add ')' or check for a missing delimiter inside the function call
+   |
+17 |     |> list.map((char) => {
+   |                --------------- '(' opened here
+...
+22 |       } else {
+   |         ^^^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 25:5 (got RBrace '}')
+  --> /tmp/dojo-caesar-cipher-2.almd:25:5
+   |
+25 |     })
+   |     ^
+error[E003]: undefined variable 'char'
+  --> /tmp/dojo-caesar-cipher-2.almd:9:9
+  in variable char
+  hint: Check the variable name
   |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                                      ^^
-error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-2.almd:7:75
-  in operator +
-  hint: Use + with numeric types, String, or List
-  |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                                           ^^
-error[E005]: argument 'n' expects Int but got Option[Int]
-  --> /tmp/dojo-caesar-cipher-2.almd:7:75
-  in call to string.from_codepoint()
-  hint: Fix the argument type
-  |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                                           ^^
-error[E005]: argument 'n' expects Int but got List[String]
-  --> /tmp/dojo-caesar-cipher-2.almd:8:14
-  in call to string.from_codepoint()
-  hint: Fix the argument type
-  |
-8 |         else c
-  |              ^
-error[E001]: type mismatch in call to string.from_codepoint(): expected Int but got Option[Int]
-  --> /tmp/dojo-caesar-cipher-2.almd:7:75
-  in call to string.from_codepoint()
-  hint: Fix the expression type or change the expected type
-  |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                                           ^^
-error[E001]: type mismatch in call to string.from_codepoint(): expected Int but got List[String]
-  --> /tmp/dojo-caesar-cipher-2.almd:8:14
-  in call to string.from_codepoint()
-  hint: Fix the expression type or change the expected type
-  |
-8 |         else c
-  |              ^
+9 |         char
+  |         ^^^^
+error[E003]: undefined variable 'char'
+  --> /tmp/dojo-caesar-cipher-2.almd:23:9
+  in variable char
+  hint: Check the variable name
+   |
+23 |         char
+   |         ^^^^
 
 8 error(s) found
 Compile error for /tmp/dojo-caesar-cipher-2.almd:
@@ -237,99 +268,95 @@ FAILED: /tmp/dojo-caesar-cipher-2.almd
 ### Attempt 4 (FAIL)
 
 ```almide
-fn encrypt(text: String, shift: Int) -> String =
-  string.from_codepoint(
-    list.map(
-      string.chars(text),
-      (c) => match c {
-        some(c) => if c >= 'a' and c <'z' then
-          string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-        else
-          string.from_codepoint(string.codepoint(c))
+fn encrypt(text: String, shift: Int) -> String = {
+  text.chars()
+    |> list.map((c) => {
+      let code = string.codepoint(c);
+      if code >= 97 && code < 122 {
+        let new_code = (code - 97 + shift) % 26 + 97;
+        string.from_codepoint(new_code)
+      } else {
+        c
       }
-    )
-  )
+    })
+    |> list.join("")
+}
 
-fn decrypt(text: String, shift: Int) -> String =
-  encrypt(text, 26 - shift)
+fn decrypt(text: String, shift: Int) -> String = {
+  text.chars()
+    |> list.map((c) => {
+      let code = string.codepoint(c);
+      if code >= 97 && code < 122 {
+        let new_code = (code - 97 - shift + 26) % 26 + 97;
+        string.from_codepoint(new_code)
+      } else {
+        c
+      }
+    })
+    |> list.join("")
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-caesar-cipher-3.almd
-error: operator '-' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-3.almd:7:56
-  in operator -
-  hint: Use numeric types (Int or Float)
+error: '&&' is not valid in Almide at line 5:21
+  --> /tmp/dojo-caesar-cipher-3.almd:5:21
+  hint: Use 'and' for logical AND. Example: if a and b then ...
   |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                        ^^
-error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-3.almd:7:61
-  in operator +
-  hint: Use + with numeric types, String, or List
+5 |       if code >= 97 && code < 122 {
+  |                     ^
+error: Expected ')' to close function call opened at line 3:16
+  --> /tmp/dojo-caesar-cipher-3.almd:8:9
+  hint: Add ')' or check for a missing delimiter inside the function call
   |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                             ^^^^^
-error: operator '%' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-3.almd:7:70
-  in operator %
-  hint: Use numeric types (Int or Float)
+3 |     |> list.map((c) => {
+  |                --------------- '(' opened here
+...
+8 |       } else {
+  |         ^^^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 11:5 (got RBrace '}')
+  --> /tmp/dojo-caesar-cipher-3.almd:11:5
+   |
+11 |     })
+   |     ^
+error: '&&' is not valid in Almide at line 19:21
+  --> /tmp/dojo-caesar-cipher-3.almd:19:21
+  hint: Use 'and' for logical AND. Example: if a and b then ...
+   |
+19 |       if code >= 97 && code < 122 {
+   |                     ^
+error: Expected ')' to close function call opened at line 17:16
+  --> /tmp/dojo-caesar-cipher-3.almd:22:9
+  hint: Add ')' or check for a missing delimiter inside the function call
+   |
+17 |     |> list.map((c) => {
+   |                --------------- '(' opened here
+...
+22 |       } else {
+   |         ^^^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 25:5 (got RBrace '}')
+  --> /tmp/dojo-caesar-cipher-3.almd:25:5
+   |
+25 |     })
+   |     ^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-caesar-cipher-3.almd:9:9
+  in variable c
+  hint: Check the variable name
   |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                                      ^^
-error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-3.almd:7:75
-  in operator +
-  hint: Use + with numeric types, String, or List
-  |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                                           ^^
-error[E005]: argument 'n' expects Int but got Option[Int]
-  --> /tmp/dojo-caesar-cipher-3.almd:7:75
-  in call to string.from_codepoint()
-  hint: Fix the argument type
-  |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                                           ^^
-error[E005]: argument 'n' expects Int but got Option[Int]
-  --> /tmp/dojo-caesar-cipher-3.almd:9:50
-  in call to string.from_codepoint()
-  hint: Fix the argument type
-  |
-9 |           string.from_codepoint(string.codepoint(c))
-  |                                                  ^
-error[E005]: argument 'n' expects Int but got List[String]
-  --> /tmp/dojo-caesar-cipher-3.almd:9:50
-  in call to string.from_codepoint()
-  hint: Fix the argument type
-  |
-9 |           string.from_codepoint(string.codepoint(c))
-  |                                                  ^
-error[E001]: type mismatch in call to string.from_codepoint(): expected Int but got Option[Int]
-  --> /tmp/dojo-caesar-cipher-3.almd:7:75
-  in call to string.from_codepoint()
-  hint: Fix the expression type or change the expected type
-  |
-7 |           string.from_codepoint((string.codepoint(c) - 97 + shift) % 26 + 97)
-  |                                                                           ^^
-error[E001]: type mismatch in call to string.from_codepoint(): expected Int but got Option[Int]
-  --> /tmp/dojo-caesar-cipher-3.almd:9:50
-  in call to string.from_codepoint()
-  hint: Fix the expression type or change the expected type
-  |
-9 |           string.from_codepoint(string.codepoint(c))
-  |                                                  ^
-error[E001]: type mismatch in call to string.from_codepoint(): expected Int but got List[String]
-  --> /tmp/dojo-caesar-cipher-3.almd:9:50
-  in call to string.from_codepoint()
-  hint: Fix the expression type or change the expected type
-  |
-9 |           string.from_codepoint(string.codepoint(c))
-  |                                                  ^
+9 |         c
+  |         ^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-caesar-cipher-3.almd:23:9
+  in variable c
+  hint: Check the variable name
+   |
+23 |         c
+   |         ^
 
-10 error(s) found
+8 error(s) found
 Compile error for /tmp/dojo-caesar-cipher-3.almd:
 compile failed
 FAILED: /tmp/dojo-caesar-cipher-3.almd

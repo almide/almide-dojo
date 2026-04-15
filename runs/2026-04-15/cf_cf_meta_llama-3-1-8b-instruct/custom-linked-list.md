@@ -23,7 +23,7 @@ fn from_list(xs: List[Int]) -> MyList =
 fn to_list(ml: MyList) -> List[Int] =
   match ml {
     Nil => []
-    | Cons(x, xs) => [x] + to_list(xs)
+    | Cons(x, xs) => [x] ++ to_list(xs)
   }
 
 fn my_len(ml: MyList) -> Int =
@@ -62,7 +62,7 @@ error: Expected pattern at line 14:5 (got Pipe '|')
   --> /tmp/dojo-custom-linked-list-0.almd:14:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-14 |     | Cons(x, xs) => [x] + to_list(xs)
+14 |     | Cons(x, xs) => [x] ++ to_list(xs)
    |     ^
 error: Expected pattern at line 20:5 (got Pipe '|')
   --> /tmp/dojo-custom-linked-list-0.almd:20:5
@@ -113,7 +113,7 @@ fn from_list(xs: List[Int]) -> MyList =
 fn to_list(ml: MyList) -> List[Int] =
   match ml {
     Nil => []
-    | Cons(x, xs) => [x] + to_list(xs)
+    | Cons(x, xs) => [x] ++ to_list(xs)
   }
 
 fn my_len(ml: MyList) -> Int =
@@ -153,7 +153,7 @@ error: Expected pattern at line 14:5 (got Pipe '|')
   --> /tmp/dojo-custom-linked-list-1.almd:14:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-14 |     | Cons(x, xs) => [x] + to_list(xs)
+14 |     | Cons(x, xs) => [x] ++ to_list(xs)
    |     ^
 error: Expected pattern at line 20:5 (got Pipe '|')
   --> /tmp/dojo-custom-linked-list-1.almd:20:5
@@ -205,7 +205,7 @@ fn from_list(xs: List[Int]) -> MyList =
 fn to_list(ml: MyList) -> List[Int] =
   match ml {
     Nil => []
-    | Cons(x, xs) => [x] + to_list(xs)
+    | Cons(x, xs) => [x] ++ to_list(xs)
   }
 
 fn my_len(ml: MyList) -> Int =
@@ -245,7 +245,7 @@ error: Expected pattern at line 14:5 (got Pipe '|')
   --> /tmp/dojo-custom-linked-list-2.almd:14:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-14 |     | Cons(x, xs) => [x] + to_list(xs)
+14 |     | Cons(x, xs) => [x] ++ to_list(xs)
    |     ^
 error: Expected pattern at line 20:5 (got Pipe '|')
   --> /tmp/dojo-custom-linked-list-2.almd:20:5
@@ -297,7 +297,7 @@ fn from_list(xs: List[Int]) -> MyList =
 fn to_list(ml: MyList) -> List[Int] =
   match ml {
     Nil => []
-    | Cons(x, xs) => [x] + to_list(xs)
+    | Cons(x, xs) => [x] ++ to_list(xs)
   }
 
 fn my_len(ml: MyList) -> Int =
@@ -337,7 +337,7 @@ error: Expected pattern at line 14:5 (got Pipe '|')
   --> /tmp/dojo-custom-linked-list-3.almd:14:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-14 |     | Cons(x, xs) => [x] + to_list(xs)
+14 |     | Cons(x, xs) => [x] ++ to_list(xs)
    |     ^
 error: Expected pattern at line 20:5 (got Pipe '|')
   --> /tmp/dojo-custom-linked-list-3.almd:20:5

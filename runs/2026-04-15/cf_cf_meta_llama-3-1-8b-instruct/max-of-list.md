@@ -1,9 +1,9 @@
 # max-of-list
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
-- **success**: yes
+- **success**: no
 - **retries**: 3
-- **category**: pass-retry
+- **category**: parse-error
 
 ## Attempts
 
@@ -12,20 +12,19 @@
 ```almide
 fn max_of_list(xs: List[Int]) -> Option[Int] = 
   if list.is_empty(xs) then none
-  else list.fold(xs, xs.first(), (max, x) => if x > max then x else max)
+  else list.fold(xs, (max, x) => if x > max then x else max, xs.head) |>
+  some
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-max-of-list-0.almd
-error[E001]: type mismatch in call to list.fold(): expected fn(Option[Int], Int) -> Option[Int] but got fn(Option[Int], Option[Int]) -> Option[Int]
-  --> /tmp/dojo-max-of-list-0.almd:3:69
-  in call to list.fold()
-  hint: Fix the expression type or change the expected type
+error: Expected LParen at line 4:7 (got Newline '')
+  --> /tmp/dojo-max-of-list-0.almd:4:7
   |
-3 |   else list.fold(xs, xs.first(), (max, x) => if x > max then x else max)
-  |                                                                     ^^^
+4 |   some
+  |       ^
 
 1 error(s) found
 Compile error for /tmp/dojo-max-of-list-0.almd:
@@ -41,18 +40,19 @@ FAILED: /tmp/dojo-max-of-list-0.almd
 ```almide
 fn max_of_list(xs: List[Int]) -> Option[Int] = 
   if list.is_empty(xs) then none
-  else list.fold(xs, some(xs.first()), (max, x) => if x > max.some().unwrap() then some(x) else max)
+  else list.fold(xs, (max, x) => if x > max then x else max, xs.head) |>
+  some
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-max-of-list-1.almd
-error: Expected name at line 3:63 (got Some 'some')
-  --> /tmp/dojo-max-of-list-1.almd:3:63
+error: Expected LParen at line 4:7 (got Newline '')
+  --> /tmp/dojo-max-of-list-1.almd:4:7
   |
-3 |   else list.fold(xs, some(xs.first()), (max, x) => if x > max.some().unwrap() then some(x) else max)
-  |                                                               ^
+4 |   some
+  |       ^
 
 1 error(s) found
 Compile error for /tmp/dojo-max-of-list-1.almd:
@@ -68,29 +68,21 @@ FAILED: /tmp/dojo-max-of-list-1.almd
 ```almide
 fn max_of_list(xs: List[Int]) -> Option[Int] = 
   if list.is_empty(xs) then none
-  else list.fold(xs, some(xs.first()), (max, x) => if x > max.unwrap() then some(x) else max)
+  else list.fold(xs, (max, x) => if x > max then x else max, xs.head) |>
+  some
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-max-of-list-2.almd
-error[E001]: type mismatch in call to list.fold(): expected fn(Option[Option[Int]], Int) -> Option[Option[Int]] but got fn(Option[Int], Int) -> Option[Int]
-  --> /tmp/dojo-max-of-list-2.almd:3:90
-  in call to list.fold()
-  hint: Fix the expression type or change the expected type
+error: Expected LParen at line 4:7 (got Newline '')
+  --> /tmp/dojo-max-of-list-2.almd:4:7
   |
-3 |   else list.fold(xs, some(xs.first()), (max, x) => if x > max.unwrap() then some(x) else max)
-  |                                                                                          ^^^
-error[E001]: type mismatch in fn 'max_of_list': expected Option[Int] but got Option[Option[Int]]
-  --> /tmp/dojo-max-of-list-2.almd:3:90
-  in fn 'max_of_list'
-  hint: Fix the expression type or change the expected type
-  |
-3 |   else list.fold(xs, some(xs.first()), (max, x) => if x > max.unwrap() then some(x) else max)
-  |                                                                                          ^^^
+4 |   some
+  |       ^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-max-of-list-2.almd:
 compile failed
 FAILED: /tmp/dojo-max-of-list-2.almd
@@ -99,10 +91,29 @@ FAILED: /tmp/dojo-max-of-list-2.almd
 
 ```
 
-### Attempt 4 (PASS)
+### Attempt 4 (FAIL)
 
 ```almide
 fn max_of_list(xs: List[Int]) -> Option[Int] = 
   if list.is_empty(xs) then none
-  else list.fold(xs, none, (max, x) => if max.is_none() then some(x) else if x > max.unwrap() then some(x) else max)
+  else list.fold(xs, (max, x) => if x > max then x else max, xs.head) |> some
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-max-of-list-3.almd
+error: Expected LParen at line 3:78 (got Newline '')
+  --> /tmp/dojo-max-of-list-3.almd:3:78
+  |
+3 |   else list.fold(xs, (max, x) => if x > max then x else max, xs.head) |> some
+  |                                                                              ^
+
+1 error(s) found
+Compile error for /tmp/dojo-max-of-list-3.almd:
+compile failed
+FAILED: /tmp/dojo-max-of-list-3.almd
+
+1/1 test file(s) failed
+
 ```

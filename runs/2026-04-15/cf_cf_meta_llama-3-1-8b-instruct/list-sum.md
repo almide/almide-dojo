@@ -10,6 +10,5 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn list_sum(xs: List[Int]) -> Int = 
-  list.fold(xs, 0, (acc, x) => acc + x)
+fn list_sum(xs: List[Int]) -> Int = xs |> list.fold(0, (acc, x) => acc + x)
 ```

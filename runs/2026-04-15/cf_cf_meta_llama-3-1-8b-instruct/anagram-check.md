@@ -1,55 +1,34 @@
 # anagram-check
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
-- **success**: no
-- **retries**: 3
-- **category**: unknown
+- **success**: yes
+- **retries**: 1
+- **category**: pass-retry
 
 ## Attempts
 
 ### Attempt 1 (FAIL)
 
 ```almide
-fn is_anagram(a: String, b: String) -> Bool = 
-  let a_chars = string.chars(a) |> list.filter(x => x != ' ')
-  let b_chars = string.chars(b) |> list.filter(x => x != ' ')
-  list.sort(a_chars) == list.sort(b_chars)
+fn is_anagram(a: String, b: String) -> Bool {
+  let a_no_spaces = a |> string.to_lower |> string.chars |> list.filter((c) => c != ' ')
+  let b_no_spaces = b |> string.to_lower |> string.chars |> list.filter((c) => c != ' ')
+  list.sort(a_no_spaces) == list.sort(b_no_spaces)
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-anagram-check-0.almd
-error: Lambda parameter must be wrapped in parentheses
-  --> /tmp/dojo-anagram-check-0.almd:2:50
-  in lambda syntax
-  hint: Almide lambdas require parentheses around parameters. Write `(x) => expr` instead of `x => expr`
+error: Missing '=' before function body at line 1:45
+  --> /tmp/dojo-anagram-check-0.almd:1:45
+  hint: Almide requires '=' before the body. Write: fn is_anagram(...) -> Type = { ... }
   |
-2 |   let a_chars = string.chars(a) |> list.filter(x => x != ' ')
-  |                                                  ^^
-error: Lambda parameter must be wrapped in parentheses
-  --> /tmp/dojo-anagram-check-0.almd:3:50
-  in lambda syntax
-  hint: Almide lambdas require parentheses around parameters. Write `(x) => expr` instead of `x => expr`
-  |
-3 |   let b_chars = string.chars(b) |> list.filter(x => x != ' ')
-  |                                                  ^^
-error[E003]: undefined variable 'a_chars'
-  --> /tmp/dojo-anagram-check-0.almd:4:13
-  in variable a_chars
-  hint: Check the variable name
-  |
-4 |   list.sort(a_chars) == list.sort(b_chars)
-  |             ^^^^^^^
-error[E003]: undefined variable 'b_chars'
-  --> /tmp/dojo-anagram-check-0.almd:4:35
-  in variable b_chars
-  hint: Check the variable name
-  |
-4 |   list.sort(a_chars) == list.sort(b_chars)
-  |                                   ^^^^^^^
+1 | fn is_anagram(a: String, b: String) -> Bool {
+  |                                             ^
 
-4 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-anagram-check-0.almd:
 compile failed
 FAILED: /tmp/dojo-anagram-check-0.almd
@@ -58,72 +37,12 @@ FAILED: /tmp/dojo-anagram-check-0.almd
 
 ```
 
-### Attempt 2 (FAIL)
+### Attempt 2 (PASS)
 
 ```almide
-fn is_anagram(a: String, b: String) -> Bool = 
-  let a_chars = string.chars(a) |> list.filter((x) => x != ' ')
-  let b_chars = string.chars(b) |> list.filter((x) => x != ' ')
-  list.sort(a_chars) == list.sort(b_chars)
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-anagram-check-1.almd
-FAILED: /tmp/dojo-anagram-check-1.almd
-
-1/1 test file(s) failed
-
-```
-
-### Attempt 3 (FAIL)
-
-```almide
-fn is_anagram(a: String, b: String) -> Bool = 
-  let a_chars = string.chars(a) |> list.filter((x) => x != ' ')
-  let b_chars = string.chars(b) |> list.filter((x) => x != ' ')
-  let a_sorted = list.sort(a_chars)
-  let b_sorted = list.sort(b_chars)
-  list.unique(a_sorted) == list.unique(b_sorted)
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-anagram-check-2.almd
-FAILED: /tmp/dojo-anagram-check-2.almd
-
-1/1 test file(s) failed
-
-```
-
-### Attempt 4 (FAIL)
-
-```almide
-fn is_anagram(a: String, b: String) -> Bool = 
-  let a_chars = string.chars(a) |> list.filter((x) => x != ' ')
-  let b_chars = string.chars(b) |> list.filter((x) => x != ' ')
-  string.to_lower(a) == string.to_lower(b) && 
-  list.sort(a_chars) == list.sort(b_chars)
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-anagram-check-3.almd
-error: '&&' is not valid in Almide at line 4:44
-  --> /tmp/dojo-anagram-check-3.almd:4:44
-  hint: Use 'and' for logical AND. Example: if a and b then ...
-  |
-4 |   string.to_lower(a) == string.to_lower(b) &&
-  |                                            ^
-
-1 error(s) found
-Compile error for /tmp/dojo-anagram-check-3.almd:
-compile failed
-FAILED: /tmp/dojo-anagram-check-3.almd
-
-1/1 test file(s) failed
-
+fn is_anagram(a: String, b: String) -> Bool = {
+  let a_no_spaces = a |> string.to_lower |> string.chars |> list.filter((c) => c != ' ')
+  let b_no_spaces = b |> string.to_lower |> string.chars |> list.filter((c) => c != ' ')
+  list.sort(a_no_spaces) == list.sort(b_no_spaces)
+}
 ```

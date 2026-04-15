@@ -3,7 +3,7 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: unknown
+- **category**: parse-error
 
 ## Attempts
 
@@ -11,52 +11,27 @@
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
-  if list.is_empty(xs) then list.empty[Int]
-  else if list.is_empty(ys) then list.empty[Int]
-  else list.cons(f(list.get(xs, 0), list.get(ys, 0)), zip_with(list.drop(xs, 1), list.drop(ys, 1), f))
+  match xs {
+    | [] => []
+    | x :: xs_tail => match ys {
+      | [] => []
+      | y :: ys_tail => f(x, y) :: zip_with(xs_tail, ys_tail, f)
+    }
+  }
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-zip-with-0.almd
-error[E003]: undefined variable 'list'
-  --> /tmp/dojo-zip-with-0.almd:2:29
-  in variable list
-  hint: Check the variable name
+error: Expected pattern at line 3:5 (got Pipe '|')
+  --> /tmp/dojo-zip-with-0.almd:3:5
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
   |
-2 |   if list.is_empty(xs) then list.empty[Int]
-  |                             ^^^^
-error[E003]: undefined variable 'list'
-  --> /tmp/dojo-zip-with-0.almd:3:34
-  in variable list
-  hint: Check the variable name
-  |
-3 |   else if list.is_empty(ys) then list.empty[Int]
-  |                                  ^^^^
-error[E002]: undefined function 'list.cons'
-  --> /tmp/dojo-zip-with-0.almd:4:100
-  in call to list.cons()
-  hint: Did you mean `list.count`?
-  |
-4 |   else list.cons(f(list.get(xs, 0), list.get(ys, 0)), zip_with(list.drop(xs, 1), list.drop(ys, 1), f))
-  |                                                                                                    ^
-error[E001]: type mismatch in call to f(): expected Int but got Option[Int]
-  --> /tmp/dojo-zip-with-0.almd:4:18
-  in call to f()
-  hint: Fix the expression type or change the expected type
-  |
-4 |   else list.cons(f(list.get(xs, 0), list.get(ys, 0)), zip_with(list.drop(xs, 1), list.drop(ys, 1), f))
-  |                  ^
-error[E001]: type mismatch in call to f(): expected Int but got Option[Int]
-  --> /tmp/dojo-zip-with-0.almd:4:18
-  in call to f()
-  hint: Fix the expression type or change the expected type
-  |
-4 |   else list.cons(f(list.get(xs, 0), list.get(ys, 0)), zip_with(list.drop(xs, 1), list.drop(ys, 1), f))
-  |                  ^
+3 |     | [] => []
+  |     ^
 
-5 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-zip-with-0.almd:
 compile failed
 FAILED: /tmp/dojo-zip-with-0.almd
@@ -69,24 +44,25 @@ FAILED: /tmp/dojo-zip-with-0.almd
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
-  if list.is_empty(xs) then list.empty[Int]
-  else if list.is_empty(ys) then list.empty[Int]
-  else let head_x = list.get(xs, 0)
-       let head_y = list.get(ys, 0)
-       list.cons(f(head_x, head_y), zip_with(list.drop(xs, 1), list.drop(ys, 1), f))
+  match xs {
+    | [] => []
+    | x :: xs_tail => match ys {
+      | [] => []
+      | y :: ys_tail => f(x, y) :: zip_with(xs_tail, ys_tail, f)
+    }
+  }
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-zip-with-1.almd
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-zip-with-1.almd:4:8
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+error: Expected pattern at line 3:5 (got Pipe '|')
+  --> /tmp/dojo-zip-with-1.almd:3:5
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
   |
-4 |   else let head_x = list.get(xs, 0)
-  |        ^^^
+3 |     | [] => []
+  |     ^
 
 1 error(s) found
 Compile error for /tmp/dojo-zip-with-1.almd:
@@ -101,24 +77,25 @@ FAILED: /tmp/dojo-zip-with-1.almd
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
-  if list.is_empty(xs) then list.empty[Int]
-  else if list.is_empty(ys) then list.empty[Int]
-  else let head_x = list.get(xs, 0)
-       let head_y = list.get(ys, 0)
-       list.cons(f(head_x, head_y), zip_with(list.drop(xs, 1), list.drop(ys, 1), f))
+  match xs {
+    | [] => []
+    | x :: xs_tail => match ys {
+      | [] => []
+      | y :: ys_tail => f(x, y) :: zip_with(xs_tail, ys_tail, f)
+    }
+  }
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-zip-with-2.almd
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-zip-with-2.almd:4:8
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+error: Expected pattern at line 3:5 (got Pipe '|')
+  --> /tmp/dojo-zip-with-2.almd:3:5
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
   |
-4 |   else let head_x = list.get(xs, 0)
-  |        ^^^
+3 |     | [] => []
+  |     ^
 
 1 error(s) found
 Compile error for /tmp/dojo-zip-with-2.almd:
@@ -133,24 +110,25 @@ FAILED: /tmp/dojo-zip-with-2.almd
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
-  if list.is_empty(xs) then list.empty[Int]
-  else if list.is_empty(ys) then list.empty[Int]
-  else let head_x = list.get(xs, 0)
-       let head_y = list.get(ys, 0)
-       list.cons(f(head_x, head_y), zip_with(list.drop(xs, 1), list.drop(ys, 1), f))
+  match xs {
+    | [] => []
+    | x :: xs_tail => match ys {
+      | [] => []
+      | y :: ys_tail => f(x, y) :: zip_with(xs_tail, ys_tail, f)
+    }
+  }
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-zip-with-3.almd
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-zip-with-3.almd:4:8
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+error: Expected pattern at line 3:5 (got Pipe '|')
+  --> /tmp/dojo-zip-with-3.almd:3:5
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
   |
-4 |   else let head_x = list.get(xs, 0)
-  |        ^^^
+3 |     | [] => []
+  |     ^
 
 1 error(s) found
 Compile error for /tmp/dojo-zip-with-3.almd:
