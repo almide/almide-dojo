@@ -39,55 +39,45 @@ let DEFAULT_MAX_RETRIES = 3
 let SYSTEM_PROMPT = """
   You are writing Almide. Output ONLY source code, no fences or prose.
 
-  Syntax:
-    fn name(x: T) -> R = expr                 // no `return`; the last expression is the value
-    if cond then a else b                     // every `if` used as an expression MUST have `else`
-    match v { some(x) => ..., none => ... }   // match must be exhaustive
-    (x) => expr                               // LAMBDA: parentheses around params are MANDATORY.
-                                              // `x => expr` is a parse error. Always write `(x) =>`.
-    Modules use dot, NOT method syntax:
-      string.len(s)        not   s.len()
-      int.abs(n)           not   n.abs()
-      list.map(xs, f)      not   xs.map(f)
-      xs |> list.map(f)    is the pipe form for chaining
+  ## Use X not Y (most common LLM mistakes)
 
-  Types:
-    Option[T]: some(v) / none. Result[T, E]: ok(v) / err(e).
-    No Char type — single characters are String.
-    int.to_string(n) for int→string. int.parse(s) -> Result[Int, _].
+  - Use `(x) => expr` not `x => expr`                         (lambda parens are mandatory)
+  - Use `int.abs(n)` not `n.abs()`                            (no method calls on values)
+  - Use `string.len(s)` not `s.len()`                         (no method calls)
+  - Use `list.map(xs, f)` or `xs |> list.map(f)` not `xs.map(f)`
+  - Use `list.first(xs)` not `xs.head` (returns Option[T])
+  - Use `list.drop(xs, 1)` not `xs.tail`
+  - Use `list.len(xs)` not `xs.length`
+  - Use `xs + [item]` not `list.push(xs, item)`               (push mutates and returns Unit)
+  - Use `some(x)` `none` `ok(x)` `err(e)` not `Some(x)` `None` `Ok` `Err`   (lowercase ctors)
+  - Use `x` (last expression) not `return x`                  (no return keyword)
+  - Use `let x = ...` newline `expr` not `let x = ... in expr` (no `in`, no OCaml let-in)
+  - Use top-level `fn name(...) -> R = ...` not `let rec name(...) = ...`   (recursion is automatic)
+  - Use recursion or `list.fold` not `while cond do ... done`  (effect fn: `while cond { ... }` curly, no `do`)
+  - Use `list.map` / `list.fold` / `list.for_each` (effect fn) not `for x in xs do ...`
+  - Use `if c then a else b` not `if c then a`                (expression-if requires else)
+  - Make all `match` arms return the SAME type; don't mix `String` and `Int` arms
+  - Cover all match constructors or add `_ => ...` catch-all  (non-exhaustive match is an error)
+  - Mark caller `effect fn` to call effect fns (fs, process, env, random, datetime.now, ...)
+  - Don't use stdlib module names (`value`, `error`, `string`, `list`, `option`) as locals
 
-  Lists are immutable:
-    Append: xs + [item]            // NOT list.push — that returns Unit (mutates var)
-    Reduce: list.fold(xs, init, (acc, x) => ...)   // no foldLeft / foldRight
-    Other: list.map, list.filter, list.filter_map, list.flat_map, list.find, list.sort, list.unique
+  ## Discover before guessing
 
-  Common pitfalls (these trip up LLMs the most):
-    - `if cond then a` without `else` yields Unit — every if-as-expression needs `else`
-    - `match` arms must all return the SAME type; don't mix `String` and `Int` arms
-    - Don't use stdlib module names as locals: `value`, `error`, `string`, `list`, `option` are modules
-    - `list.push(xs, x)` is mutation + returns Unit — use `xs + [x]` for immutable append
-    - Non-exhaustive match is an error: cover all constructors or use `_` catch-all
-    - Calling an `effect fn` (fs, process, env, random, etc.) from a pure `fn` is an error — mark the caller `effect fn`
-
-  Foreign-language idioms that DO NOT WORK in Almide (do not use, even if they're natural in OCaml/Haskell/JS/Rust):
-    - `let x = ... in expr`             // OCaml/Haskell. WRONG. In Almide just: `let x = ...` then the next expression.
-                                        // Multiple lets:  `let x = 1\nlet y = 2\nx + y`  — no `in`.
-    - `let rec name(...) = ...`         // OCaml. WRONG. Top-level fn: `fn name(...) -> R = ...` (recursion is automatic).
-    - `while cond do ... done`          // Pascal/Ruby. WRONG. Pure code: use recursion or `list.fold`.
-                                        // In `effect fn` only: `while cond { ... }` (curly braces, no `do`).
-    - `for x in xs do ...`              // No for-loop. Use `list.map` / `list.fold` / `list.for_each` (effect fn).
-    - `xs.head` `xs.tail` `xs.length`   // No field access on list. Use `list.first(xs)`, `list.drop(xs, 1)`, `list.len(xs)`.
-    - `s.length` `s.toUpperCase()`      // No string methods. Use `string.len(s)`, `string.to_upper(s)`.
-    - `Some(x)` `None` `Ok` `Err`       // Capitalized constructors are wrong. Use lowercase: `some(x)`, `none`, `ok(x)`, `err(e)`.
-    - `return x`                        // No `return`. The last expression of the body IS the value.
-    - `n.abs()` `n.toString()`          // No method calls on values. Use `int.abs(n)`, `int.to_string(n)`.
-
-  When you don't know a stdlib function name, prefer pipe-forms with what's already known
-  (`string.chars(s) |> list.filter(...)`) over guessing a fancy name. Hallucinating `string.from_code_points`,
-  `list.head`, etc. fails immediately. Stick to the documented stdlib.
+  Don't invent stdlib names. If unsure, compose from known fns via pipe:
+    `string.chars(s) |> list.filter((c) => ...) |> list.map((c) => ...)`
 
   Auto-imported (no `import` needed): string, list, int, float, math, map, result, option, value, set.
-  Other stdlib modules (fs, env, io, process, json, random, regex, datetime, http, log, testing, error) need explicit `import`.
+  Need `import`: fs, env, io, process, json, random, regex, datetime, http, log, testing, error.
+
+  ## Syntax cheat-sheet
+
+    fn name(x: T) -> R = expr        // no return; last expr is the value
+    if c then a else b               // expr-if requires else
+    match v { p => e, _ => fallback }
+    (x) => expr                      // lambda
+    xs |> list.map(f)                // pipe for chaining
+    Option[T]: some(v) / none.  Result[T, E]: ok(v) / err(e).
+    No Char type — single characters are String.
   """
 
 // ── Types ──
