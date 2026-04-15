@@ -39,45 +39,222 @@ let DEFAULT_MAX_RETRIES = 3
 let SYSTEM_PROMPT = """
   You are writing Almide. Output ONLY source code, no fences or prose.
 
-  ## Use X not Y (most common LLM mistakes)
+  Syntax:
+    fn name(x: T) -> R = expr                 // no `return`; the last expression is the value
+    if cond then a else b                     // every `if` used as an expression MUST have `else`
+    match v { some(x) => ..., none => ... }   // match must be exhaustive
+    (x) => expr                               // LAMBDA: parentheses around params are MANDATORY.
+                                              // `x => expr` is a parse error. Always write `(x) =>`.
+    Modules use dot, NOT method syntax:
+      string.len(s)        not   s.len()
+      int.abs(n)           not   n.abs()
+      list.map(xs, f)      not   xs.map(f)
+      xs |> list.map(f)    is the pipe form for chaining
 
-  - Use `(x) => expr` not `x => expr`                         (lambda parens are mandatory)
-  - Use `int.abs(n)` not `n.abs()`                            (no method calls on values)
-  - Use `string.len(s)` not `s.len()`                         (no method calls)
-  - Use `list.map(xs, f)` or `xs |> list.map(f)` not `xs.map(f)`
-  - Use `list.first(xs)` not `xs.head` (returns Option[T])
-  - Use `list.drop(xs, 1)` not `xs.tail`
-  - Use `list.len(xs)` not `xs.length`
-  - Use `xs + [item]` not `list.push(xs, item)`               (push mutates and returns Unit)
-  - Use `some(x)` `none` `ok(x)` `err(e)` not `Some(x)` `None` `Ok` `Err`   (lowercase ctors)
-  - Use `x` (last expression) not `return x`                  (no return keyword)
-  - Use `let x = ...` newline `expr` not `let x = ... in expr` (no `in`, no OCaml let-in)
-  - Use top-level `fn name(...) -> R = ...` not `let rec name(...) = ...`   (recursion is automatic)
-  - Use recursion or `list.fold` not `while cond do ... done`  (effect fn: `while cond { ... }` curly, no `do`)
-  - Use `list.map` / `list.fold` / `list.for_each` (effect fn) not `for x in xs do ...`
-  - Use `if c then a else b` not `if c then a`                (expression-if requires else)
-  - Make all `match` arms return the SAME type; don't mix `String` and `Int` arms
-  - Cover all match constructors or add `_ => ...` catch-all  (non-exhaustive match is an error)
-  - Mark caller `effect fn` to call effect fns (fs, process, env, random, datetime.now, ...)
-  - Don't use stdlib module names (`value`, `error`, `string`, `list`, `option`) as locals
+  Types:
+    Option[T]: some(v) / none. Result[T, E]: ok(v) / err(e).
+    No Char type — single characters are String.
+    int.to_string(n) for int→string. int.parse(s) -> Result[Int, _].
 
-  ## Discover before guessing
+  Lists are immutable:
+    Append: xs + [item]            // NOT list.push — that returns Unit (mutates var)
+    Reduce: list.fold(xs, init, (acc, x) => ...)   // no foldLeft / foldRight
+    Other: list.map, list.filter, list.filter_map, list.flat_map, list.find, list.sort, list.unique
 
-  Don't invent stdlib names. If unsure, compose from known fns via pipe:
-    `string.chars(s) |> list.filter((c) => ...) |> list.map((c) => ...)`
+  Common pitfalls (these trip up LLMs the most):
+    - `if cond then a` without `else` yields Unit — every if-as-expression needs `else`
+    - `match` arms must all return the SAME type; don't mix `String` and `Int` arms
+    - Don't use stdlib module names as locals: `value`, `error`, `string`, `list`, `option` are modules
+    - `list.push(xs, x)` is mutation + returns Unit — use `xs + [x]` for immutable append
+    - Non-exhaustive match is an error: cover all constructors or use `_` catch-all
+    - Calling an `effect fn` (fs, process, env, random, etc.) from a pure `fn` is an error — mark the caller `effect fn`
+
+  Foreign-language idioms that DO NOT WORK in Almide (do not use, even if natural in OCaml/Haskell/JS/Rust):
+    - `let x = ... in expr`             // OCaml/Haskell. WRONG. Just: `let x = ...` then the next expression on a new line.
+    - `let rec name(...) = ...`         // OCaml. WRONG. Top-level fn: `fn name(...) -> R = ...` (recursion is automatic).
+    - `while cond do ... done`          // Pascal/Ruby. WRONG. Pure code: use recursion or `list.fold`.
+                                        // In `effect fn` only: `while cond { ... }` (curly braces, no `do`).
+    - `for x in xs do ...`              // No for-loop. Use `list.map` / `list.fold` / `list.for_each` (effect fn).
+    - `xs.head` `xs.tail` `xs.length`   // No field access on list. Use `list.first(xs)`, `list.drop(xs, 1)`, `list.len(xs)`.
+    - `s.length` `s.toUpperCase()`      // No string methods. Use `string.len(s)`, `string.to_upper(s)`.
+    - `Some(x)` `None` `Ok` `Err`       // Capitalized constructors are wrong. Use lowercase: `some(x)`, `none`, `ok(x)`, `err(e)`.
+    - `return x`                        // No `return`. The last expression of the body IS the value.
+    - `n.abs()` `n.toString()`          // No method calls on values. Use `int.abs(n)`, `int.to_string(n)`.
 
   Auto-imported (no `import` needed): string, list, int, float, math, map, result, option, value, set.
-  Need `import`: fs, env, io, process, json, random, regex, datetime, http, log, testing, error.
+  Other (need `import`): fs, env, io, process, json, random, regex, datetime, http, log, testing, error.
 
-  ## Syntax cheat-sheet
+  ## Available stdlib API (use ONLY these names — inventing other names like `string.from_code_points` will fail)
 
-    fn name(x: T) -> R = expr        // no return; last expr is the value
-    if c then a else b               // expr-if requires else
-    match v { p => e, _ => fallback }
-    (x) => expr                      // lambda
-    xs |> list.map(f)                // pipe for chaining
-    Option[T]: some(v) / none.  Result[T, E]: ok(v) / err(e).
-    No Char type — single characters are String.
+  ### string
+  - fn string.capitalize(s: String) -> String
+  - fn string.chars(s: String) -> List[String]
+  - fn string.codepoint(s: String) -> Option[Int]
+  - fn string.contains(s: String, sub: String) -> Bool
+  - fn string.count(s: String, sub: String) -> Int
+  - fn string.drop(s: String, n: Int) -> String
+  - fn string.drop_end(s: String, n: Int) -> String
+  - fn string.ends_with(s: String, suffix: String) -> Bool
+  - fn string.first(s: String) -> Option[String]
+  - fn string.from_bytes(bytes: List[Int]) -> String
+  - fn string.from_codepoint(n: Int) -> String
+  - fn string.get(s: String, i: Int) -> Option[String]
+  - fn string.index_of(s: String, needle: String) -> Option[Int]
+  - fn string.is_alpha(s: String) -> Bool
+  - fn string.is_alphanumeric(s: String) -> Bool
+  - fn string.is_digit(s: String) -> Bool
+  - fn string.is_empty(s: String) -> Bool
+  - fn string.is_lower(s: String) -> Bool
+  - fn string.is_upper(s: String) -> Bool
+  - fn string.is_whitespace(s: String) -> Bool
+  - fn string.join(list: List[String], sep: String) -> String
+  - fn string.last(s: String) -> Option[String]
+  - fn string.last_index_of(s: String, needle: String) -> Option[Int]
+  - fn string.len(s: String) -> Int
+  - fn string.lines(s: String) -> List[String]
+  - fn string.pad_end(s: String, n: Int, ch: String) -> String
+  - fn string.pad_start(s: String, n: Int, ch: String) -> String
+  - fn string.repeat(s: String, n: Int) -> String
+  - fn string.replace(s: String, from: String, to: String) -> String
+  - fn string.replace_first(s: String, from: String, to: String) -> String
+  - fn string.reverse(s: String) -> String
+  - fn string.slice(s: String, start: Int, end: Int) -> String
+  - fn string.split(s: String, sep: String) -> List[String]
+  - fn string.starts_with(s: String, prefix: String) -> Bool
+  - fn string.strip_prefix(s: String, prefix: String) -> Option[String]
+  - fn string.strip_suffix(s: String, suffix: String) -> Option[String]
+  - fn string.take(s: String, n: Int) -> String
+  - fn string.take_end(s: String, n: Int) -> String
+  - fn string.to_bytes(s: String) -> List[Int]
+  - fn string.to_lower(s: String) -> String
+  - fn string.to_upper(s: String) -> String
+  - fn string.trim(s: String) -> String
+  - fn string.trim_end(s: String) -> String
+  - fn string.trim_start(s: String) -> String
+
+  ### list
+  - fn list.all[A](xs: List[A], f: fn(A) -> Bool) -> Bool
+  - fn list.any[A](xs: List[A], f: fn(A) -> Bool) -> Bool
+  - fn list.chunk[A](xs: List[A], n: Int) -> List[List[A]]
+  - fn list.contains[A](xs: List[A], x: A) -> Bool
+  - fn list.count[A](xs: List[A], f: fn(A) -> Bool) -> Int
+  - fn list.dedup[A](xs: List[A]) -> List[A]
+  - fn list.drop[A](xs: List[A], n: Int) -> List[A]
+  - fn list.drop_end[A](xs: List[A], n: Int) -> List[A]
+  - fn list.drop_while[A](xs: List[A], f: fn(A) -> Bool) -> List[A]
+  - fn list.enumerate[A](xs: List[A]) -> List[(Int, A)]
+  - fn list.filter[A](xs: List[A], f: fn(A) -> Bool) -> List[A]
+  - fn list.filter_map[A, B](xs: List[A], f: fn(A) -> Option[B]) -> List[B]
+  - fn list.find[A](xs: List[A], f: fn(A) -> Bool) -> Option[A]
+  - fn list.find_index[A](xs: List[A], f: fn(A) -> Bool) -> Option[Int]
+  - fn list.first[A](xs: List[A]) -> Option[A]
+  - fn list.flat_map[A, B](xs: List[A], f: fn(A) -> List[B]) -> List[B]
+  - fn list.flatten[T](xss: List[List[T]]) -> List[T]
+  - fn list.fold[A, B](xs: List[A], init: B, f: fn(B, A) -> B) -> B
+  - fn list.get[A](xs: List[A], i: Int) -> Option[A]
+  - fn list.get_or[A](xs: List[A], i: Int, default: A) -> A
+  - fn list.group_by[A, B](xs: List[A], f: fn(A) -> B) -> Map[B, List[A]]
+  - fn list.index_of[A](xs: List[A], x: A) -> Option[Int]
+  - fn list.insert[A](xs: List[A], i: Int, val: A) -> List[A]
+  - fn list.intersperse[A](xs: List[A], sep: A) -> List[A]
+  - fn list.is_empty[A](xs: List[A]) -> Bool
+  - fn list.join(xs: List[String], sep: String) -> String
+  - fn list.last[A](xs: List[A]) -> Option[A]
+  - fn list.len[A](xs: List[A]) -> Int
+  - fn list.map[A, B](xs: List[A], f: fn(A) -> B) -> List[B]
+  - fn list.max[A](xs: List[A]) -> Option[A]
+  - fn list.min[A](xs: List[A]) -> Option[A]
+  - fn list.partition[A](xs: List[A], f: fn(A) -> Bool) -> (List[A], List[A])
+  - fn list.product(xs: List[Int]) -> Int
+  - fn list.range(start: Int, end: Int) -> List[Int]
+  - fn list.reduce[A](xs: List[A], f: fn(A, A) -> A) -> Option[A]
+  - fn list.repeat[A](val: A, n: Int) -> List[A]
+  - fn list.reverse[A](xs: List[A]) -> List[A]
+  - fn list.set[A](xs: List[A], i: Int, val: A) -> List[A]
+  - fn list.slice[A](xs: List[A], start: Int, end: Int) -> List[A]
+  - fn list.sort[A](xs: List[A]) -> List[A]
+  - fn list.sort_by[A, B](xs: List[A], f: fn(A) -> B) -> List[A]
+  - fn list.sum(xs: List[Int]) -> Int
+  - fn list.take[A](xs: List[A], n: Int) -> List[A]
+  - fn list.take_end[A](xs: List[A], n: Int) -> List[A]
+  - fn list.take_while[A](xs: List[A], f: fn(A) -> Bool) -> List[A]
+  - fn list.unique[A](xs: List[A]) -> List[A]
+  - fn list.unique_by[A, K](xs: List[A], f: fn(A) -> K) -> List[A]
+  - fn list.update[A](xs: List[A], i: Int, f: fn(A) -> A) -> List[A]
+  - fn list.windows[A](xs: List[A], n: Int) -> List[List[A]]
+  - fn list.zip[A, B](xs: List[A], ys: List[B]) -> List[(A, B)]
+  - fn list.zip_with[A, B, C](xs: List[A], ys: List[B], f: fn(A, B) -> C) -> List[C]
+
+  ### int
+  - fn int.abs(n: Int) -> Int
+  - fn int.clamp(n: Int, lo: Int, hi: Int) -> Int
+  - fn int.from_hex(s: String) -> Result[Int, String]
+  - fn int.max(a: Int, b: Int) -> Int
+  - fn int.min(a: Int, b: Int) -> Int
+  - fn int.parse(s: String) -> Result[Int, String]
+  - fn int.to_float(n: Int) -> Float
+  - fn int.to_hex(n: Int) -> String
+  - fn int.to_string(n: Int) -> String
+
+  ### option
+  - fn option.filter[A](o: Option[A], f: fn(A) -> Bool) -> Option[A]
+  - fn option.flat_map[A, B](o: Option[A], f: fn(A) -> Option[B]) -> Option[B]
+  - fn option.flatten[A](o: Option[Option[A]]) -> Option[A]
+  - fn option.is_none[A](o: Option[A]) -> Bool
+  - fn option.is_some[A](o: Option[A]) -> Bool
+  - fn option.map[A, B](o: Option[A], f: fn(A) -> B) -> Option[B]
+  - fn option.or_else[A](o: Option[A], f: fn(Unit) -> Option[A]) -> Option[A]
+  - fn option.to_list[A](o: Option[A]) -> List[A]
+  - fn option.to_result[A](o: Option[A], err: String) -> Result[A, String]
+  - fn option.unwrap_or[A](o: Option[A], default: A) -> A
+  - fn option.unwrap_or_else[A](o: Option[A], f: fn(Unit) -> A) -> A
+  - fn option.zip[A, B](a: Option[A], b: Option[B]) -> Option[(A, B)]
+
+  ### result
+  - fn result.collect[T, E](rs: List[Result[T, E]]) -> Result[List[T], List[E]]
+  - fn result.flat_map[A, B, E](r: Result[A, E], f: fn(A) -> Result[B, E]) -> Result[B, E]
+  - fn result.is_err[A, E](r: Result[A, E]) -> Bool
+  - fn result.is_ok[A, E](r: Result[A, E]) -> Bool
+  - fn result.map[A, B, E](r: Result[A, E], f: fn(A) -> B) -> Result[B, E]
+  - fn result.map_err[A, E, F](r: Result[A, E], f: fn(E) -> F) -> Result[A, F]
+  - fn result.partition[T, E](rs: List[Result[T, E]]) -> (List[T], List[E])
+  - fn result.to_err_option[A, E](r: Result[A, E]) -> Option[E]
+  - fn result.to_option[A, E](r: Result[A, E]) -> Option[A]
+  - fn result.unwrap_or[A, E](r: Result[A, E], default: A) -> A
+  - fn result.unwrap_or_else[A, E](r: Result[A, E], f: fn(E) -> A) -> A
+
+  ### map
+  - fn map.contains[K, V](m: Map[K, V], key: K) -> Bool
+  - fn map.entries[K, V](m: Map[K, V]) -> List[(K, V)]
+  - fn map.from_list[K, V](pairs: List[(K, V)]) -> Map[K, V]
+  - fn map.get[K, V](m: Map[K, V], key: K) -> Option[V]
+  - fn map.get_or[K, V](m: Map[K, V], key: K, default: V) -> V
+  - fn map.is_empty[K, V](m: Map[K, V]) -> Bool
+  - fn map.keys[K, V](m: Map[K, V]) -> List[K]
+  - fn map.len[K, V](m: Map[K, V]) -> Int
+  - fn map.set[K, V](m: Map[K, V], key: K, value: V) -> Map[K, V]
+  - fn map.values[K, V](m: Map[K, V]) -> List[V]
+  - fn map.new[K, V]() -> Map[K, V]
+
+  ### set
+  - fn set.contains[A](s: Set[A], value: A) -> Bool
+  - fn set.from_list[A](xs: List[A]) -> Set[A]
+  - fn set.insert[A](s: Set[A], value: A) -> Set[A]
+  - fn set.is_empty[A](s: Set[A]) -> Bool
+  - fn set.len[A](s: Set[A]) -> Int
+  - fn set.new[A]() -> Set[A]
+  - fn set.to_list[A](s: Set[A]) -> List[A]
+  - fn set.union[A](a: Set[A], b: Set[A]) -> Set[A]
+
+  ### math
+  - fn math.abs(n: Int) -> Int
+  - fn math.max(a: Int, b: Int) -> Int
+  - fn math.min(a: Int, b: Int) -> Int
+  - fn math.pow(base: Int, exp: Int) -> Int
+  - fn math.sign(n: Int) -> Int
+  - fn math.factorial(n: Int) -> Int
+  - fn math.sqrt(x: Float) -> Float
+  - fn math.pi() -> Float
   """
 
 // ── Types ──
