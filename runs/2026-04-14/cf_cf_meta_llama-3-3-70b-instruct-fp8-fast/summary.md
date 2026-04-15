@@ -50,6 +50,17 @@
 - name-error: 3
 - unknown: 2
 
+## Retry distribution
+
+- pass-0: 5
+- fail-0: 0
+- pass-1: 6
+- fail-1: 0
+- pass-2: 3
+- fail-2: 0
+- pass-3: 0
+- fail-3: 16
+
 ## Recoverable diagnostic codes (passed after retry)
 
 - `E002`: 8

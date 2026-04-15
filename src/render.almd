@@ -89,6 +89,18 @@ fn render_summary(date: String, model: String, results: List[RunResult]) -> Stri
   let unrecov_section = if list.is_empty(unrecov_unique) then ""
     else "\n## Unrecoverable diagnostic codes (still failing after " + int.to_string(3) + " retries)\n\n" + unrecov_lines + "\n"
 
+  // Retry distribution: how many tasks landed at each retry count, split
+  // by pass/fail. Reveals whether the diagnostic loop converges with more
+  // retries (the headline question for retry-success accuracy).
+  let dist_buckets = [0, 1, 2, 3]
+  let dist_lines = dist_buckets
+    |> list.flat_map((n) => [
+      "- pass-" + int.to_string(n) + ": " + int.to_string(list.count(results, (r) => r.success and r.retries == n)),
+      "- fail-" + int.to_string(n) + ": " + int.to_string(list.count(results, (r) => not r.success and r.retries == n)),
+    ])
+    |> string.join("\n")
+  let dist_section = "\n## Retry distribution\n\n" + dist_lines + "\n"
+
   "# MSR run " + date + "\n\n" +
   "- **model**: `" + model + "`\n" +
   "- **tasks**: " + int.to_string(total) + "\n" +
@@ -100,6 +112,7 @@ fn render_summary(date: String, model: String, results: List[RunResult]) -> Stri
   "|---|---|---|---|---|\n" +
   rows + "\n\n" +
   "## By category\n\n" + cat_lines + "\n" +
+  dist_section +
   recov_section +
   unrecov_section
 }

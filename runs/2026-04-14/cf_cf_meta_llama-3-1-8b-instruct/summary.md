@@ -49,6 +49,17 @@
 - name-error: 7
 - import-error: 1
 
+## Retry distribution
+
+- pass-0: 10
+- fail-0: 0
+- pass-1: 1
+- fail-1: 0
+- pass-2: 0
+- fail-2: 0
+- pass-3: 0
+- fail-3: 19
+
 ## Unrecoverable diagnostic codes (still failing after 3 retries)
 
 - `E001`: 6

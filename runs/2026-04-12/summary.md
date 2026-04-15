@@ -51,6 +51,17 @@
 - import-error: 1
 - unknown: 2
 
+## Retry distribution
+
+- pass-0: 6
+- fail-0: 0
+- pass-1: 7
+- fail-1: 0
+- pass-2: 1
+- fail-2: 0
+- pass-3: 0
+- fail-3: 16
+
 ## Unrecoverable diagnostic codes (still failing after 3 retries)
 
 - `E001`: 3
