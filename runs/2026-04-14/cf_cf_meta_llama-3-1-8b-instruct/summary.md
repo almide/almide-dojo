@@ -8,35 +8,50 @@
 
 ## Per-task
 
-| task | result | retries |
-|---|---|---|
-| `anagram-check` | FAIL | 3 |
-| `balanced-parens` | FAIL | 3 |
-| `binary-search` | FAIL | 3 |
-| `caesar-cipher` | FAIL | 3 |
-| `clamp` | pass | 0 |
-| `count-vowels` | pass | 0 |
-| `custom-linked-list` | FAIL | 3 |
-| `expression-eval` | pass | 0 |
-| `factorial` | FAIL | 3 |
-| `fibonacci` | pass | 0 |
-| `fizzbuzz` | pass | 0 |
-| `flatten-nested` | pass | 0 |
-| `gcd` | pass | 0 |
-| `is-palindrome` | FAIL | 3 |
-| `is-prime` | FAIL | 3 |
-| `list-sum` | pass | 0 |
-| `matrix-ops` | FAIL | 3 |
-| `max-of-list` | FAIL | 3 |
-| `mini-json-query` | FAIL | 3 |
-| `partition-list` | pass | 1 |
-| `remove-duplicates` | FAIL | 3 |
-| `repeat-string` | pass | 0 |
-| `result-pipeline` | FAIL | 3 |
-| `roman-numeral` | FAIL | 3 |
-| `run-length-encoding` | FAIL | 3 |
-| `string-reverse` | FAIL | 3 |
-| `sum-digits` | pass | 0 |
-| `title-case` | FAIL | 3 |
-| `word-count` | FAIL | 3 |
-| `zip-with` | FAIL | 3 |
+| task | result | category | code | retries |
+|---|---|---|---|---|
+| `anagram-check` | FAIL | type-error | `E002` | 3 |
+| `balanced-parens` | FAIL | name-error | `E003` | 3 |
+| `binary-search` | FAIL | name-error | `E003` | 3 |
+| `caesar-cipher` | FAIL | name-error | `E003` | 3 |
+| `clamp` | pass | pass-1shot | — | 0 |
+| `count-vowels` | pass | pass-1shot | — | 0 |
+| `custom-linked-list` | FAIL | type-error | `E002` | 3 |
+| `expression-eval` | pass | pass-1shot | — | 0 |
+| `factorial` | FAIL | type-error | `E001` | 3 |
+| `fibonacci` | pass | pass-1shot | — | 0 |
+| `fizzbuzz` | pass | pass-1shot | — | 0 |
+| `flatten-nested` | pass | pass-1shot | — | 0 |
+| `gcd` | pass | pass-1shot | — | 0 |
+| `is-palindrome` | FAIL | type-error | `E001` | 3 |
+| `is-prime` | FAIL | type-error | `E001` | 3 |
+| `list-sum` | pass | pass-1shot | — | 0 |
+| `matrix-ops` | FAIL | name-error | `E003` | 3 |
+| `max-of-list` | FAIL | type-error | `E002` | 3 |
+| `mini-json-query` | FAIL | type-error | `E002` | 3 |
+| `partition-list` | pass | pass-retry | — | 1 |
+| `remove-duplicates` | FAIL | type-error | `E002` | 3 |
+| `repeat-string` | pass | pass-1shot | — | 0 |
+| `result-pipeline` | FAIL | type-error | `E001` | 3 |
+| `roman-numeral` | FAIL | name-error | `E003` | 3 |
+| `run-length-encoding` | FAIL | name-error | `E003` | 3 |
+| `string-reverse` | FAIL | type-error | `E001` | 3 |
+| `sum-digits` | pass | pass-1shot | — | 0 |
+| `title-case` | FAIL | type-error | `E001` | 3 |
+| `word-count` | FAIL | import-error | `E004` | 3 |
+| `zip-with` | FAIL | name-error | `E003` | 3 |
+
+## By category
+
+- pass-1shot: 10
+- pass-retry: 1
+- type-error: 11
+- name-error: 7
+- import-error: 1
+
+## Top diagnostic codes
+
+- `E001`: 6
+- `E002`: 5
+- `E003`: 7
+- `E004`: 1
