@@ -3,7 +3,8 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: parse-error
+- **category**: type-error
+- **diagnostic code**: `E005`
 
 ## Attempts
 
@@ -11,48 +12,41 @@
 
 ```almide
 fn word_count(s: String) -> Map[String, Int] = 
-  let words = string.split(s, " ").filter(x => x != "")
-  list.fold(words, Map[String, Int](), (map, word) => 
-    map.get_or(word, 0) + 1 => map.set(word, map.get_or(word, 0) + 1))
+  list.filter(string.split(s, " "), (x) => x != "") 
+  |> list.fold(Map[String, Int](), (m, x) => 
+    match m.get_or(x, 0) {
+      some(count) => m.set(x, count + 1),
+      none => m.set(x, 1)
+    })
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-word-count-0.almd
-error: Lambda parameter must be wrapped in parentheses
-  --> /tmp/dojo-word-count-0.almd:2:45
-  in lambda syntax
-  hint: Almide lambdas require parentheses around parameters. Write `(x) => expr` instead of `x => expr`
+error[E005]: argument 'f' expects fn(Map, String) -> Map but got fn(fn(?2, Int) -> ?3, ?2) -> ?3
+  --> /tmp/dojo-word-count-0.almd:6:15
+  in call to list.fold()
+  hint: Fix the argument type
   |
-2 |   let words = string.split(s, " ").filter(x => x != "")
-  |                                             ^^
-error: Lambda parameter must be wrapped in parentheses at line 2:45
-  --> /tmp/dojo-word-count-0.almd:2:45
+6 |       none => m.set(x, 1)
+  |               ^
+error[E001]: type mismatch in call to list.fold(): expected fn(Map, String) -> Map but got fn(fn(?2, Int) -> ?3, ?2) -> ?3
+  --> /tmp/dojo-word-count-0.almd:6:15
+  in call to list.fold()
+  hint: Fix the expression type or change the expected type
   |
-2 |   let words = string.split(s, " ").filter(x => x != "")
-  |                                             ^
-error: Lambda parameter must be wrapped in parentheses
-  --> /tmp/dojo-word-count-0.almd:4:29
-  in lambda syntax
-  hint: Almide lambdas require parentheses around parameters. Write `(x) => expr` instead of `x => expr`
-  |
-4 |     map.get_or(word, 0) + 1 => map.set(word, map.get_or(word, 0) + 1))
-  |                             ^^
-error: Lambda parameter must be wrapped in parentheses at line 4:29
-  --> /tmp/dojo-word-count-0.almd:4:29
-  |
-4 |     map.get_or(word, 0) + 1 => map.set(word, map.get_or(word, 0) + 1))
-  |                             ^
-error[E001]: type mismatch in fn 'word_count': expected Map[String, Int] but got Unit
-  --> /tmp/dojo-word-count-0.almd:2:3
+6 |       none => m.set(x, 1)
+  |               ^
+error[E001]: type mismatch in fn 'word_count': expected Map[String, Int] but got Map
+  --> /tmp/dojo-word-count-0.almd:6:15
   in fn 'word_count'
   hint: Fix the expression type or change the expected type
   |
-2 |   let words = string.split(s, " ").filter(x => x != "")
-  |   ^^^
+6 |       none => m.set(x, 1)
+  |               ^
 
-5 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-word-count-0.almd:
 compile failed
 FAILED: /tmp/dojo-word-count-0.almd
@@ -65,75 +59,55 @@ FAILED: /tmp/dojo-word-count-0.almd
 
 ```almide
 fn word_count(s: String) -> Map[String, Int] = 
-  let words = string.split(s, " ").filter(x => x != "")
-  list.fold(words, Map[String, Int](), (map, word) => 
-    let count = map.get_or(word, 0)
-    map.set(word, count + 1))
+  list.filter(string.split(s, " "), (x) => x != "") 
+  |> list.fold(Map[String, Int](), (m, x) => 
+    match m.get_or(x, 0) {
+      some(count) => Map.set(m, x, count + 1),
+      none => Map.set(m, x, 1)
+    })
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-word-count-1.almd
-error: Lambda parameter must be wrapped in parentheses
-  --> /tmp/dojo-word-count-1.almd:2:45
-  in lambda syntax
-  hint: Almide lambdas require parentheses around parameters. Write `(x) => expr` instead of `x => expr`
+error[E005]: argument 'f' expects fn(Map, String) -> Map but got fn(fn(?2, Int) -> ?3, ?2) -> ?4
+  --> /tmp/dojo-word-count-1.almd:6:15
+  in call to list.fold()
+  hint: Fix the argument type
   |
-2 |   let words = string.split(s, " ").filter(x => x != "")
-  |                                             ^^
-error: Lambda parameter must be wrapped in parentheses at line 2:45
-  --> /tmp/dojo-word-count-1.almd:2:45
+6 |       none => Map.set(m, x, 1)
+  |               ^^^
+error[E001]: type mismatch in method call: expected Map but got fn(fn(?2, Int) -> ?3, ?2, Unknown) -> ?4
+  --> /tmp/dojo-word-count-1.almd:5:22
+  in method call
+  hint: Fix the expression type or change the expected type
   |
-2 |   let words = string.split(s, " ").filter(x => x != "")
-  |                                             ^
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-word-count-1.almd:4:5
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+5 |       some(count) => Map.set(m, x, count + 1),
+  |                      ^^^
+error[E001]: type mismatch in method call: expected Map but got fn(fn(?2, Int) -> ?3, ?2, Int) -> ?4
+  --> /tmp/dojo-word-count-1.almd:6:15
+  in method call
+  hint: Fix the expression type or change the expected type
   |
-4 |     let count = map.get_or(word, 0)
-  |     ^^^
-error: 'let' is not an expression in Almide at line 4:5
-  --> /tmp/dojo-word-count-1.almd:4:5
+6 |       none => Map.set(m, x, 1)
+  |               ^^^
+error[E001]: type mismatch in call to list.fold(): expected fn(Map, String) -> Map but got fn(fn(?2, Int) -> ?3, ?2) -> ?4
+  --> /tmp/dojo-word-count-1.almd:6:15
+  in call to list.fold()
+  hint: Fix the expression type or change the expected type
   |
-4 |     let count = map.get_or(word, 0)
-  |     ^
-error: Expected expression at line 5:29 (got RParen ')')
-  --> /tmp/dojo-word-count-1.almd:5:29
-  |
-5 |     map.set(word, count + 1))
-  |                             ^
-error[E003]: undefined variable 'word'
-  --> /tmp/dojo-word-count-1.almd:5:13
-  in variable word
-  hint: Check the variable name
-  |
-5 |     map.set(word, count + 1))
-  |             ^^^^
-error[E003]: undefined variable 'count'
-  --> /tmp/dojo-word-count-1.almd:5:19
-  in variable count
-  hint: Check the variable name
-  |
-5 |     map.set(word, count + 1))
-  |                   ^^^^^
-error[E004]: map.set() expects 3 argument(s) but got 2
-  --> /tmp/dojo-word-count-1.almd:5:27
-  in call to map.set()
-  hint: Check the number of arguments
-  |
-5 |     map.set(word, count + 1))
-  |                           ^
-error[E001]: type mismatch in fn 'word_count': expected Map[String, Int] but got Unit
-  --> /tmp/dojo-word-count-1.almd:5:27
+6 |       none => Map.set(m, x, 1)
+  |               ^^^
+error[E001]: type mismatch in fn 'word_count': expected Map[String, Int] but got Map
+  --> /tmp/dojo-word-count-1.almd:6:15
   in fn 'word_count'
   hint: Fix the expression type or change the expected type
   |
-5 |     map.set(word, count + 1))
-  |                           ^
+6 |       none => Map.set(m, x, 1)
+  |               ^^^
 
-9 error(s) found
+5 error(s) found
 Compile error for /tmp/dojo-word-count-1.almd:
 compile failed
 FAILED: /tmp/dojo-word-count-1.almd
@@ -146,75 +120,55 @@ FAILED: /tmp/dojo-word-count-1.almd
 
 ```almide
 fn word_count(s: String) -> Map[String, Int] = 
-  let words = string.split(s, " ").filter(x => x != "").map(x => x)
-  list.fold(words, Map[String, Int](), (map, word) => 
-    let count = map.get_or(word, 0)
-    map.set(word, count + 1))
+  list.filter(string.split(s, " "), (x) => x != "") 
+  |> list.fold(Map[String, Int](), (m, x) => 
+    match m.get_or(x, 0) {
+      some(count) => Map.set(m, x, count + 1),
+      none => Map.set(m, x, 1)
+    })
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-word-count-2.almd
-error: Lambda parameter must be wrapped in parentheses
-  --> /tmp/dojo-word-count-2.almd:2:45
-  in lambda syntax
-  hint: Almide lambdas require parentheses around parameters. Write `(x) => expr` instead of `x => expr`
+error[E005]: argument 'f' expects fn(Map, String) -> Map but got fn(fn(?2, Int) -> ?3, ?2) -> ?4
+  --> /tmp/dojo-word-count-2.almd:6:15
+  in call to list.fold()
+  hint: Fix the argument type
   |
-2 |   let words = string.split(s, " ").filter(x => x != "").map(x => x)
-  |                                             ^^
-error: Lambda parameter must be wrapped in parentheses at line 2:45
-  --> /tmp/dojo-word-count-2.almd:2:45
+6 |       none => Map.set(m, x, 1)
+  |               ^^^
+error[E001]: type mismatch in method call: expected Map but got fn(fn(?2, Int) -> ?3, ?2, Unknown) -> ?4
+  --> /tmp/dojo-word-count-2.almd:5:22
+  in method call
+  hint: Fix the expression type or change the expected type
   |
-2 |   let words = string.split(s, " ").filter(x => x != "").map(x => x)
-  |                                             ^
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-word-count-2.almd:4:5
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+5 |       some(count) => Map.set(m, x, count + 1),
+  |                      ^^^
+error[E001]: type mismatch in method call: expected Map but got fn(fn(?2, Int) -> ?3, ?2, Int) -> ?4
+  --> /tmp/dojo-word-count-2.almd:6:15
+  in method call
+  hint: Fix the expression type or change the expected type
   |
-4 |     let count = map.get_or(word, 0)
-  |     ^^^
-error: 'let' is not an expression in Almide at line 4:5
-  --> /tmp/dojo-word-count-2.almd:4:5
+6 |       none => Map.set(m, x, 1)
+  |               ^^^
+error[E001]: type mismatch in call to list.fold(): expected fn(Map, String) -> Map but got fn(fn(?2, Int) -> ?3, ?2) -> ?4
+  --> /tmp/dojo-word-count-2.almd:6:15
+  in call to list.fold()
+  hint: Fix the expression type or change the expected type
   |
-4 |     let count = map.get_or(word, 0)
-  |     ^
-error: Expected expression at line 5:29 (got RParen ')')
-  --> /tmp/dojo-word-count-2.almd:5:29
-  |
-5 |     map.set(word, count + 1))
-  |                             ^
-error[E003]: undefined variable 'word'
-  --> /tmp/dojo-word-count-2.almd:5:13
-  in variable word
-  hint: Check the variable name
-  |
-5 |     map.set(word, count + 1))
-  |             ^^^^
-error[E003]: undefined variable 'count'
-  --> /tmp/dojo-word-count-2.almd:5:19
-  in variable count
-  hint: Check the variable name
-  |
-5 |     map.set(word, count + 1))
-  |                   ^^^^^
-error[E004]: map.set() expects 3 argument(s) but got 2
-  --> /tmp/dojo-word-count-2.almd:5:27
-  in call to map.set()
-  hint: Check the number of arguments
-  |
-5 |     map.set(word, count + 1))
-  |                           ^
-error[E001]: type mismatch in fn 'word_count': expected Map[String, Int] but got Unit
-  --> /tmp/dojo-word-count-2.almd:5:27
+6 |       none => Map.set(m, x, 1)
+  |               ^^^
+error[E001]: type mismatch in fn 'word_count': expected Map[String, Int] but got Map
+  --> /tmp/dojo-word-count-2.almd:6:15
   in fn 'word_count'
   hint: Fix the expression type or change the expected type
   |
-5 |     map.set(word, count + 1))
-  |                           ^
+6 |       none => Map.set(m, x, 1)
+  |               ^^^
 
-9 error(s) found
+5 error(s) found
 Compile error for /tmp/dojo-word-count-2.almd:
 compile failed
 FAILED: /tmp/dojo-word-count-2.almd
@@ -227,75 +181,55 @@ FAILED: /tmp/dojo-word-count-2.almd
 
 ```almide
 fn word_count(s: String) -> Map[String, Int] = 
-  let words = string.split(s, " ").filter(x => x != "").map(x => x)
-  list.fold(words, Map[String, Int](), (map, word) => 
-    let count = map.get_or(word, 0)
-    map.set(word, count + 1)).as_map
+  list.filter(string.split(s, " "), (x) => x != "") 
+  |> list.fold(Map[String, Int](), (m, x) => 
+    match m.get_or(x, 0) {
+      some(count) => Map.set(m, x, count + 1),
+      none => Map.set(m, x, 1)
+    })
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-word-count-3.almd
-error: Lambda parameter must be wrapped in parentheses
-  --> /tmp/dojo-word-count-3.almd:2:45
-  in lambda syntax
-  hint: Almide lambdas require parentheses around parameters. Write `(x) => expr` instead of `x => expr`
+error[E005]: argument 'f' expects fn(Map, String) -> Map but got fn(fn(?2, Int) -> ?3, ?2) -> ?4
+  --> /tmp/dojo-word-count-3.almd:6:15
+  in call to list.fold()
+  hint: Fix the argument type
   |
-2 |   let words = string.split(s, " ").filter(x => x != "").map(x => x)
-  |                                             ^^
-error: Lambda parameter must be wrapped in parentheses at line 2:45
-  --> /tmp/dojo-word-count-3.almd:2:45
+6 |       none => Map.set(m, x, 1)
+  |               ^^^
+error[E001]: type mismatch in method call: expected Map but got fn(fn(?2, Int) -> ?3, ?2, Unknown) -> ?4
+  --> /tmp/dojo-word-count-3.almd:5:22
+  in method call
+  hint: Fix the expression type or change the expected type
   |
-2 |   let words = string.split(s, " ").filter(x => x != "").map(x => x)
-  |                                             ^
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-word-count-3.almd:4:5
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+5 |       some(count) => Map.set(m, x, count + 1),
+  |                      ^^^
+error[E001]: type mismatch in method call: expected Map but got fn(fn(?2, Int) -> ?3, ?2, Int) -> ?4
+  --> /tmp/dojo-word-count-3.almd:6:15
+  in method call
+  hint: Fix the expression type or change the expected type
   |
-4 |     let count = map.get_or(word, 0)
-  |     ^^^
-error: 'let' is not an expression in Almide at line 4:5
-  --> /tmp/dojo-word-count-3.almd:4:5
+6 |       none => Map.set(m, x, 1)
+  |               ^^^
+error[E001]: type mismatch in call to list.fold(): expected fn(Map, String) -> Map but got fn(fn(?2, Int) -> ?3, ?2) -> ?4
+  --> /tmp/dojo-word-count-3.almd:6:15
+  in call to list.fold()
+  hint: Fix the expression type or change the expected type
   |
-4 |     let count = map.get_or(word, 0)
-  |     ^
-error: Expected expression at line 5:29 (got RParen ')')
-  --> /tmp/dojo-word-count-3.almd:5:29
-  |
-5 |     map.set(word, count + 1)).as_map
-  |                             ^
-error[E003]: undefined variable 'word'
-  --> /tmp/dojo-word-count-3.almd:5:13
-  in variable word
-  hint: Check the variable name
-  |
-5 |     map.set(word, count + 1)).as_map
-  |             ^^^^
-error[E003]: undefined variable 'count'
-  --> /tmp/dojo-word-count-3.almd:5:19
-  in variable count
-  hint: Check the variable name
-  |
-5 |     map.set(word, count + 1)).as_map
-  |                   ^^^^^
-error[E004]: map.set() expects 3 argument(s) but got 2
-  --> /tmp/dojo-word-count-3.almd:5:27
-  in call to map.set()
-  hint: Check the number of arguments
-  |
-5 |     map.set(word, count + 1)).as_map
-  |                           ^
-error[E001]: type mismatch in fn 'word_count': expected Map[String, Int] but got Unit
-  --> /tmp/dojo-word-count-3.almd:5:27
+6 |       none => Map.set(m, x, 1)
+  |               ^^^
+error[E001]: type mismatch in fn 'word_count': expected Map[String, Int] but got Map
+  --> /tmp/dojo-word-count-3.almd:6:15
   in fn 'word_count'
   hint: Fix the expression type or change the expected type
   |
-5 |     map.set(word, count + 1)).as_map
-  |                           ^
+6 |       none => Map.set(m, x, 1)
+  |               ^^^
 
-9 error(s) found
+5 error(s) found
 Compile error for /tmp/dojo-word-count-3.almd:
 compile failed
 FAILED: /tmp/dojo-word-count-3.almd

@@ -12,5 +12,5 @@
 ```almide
 fn sum_digits(n: Int) -> Int = 
   if n == 0 then 0 
-  else n.abs() % 10 + sum_digits(n.abs() / 10)
+  else int.abs(n) % 10 + sum_digits(int.abs(n) / 10)
 ```

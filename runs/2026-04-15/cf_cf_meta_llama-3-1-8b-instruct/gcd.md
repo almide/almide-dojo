@@ -11,7 +11,10 @@
 
 ```almide
 fn gcd(a: Int, b: Int) -> Int = 
-  if b == 0 then a 
-  else if a < b then gcd(b, a) 
-  else gcd(b, a % b)
+  if b == 0 then a else 
+  match (a % b, b) { 
+    (0, _) => b, 
+    (_, 0) => a, 
+    _ => gcd(b, a % b) 
+  }
 ```

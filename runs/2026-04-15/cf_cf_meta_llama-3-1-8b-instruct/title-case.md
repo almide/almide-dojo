@@ -51,7 +51,7 @@ FAILED: /tmp/dojo-title-case-1.almd
 fn title_case(s: String) -> String = 
   let words = string.split(s, " ")
   let capitalized_words = list.map(words, (word) => string.to_lower(word) + string.capitalize(word))
-  string.join(list.map(capitalized_words, (word) => string.to_lower(word) + string.capitalize(word)), " ")
+  string.join(list.map(capitalized_words, (x) => x), " ")
 ```
 
 **Diagnostic:**
@@ -69,8 +69,8 @@ FAILED: /tmp/dojo-title-case-2.almd
 ```almide
 fn title_case(s: String) -> String = 
   let words = string.split(s, " ")
-  let capitalized_words = list.map(words, (word) => string.capitalize(word))
-  string.join(capitalized_words, " ")
+  let capitalized_words = list.map(words, (word) => string.capitalize(word) + string.to_lower(string.drop(word, 1)))
+  string.join(list.map(capitalized_words, (x) => x), " ")
 ```
 
 **Diagnostic:**

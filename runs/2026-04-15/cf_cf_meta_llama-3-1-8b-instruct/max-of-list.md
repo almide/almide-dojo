@@ -14,7 +14,7 @@
 fn max_of_list(xs: List[Int]) -> Option[Int] = 
   if list.is_empty(xs) then none 
   else 
-    list.fold(xs, xs.head, (x, y) => if x > y then x else y)
+    list.fold(xs, xs.head, (max, x) => if x > max then x else max)
 ```
 
 **Diagnostic:**
@@ -22,17 +22,21 @@ fn max_of_list(xs: List[Int]) -> Option[Int] =
 ```
 Compiling /tmp/dojo-max-of-list-0.almd
 Compile error for /tmp/dojo-max-of-list-0.almd:
+codegen produced invalid Rust — this is an Almide bug.
+Please file a minimal repro at https://github.com/almide/almide/issues
+
+--- rustc output (edited to hide generated paths) ---
 error[E0609]: no field `head` on type `Vec<i64>`
-   --> src/main.rs:248:42
+   --> <generated.rs>:248:42
     |
-248 |         (xs.clone()).into_iter().fold(xs.head, move |x, y| {
+248 |         (xs.clone()).into_iter().fold(xs.head, move |max, x| {
     |                                          ^^^^ unknown field
 
 
 error[E0308]: mismatched types
-   --> src/main.rs:250:34
+   --> <generated.rs>:250:34
     |
-250 |             let y: Option<i64> = y.clone();
+250 |             let x: Option<i64> = x.clone();
     |                    -----------   ^^^^^^^^^ expected `Option<i64>`, found `i64`
     |                    |
     |                    expected due to this
@@ -41,11 +45,11 @@ error[E0308]: mismatched types
                found type `i64`
 help: try wrapping the expression in `Some`
     |
-250 |             let y: Option<i64> = Some(y.clone());
+250 |             let x: Option<i64> = Some(x.clone());
     |                                  +++++         +
 
 
-error: could not compile `almide-out` (bin "almide-out" test) due to 2 previous errors; 2 warnings emitted
+error: could not compile `almide-generated` (bin "almide-generated" test) due to 2 previous errors; 2 warnings emitted
 
 FAILED: /tmp/dojo-max-of-list-0.almd
 
@@ -59,7 +63,7 @@ FAILED: /tmp/dojo-max-of-list-0.almd
 fn max_of_list(xs: List[Int]) -> Option[Int] = 
   if list.is_empty(xs) then none 
   else 
-    list.fold(xs, xs.head, (x, y) => if x > y then x else y)
+    list.fold(xs, some(xs.head), (max, x) => if x > max.unwrap() then some(x) else max)
 ```
 
 **Diagnostic:**
@@ -67,30 +71,18 @@ fn max_of_list(xs: List[Int]) -> Option[Int] =
 ```
 Compiling /tmp/dojo-max-of-list-1.almd
 Compile error for /tmp/dojo-max-of-list-1.almd:
+codegen produced invalid Rust — this is an Almide bug.
+Please file a minimal repro at https://github.com/almide/almide/issues
+
+--- rustc output (edited to hide generated paths) ---
 error[E0609]: no field `head` on type `Vec<i64>`
-   --> src/main.rs:248:42
+   --> <generated.rs>:248:47
     |
-248 |         (xs.clone()).into_iter().fold(xs.head, move |x, y| {
-    |                                          ^^^^ unknown field
+248 |         (xs.clone()).into_iter().fold(Some(xs.head), move |max, x| {
+    |                                               ^^^^ unknown field
 
 
-error[E0308]: mismatched types
-   --> src/main.rs:250:34
-    |
-250 |             let y: Option<i64> = y.clone();
-    |                    -----------   ^^^^^^^^^ expected `Option<i64>`, found `i64`
-    |                    |
-    |                    expected due to this
-    |
-    = note: expected enum `Option<i64>`
-               found type `i64`
-help: try wrapping the expression in `Some`
-    |
-250 |             let y: Option<i64> = Some(y.clone());
-    |                                  +++++         +
-
-
-error: could not compile `almide-out` (bin "almide-out" test) due to 2 previous errors; 2 warnings emitted
+error: could not compile `almide-generated` (bin "almide-generated" test) due to 1 previous error; 2 warnings emitted
 
 FAILED: /tmp/dojo-max-of-list-1.almd
 
@@ -104,22 +96,29 @@ FAILED: /tmp/dojo-max-of-list-1.almd
 fn max_of_list(xs: List[Int]) -> Option[Int] = 
   if list.is_empty(xs) then none 
   else 
-    list.fold(xs, some(xs.head), (x, y) => if x > y then x else y)
+    some(xs.fold((x) => x, (max, x) => if x > max then x else max))
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-max-of-list-2.almd
-error[E001]: type mismatch in call to list.fold(): expected fn(Option[Unknown], Int) -> Option[Unknown] but got fn(Option[Unknown], Option[Unknown]) -> Option[Unknown]
-  --> /tmp/dojo-max-of-list-2.almd:4:65
+error[E001]: type mismatch in call to list.fold(): expected fn(fn(?1) -> ?1, Int) -> fn(?1) -> ?1 but got fn(fn(?1) -> ?1, fn(?1) -> ?1) -> fn(?1) -> ?1
+  --> /tmp/dojo-max-of-list-2.almd:4:10
   in call to list.fold()
   hint: Fix the expression type or change the expected type
   |
-4 |     list.fold(xs, some(xs.head), (x, y) => if x > y then x else y)
-  |                                                                 ^
+4 |     some(xs.fold((x) => x, (max, x) => if x > max then x else max))
+  |          ^^
+error[E001]: type mismatch in fn 'max_of_list': expected Option[Int] but got Option[fn(?1) -> ?1]
+  --> /tmp/dojo-max-of-list-2.almd:4:10
+  in fn 'max_of_list'
+  hint: Fix the expression type or change the expected type
+  |
+4 |     some(xs.fold((x) => x, (max, x) => if x > max then x else max))
+  |          ^^
 
-1 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-max-of-list-2.almd:
 compile failed
 FAILED: /tmp/dojo-max-of-list-2.almd
@@ -134,22 +133,29 @@ FAILED: /tmp/dojo-max-of-list-2.almd
 fn max_of_list(xs: List[Int]) -> Option[Int] = 
   if list.is_empty(xs) then none 
   else 
-    list.fold(xs, some(xs.head), (x, y) => if x > y then x else y)
+    some(xs.fold((x) => x, (max, x) => if x > max then x else max))(0)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-max-of-list-3.almd
-error[E001]: type mismatch in call to list.fold(): expected fn(Option[Unknown], Int) -> Option[Unknown] but got fn(Option[Unknown], Option[Unknown]) -> Option[Unknown]
-  --> /tmp/dojo-max-of-list-3.almd:4:65
+error[E001]: type mismatch in call to list.fold(): expected fn(fn(?1) -> ?1, Int) -> fn(?1) -> ?1 but got fn(fn(?1) -> ?1, fn(?1) -> ?1) -> fn(?1) -> ?1
+  --> /tmp/dojo-max-of-list-3.almd:4:10
   in call to list.fold()
   hint: Fix the expression type or change the expected type
   |
-4 |     list.fold(xs, some(xs.head), (x, y) => if x > y then x else y)
-  |                                                                 ^
+4 |     some(xs.fold((x) => x, (max, x) => if x > max then x else max))(0)
+  |          ^^
+error[E001]: type mismatch in function call: expected Option[fn(?1) -> ?1] but got fn(Int) -> Option[Int]
+  --> /tmp/dojo-max-of-list-3.almd:4:10
+  in function call
+  hint: Fix the expression type or change the expected type
+  |
+4 |     some(xs.fold((x) => x, (max, x) => if x > max then x else max))(0)
+  |          ^^
 
-1 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-max-of-list-3.almd:
 compile failed
 FAILED: /tmp/dojo-max-of-list-3.almd

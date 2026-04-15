@@ -3,8 +3,7 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: type-error
-- **diagnostic code**: `E001`
+- **category**: parse-error
 
 ## Attempts
 
@@ -12,114 +11,92 @@
 
 ```almide
 fn is_balanced(s: String) -> Bool = 
-  match s.chars(s) |> list.fold([], (stack, c) => 
-    match c {
-      '(' => list.push(stack, ")"),
-      '[' => list.push(stack, "]"),
-      '{' => list.push(stack, "}"),
-      ')' => 
-        match list.last(stack) {
-          ')' => list.drop_end(stack, 1),
-          _ => return false
-        },
-      ']' => 
-        match list.last(stack) {
-          ']' => list.drop_end(stack, 1),
-          _ => return false
-        },
-      '}' => 
-        match list.last(stack) {
-          '}' => list.drop_end(stack, 1),
-          _ => return false
-        },
-      _ => stack
-    }
-  ) {
-    some(stack) => list.length(stack) == 0,
-    none => true
-  }
+  let stack = list.fold(list(), "", (acc, c) => 
+    if string.match(c, r"[(){}\[\]]") then 
+      if string.match(c, r"[)\]}") then 
+        if list.is_empty(stack) || not string.match(list.last(stack), r"[({\[]") then 
+          false 
+        else 
+          list.drop_end(stack, 1) 
+      else 
+        list.push(stack, c) 
+    else 
+      acc 
+  ) 
+  in 
+  list.is_empty(stack)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-0.almd
-error: 'return' is not needed in Almide at line 10:16
-  --> /tmp/dojo-balanced-parens-0.almd:10:16
-  hint: The last expression in a block is the return value. Use 'guard ... else' for early returns.
+error: Expected name at line 3:15 (got Match 'match')
+  --> /tmp/dojo-balanced-parens-0.almd:3:15
+  |
+3 |     if string.match(c, r"[(){}\[\]]") then
+  |               ^
+error: Expected name at line 4:17 (got Match 'match')
+  --> /tmp/dojo-balanced-parens-0.almd:4:17
+  |
+4 |       if string.match(c, r"[)\]}") then
+  |                 ^
+error: '||' is not valid in Almide at line 5:33
+  --> /tmp/dojo-balanced-parens-0.almd:5:33
+  hint: Use 'or' for logical OR. Example: if a or b then ...
+  |
+5 |         if list.is_empty(stack) || not string.match(list.last(stack), r"[({\[]") then
+  |                                 ^
+error: Expected expression at line 9:7 (got Else 'else')
+  --> /tmp/dojo-balanced-parens-0.almd:9:7
+  |
+9 |       else
+  |       ^
+error: Expected expression at line 11:5 (got Else 'else')
+  --> /tmp/dojo-balanced-parens-0.almd:11:5
    |
-10 |           _ => return false
-   |                ^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-0.almd:29:47
-  in call to is_balanced()
-  hint: Check the function name
+11 |     else
+   |     ^
+error: Expected expression at line 13:3 (got RParen ')')
+  --> /tmp/dojo-balanced-parens-0.almd:13:3
    |
-29 | test "balanced empty" { assert_eq(is_balanced(""), true) }
-   |                                               ^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-0.almd:30:55
-  in call to is_balanced()
-  hint: Check the function name
+13 |   )
+   |   ^
+error[E003]: undefined variable 'stack'
+  --> /tmp/dojo-balanced-parens-0.almd:8:25
+  in variable stack
+  hint: Check the variable name
+  |
+8 |           list.drop_end(stack, 1)
+  |                         ^^^^^
+error[E003]: undefined variable 'stack'
+  --> /tmp/dojo-balanced-parens-0.almd:10:19
+  in variable stack
+  hint: Check the variable name
    |
-30 | test "balanced simple parens" { assert_eq(is_balanced("()"), true) }
-   |                                                       ^^^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-0.almd:31:48
-  in call to is_balanced()
-  hint: Check the function name
+10 |         list.push(stack, c)
+   |                   ^^^^^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-balanced-parens-0.almd:10:26
+  in variable c
+  hint: Did you mean `s`?
    |
-31 | test "balanced nested" { assert_eq(is_balanced("([{}])"), true) }
-   |                                                ^^^^^^^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-0.almd:32:52
-  in call to is_balanced()
-  hint: Check the function name
+10 |         list.push(stack, c)
+   |                          ^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-balanced-parens-0.almd:12:7
+  in variable acc
+  hint: Check the variable name
    |
-32 | test "balanced sequential" { assert_eq(is_balanced("()[]{}"), true) }
-   |                                                    ^^^^^^^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-0.almd:33:51
-  in call to is_balanced()
-  hint: Check the function name
+12 |       acc
+   |       ^^^
+error[E003]: undefined variable 'stack'
+  --> /tmp/dojo-balanced-parens-0.almd:15:17
+  in variable stack
+  hint: Check the variable name
    |
-33 | test "balanced with text" { assert_eq(is_balanced("fn foo(x: Int) -> { x }"), true) }
-   |                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-0.almd:34:49
-  in call to is_balanced()
-  hint: Check the function name
-   |
-34 | test "unbalanced cross" { assert_eq(is_balanced("([)]"), false) }
-   |                                                 ^^^^^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-0.almd:35:48
-  in call to is_balanced()
-  hint: Check the function name
-   |
-35 | test "unbalanced open" { assert_eq(is_balanced("("), false) }
-   |                                                ^^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-0.almd:36:49
-  in call to is_balanced()
-  hint: Check the function name
-   |
-36 | test "unbalanced close" { assert_eq(is_balanced(")"), false) }
-   |                                                 ^^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-0.almd:37:55
-  in call to is_balanced()
-  hint: Check the function name
-   |
-37 | test "unbalanced extra close" { assert_eq(is_balanced("())"), false) }
-   |                                                       ^^^^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-0.almd:38:52
-  in call to is_balanced()
-  hint: Check the function name
-   |
-38 | test "unbalanced mismatch" { assert_eq(is_balanced("(]"), false) }
-   |                                                    ^^^^
+15 |   list.is_empty(stack)
+   |                 ^^^^^
 
 11 error(s) found
 Compile error for /tmp/dojo-balanced-parens-0.almd:
@@ -134,108 +111,86 @@ FAILED: /tmp/dojo-balanced-parens-0.almd
 
 ```almide
 fn is_balanced(s: String) -> Bool = 
-  match s.chars(s) |> list.fold([], (stack, c) => 
-    match c {
-      '(' => list.push(stack, ")"),
-      '[' => list.push(stack, "]"),
-      '{' => list.push(stack, "}"),
-      ')' => 
-        match list.last(stack) {
-          ')' => list.drop_end(stack, 1),
-          _ => false
-        },
-      ']' => 
-        match list.last(stack) {
-          ']' => list.drop_end(stack, 1),
-          _ => false
-        },
-      '}' => 
-        match list.last(stack) {
-          '}' => list.drop_end(stack, 1),
-          _ => false
-        },
-      _ => stack
-    }
-  ) {
-    some(stack) => list.length(stack) == 0,
-    none => true
-  }
+  let stack = list.fold(list(), "", (acc, c) => 
+    if string.match(c, r"[(){}\[\]]") then 
+      list.push(acc, c) 
+    else if string.match(c, r"[)\]}") then 
+      if list.is_empty(acc) || not string.match(list.last(acc), r"[({\[]") then 
+        false 
+      else 
+        list.drop_end(acc, 1) 
+    else 
+      acc 
+  ) 
+  in 
+  list.is_empty(stack)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-1.almd
-error[E004]: string.chars() expects 1 argument(s) but got 2
-  --> /tmp/dojo-balanced-parens-1.almd:2:9
-  in call to string.chars()
-  hint: Check the number of arguments
+error: Expected name at line 3:15 (got Match 'match')
+  --> /tmp/dojo-balanced-parens-1.almd:3:15
   |
-2 |   match s.chars(s) |> list.fold([], (stack, c) =>
-  |         ^
-error[E005]: argument 'f' expects fn(List[?0], String) -> List[?0] but got fn(Unit, ?2) -> Unit
-  --> /tmp/dojo-balanced-parens-1.almd:22:12
-  in call to list.fold()
-  hint: Fix the argument type. Got Unit where a List was expected. `list.push`/`pop`/`clear` mutate and return Unit — use `xs + [item]` for an immutable append. `for x in xs { ... }` is a side-effect loop (Unit); for element transforms, use `list.map(xs, (x) => ...)`.
+3 |     if string.match(c, r"[(){}\[\]]") then
+  |               ^
+error: Expected expression at line 5:5 (got Else 'else')
+  --> /tmp/dojo-balanced-parens-1.almd:5:5
+  |
+5 |     else if string.match(c, r"[)\]}") then
+  |     ^
+error: '||' is not valid in Almide at line 6:29
+  --> /tmp/dojo-balanced-parens-1.almd:6:29
+  hint: Use 'or' for logical OR. Example: if a or b then ...
+  |
+6 |       if list.is_empty(acc) || not string.match(list.last(acc), r"[({\[]") then
+  |                             ^
+error: Expected expression at line 10:5 (got Else 'else')
+  --> /tmp/dojo-balanced-parens-1.almd:10:5
    |
-22 |       _ => stack
-   |            ^^^^^
-error[E002]: undefined function 'list.length'
-  --> /tmp/dojo-balanced-parens-1.almd:25:32
-  in call to list.length()
-  hint: Did you mean `list.len`?
+10 |     else
+   |     ^
+error: Expected expression at line 12:3 (got RParen ')')
+  --> /tmp/dojo-balanced-parens-1.almd:12:3
    |
-25 |     some(stack) => list.length(stack) == 0,
-   |                                ^^^^^
-error[E001]: type mismatch in match arm: expected List[String] but got Bool
-  --> /tmp/dojo-balanced-parens-1.almd:10:16
-  in match arm
-  hint: Fix the expression type or change the expected type
+12 |   )
+   |   ^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-balanced-parens-1.almd:4:17
+  in variable acc
+  hint: Check the variable name
+  |
+4 |       list.push(acc, c)
+  |                 ^^^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-balanced-parens-1.almd:4:22
+  in variable c
+  hint: Did you mean `s`?
+  |
+4 |       list.push(acc, c)
+  |                      ^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-balanced-parens-1.almd:9:23
+  in variable acc
+  hint: Check the variable name
+  |
+9 |         list.drop_end(acc, 1)
+  |                       ^^^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-balanced-parens-1.almd:11:7
+  in variable acc
+  hint: Check the variable name
    |
-10 |           _ => false
-   |                ^^^^^
-error[E001]: type mismatch in match arm: expected List[String] but got Bool
-  --> /tmp/dojo-balanced-parens-1.almd:15:16
-  in match arm
-  hint: Fix the expression type or change the expected type
+11 |       acc
+   |       ^^^
+error[E003]: undefined variable 'stack'
+  --> /tmp/dojo-balanced-parens-1.almd:14:17
+  in variable stack
+  hint: Check the variable name
    |
-15 |           _ => false
-   |                ^^^^^
-error[E001]: type mismatch in match arm: expected List[String] but got Bool
-  --> /tmp/dojo-balanced-parens-1.almd:20:16
-  in match arm
-  hint: Fix the expression type or change the expected type
-   |
-20 |           _ => false
-   |                ^^^^^
-error[E001]: type mismatch in match arm: expected Unit but got List[String]
-  --> /tmp/dojo-balanced-parens-1.almd:22:12
-  in match arm
-  hint: Fix the expression type or change the expected type
-   |
-22 |       _ => stack
-   |            ^^^^^
-error[E001]: type mismatch in match arm: expected Unit but got List[String]
-  --> /tmp/dojo-balanced-parens-1.almd:22:12
-  in match arm
-  hint: Fix the expression type or change the expected type
-   |
-22 |       _ => stack
-   |            ^^^^^
-error[E001]: type mismatch in match arm: expected Unit but got List[String]
-  --> /tmp/dojo-balanced-parens-1.almd:22:12
-  in match arm
-  hint: Fix the expression type or change the expected type
-   |
-22 |       _ => stack
-   |            ^^^^^
-error[E001]: type mismatch in call to list.fold(): expected fn(List[?0], String) -> List[?0] but got fn(Unit, ?2) -> Unit
-  --> /tmp/dojo-balanced-parens-1.almd:22:12
-  in call to list.fold()
-  hint: Fix the expression type or change the expected type. Got Unit where a List was expected. `list.push`/`pop`/`clear` mutate and return Unit — use `xs + [item]` for an immutable append. `for x in xs { ... }` is a side-effect loop (Unit); for element transforms, use `list.map(xs, (x) => ...)`.
-   |
-22 |       _ => stack
-   |            ^^^^^
+14 |   list.is_empty(stack)
+   |                 ^^^^^
 
 10 error(s) found
 Compile error for /tmp/dojo-balanced-parens-1.almd:
@@ -250,96 +205,55 @@ FAILED: /tmp/dojo-balanced-parens-1.almd
 
 ```almide
 fn is_balanced(s: String) -> Bool = 
-  match s.chars() |> list.fold([], (stack, c) => 
-    match c {
-      '(' => list.push(stack, ")"),
-      '[' => list.push(stack, "]"),
-      '{' => list.push(stack, "}"),
-      ')' => 
-        match list.last(stack) {
-          ')' => list.drop_end(stack, 1),
-          _ => false
-        },
-      ']' => 
-        match list.last(stack) {
-          ']' => list.drop_end(stack, 1),
-          _ => false
-        },
-      '}' => 
-        match list.last(stack) {
-          '}' => list.drop_end(stack, 1),
-          _ => false
-        },
-      _ => stack
-    }
-  ) {
-    some(stack) => list.len(stack) == 0,
-    none => true
-  }
+  let stack = list.fold(list(), "", (acc, c) => 
+    match (string.match(c, r"[(){}\[\]]"), string.match(c, r"[)\]}")) 
+    { 
+      (some(_), none) => list.push(acc, c), 
+      (none, some(_)) => if list.is_empty(acc) || not (match list.last(acc) with { some(x) => string.match(x, r"[({\[]"), none => false }), 
+        list.drop_end(acc, 1) 
+      else 
+        acc 
+    } 
+  ) 
+  in 
+  list.is_empty(stack)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-2.almd
-error[E005]: argument 'f' expects fn(List[?0], String) -> List[?0] but got fn(Unit, ?2) -> Unit
-  --> /tmp/dojo-balanced-parens-2.almd:22:12
-  in call to list.fold()
-  hint: Fix the argument type. Got Unit where a List was expected. `list.push`/`pop`/`clear` mutate and return Unit — use `xs + [item]` for an immutable append. `for x in xs { ... }` is a side-effect loop (Unit); for element transforms, use `list.map(xs, (x) => ...)`.
+error: Expected name at line 3:19 (got Match 'match')
+  --> /tmp/dojo-balanced-parens-2.almd:3:19
+  |
+3 |     match (string.match(c, r"[(){}\[\]]"), string.match(c, r"[)\]}"))
+  |                   ^
+error: Expected expression at line 8:7 (got Else 'else')
+  --> /tmp/dojo-balanced-parens-2.almd:8:7
+  |
+8 |       else
+  |       ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 10:5 (got RBrace '}')
+  --> /tmp/dojo-balanced-parens-2.almd:10:5
    |
-22 |       _ => stack
-   |            ^^^^^
-error[E001]: type mismatch in match arm: expected List[String] but got Bool
-  --> /tmp/dojo-balanced-parens-2.almd:10:16
-  in match arm
-  hint: Fix the expression type or change the expected type
-   |
-10 |           _ => false
-   |                ^^^^^
-error[E001]: type mismatch in match arm: expected List[String] but got Bool
-  --> /tmp/dojo-balanced-parens-2.almd:15:16
-  in match arm
-  hint: Fix the expression type or change the expected type
-   |
-15 |           _ => false
-   |                ^^^^^
-error[E001]: type mismatch in match arm: expected List[String] but got Bool
-  --> /tmp/dojo-balanced-parens-2.almd:20:16
-  in match arm
-  hint: Fix the expression type or change the expected type
-   |
-20 |           _ => false
-   |                ^^^^^
-error[E001]: type mismatch in match arm: expected Unit but got List[String]
-  --> /tmp/dojo-balanced-parens-2.almd:22:12
-  in match arm
-  hint: Fix the expression type or change the expected type
-   |
-22 |       _ => stack
-   |            ^^^^^
-error[E001]: type mismatch in match arm: expected Unit but got List[String]
-  --> /tmp/dojo-balanced-parens-2.almd:22:12
-  in match arm
-  hint: Fix the expression type or change the expected type
-   |
-22 |       _ => stack
-   |            ^^^^^
-error[E001]: type mismatch in match arm: expected Unit but got List[String]
-  --> /tmp/dojo-balanced-parens-2.almd:22:12
-  in match arm
-  hint: Fix the expression type or change the expected type
-   |
-22 |       _ => stack
-   |            ^^^^^
-error[E001]: type mismatch in call to list.fold(): expected fn(List[?0], String) -> List[?0] but got fn(Unit, ?2) -> Unit
-  --> /tmp/dojo-balanced-parens-2.almd:22:12
-  in call to list.fold()
-  hint: Fix the expression type or change the expected type. Got Unit where a List was expected. `list.push`/`pop`/`clear` mutate and return Unit — use `xs + [item]` for an immutable append. `for x in xs { ... }` is a side-effect loop (Unit); for element transforms, use `list.map(xs, (x) => ...)`.
-   |
-22 |       _ => stack
-   |            ^^^^^
+10 |     }
+   |     ^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-balanced-parens-2.almd:7:23
+  in variable acc
+  hint: Check the variable name
+  |
+7 |         list.drop_end(acc, 1)
+  |                       ^^^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-balanced-parens-2.almd:9:9
+  in variable acc
+  hint: Check the variable name
+  |
+9 |         acc
+  |         ^^^
 
-8 error(s) found
+5 error(s) found
 Compile error for /tmp/dojo-balanced-parens-2.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-2.almd
@@ -352,59 +266,39 @@ FAILED: /tmp/dojo-balanced-parens-2.almd
 
 ```almide
 fn is_balanced(s: String) -> Bool = 
-  match s.chars() |> list.fold([], (stack, c) => 
-    match c {
-      '(' => stack + [")"],
-      '[' => stack + ["]"],
-      '{' => stack + ["}"],
-      ')' => 
-        match list.last(stack) {
-          ')' => list.drop_end(stack, 1),
-          _ => false
-        },
-      ']' => 
-        match list.last(stack) {
-          ']' => list.drop_end(stack, 1),
-          _ => false
-        },
-      '}' => 
-        match list.last(stack) {
-          '}' => list.drop_end(stack, 1),
-          _ => false
-        },
-      _ => stack
-    }
-  ) {
-    some(stack) => list.len(stack) == 0,
-    none => true
-  }
+  let stack = list.fold(list(), "", (acc, c) => 
+    match (string.match(c, r"[(){}\[\]]"), string.match(c, r"[)\]}")) 
+    { 
+      (some(_), none) => list.push(acc, c), 
+      (none, some(_)) => if list.is_empty(acc) then false 
+        else match list.last(acc) with { some(x) => string.match(x, r"[({\[]") ? list.drop_end(acc, 1) : false 
+    } 
+  ) 
+  in 
+  list.is_empty(stack)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-3.almd
-error[E001]: type mismatch in match arm: expected List[String] but got Bool
-  --> /tmp/dojo-balanced-parens-3.almd:10:16
-  in match arm
+error: Expected name at line 3:19 (got Match 'match')
+  --> /tmp/dojo-balanced-parens-3.almd:3:19
+  |
+3 |     match (string.match(c, r"[(){}\[\]]"), string.match(c, r"[)\]}"))
+  |                   ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 8:5 (got RBrace '}')
+  --> /tmp/dojo-balanced-parens-3.almd:8:5
+  |
+8 |     }
+  |     ^
+error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
+  --> /tmp/dojo-balanced-parens-3.almd:2:3
+  in fn 'is_balanced'
   hint: Fix the expression type or change the expected type
-   |
-10 |           _ => false
-   |                ^^^^^
-error[E001]: type mismatch in match arm: expected List[String] but got Bool
-  --> /tmp/dojo-balanced-parens-3.almd:15:16
-  in match arm
-  hint: Fix the expression type or change the expected type
-   |
-15 |           _ => false
-   |                ^^^^^
-error[E001]: type mismatch in match arm: expected List[String] but got Bool
-  --> /tmp/dojo-balanced-parens-3.almd:20:16
-  in match arm
-  hint: Fix the expression type or change the expected type
-   |
-20 |           _ => false
-   |                ^^^^^
+  |
+2 |   let stack = list.fold(list(), "", (acc, c) =>
+  |   ^^^
 
 3 error(s) found
 Compile error for /tmp/dojo-balanced-parens-3.almd:
