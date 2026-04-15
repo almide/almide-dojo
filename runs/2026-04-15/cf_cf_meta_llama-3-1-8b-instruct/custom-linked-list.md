@@ -17,35 +17,35 @@ type MyList =
 fn from_list(xs: List[Int]) -> MyList =
   match xs {
     Nil => Nil
-    | Cons(h, t) => Cons(h, from_list(t))
+    | Cons(x, xs) => Cons(x, from_list(xs))
   }
 
 fn to_list(ml: MyList) -> List[Int] =
   match ml {
     Nil => []
-    | Cons(h, t) => h :: to_list(t)
+    | Cons(x, xs) => [x] + to_list(xs)
   }
 
 fn my_len(ml: MyList) -> Int =
   match ml {
     Nil => 0
-    | Cons(_, t) => 1 + my_len(t)
+    | Cons(_, xs) => 1 + my_len(xs)
   }
 
 fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
   match ml {
     Nil => Nil
-    | Cons(h, t) => Cons(f(h), my_map(t, f))
+    | Cons(x, xs) => Cons(f(x), my_map(xs, f))
   }
 
 fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
   match ml {
     Nil => Nil
-    | Cons(h, t) => if pred(h) then Cons(h, my_filter(t, pred)) else my_filter(t, pred)
+    | Cons(x, xs) =>
+      if pred(x) then Cons(x, my_filter(xs, pred)) else my_filter(xs, pred)
   }
 
 fn my_reverse(ml: MyList) -> MyList =
-  match ml
 ```
 
 **Diagnostic:**
@@ -56,33 +56,33 @@ error: Expected pattern at line 8:5 (got Pipe '|')
   --> /tmp/dojo-custom-linked-list-0.almd:8:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
   |
-8 |     | Cons(h, t) => Cons(h, from_list(t))
+8 |     | Cons(x, xs) => Cons(x, from_list(xs))
   |     ^
 error: Expected pattern at line 14:5 (got Pipe '|')
   --> /tmp/dojo-custom-linked-list-0.almd:14:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-14 |     | Cons(h, t) => h :: to_list(t)
+14 |     | Cons(x, xs) => [x] + to_list(xs)
    |     ^
 error: Expected pattern at line 20:5 (got Pipe '|')
   --> /tmp/dojo-custom-linked-list-0.almd:20:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-20 |     | Cons(_, t) => 1 + my_len(t)
+20 |     | Cons(_, xs) => 1 + my_len(xs)
    |     ^
 error: Expected pattern at line 26:5 (got Pipe '|')
   --> /tmp/dojo-custom-linked-list-0.almd:26:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-26 |     | Cons(h, t) => Cons(f(h), my_map(t, f))
+26 |     | Cons(x, xs) => Cons(f(x), my_map(xs, f))
    |     ^
 error: Expected pattern at line 32:5 (got Pipe '|')
   --> /tmp/dojo-custom-linked-list-0.almd:32:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-32 |     | Cons(h, t) => if pred(h) then Cons(h, my_filter(t, pred)) else my_filter(t, pred)
+32 |     | Cons(x, xs) =>
    |     ^
-error: Expected LBrace at line 38:1 (got Test 'test')
+error: Expected expression at line 38:1 (got Test 'test')
   --> /tmp/dojo-custom-linked-list-0.almd:38:1
    |
 38 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
@@ -105,74 +105,82 @@ type MyList =
   | Cons(Int, MyList)
 
 fn from_list(xs: List[Int]) -> MyList =
-  list.fold(xs, Nil, (acc, x) => Cons(x, acc))
+  match xs {
+    Nil => Nil
+    | Cons(x, xs) => Cons(x, from_list(xs))
+  }
 
 fn to_list(ml: MyList) -> List[Int] =
   match ml {
     Nil => []
-    | Cons(h, t) => h :: to_list(t)
+    | Cons(x, xs) => [x] + to_list(xs)
   }
 
 fn my_len(ml: MyList) -> Int =
   match ml {
     Nil => 0
-    | Cons(_, t) => 1 + my_len(t)
+    | Cons(_, xs) => 1 + my_len(xs)
   }
 
 fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
   match ml {
     Nil => Nil
-    | Cons(h, t) => Cons(f(h), my_map(t, f))
+    | Cons(x, xs) => Cons(f(x), my_map(xs, f))
   }
 
 fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
   match ml {
     Nil => Nil
-    | Cons(h, t) => if pred(h) then Cons(h, my_filter(t, pred)) else my_filter(t, pred)
+    | Cons(x, xs) =>
+      if pred(x) then Cons(x, my_filter(xs, pred)) else my_filter(xs, pred)
   }
 
 fn my_reverse(ml: MyList) -> MyList =
   match ml {
-    Nil => Nil
-    | Cons(h, t
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-custom-linked-list-1.almd
-error: Expected pattern at line 11:5 (got Pipe '|')
-  --> /tmp/dojo-custom-linked-list-1.almd:11:5
+error: Expected pattern at line 8:5 (got Pipe '|')
+  --> /tmp/dojo-custom-linked-list-1.almd:8:5
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+  |
+8 |     | Cons(x, xs) => Cons(x, from_list(xs))
+  |     ^
+error: Expected pattern at line 14:5 (got Pipe '|')
+  --> /tmp/dojo-custom-linked-list-1.almd:14:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-11 |     | Cons(h, t) => h :: to_list(t)
+14 |     | Cons(x, xs) => [x] + to_list(xs)
    |     ^
-error: Expected pattern at line 17:5 (got Pipe '|')
-  --> /tmp/dojo-custom-linked-list-1.almd:17:5
+error: Expected pattern at line 20:5 (got Pipe '|')
+  --> /tmp/dojo-custom-linked-list-1.almd:20:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-17 |     | Cons(_, t) => 1 + my_len(t)
+20 |     | Cons(_, xs) => 1 + my_len(xs)
    |     ^
-error: Expected pattern at line 23:5 (got Pipe '|')
-  --> /tmp/dojo-custom-linked-list-1.almd:23:5
+error: Expected pattern at line 26:5 (got Pipe '|')
+  --> /tmp/dojo-custom-linked-list-1.almd:26:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-23 |     | Cons(h, t) => Cons(f(h), my_map(t, f))
+26 |     | Cons(x, xs) => Cons(f(x), my_map(xs, f))
    |     ^
-error: Expected pattern at line 29:5 (got Pipe '|')
-  --> /tmp/dojo-custom-linked-list-1.almd:29:5
+error: Expected pattern at line 32:5 (got Pipe '|')
+  --> /tmp/dojo-custom-linked-list-1.almd:32:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-29 |     | Cons(h, t) => if pred(h) then Cons(h, my_filter(t, pred)) else my_filter(t, pred)
+32 |     | Cons(x, xs) =>
    |     ^
-error: Expected pattern at line 35:5 (got Pipe '|')
-  --> /tmp/dojo-custom-linked-list-1.almd:35:5
+error: Expected pattern at line 39:1 (got Test 'test')
+  --> /tmp/dojo-custom-linked-list-1.almd:39:1
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-35 |     | Cons(h, t
-   |     ^
+39 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
+   | ^
 
-5 error(s) found
+6 error(s) found
 Compile error for /tmp/dojo-custom-linked-list-1.almd:
 compile failed
 FAILED: /tmp/dojo-custom-linked-list-1.almd
@@ -189,74 +197,82 @@ type MyList =
   | Cons(Int, MyList)
 
 fn from_list(xs: List[Int]) -> MyList =
-  list.fold(xs, Nil, (acc, x) => Cons(x, acc))
+  match xs {
+    Nil => Nil
+    | Cons(x, xs) => Cons(x, from_list(xs))
+  }
 
 fn to_list(ml: MyList) -> List[Int] =
   match ml {
     Nil => []
-    | Cons(h, t) => h :: to_list(t)
+    | Cons(x, xs) => [x] + to_list(xs)
   }
 
 fn my_len(ml: MyList) -> Int =
   match ml {
     Nil => 0
-    | Cons(_, t) => 1 + my_len(t)
+    | Cons(_, xs) => 1 + my_len(xs)
   }
 
 fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
   match ml {
     Nil => Nil
-    | Cons(h, t) => Cons(f(h), my_map(t, f))
+    | Cons(x, xs) => Cons(f(x), my_map(xs, f))
   }
 
 fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
   match ml {
     Nil => Nil
-    | Cons(h, t) => if pred(h) then Cons(h, my_filter(t, pred)) else my_filter(t, pred)
+    | Cons(x, xs) =>
+      if pred(x) then Cons(x, my_filter(xs, pred)) else my_filter(xs, pred)
   }
 
 fn my_reverse(ml: MyList) -> MyList =
   match ml {
-    Nil => Nil
-    | Cons(h, t
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-custom-linked-list-2.almd
-error: Expected pattern at line 11:5 (got Pipe '|')
-  --> /tmp/dojo-custom-linked-list-2.almd:11:5
+error: Expected pattern at line 8:5 (got Pipe '|')
+  --> /tmp/dojo-custom-linked-list-2.almd:8:5
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+  |
+8 |     | Cons(x, xs) => Cons(x, from_list(xs))
+  |     ^
+error: Expected pattern at line 14:5 (got Pipe '|')
+  --> /tmp/dojo-custom-linked-list-2.almd:14:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-11 |     | Cons(h, t) => h :: to_list(t)
+14 |     | Cons(x, xs) => [x] + to_list(xs)
    |     ^
-error: Expected pattern at line 17:5 (got Pipe '|')
-  --> /tmp/dojo-custom-linked-list-2.almd:17:5
+error: Expected pattern at line 20:5 (got Pipe '|')
+  --> /tmp/dojo-custom-linked-list-2.almd:20:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-17 |     | Cons(_, t) => 1 + my_len(t)
+20 |     | Cons(_, xs) => 1 + my_len(xs)
    |     ^
-error: Expected pattern at line 23:5 (got Pipe '|')
-  --> /tmp/dojo-custom-linked-list-2.almd:23:5
+error: Expected pattern at line 26:5 (got Pipe '|')
+  --> /tmp/dojo-custom-linked-list-2.almd:26:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-23 |     | Cons(h, t) => Cons(f(h), my_map(t, f))
+26 |     | Cons(x, xs) => Cons(f(x), my_map(xs, f))
    |     ^
-error: Expected pattern at line 29:5 (got Pipe '|')
-  --> /tmp/dojo-custom-linked-list-2.almd:29:5
+error: Expected pattern at line 32:5 (got Pipe '|')
+  --> /tmp/dojo-custom-linked-list-2.almd:32:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-29 |     | Cons(h, t) => if pred(h) then Cons(h, my_filter(t, pred)) else my_filter(t, pred)
+32 |     | Cons(x, xs) =>
    |     ^
-error: Expected pattern at line 35:5 (got Pipe '|')
-  --> /tmp/dojo-custom-linked-list-2.almd:35:5
+error: Expected pattern at line 39:1 (got Test 'test')
+  --> /tmp/dojo-custom-linked-list-2.almd:39:1
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-35 |     | Cons(h, t
-   |     ^
+39 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
+   | ^
 
-5 error(s) found
+6 error(s) found
 Compile error for /tmp/dojo-custom-linked-list-2.almd:
 compile failed
 FAILED: /tmp/dojo-custom-linked-list-2.almd
@@ -273,74 +289,82 @@ type MyList =
   | Cons(Int, MyList)
 
 fn from_list(xs: List[Int]) -> MyList =
-  list.fold(xs, Nil, (acc, x) => Cons(x, acc))
+  match xs {
+    Nil => Nil
+    | Cons(x, xs) => Cons(x, from_list(xs))
+  }
 
 fn to_list(ml: MyList) -> List[Int] =
   match ml {
     Nil => []
-    | Cons(h, t) => h :: to_list(t)
+    | Cons(x, xs) => [x] + to_list(xs)
   }
 
 fn my_len(ml: MyList) -> Int =
   match ml {
     Nil => 0
-    | Cons(_, t) => 1 + my_len(t)
+    | Cons(_, xs) => 1 + my_len(xs)
   }
 
 fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
   match ml {
     Nil => Nil
-    | Cons(h, t) => Cons(f(h), my_map(t, f))
+    | Cons(x, xs) => Cons(f(x), my_map(xs, f))
   }
 
 fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
   match ml {
     Nil => Nil
-    | Cons(h, t) => if pred(h) then Cons(h, my_filter(t, pred)) else my_filter(t, pred)
+    | Cons(x, xs) =>
+      if pred(x) then Cons(x, my_filter(xs, pred)) else my_filter(xs, pred)
   }
 
 fn my_reverse(ml: MyList) -> MyList =
   match ml {
-    Nil => Nil
-    | Cons(h, t
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-custom-linked-list-3.almd
-error: Expected pattern at line 11:5 (got Pipe '|')
-  --> /tmp/dojo-custom-linked-list-3.almd:11:5
+error: Expected pattern at line 8:5 (got Pipe '|')
+  --> /tmp/dojo-custom-linked-list-3.almd:8:5
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+  |
+8 |     | Cons(x, xs) => Cons(x, from_list(xs))
+  |     ^
+error: Expected pattern at line 14:5 (got Pipe '|')
+  --> /tmp/dojo-custom-linked-list-3.almd:14:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-11 |     | Cons(h, t) => h :: to_list(t)
+14 |     | Cons(x, xs) => [x] + to_list(xs)
    |     ^
-error: Expected pattern at line 17:5 (got Pipe '|')
-  --> /tmp/dojo-custom-linked-list-3.almd:17:5
+error: Expected pattern at line 20:5 (got Pipe '|')
+  --> /tmp/dojo-custom-linked-list-3.almd:20:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-17 |     | Cons(_, t) => 1 + my_len(t)
+20 |     | Cons(_, xs) => 1 + my_len(xs)
    |     ^
-error: Expected pattern at line 23:5 (got Pipe '|')
-  --> /tmp/dojo-custom-linked-list-3.almd:23:5
+error: Expected pattern at line 26:5 (got Pipe '|')
+  --> /tmp/dojo-custom-linked-list-3.almd:26:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-23 |     | Cons(h, t) => Cons(f(h), my_map(t, f))
+26 |     | Cons(x, xs) => Cons(f(x), my_map(xs, f))
    |     ^
-error: Expected pattern at line 29:5 (got Pipe '|')
-  --> /tmp/dojo-custom-linked-list-3.almd:29:5
+error: Expected pattern at line 32:5 (got Pipe '|')
+  --> /tmp/dojo-custom-linked-list-3.almd:32:5
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-29 |     | Cons(h, t) => if pred(h) then Cons(h, my_filter(t, pred)) else my_filter(t, pred)
+32 |     | Cons(x, xs) =>
    |     ^
-error: Expected pattern at line 35:5 (got Pipe '|')
-  --> /tmp/dojo-custom-linked-list-3.almd:35:5
+error: Expected pattern at line 39:1 (got Test 'test')
+  --> /tmp/dojo-custom-linked-list-3.almd:39:1
   hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-35 |     | Cons(h, t
-   |     ^
+39 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
+   | ^
 
-5 error(s) found
+6 error(s) found
 Compile error for /tmp/dojo-custom-linked-list-3.almd:
 compile failed
 FAILED: /tmp/dojo-custom-linked-list-3.almd

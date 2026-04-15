@@ -3,8 +3,8 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: type-error
-- **diagnostic code**: `E005`
+- **category**: import-error
+- **diagnostic code**: `E004`
 
 ## Attempts
 
@@ -12,41 +12,29 @@
 
 ```almide
 fn word_count(s: String) -> Map[String, Int] = 
-  list.filter(string.split(s, " "), (x) => x != "") 
-  |> list.fold(Map[String, Int](), (m, x) => 
-    match m.get_or(x, 0) {
-      some(count) => m.set(x, count + 1),
-      none => m.set(x, 1)
-    })
+  string.split(s, " ") 
+  |> list.filter(x => x != "") 
+  |> list.fold(
+    Map[String, Int](),
+    (map, word) => 
+      map.get_or(word, 0) 
+      |> map.set(word, _ + 1)
+  )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-word-count-0.almd
-error[E005]: argument 'f' expects fn(Map, String) -> Map but got fn(fn(?2, Int) -> ?3, ?2) -> ?3
-  --> /tmp/dojo-word-count-0.almd:6:15
-  in call to list.fold()
-  hint: Fix the argument type
+error: Lambda parameter must be wrapped in parentheses
+  --> /tmp/dojo-word-count-0.almd:3:20
+  in lambda syntax
+  hint: Almide lambdas require parentheses around parameters. Write `(x) => expr` instead of `x => expr`
   |
-6 |       none => m.set(x, 1)
-  |               ^
-error[E001]: type mismatch in call to list.fold(): expected fn(Map, String) -> Map but got fn(fn(?2, Int) -> ?3, ?2) -> ?3
-  --> /tmp/dojo-word-count-0.almd:6:15
-  in call to list.fold()
-  hint: Fix the expression type or change the expected type
-  |
-6 |       none => m.set(x, 1)
-  |               ^
-error[E001]: type mismatch in fn 'word_count': expected Map[String, Int] but got Map
-  --> /tmp/dojo-word-count-0.almd:6:15
-  in fn 'word_count'
-  hint: Fix the expression type or change the expected type
-  |
-6 |       none => m.set(x, 1)
-  |               ^
+3 |   |> list.filter(x => x != "")
+  |                    ^^
 
-3 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-word-count-0.almd:
 compile failed
 FAILED: /tmp/dojo-word-count-0.almd
@@ -59,55 +47,31 @@ FAILED: /tmp/dojo-word-count-0.almd
 
 ```almide
 fn word_count(s: String) -> Map[String, Int] = 
-  list.filter(string.split(s, " "), (x) => x != "") 
-  |> list.fold(Map[String, Int](), (m, x) => 
-    match m.get_or(x, 0) {
-      some(count) => Map.set(m, x, count + 1),
-      none => Map.set(m, x, 1)
-    })
+  string.split(s, " ") 
+  |> list.filter((x) => x != "") 
+  |> list.fold(
+    Map[String, Int](),
+    (map, word) => 
+      map.get_or(word, 0) 
+      |> map.set(word, _ + 1)
+  )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-word-count-1.almd
-error[E005]: argument 'f' expects fn(Map, String) -> Map but got fn(fn(?2, Int) -> ?3, ?2) -> ?4
-  --> /tmp/dojo-word-count-1.almd:6:15
-  in call to list.fold()
-  hint: Fix the argument type
+error: Expected ')' to close function call opened at line 8:17
+  --> /tmp/dojo-word-count-1.almd:8:26
+  hint: Add ')' or check for a missing delimiter inside the function call
   |
-6 |       none => Map.set(m, x, 1)
-  |               ^^^
-error[E001]: type mismatch in method call: expected Map but got fn(fn(?2, Int) -> ?3, ?2, Unknown) -> ?4
-  --> /tmp/dojo-word-count-1.almd:5:22
-  in method call
-  hint: Fix the expression type or change the expected type
+8 |       |> map.set(word, _ + 1)
+  |                 --------------- '(' opened here
   |
-5 |       some(count) => Map.set(m, x, count + 1),
-  |                      ^^^
-error[E001]: type mismatch in method call: expected Map but got fn(fn(?2, Int) -> ?3, ?2, Int) -> ?4
-  --> /tmp/dojo-word-count-1.almd:6:15
-  in method call
-  hint: Fix the expression type or change the expected type
-  |
-6 |       none => Map.set(m, x, 1)
-  |               ^^^
-error[E001]: type mismatch in call to list.fold(): expected fn(Map, String) -> Map but got fn(fn(?2, Int) -> ?3, ?2) -> ?4
-  --> /tmp/dojo-word-count-1.almd:6:15
-  in call to list.fold()
-  hint: Fix the expression type or change the expected type
-  |
-6 |       none => Map.set(m, x, 1)
-  |               ^^^
-error[E001]: type mismatch in fn 'word_count': expected Map[String, Int] but got Map
-  --> /tmp/dojo-word-count-1.almd:6:15
-  in fn 'word_count'
-  hint: Fix the expression type or change the expected type
-  |
-6 |       none => Map.set(m, x, 1)
-  |               ^^^
+8 |       |> map.set(word, _ + 1)
+  |                          ^
 
-5 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-word-count-1.almd:
 compile failed
 FAILED: /tmp/dojo-word-count-1.almd
@@ -120,53 +84,55 @@ FAILED: /tmp/dojo-word-count-1.almd
 
 ```almide
 fn word_count(s: String) -> Map[String, Int] = 
-  list.filter(string.split(s, " "), (x) => x != "") 
-  |> list.fold(Map[String, Int](), (m, x) => 
-    match m.get_or(x, 0) {
-      some(count) => Map.set(m, x, count + 1),
-      none => Map.set(m, x, 1)
-    })
+  string.split(s, " ") 
+  |> list.filter((x) => x != "") 
+  |> list.fold(
+    Map[String, Int](),
+    (map, word) => 
+      map.get_or(word, 0) 
+      |> map.set(word, map.get_or(word, 0) + 1)
+  )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-word-count-2.almd
-error[E005]: argument 'f' expects fn(Map, String) -> Map but got fn(fn(?2, Int) -> ?3, ?2) -> ?4
-  --> /tmp/dojo-word-count-2.almd:6:15
+error[E004]: map.get_or() expects 3 argument(s) but got 2
+  --> /tmp/dojo-word-count-2.almd:7:24
+  in call to map.get_or()
+  hint: Check the number of arguments
+  |
+7 |       map.get_or(word, 0)
+  |                        ^
+error[E004]: map.get_or() expects 3 argument(s) but got 2
+  --> /tmp/dojo-word-count-2.almd:8:41
+  in call to map.get_or()
+  hint: Check the number of arguments
+  |
+8 |       |> map.set(word, map.get_or(word, 0) + 1)
+  |                                         ^
+error[E005]: argument 'f' expects fn(Map, String) -> Map but got fn(?1, Map[Int, V]) -> Map[Map[Int, V], ?4]
+  --> /tmp/dojo-word-count-2.almd:8:46
   in call to list.fold()
   hint: Fix the argument type
   |
-6 |       none => Map.set(m, x, 1)
-  |               ^^^
-error[E001]: type mismatch in method call: expected Map but got fn(fn(?2, Int) -> ?3, ?2, Unknown) -> ?4
-  --> /tmp/dojo-word-count-2.almd:5:22
-  in method call
-  hint: Fix the expression type or change the expected type
-  |
-5 |       some(count) => Map.set(m, x, count + 1),
-  |                      ^^^
-error[E001]: type mismatch in method call: expected Map but got fn(fn(?2, Int) -> ?3, ?2, Int) -> ?4
-  --> /tmp/dojo-word-count-2.almd:6:15
-  in method call
-  hint: Fix the expression type or change the expected type
-  |
-6 |       none => Map.set(m, x, 1)
-  |               ^^^
-error[E001]: type mismatch in call to list.fold(): expected fn(Map, String) -> Map but got fn(fn(?2, Int) -> ?3, ?2) -> ?4
-  --> /tmp/dojo-word-count-2.almd:6:15
+8 |       |> map.set(word, map.get_or(word, 0) + 1)
+  |                                              ^
+error[E001]: type mismatch in call to list.fold(): expected fn(Map, String) -> Map but got fn(Map, Map[Int, V]) -> Map[Map[Int, V], ?4]
+  --> /tmp/dojo-word-count-2.almd:8:46
   in call to list.fold()
   hint: Fix the expression type or change the expected type
   |
-6 |       none => Map.set(m, x, 1)
-  |               ^^^
+8 |       |> map.set(word, map.get_or(word, 0) + 1)
+  |                                              ^
 error[E001]: type mismatch in fn 'word_count': expected Map[String, Int] but got Map
-  --> /tmp/dojo-word-count-2.almd:6:15
+  --> /tmp/dojo-word-count-2.almd:8:46
   in fn 'word_count'
   hint: Fix the expression type or change the expected type
   |
-6 |       none => Map.set(m, x, 1)
-  |               ^^^
+8 |       |> map.set(word, map.get_or(word, 0) + 1)
+  |                                              ^
 
 5 error(s) found
 Compile error for /tmp/dojo-word-count-2.almd:
@@ -181,53 +147,54 @@ FAILED: /tmp/dojo-word-count-2.almd
 
 ```almide
 fn word_count(s: String) -> Map[String, Int] = 
-  list.filter(string.split(s, " "), (x) => x != "") 
-  |> list.fold(Map[String, Int](), (m, x) => 
-    match m.get_or(x, 0) {
-      some(count) => Map.set(m, x, count + 1),
-      none => Map.set(m, x, 1)
-    })
+  string.split(s, " ") 
+  |> list.filter((x) => x != "") 
+  |> list.fold(
+    Map[String, Int](),
+    (map, word) => 
+      map.set(word, map.get_or(word, 0) + 1)
+  )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-word-count-3.almd
-error[E005]: argument 'f' expects fn(Map, String) -> Map but got fn(fn(?2, Int) -> ?3, ?2) -> ?4
-  --> /tmp/dojo-word-count-3.almd:6:15
+error[E004]: map.get_or() expects 3 argument(s) but got 2
+  --> /tmp/dojo-word-count-3.almd:7:38
+  in call to map.get_or()
+  hint: Check the number of arguments
+  |
+7 |       map.set(word, map.get_or(word, 0) + 1)
+  |                                      ^
+error[E004]: map.set() expects 3 argument(s) but got 2
+  --> /tmp/dojo-word-count-3.almd:7:43
+  in call to map.set()
+  hint: Check the number of arguments
+  |
+7 |       map.set(word, map.get_or(word, 0) + 1)
+  |                                           ^
+error[E005]: argument 'f' expects fn(Map, String) -> Map but got fn(?1, Map[Int, V]) -> Map[Int, ?4]
+  --> /tmp/dojo-word-count-3.almd:7:43
   in call to list.fold()
   hint: Fix the argument type
   |
-6 |       none => Map.set(m, x, 1)
-  |               ^^^
-error[E001]: type mismatch in method call: expected Map but got fn(fn(?2, Int) -> ?3, ?2, Unknown) -> ?4
-  --> /tmp/dojo-word-count-3.almd:5:22
-  in method call
-  hint: Fix the expression type or change the expected type
-  |
-5 |       some(count) => Map.set(m, x, count + 1),
-  |                      ^^^
-error[E001]: type mismatch in method call: expected Map but got fn(fn(?2, Int) -> ?3, ?2, Int) -> ?4
-  --> /tmp/dojo-word-count-3.almd:6:15
-  in method call
-  hint: Fix the expression type or change the expected type
-  |
-6 |       none => Map.set(m, x, 1)
-  |               ^^^
-error[E001]: type mismatch in call to list.fold(): expected fn(Map, String) -> Map but got fn(fn(?2, Int) -> ?3, ?2) -> ?4
-  --> /tmp/dojo-word-count-3.almd:6:15
+7 |       map.set(word, map.get_or(word, 0) + 1)
+  |                                           ^
+error[E001]: type mismatch in call to list.fold(): expected fn(Map, String) -> Map but got fn(Map, Map[Int, V]) -> Map[Int, ?4]
+  --> /tmp/dojo-word-count-3.almd:7:43
   in call to list.fold()
   hint: Fix the expression type or change the expected type
   |
-6 |       none => Map.set(m, x, 1)
-  |               ^^^
+7 |       map.set(word, map.get_or(word, 0) + 1)
+  |                                           ^
 error[E001]: type mismatch in fn 'word_count': expected Map[String, Int] but got Map
-  --> /tmp/dojo-word-count-3.almd:6:15
+  --> /tmp/dojo-word-count-3.almd:7:43
   in fn 'word_count'
   hint: Fix the expression type or change the expected type
   |
-6 |       none => Map.set(m, x, 1)
-  |               ^^^
+7 |       map.set(word, map.get_or(word, 0) + 1)
+  |                                           ^
 
 5 error(s) found
 Compile error for /tmp/dojo-word-count-3.almd:

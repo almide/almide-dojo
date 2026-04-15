@@ -10,95 +10,61 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn is_balanced(s: String) -> Bool = 
-  let stack = list.fold(list(), "", (acc, c) => 
-    if string.match(c, r"[(){}\[\]]") then 
-      if string.match(c, r"[)\]}") then 
-        if list.is_empty(stack) || not string.match(list.last(stack), r"[({\[]") then 
-          false 
-        else 
-          list.drop_end(stack, 1) 
-      else 
-        list.push(stack, c) 
-    else 
-      acc 
-  ) 
-  in 
-  list.is_empty(stack)
+fn is_balanced(s: String) -> Bool =
+  let stack = list.new()
+  in
+  string.chars(s)
+  |> list.map((c) => if c == '(' || c == '[' || c == '{' then list.push(stack, string.of_char(c)) else if list.len(stack) > 0 then
+    let last = list.last(stack)
+    in
+    if (c == ')' && last == '(') || (c == ']' && last == '[') || (c == '}' && last == '{') then list.drop_end(stack, 1) else err("unbalanced")
+    else stack)
+  |> list.fold((_, _) => true, list.new())
+  |> match some(_) => true, none => false
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-0.almd
-error: Expected name at line 3:15 (got Match 'match')
-  --> /tmp/dojo-balanced-parens-0.almd:3:15
+error: Expected expression at line 3:3 (got In 'in')
+  --> /tmp/dojo-balanced-parens-0.almd:3:3
   |
-3 |     if string.match(c, r"[(){}\[\]]") then
-  |               ^
-error: Expected name at line 4:17 (got Match 'match')
-  --> /tmp/dojo-balanced-parens-0.almd:4:17
-  |
-4 |       if string.match(c, r"[)\]}") then
-  |                 ^
-error: '||' is not valid in Almide at line 5:33
-  --> /tmp/dojo-balanced-parens-0.almd:5:33
+3 |   in
+  |   ^
+error: '||' is not valid in Almide at line 5:34
+  --> /tmp/dojo-balanced-parens-0.almd:5:34
   hint: Use 'or' for logical OR. Example: if a or b then ...
   |
-5 |         if list.is_empty(stack) || not string.match(list.last(stack), r"[({\[]") then
-  |                                 ^
-error: Expected expression at line 9:7 (got Else 'else')
-  --> /tmp/dojo-balanced-parens-0.almd:9:7
+5 |   |> list.map((c) => if c == '(' || c == '[' || c == '{' then list.push(stack, string.of_char(c)) else if list.len(stack) > 0 then
+  |                                  ^
+error: Expected expression at line 7:5 (got In 'in')
+  --> /tmp/dojo-balanced-parens-0.almd:7:5
   |
-9 |       else
-  |       ^
-error: Expected expression at line 11:5 (got Else 'else')
-  --> /tmp/dojo-balanced-parens-0.almd:11:5
-   |
-11 |     else
-   |     ^
-error: Expected expression at line 13:3 (got RParen ')')
-  --> /tmp/dojo-balanced-parens-0.almd:13:3
-   |
-13 |   )
-   |   ^
-error[E003]: undefined variable 'stack'
-  --> /tmp/dojo-balanced-parens-0.almd:8:25
-  in variable stack
-  hint: Check the variable name
+7 |     in
+  |     ^
+error: '&&' is not valid in Almide at line 8:18
+  --> /tmp/dojo-balanced-parens-0.almd:8:18
+  hint: Use 'and' for logical AND. Example: if a and b then ...
   |
-8 |           list.drop_end(stack, 1)
-  |                         ^^^^^
-error[E003]: undefined variable 'stack'
-  --> /tmp/dojo-balanced-parens-0.almd:10:19
-  in variable stack
-  hint: Check the variable name
-   |
-10 |         list.push(stack, c)
-   |                   ^^^^^
-error[E003]: undefined variable 'c'
-  --> /tmp/dojo-balanced-parens-0.almd:10:26
-  in variable c
-  hint: Did you mean `s`?
-   |
-10 |         list.push(stack, c)
-   |                          ^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-balanced-parens-0.almd:12:7
-  in variable acc
-  hint: Check the variable name
-   |
-12 |       acc
-   |       ^^^
-error[E003]: undefined variable 'stack'
-  --> /tmp/dojo-balanced-parens-0.almd:15:17
-  in variable stack
-  hint: Check the variable name
-   |
-15 |   list.is_empty(stack)
-   |                 ^^^^^
+8 |     if (c == ')' && last == '(') || (c == ']' && last == '[') || (c == '}' && last == '{') then list.drop_end(stack, 1) else err("unbalanced")
+  |                  ^
+error[E002]: undefined function 'list.new'
+  --> /tmp/dojo-balanced-parens-0.almd:2:23
+  in call to list.new()
+  hint: Did you mean `[] (empty list literal)`?
+  |
+2 |   let stack = list.new()
+  |                       ^
+error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
+  --> /tmp/dojo-balanced-parens-0.almd:6:26
+  in fn 'is_balanced'
+  hint: Fix the expression type or change the expected type
+  |
+6 |     let last = list.last(stack)
+  |                          ^^^^^
 
-11 error(s) found
+6 error(s) found
 Compile error for /tmp/dojo-balanced-parens-0.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-0.almd
@@ -110,89 +76,54 @@ FAILED: /tmp/dojo-balanced-parens-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn is_balanced(s: String) -> Bool = 
-  let stack = list.fold(list(), "", (acc, c) => 
-    if string.match(c, r"[(){}\[\]]") then 
-      list.push(acc, c) 
-    else if string.match(c, r"[)\]}") then 
-      if list.is_empty(acc) || not string.match(list.last(acc), r"[({\[]") then 
-        false 
-      else 
-        list.drop_end(acc, 1) 
-    else 
-      acc 
-  ) 
-  in 
-  list.is_empty(stack)
+fn is_balanced(s: String) -> Bool =
+  let stack = []
+  in
+  string.chars(s)
+  |> list.map((c) => if c == '(' || c == '[' || c == '{' then stack + [string.of_char(c)] else if list.len(stack) > 0 then
+    let last = list.last(stack)
+    in
+    if (c == ')' && last == '(') || (c == ']' && last == '[') || (c == '}' && last == '{') then list.drop_end(stack, 1) else err("unbalanced")
+    else stack)
+  |> list.fold((_, _) => true, [])
+  |> match some(_) => true, none => false
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-1.almd
-error: Expected name at line 3:15 (got Match 'match')
-  --> /tmp/dojo-balanced-parens-1.almd:3:15
+error: Expected expression at line 3:3 (got In 'in')
+  --> /tmp/dojo-balanced-parens-1.almd:3:3
   |
-3 |     if string.match(c, r"[(){}\[\]]") then
-  |               ^
-error: Expected expression at line 5:5 (got Else 'else')
-  --> /tmp/dojo-balanced-parens-1.almd:5:5
-  |
-5 |     else if string.match(c, r"[)\]}") then
-  |     ^
-error: '||' is not valid in Almide at line 6:29
-  --> /tmp/dojo-balanced-parens-1.almd:6:29
+3 |   in
+  |   ^
+error: '||' is not valid in Almide at line 5:34
+  --> /tmp/dojo-balanced-parens-1.almd:5:34
   hint: Use 'or' for logical OR. Example: if a or b then ...
   |
-6 |       if list.is_empty(acc) || not string.match(list.last(acc), r"[({\[]") then
-  |                             ^
-error: Expected expression at line 10:5 (got Else 'else')
-  --> /tmp/dojo-balanced-parens-1.almd:10:5
-   |
-10 |     else
-   |     ^
-error: Expected expression at line 12:3 (got RParen ')')
-  --> /tmp/dojo-balanced-parens-1.almd:12:3
-   |
-12 |   )
-   |   ^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-balanced-parens-1.almd:4:17
-  in variable acc
-  hint: Check the variable name
+5 |   |> list.map((c) => if c == '(' || c == '[' || c == '{' then stack + [string.of_char(c)] else if list.len(stack) > 0 then
+  |                                  ^
+error: Expected expression at line 7:5 (got In 'in')
+  --> /tmp/dojo-balanced-parens-1.almd:7:5
   |
-4 |       list.push(acc, c)
-  |                 ^^^
-error[E003]: undefined variable 'c'
-  --> /tmp/dojo-balanced-parens-1.almd:4:22
-  in variable c
-  hint: Did you mean `s`?
+7 |     in
+  |     ^
+error: '&&' is not valid in Almide at line 8:18
+  --> /tmp/dojo-balanced-parens-1.almd:8:18
+  hint: Use 'and' for logical AND. Example: if a and b then ...
   |
-4 |       list.push(acc, c)
-  |                      ^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-balanced-parens-1.almd:9:23
-  in variable acc
-  hint: Check the variable name
+8 |     if (c == ')' && last == '(') || (c == ']' && last == '[') || (c == '}' && last == '{') then list.drop_end(stack, 1) else err("unbalanced")
+  |                  ^
+error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
+  --> /tmp/dojo-balanced-parens-1.almd:6:26
+  in fn 'is_balanced'
+  hint: Fix the expression type or change the expected type
   |
-9 |         list.drop_end(acc, 1)
-  |                       ^^^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-balanced-parens-1.almd:11:7
-  in variable acc
-  hint: Check the variable name
-   |
-11 |       acc
-   |       ^^^
-error[E003]: undefined variable 'stack'
-  --> /tmp/dojo-balanced-parens-1.almd:14:17
-  in variable stack
-  hint: Check the variable name
-   |
-14 |   list.is_empty(stack)
-   |                 ^^^^^
+6 |     let last = list.last(stack)
+  |                          ^^^^^
 
-10 error(s) found
+5 error(s) found
 Compile error for /tmp/dojo-balanced-parens-1.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-1.almd
@@ -204,54 +135,51 @@ FAILED: /tmp/dojo-balanced-parens-1.almd
 ### Attempt 3 (FAIL)
 
 ```almide
-fn is_balanced(s: String) -> Bool = 
-  let stack = list.fold(list(), "", (acc, c) => 
-    match (string.match(c, r"[(){}\[\]]"), string.match(c, r"[)\]}")) 
-    { 
-      (some(_), none) => list.push(acc, c), 
-      (none, some(_)) => if list.is_empty(acc) || not (match list.last(acc) with { some(x) => string.match(x, r"[({\[]"), none => false }), 
-        list.drop_end(acc, 1) 
-      else 
-        acc 
-    } 
-  ) 
-  in 
-  list.is_empty(stack)
+fn is_balanced(s: String) -> Bool =
+  let stack = []
+  in
+  string.chars(s)
+  |> list.map((c) => if c == '(' || c == '[' || c == '{' then stack + [string.of_char(c)] else if list.len(stack) > 0 then
+    let last = list.last(stack)
+    in
+    if (c == ')' && last == '(') || (c == ']' && last == '[') || (c == '}' && last == '{') then list.drop_end(stack, 1) else if list.len(stack) == 0 then err("unbalanced") else stack)
+  |> list.fold((_, _) => true, [])
+  |> match some(_) => true, none => false
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-2.almd
-error: Expected name at line 3:19 (got Match 'match')
-  --> /tmp/dojo-balanced-parens-2.almd:3:19
+error: Expected expression at line 3:3 (got In 'in')
+  --> /tmp/dojo-balanced-parens-2.almd:3:3
   |
-3 |     match (string.match(c, r"[(){}\[\]]"), string.match(c, r"[)\]}"))
-  |                   ^
-error: Expected expression at line 8:7 (got Else 'else')
-  --> /tmp/dojo-balanced-parens-2.almd:8:7
+3 |   in
+  |   ^
+error: '||' is not valid in Almide at line 5:34
+  --> /tmp/dojo-balanced-parens-2.almd:5:34
+  hint: Use 'or' for logical OR. Example: if a or b then ...
   |
-8 |       else
-  |       ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 10:5 (got RBrace '}')
-  --> /tmp/dojo-balanced-parens-2.almd:10:5
-   |
-10 |     }
-   |     ^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-balanced-parens-2.almd:7:23
-  in variable acc
-  hint: Check the variable name
+5 |   |> list.map((c) => if c == '(' || c == '[' || c == '{' then stack + [string.of_char(c)] else if list.len(stack) > 0 then
+  |                                  ^
+error: Expected expression at line 7:5 (got In 'in')
+  --> /tmp/dojo-balanced-parens-2.almd:7:5
   |
-7 |         list.drop_end(acc, 1)
-  |                       ^^^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-balanced-parens-2.almd:9:9
-  in variable acc
-  hint: Check the variable name
+7 |     in
+  |     ^
+error: '&&' is not valid in Almide at line 8:18
+  --> /tmp/dojo-balanced-parens-2.almd:8:18
+  hint: Use 'and' for logical AND. Example: if a and b then ...
   |
-9 |         acc
-  |         ^^^
+8 |     if (c == ')' && last == '(') || (c == ']' && last == '[') || (c == '}' && last == '{') then list.drop_end(stack, 1) else if list.len(stack) == 0 then err("unbalanced") else stack)
+  |                  ^
+error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
+  --> /tmp/dojo-balanced-parens-2.almd:6:26
+  in fn 'is_balanced'
+  hint: Fix the expression type or change the expected type
+  |
+6 |     let last = list.last(stack)
+  |                          ^^^^^
 
 5 error(s) found
 Compile error for /tmp/dojo-balanced-parens-2.almd:
@@ -265,42 +193,53 @@ FAILED: /tmp/dojo-balanced-parens-2.almd
 ### Attempt 4 (FAIL)
 
 ```almide
-fn is_balanced(s: String) -> Bool = 
-  let stack = list.fold(list(), "", (acc, c) => 
-    match (string.match(c, r"[(){}\[\]]"), string.match(c, r"[)\]}")) 
-    { 
-      (some(_), none) => list.push(acc, c), 
-      (none, some(_)) => if list.is_empty(acc) then false 
-        else match list.last(acc) with { some(x) => string.match(x, r"[({\[]") ? list.drop_end(acc, 1) : false 
-    } 
-  ) 
-  in 
-  list.is_empty(stack)
+fn is_balanced(s: String) -> Bool =
+  let stack = []
+  in
+  string.chars(s)
+  |> list.map((c) => if c == '(' || c == '[' || c == '{' then stack + [string.of_char(c)] else if list.len(stack) > 0 then
+    let last = list.last(stack)
+    in
+    if (c == ')' && last == '(') || (c == ']' && last == '[') || (c == '}' && last == '{') then list.drop_end(stack, 1) else stack)
+  |> list.fold((_, _) => true, true)
+  |> match some(_) => true, none => false
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-3.almd
-error: Expected name at line 3:19 (got Match 'match')
-  --> /tmp/dojo-balanced-parens-3.almd:3:19
+error: Expected expression at line 3:3 (got In 'in')
+  --> /tmp/dojo-balanced-parens-3.almd:3:3
   |
-3 |     match (string.match(c, r"[(){}\[\]]"), string.match(c, r"[)\]}"))
-  |                   ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 8:5 (got RBrace '}')
-  --> /tmp/dojo-balanced-parens-3.almd:8:5
+3 |   in
+  |   ^
+error: '||' is not valid in Almide at line 5:34
+  --> /tmp/dojo-balanced-parens-3.almd:5:34
+  hint: Use 'or' for logical OR. Example: if a or b then ...
   |
-8 |     }
+5 |   |> list.map((c) => if c == '(' || c == '[' || c == '{' then stack + [string.of_char(c)] else if list.len(stack) > 0 then
+  |                                  ^
+error: Expected expression at line 7:5 (got In 'in')
+  --> /tmp/dojo-balanced-parens-3.almd:7:5
+  |
+7 |     in
   |     ^
+error: '&&' is not valid in Almide at line 8:18
+  --> /tmp/dojo-balanced-parens-3.almd:8:18
+  hint: Use 'and' for logical AND. Example: if a and b then ...
+  |
+8 |     if (c == ')' && last == '(') || (c == ']' && last == '[') || (c == '}' && last == '{') then list.drop_end(stack, 1) else stack)
+  |                  ^
 error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
-  --> /tmp/dojo-balanced-parens-3.almd:2:3
+  --> /tmp/dojo-balanced-parens-3.almd:6:26
   in fn 'is_balanced'
   hint: Fix the expression type or change the expected type
   |
-2 |   let stack = list.fold(list(), "", (acc, c) =>
-  |   ^^^
+6 |     let last = list.last(stack)
+  |                          ^^^^^
 
-3 error(s) found
+5 error(s) found
 Compile error for /tmp/dojo-balanced-parens-3.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-3.almd
