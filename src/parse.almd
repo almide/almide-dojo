@@ -1,0 +1,69 @@
+// Parsers for per-task markdown reports written by render_report.
+// Used by the backfill subcommand to reconstruct RunResults from the
+// historical run files on disk.
+
+import self.types.{RunResult}
+
+fn parse_field_from_lines(lines: List[String], prefix: String) -> String =
+  lines
+    |> list.find((line) => string.contains(line, prefix))
+    |> option.map((line) => {
+      let after = string.drop(line, string.index_of(line, prefix) |> option.unwrap_or(0) + string.len(prefix))
+      string.trim(after) |> string.replace("`", "")
+    })
+    |> option.unwrap_or("")
+
+fn parse_int_from_lines(lines: List[String], prefix: String) -> Int = {
+  let raw = parse_field_from_lines(lines, prefix)
+  let num = if string.contains(raw, "/") then
+    string.trim(string.take(raw, string.index_of(raw, "/") |> option.unwrap_or(0)))
+  else if string.contains(raw, " ") then
+    string.trim(string.take(raw, string.index_of(raw, " ") |> option.unwrap_or(0)))
+  else raw
+  match int.parse(num) { ok(n) => n, err(_) => 0 }
+}
+
+fn extract_final_diagnostic(content: String) -> String = {
+  let parts = string.split(content, "**Diagnostic:**")
+  if list.len(parts) <= 1 then ""
+  else {
+    let last = list.get(parts, list.len(parts) - 1) |> option.unwrap_or("")
+    match string.index_of(last, "```") {
+      none => ""
+      some(i) => {
+        let after_open = string.drop(last, i + 3)
+        let body_start = match string.index_of(after_open, "\n") {
+          some(j) => string.drop(after_open, j + 1)
+          none => after_open
+        }
+        match string.index_of(body_start, "```") {
+          none => string.trim(body_start)
+          some(k) => string.trim(string.take(body_start, k))
+        }
+      }
+    }
+  }
+}
+
+fn task_name_from_filename(filename: String) -> String =
+  if string.ends_with(filename, ".md") then
+    string.take(filename, string.len(filename) - 3)
+  else filename
+
+fn parse_task_md(filename: String, content: String) -> RunResult = {
+  let lines = string.split(content, "\n")
+  let success_str = parse_field_from_lines(lines, "**success**: ")
+  let retries = parse_int_from_lines(lines, "**retries**: ")
+  let model = parse_field_from_lines(lines, "**model**: ")
+  let success = success_str == "yes"
+  let diag = if success then "" else extract_final_diagnostic(content)
+  RunResult {
+    task: task_name_from_filename(filename),
+    model: model,
+    success: success,
+    retries: retries,
+    final_diagnostic: diag,
+    final_code: "",
+    attempts: [],
+  }
+}

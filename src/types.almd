@@ -1,0 +1,32 @@
+// Shared record types for the dojo harness.
+// Kept in their own module so classify / parse / render / backfill
+// can depend on them without pulling in the runner.
+
+type Task = {
+  name: String,
+  prompt: String,
+  tests: String,
+  dir: String,
+}
+
+type Attempt = {
+  code: String,
+  diagnostic: String,
+  passed: Bool,
+}
+
+type RunResult = {
+  task: String,
+  model: String,
+  success: Bool,
+  retries: Int,
+  final_diagnostic: String,
+  final_code: String,
+  attempts: List[Attempt],
+}
+
+type AttemptResult = {
+  success: Bool,
+  code: String,
+  diagnostic: String,
+}

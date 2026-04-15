@@ -1,0 +1,81 @@
+// Backfill subcommand: re-render historical runs/<date>/[<model>/]summary.md
+// from per-task .md files using the current classifier and render_summary.
+// Lets the dashboard show diagnostic breakdowns without waiting for the
+// next scheduled CI run.
+
+import fs
+import process
+import self.parse
+import self.render
+
+effect fn backfill_dir(date: String, dir: String) -> Unit = {
+  match fs.list_dir(dir) {
+    err(_) => println("  skip (cannot list): " + dir)
+    ok(entries) => {
+      let task_files = entries
+        |> list.filter((e) => string.ends_with(e, ".md") and e != "summary.md" and e != "README.md")
+        |> list.sort
+      let results = task_files
+        |> list.filter_map((f) =>
+          match fs.read_text(dir + "/" + f) {
+            ok(content) => some(parse.parse_task_md(f, content))
+            err(_) => none
+          })
+      if list.is_empty(results) then
+        println("  skip (no task reports): " + dir)
+      else {
+        let model = list.get(results, 0)
+          |> option.map((r) => r.model)
+          |> option.unwrap_or("unknown")
+        let path = dir + "/summary.md"
+        match fs.write(path, render.render_summary(date, model, results)) {
+          ok(_) => println("  wrote " + path + " (" + int.to_string(list.len(results)) + " tasks)")
+          err(e) => println("  failed " + path + ": " + e)
+        }
+      }
+    }
+  }
+}
+
+effect fn backfill_subs_loop(date: String, parent: String, subs: List[String]) -> Unit =
+  if list.is_empty(subs) then {}
+  else {
+    let sub = list.get(subs, 0) |> option.unwrap_or("")
+    let rest = list.drop(subs, 1)
+    backfill_dir(date, parent + "/" + sub)
+    backfill_subs_loop(date, parent, rest)
+  }
+
+effect fn backfill_loop(dates: List[String]) -> Unit =
+  if list.is_empty(dates) then {}
+  else {
+    let date = list.get(dates, 0) |> option.unwrap_or("")
+    let rest = list.drop(dates, 1)
+    println("[" + date + "]")
+    match fs.read_text("runs/" + date + "/summary.md") {
+      ok(_) => { backfill_dir(date, "runs/" + date); {} }
+      err(_) =>
+        match fs.list_dir("runs/" + date) {
+          err(_) => { println("  skip (no subdirs)"); {} }
+          ok(subs) => { backfill_subs_loop(date, "runs/" + date, subs); {} }
+        }
+    }
+    backfill_loop(rest)
+  }
+
+effect fn backfill_all() -> Unit = {
+  match fs.list_dir("runs") {
+    err(_) => {
+      println("No runs/ directory found")
+      process.exit(1)
+    }
+    ok(entries) => {
+      let dates = entries
+        |> list.filter((e) => not string.starts_with(e, ".") and e != "README.md")
+        |> list.sort
+      println("Backfilling " + int.to_string(list.len(dates)) + " date dirs...")
+      backfill_loop(dates)
+      println("Done.")
+    }
+  }
+}

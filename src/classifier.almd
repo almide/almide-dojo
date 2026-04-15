@@ -1,0 +1,94 @@
+// Failure classification.
+//
+// Each RunResult is reduced to a (category, primary-diagnostic-code) pair.
+// The category drives the dashboard breakdown; the code drives the
+// "top diagnostic codes" leaderboard that surfaces the diagnostics most
+// likely to mislead an LLM.
+
+import self.types.{RunResult}
+
+fn primary_diagnostic_code(diag: String) -> String =
+  match string.index_of(diag, "error[E") {
+    none => ""
+    some(i) => {
+      let after = string.drop(diag, i + 6)
+      match string.index_of(after, "]") {
+        none => ""
+        some(j) => string.take(after, j)
+      }
+    }
+  }
+
+fn category_from_code(code: String) -> String =
+  if code == "E001" then "type-error"
+  else if code == "E002" then "type-error"
+  else if code == "E005" then "type-error"
+  else if code == "E003" then "name-error"
+  else if code == "E004" then "import-error"
+  else "compile-error"
+
+fn classify_failure(diag: String) -> (String, String) = {
+  let code = primary_diagnostic_code(diag)
+  if code != "" then (category_from_code(code), code)
+  else if string.contains(diag, "Expected ") then ("parse-error", "")
+  else if string.contains(diag, "panicked") then ("runtime-error", "")
+  else if string.contains(diag, "thread '") then ("runtime-error", "")
+  else if string.contains(diag, "assertion") then ("wrong-output", "")
+  else if string.contains(diag, "test failed") then ("wrong-output", "")
+  else if string.contains(diag, "timed out") then ("timeout", "")
+  else if string.contains(diag, "Timeout") then ("timeout", "")
+  else ("unknown", "")
+}
+
+fn classify(result: RunResult) -> (String, String) =
+  if result.success then
+    (if result.retries == 0 then "pass-1shot" else "pass-retry", "")
+  else
+    classify_failure(result.final_diagnostic)
+
+fn category_order() -> List[String] = [
+  "pass-1shot", "pass-retry",
+  "parse-error", "type-error", "name-error", "import-error",
+  "compile-error", "runtime-error", "wrong-output", "timeout", "unknown",
+]
+
+test "primary_diagnostic_code extracts E003" {
+  assert_eq(primary_diagnostic_code("error[E003]: undefined variable 'x'"), "E003")
+}
+
+test "primary_diagnostic_code returns empty when no code" {
+  assert_eq(primary_diagnostic_code("error: Expected identifier"), "")
+}
+
+test "classify_failure name-error from E003" {
+  let r = classify_failure("error[E003]: undefined variable 'x'")
+  assert_eq(r.0, "name-error")
+  assert_eq(r.1, "E003")
+}
+
+test "classify_failure type-error from E001" {
+  let r = classify_failure("error[E001]: type mismatch")
+  assert_eq(r.0, "type-error")
+  assert_eq(r.1, "E001")
+}
+
+test "classify_failure parse-error when only Expected" {
+  let r = classify_failure("error: Expected identifier at 1:1")
+  assert_eq(r.0, "parse-error")
+  assert_eq(r.1, "")
+}
+
+test "classify_failure runtime-error from panic" {
+  let r = classify_failure("thread 'main' panicked at 'index out of bounds'")
+  assert_eq(r.0, "runtime-error")
+}
+
+test "classify pass-1shot when success and zero retries" {
+  let r = RunResult { task: "x", model: "m", success: true, retries: 0, final_diagnostic: "", final_code: "", attempts: [] }
+  assert_eq(classify(r).0, "pass-1shot")
+}
+
+test "classify pass-retry when success after retries" {
+  let r = RunResult { task: "x", model: "m", success: true, retries: 2, final_diagnostic: "", final_code: "", attempts: [] }
+  assert_eq(classify(r).0, "pass-retry")
+}

@@ -1,0 +1,87 @@
+// Markdown rendering for per-task reports and per-(date, model) summaries.
+// Both feed runs/<date>/[<model>/]*.md files and the dashboard build.
+
+import self.types.{Attempt, RunResult}
+import self.classifier
+
+fn fence_block(lang: String, body: String) -> String =
+  "```" + lang + "\n" + body + "\n```\n"
+
+fn render_attempt(idx: Int, attempt: Attempt) -> String = {
+  let header = "### Attempt " + int.to_string(idx + 1) +
+    (if attempt.passed then " (PASS)" else " (FAIL)") + "\n\n"
+  let code_section = fence_block("almide", attempt.code)
+  if attempt.passed then header + code_section
+  else if attempt.diagnostic == "" then header + code_section
+  else header + code_section + "\n**Diagnostic:**\n\n" + fence_block("", attempt.diagnostic)
+}
+
+fn render_attempts(attempts: List[Attempt]) -> String =
+  if list.is_empty(attempts) then ""
+  else {
+    let body = attempts
+      |> list.enumerate
+      |> list.map((entry) => render_attempt(entry.0, entry.1))
+      |> string.join("\n")
+    "## Attempts\n\n" + body
+  }
+
+fn render_report(result: RunResult) -> String = {
+  let c = classifier.classify(result)
+  let code_line = if c.1 == "" then "" else "- **diagnostic code**: `" + c.1 + "`\n"
+  "# " + result.task + "\n\n" +
+  "- **model**: `" + result.model + "`\n" +
+  "- **success**: " + (if result.success then "yes" else "no") + "\n" +
+  "- **retries**: " + int.to_string(result.retries) + "\n" +
+  "- **category**: " + c.0 + "\n" +
+  code_line + "\n" +
+  render_attempts(result.attempts)
+}
+
+fn render_summary(date: String, model: String, results: List[RunResult]) -> String = {
+  let total = list.len(results)
+  let passed = list.count(results, (r) => r.success)
+  let one_shot = list.count(results, (r) => r.success and r.retries == 0)
+  let total_retries = results
+    |> list.map((r) => r.retries)
+    |> list.sum
+
+  let rows = results
+    |> list.map((r) => {
+      let c = classifier.classify(r)
+      let success_mark = if r.success then "pass" else "FAIL"
+      let code_cell = if c.1 == "" then "—" else "`" + c.1 + "`"
+      "| `" + r.task + "` | " + success_mark + " | " + c.0 + " | " + code_cell + " | " + int.to_string(r.retries) + " |"
+    })
+    |> string.join("\n")
+
+  let cat_lines = classifier.category_order()
+    |> list.filter_map((cat) => {
+      let n = list.count(results, (r) => classifier.classify(r).0 == cat)
+      if n > 0 then some("- " + cat + ": " + int.to_string(n)) else none
+    })
+    |> string.join("\n")
+
+  let codes = results
+    |> list.map((r) => classifier.classify(r).1)
+    |> list.filter((c) => c != "")
+  let unique_codes = list.unique(codes) |> list.sort
+  let code_lines = unique_codes
+    |> list.map((code) => "- `" + code + "`: " + int.to_string(list.count(codes, (c) => c == code)))
+    |> string.join("\n")
+  let codes_section = if list.is_empty(unique_codes) then ""
+    else "\n## Top diagnostic codes\n\n" + code_lines + "\n"
+
+  "# MSR run " + date + "\n\n" +
+  "- **model**: `" + model + "`\n" +
+  "- **tasks**: " + int.to_string(total) + "\n" +
+  "- **passed**: " + int.to_string(passed) + " / " + int.to_string(total) + "\n" +
+  "- **1-shot passes**: " + int.to_string(one_shot) + " / " + int.to_string(total) + "\n" +
+  "- **total retries**: " + int.to_string(total_retries) + "\n\n" +
+  "## Per-task\n\n" +
+  "| task | result | category | code | retries |\n" +
+  "|---|---|---|---|---|\n" +
+  rows + "\n\n" +
+  "## By category\n\n" + cat_lines + "\n" +
+  codes_section
+}
