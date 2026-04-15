@@ -12,8 +12,10 @@
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
   match (xs, ys) {
-    (xs, ys) if xs.is_empty() or ys.is_empty() => []
-    (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+    (xs, ys) if xs.is_empty() && ys.is_empty() => []
+    (xs, ys) if xs.is_empty() => []
+    (xs, ys) if ys.is_empty() => []
+    (x :: xs, y :: ys) => (f(x, y)) :: zip_with(xs, ys, f)
   }
 ```
 
@@ -21,12 +23,12 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
 
 ```
 Compiling /tmp/dojo-zip-with-0.almd
-error: Expected RParen at line 4:8 (got Colon ':')
-  --> /tmp/dojo-zip-with-0.almd:4:8
-  hint: Missing ')'. Check for an unclosed '(' earlier in this expression
+error: '&&' is not valid in Almide at line 3:31
+  --> /tmp/dojo-zip-with-0.almd:3:31
+  hint: Use 'and' for logical AND. Example: if a and b then ...
   |
-4 |     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
-  |        ^
+3 |     (xs, ys) if xs.is_empty() && ys.is_empty() => []
+  |                               ^
 
 1 error(s) found
 Compile error for /tmp/dojo-zip-with-0.almd:
@@ -42,8 +44,10 @@ FAILED: /tmp/dojo-zip-with-0.almd
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
   match (xs, ys) {
-    (xs, ys) if xs.is_empty() or ys.is_empty() => []
-    (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+    (xs, ys) if xs.is_empty() and ys.is_empty() => []
+    (xs, ys) if xs.is_empty() => []
+    (xs, ys) if ys.is_empty() => []
+    (x :: xs, y :: ys) => (f(x, y)) :: zip_with(xs, ys, f)
   }
 ```
 
@@ -51,11 +55,11 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
 
 ```
 Compiling /tmp/dojo-zip-with-1.almd
-error: Expected RParen at line 4:8 (got Colon ':')
-  --> /tmp/dojo-zip-with-1.almd:4:8
+error: Expected RParen at line 6:8 (got Colon ':')
+  --> /tmp/dojo-zip-with-1.almd:6:8
   hint: Missing ')'. Check for an unclosed '(' earlier in this expression
   |
-4 |     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+6 |     (x :: xs, y :: ys) => (f(x, y)) :: zip_with(xs, ys, f)
   |        ^
 
 1 error(s) found
@@ -72,7 +76,9 @@ FAILED: /tmp/dojo-zip-with-1.almd
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
   match (xs, ys) {
-    (xs, ys) if xs.is_empty() or ys.is_empty() => []
+    (xs, ys) if xs.is_empty() and ys.is_empty() => []
+    (xs, ys) if xs.is_empty() => []
+    (xs, ys) if ys.is_empty() => []
     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
   }
 ```
@@ -81,11 +87,11 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
 
 ```
 Compiling /tmp/dojo-zip-with-2.almd
-error: Expected RParen at line 4:8 (got Colon ':')
-  --> /tmp/dojo-zip-with-2.almd:4:8
+error: Expected RParen at line 6:8 (got Colon ':')
+  --> /tmp/dojo-zip-with-2.almd:6:8
   hint: Missing ')'. Check for an unclosed '(' earlier in this expression
   |
-4 |     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+6 |     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
   |        ^
 
 1 error(s) found
@@ -102,7 +108,9 @@ FAILED: /tmp/dojo-zip-with-2.almd
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
   match (xs, ys) {
-    (xs, ys) if xs.is_empty() or ys.is_empty() => []
+    (xs, ys) if xs.is_empty() and ys.is_empty() => []
+    (xs, ys) if xs.is_empty() => []
+    (xs, ys) if ys.is_empty() => []
     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
   }
 ```
@@ -111,11 +119,11 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
 
 ```
 Compiling /tmp/dojo-zip-with-3.almd
-error: Expected RParen at line 4:8 (got Colon ':')
-  --> /tmp/dojo-zip-with-3.almd:4:8
+error: Expected RParen at line 6:8 (got Colon ':')
+  --> /tmp/dojo-zip-with-3.almd:6:8
   hint: Missing ')'. Check for an unclosed '(' earlier in this expression
   |
-4 |     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+6 |     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
   |        ^
 
 1 error(s) found

@@ -3,8 +3,7 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: type-error
-- **diagnostic code**: `E005`
+- **category**: parse-error
 
 ## Attempts
 
@@ -12,32 +11,34 @@
 
 ```almide
 fn rle_encode(s: String) -> String {
-  let acc = List[(Int, String)]()
-  for c in string.chars(s) {
-    let (count, rest) = match acc.first() {
-      some((n, _)) => (n + 1, acc.drop(1)),
-      none => (1, acc)
-    };
-    acc = acc + [(count, c)]
-  };
-  let encoded = List[String]()
-  for (count, c) in acc {
-    encoded = encoded + [int.to_string(count) + c]
-  };
-  string.join(encoded, "")
+  let mut result = ""
+  let mut count = 1
+  let chars = string.chars(s)
+  for (i, c) in chars.enumerate() {
+    if i + 1 < chars.len() && c == chars[i + 1] {
+      count += 1
+    } else {
+      result += int.to_string(count)
+      result += string.from_codepoint(c)
+      count = 1
+    }
+  }
+  result
 }
 
 fn rle_decode(s: String) -> String {
-  let encoded = string.split(s, "")
-  let decoded = List[String]()
-  for chunk in encoded {
-    let count = int.parse(chunk)
-    match count {
-      ok(n) => decoded = decoded + [string.repeat("", n)],
-      err(_) => return "Invalid encoded string"
-    };
-  };
-  string.join(decoded, "")
+  let mut result = ""
+  let chars = string.chars(s)
+  for (i, c) in chars.enumerate() {
+    if i + 1 < chars.len() && string.is_digit(chars[i + 1]) {
+      let count = int.parse(string.slice(s, i + 1, i + 2)).unwrap()
+      result += string.repeat(c, count)
+      i += 1
+    } else {
+      result += string.from_codepoint(c)
+    }
+  }
+  result
 }
 ```
 
@@ -71,32 +72,34 @@ FAILED: /tmp/dojo-run-length-encoding-0.almd
 
 ```almide
 fn rle_encode(s: String) -> String = {
-  let acc = List[(Int, String)]()
-  for c in string.chars(s) {
-    let (count, rest) = match acc.first() {
-      some((n, _)) => (n + 1, acc.drop(1)),
-      none => (1, acc)
-    };
-    acc = acc + [(count, c)]
-  };
-  let encoded = List[String]()
-  for (count, c) in acc {
-    encoded = encoded + [int.to_string(count) + c]
-  };
-  string.join(encoded, "")
+  let mut result = ""
+  let mut count = 1
+  let chars = string.chars(s)
+  for (i, c) in chars.enumerate() {
+    if i + 1 < chars.len() && c == chars[i + 1] {
+      count += 1
+    } else {
+      result += int.to_string(count)
+      result += string.from_codepoint(c)
+      count = 1
+    }
+  }
+  result
 }
 
 fn rle_decode(s: String) -> String = {
-  let encoded = string.split(s, "")
-  let decoded = List[String]()
-  for chunk in encoded {
-    let count = int.parse(chunk)
-    match count {
-      ok(n) => decoded = decoded + [string.repeat("", n)],
-      err(_) => return "Invalid encoded string"
-    };
-  };
-  string.join(decoded, "")
+  let mut result = ""
+  let chars = string.chars(s)
+  for (i, c) in chars.enumerate() {
+    if i + 1 < chars.len() && string.is_digit(chars[i + 1]) {
+      let count = int.parse(string.slice(s, i + 1, i + 2)).unwrap()
+      result += string.repeat(c, count)
+      i += 1
+    } else {
+      result += string.from_codepoint(c)
+    }
+  }
+  result
 }
 ```
 
@@ -104,89 +107,122 @@ fn rle_decode(s: String) -> String = {
 
 ```
 Compiling /tmp/dojo-run-length-encoding-1.almd
-error: Expected pattern at line 23:24 (got Eq '=')
-  --> /tmp/dojo-run-length-encoding-1.almd:23:24
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
-   |
-23 |       ok(n) => decoded = decoded + [string.repeat("", n)],
-   |                        ^
-error: Semicolons are not used in Almide at line 25:6
-  --> /tmp/dojo-run-length-encoding-1.almd:25:6
-  hint: Remove the ';'. Almide uses newlines to separate statements.
-   |
-25 |     };
-   |      ^
-error: operator '+' requires numeric, String, or List types but got List and List[(Unknown, String)]
-  --> /tmp/dojo-run-length-encoding-1.almd:8:26
-  in operator +
-  hint: Use + with numeric types, String, or List
+error: 'let mut' is not valid in Almide at line 2:7
+  --> /tmp/dojo-run-length-encoding-1.almd:2:7
+  hint: Use 'var' for mutable variables. Example: var x = 0
   |
-8 |     acc = acc + [(count, c)]
-  |                          ^
-error[E009]: cannot reassign immutable binding 'acc'
-  --> /tmp/dojo-run-length-encoding-1.almd:8:26
-  in acc = ...
-  hint: Use 'var acc = ...' instead of 'let acc = ...' to declare a mutable variable
+2 |   let mut result = ""
+  |       ^
+error: 'let mut' is not valid in Almide at line 3:7
+  --> /tmp/dojo-run-length-encoding-1.almd:3:7
+  hint: Use 'var' for mutable variables. Example: var x = 0
   |
-2 |   let acc = List[(Int, String)]()
-  |   ------------------- 'acc' declared here
-...
-8 |     acc = acc + [(count, c)]
-  |                          ^
-error: operator '+' requires numeric, String, or List types but got List and List[String]
-  --> /tmp/dojo-run-length-encoding-1.almd:12:49
-  in operator +
-  hint: Use + with numeric types, String, or List
+3 |   let mut count = 1
+  |       ^
+error: '&&' is not valid in Almide at line 6:28
+  --> /tmp/dojo-run-length-encoding-1.almd:6:28
+  hint: Use 'and' for logical AND. Example: if a and b then ...
+  |
+6 |     if i + 1 < chars.len() && c == chars[i + 1] {
+  |                            ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-1.almd:7:14
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+  |
+7 |       count += 1
+  |              ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 8:7 (got Else 'else')
+  --> /tmp/dojo-run-length-encoding-1.almd:8:7
+  |
+8 |     } else {
+  |       ^
+error: 'let mut' is not valid in Almide at line 18:7
+  --> /tmp/dojo-run-length-encoding-1.almd:18:7
+  hint: Use 'var' for mutable variables. Example: var x = 0
    |
-12 |     encoded = encoded + [int.to_string(count) + c]
-   |                                                 ^
-error[E009]: cannot reassign immutable binding 'encoded'
-  --> /tmp/dojo-run-length-encoding-1.almd:12:49
-  in encoded = ...
-  hint: Use 'var encoded = ...' instead of 'let encoded = ...' to declare a mutable variable
+18 |   let mut result = ""
+   |       ^
+error: '&&' is not valid in Almide at line 21:28
+  --> /tmp/dojo-run-length-encoding-1.almd:21:28
+  hint: Use 'and' for logical AND. Example: if a and b then ...
    |
-10 |   let encoded = List[String]()
-   |   ----------------------- 'encoded' declared here
-...
-12 |     encoded = encoded + [int.to_string(count) + c]
-   |                                                 ^
-error[E005]: argument 'list' expects List[String] but got List
-  --> /tmp/dojo-run-length-encoding-1.almd:14:24
-  in call to string.join()
-  hint: Fix the argument type
+21 |     if i + 1 < chars.len() && string.is_digit(chars[i + 1]) {
+   |                            ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-1.almd:23:15
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
    |
-14 |   string.join(encoded, "")
-   |                        ^^
-error[E001]: type mismatch in method call: expected List but got fn() -> ?0
-  --> /tmp/dojo-run-length-encoding-1.almd:4:31
-  in method call
+23 |       result += string.repeat(c, count)
+   |               ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-1.almd:24:10
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+24 |       i += 1
+   |          ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 25:7 (got Else 'else')
+  --> /tmp/dojo-run-length-encoding-1.almd:25:7
+   |
+25 |     } else {
+   |       ^
+error[E003]: undefined variable 'i'
+  --> /tmp/dojo-run-length-encoding-1.almd:22:45
+  in variable i
+  hint: Did you mean `s`?
+  try:
+      // i  →  s
+      s
+   |
+22 |       let count = int.parse(string.slice(s, i + 1, i + 2)).unwrap()
+   |                                             ^
+error[E003]: undefined variable 'i'
+  --> /tmp/dojo-run-length-encoding-1.almd:22:52
+  in variable i
+  hint: Did you mean `s`?
+  try:
+      // i  →  s
+      s
+   |
+22 |       let count = int.parse(string.slice(s, i + 1, i + 2)).unwrap()
+   |                                                    ^
+error[E002]: undefined method 'unwrap' on result
+  --> /tmp/dojo-run-length-encoding-1.almd:22:56
+  in method call .unwrap()
+  hint: Almide doesn't use method-call syntax. Write `result.<fn>(x)` (or `x |> result.<fn>`) — there is no method `unwrap` on `result`. Run `almide explain E002` for examples.
+   |
+22 |       let count = int.parse(string.slice(s, i + 1, i + 2)).unwrap()
+   |                                                        ^
+error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
+  --> /tmp/dojo-run-length-encoding-1.almd:4:28
+  in fn 'rle_encode'
   hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
   |
-4 |     let (count, rest) = match acc.first() {
-  |                               ^^^
-error[E001]: type mismatch in method call: expected List but got fn(Int) -> List
-  --> /tmp/dojo-run-length-encoding-1.almd:5:31
-  in method call
-  hint: Fix the expression type or change the expected type
-  |
-5 |       some((n, _)) => (n + 1, acc.drop(1)),
-  |                               ^^^
-error[E001]: type mismatch in call to string.join(): expected List[String] but got List
-  --> /tmp/dojo-run-length-encoding-1.almd:14:24
-  in call to string.join()
-  hint: Fix the expression type or change the expected type
-   |
-14 |   string.join(encoded, "")
-   |                        ^^
+4 |   let chars = string.chars(s)
+  |                            ^
 error[E001]: type mismatch in fn 'rle_decode': expected String but got Unit
-  --> /tmp/dojo-run-length-encoding-1.almd:19:17
+  --> /tmp/dojo-run-length-encoding-1.almd:22:56
   in fn 'rle_decode'
   hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
    |
-19 |   let decoded = List[String]()
-   |                 ^^^^
+22 |       let count = int.parse(string.slice(s, i + 1, i + 2)).unwrap()
+   |                                                        ^
 
-11 error(s) found
+15 error(s) found
 Compile error for /tmp/dojo-run-length-encoding-1.almd:
 compile failed
 FAILED: /tmp/dojo-run-length-encoding-1.almd
@@ -199,32 +235,34 @@ FAILED: /tmp/dojo-run-length-encoding-1.almd
 
 ```almide
 fn rle_encode(s: String) -> String = {
-  var acc = List[(Int, String)]()
-  for c in string.chars(s) {
-    let (count, rest) = match acc.first() {
-      some((n, _)) => (n + 1, acc.drop(1)),
-      none => (1, acc)
-    };
-    acc = acc + [(count, c)]
-  };
-  var encoded = List[String]()
-  for (count, c) in acc {
-    encoded = encoded + [int.to_string(count) + c]
-  };
-  string.join(encoded, "")
+  let result = ""
+  let chars = string.chars(s)
+  for (i, c) in chars.enumerate() {
+    if i + 1 < chars.len() && c == chars[i + 1] {
+      let count = int.to_string(i + 2 - chars.index_of(c, 0))
+      result += count
+      result += string.from_codepoint(c)
+    } else {
+      result += int.to_string(1)
+      result += string.from_codepoint(c)
+    }
+  }
+  result
 }
 
 fn rle_decode(s: String) -> String = {
-  let encoded = string.split(s, "")
-  var decoded = List[String]()
-  for chunk in encoded {
-    let count = match int.parse(chunk) {
-      ok(n) => n,
-      err(_) => return "Invalid encoded string"
-    };
-    decoded = decoded + [string.repeat("", count)]
-  };
-  string.join(decoded, "")
+  let chars = string.chars(s)
+  let result = ""
+  for (i, c) in chars.enumerate() {
+    if i + 1 < chars.len() && string.is_digit(chars[i + 1]) {
+      let count = int.parse(string.slice(s, i + 1, i + 2)).unwrap()
+      result += string.repeat(string.from_codepoint(c), count)
+      i += 1
+    } else {
+      result += string.from_codepoint(c)
+    }
+  }
+  result
 }
 ```
 
@@ -232,69 +270,148 @@ fn rle_decode(s: String) -> String = {
 
 ```
 Compiling /tmp/dojo-run-length-encoding-2.almd
-error: 'return' is not needed in Almide at line 23:17
-  --> /tmp/dojo-run-length-encoding-2.almd:23:17
-  hint: The last expression in a block is the return value. Use 'guard ... else' for early returns.
-   |
-23 |       err(_) => return "Invalid encoded string"
-   |                 ^
-error: Semicolons are not used in Almide at line 24:6
-  --> /tmp/dojo-run-length-encoding-2.almd:24:6
-  hint: Remove the ';'. Almide uses newlines to separate statements.
-   |
-24 |     };
-   |      ^
-error: operator '+' requires numeric, String, or List types but got List and List[(Unknown, String)]
-  --> /tmp/dojo-run-length-encoding-2.almd:8:26
-  in operator +
-  hint: Use + with numeric types, String, or List
+error: '&&' is not valid in Almide at line 5:28
+  --> /tmp/dojo-run-length-encoding-2.almd:5:28
+  hint: Use 'and' for logical AND. Example: if a and b then ...
   |
-8 |     acc = acc + [(count, c)]
-  |                          ^
-error: operator '+' requires numeric, String, or List types but got List and List[String]
-  --> /tmp/dojo-run-length-encoding-2.almd:12:49
-  in operator +
-  hint: Use + with numeric types, String, or List
-   |
-12 |     encoded = encoded + [int.to_string(count) + c]
-   |                                                 ^
-error[E005]: argument 'list' expects List[String] but got List
-  --> /tmp/dojo-run-length-encoding-2.almd:14:24
-  in call to string.join()
-  hint: Fix the argument type
-   |
-14 |   string.join(encoded, "")
-   |                        ^^
-error[E001]: type mismatch in method call: expected List but got fn() -> ?0
-  --> /tmp/dojo-run-length-encoding-2.almd:4:31
-  in method call
-  hint: Fix the expression type or change the expected type
+5 |     if i + 1 < chars.len() && c == chars[i + 1] {
+  |                            ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-2.almd:7:15
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
   |
-4 |     let (count, rest) = match acc.first() {
-  |                               ^^^
-error[E001]: type mismatch in method call: expected List but got fn(Int) -> List
-  --> /tmp/dojo-run-length-encoding-2.almd:5:31
-  in method call
-  hint: Fix the expression type or change the expected type
+7 |       result += count
+  |               ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-2.almd:8:15
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
   |
-5 |       some((n, _)) => (n + 1, acc.drop(1)),
-  |                               ^^^
-error[E001]: type mismatch in call to string.join(): expected List[String] but got List
-  --> /tmp/dojo-run-length-encoding-2.almd:14:24
-  in call to string.join()
-  hint: Fix the expression type or change the expected type
+8 |       result += string.from_codepoint(c)
+  |               ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 9:7 (got Else 'else')
+  --> /tmp/dojo-run-length-encoding-2.almd:9:7
+  |
+9 |     } else {
+  |       ^
+error: '&&' is not valid in Almide at line 21:28
+  --> /tmp/dojo-run-length-encoding-2.almd:21:28
+  hint: Use 'and' for logical AND. Example: if a and b then ...
    |
-14 |   string.join(encoded, "")
-   |                        ^^
+21 |     if i + 1 < chars.len() && string.is_digit(chars[i + 1]) {
+   |                            ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-2.almd:23:15
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+23 |       result += string.repeat(string.from_codepoint(c), count)
+   |               ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-2.almd:24:10
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+24 |       i += 1
+   |          ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 25:7 (got Else 'else')
+  --> /tmp/dojo-run-length-encoding-2.almd:25:7
+   |
+25 |     } else {
+   |       ^
+error[E003]: undefined variable 'i'
+  --> /tmp/dojo-run-length-encoding-2.almd:6:33
+  in variable i
+  hint: Did you mean `s`?
+  try:
+      // i  →  s
+      s
+  |
+6 |       let count = int.to_string(i + 2 - chars.index_of(c, 0))
+  |                                 ^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-run-length-encoding-2.almd:6:56
+  in variable c
+  hint: Did you mean `s`?
+  try:
+      // c  →  s
+      s
+  |
+6 |       let count = int.to_string(i + 2 - chars.index_of(c, 0))
+  |                                                        ^
+error[E004]: list.index_of() expects 2 argument(s) but got 3
+  --> /tmp/dojo-run-length-encoding-2.almd:6:41
+  in call to list.index_of()
+  hint: Check the number of arguments
+  try:
+      // list.index_of() takes 2 arg(s) — you passed 3
+      list.index_of(<xs: List[A]>, <x: A>)
+  |
+6 |       let count = int.to_string(i + 2 - chars.index_of(c, 0))
+  |                                         ^^^^^
+error: operator '-' requires numeric types but got Unknown and Option[Int]
+  --> /tmp/dojo-run-length-encoding-2.almd:6:41
+  in operator -
+  hint: Use numeric types (Int or Float)
+  |
+6 |       let count = int.to_string(i + 2 - chars.index_of(c, 0))
+  |                                         ^^^^^
+error[E003]: undefined variable 'i'
+  --> /tmp/dojo-run-length-encoding-2.almd:22:45
+  in variable i
+  hint: Did you mean `s`?
+  try:
+      // i  →  s
+      s
+   |
+22 |       let count = int.parse(string.slice(s, i + 1, i + 2)).unwrap()
+   |                                             ^
+error[E003]: undefined variable 'i'
+  --> /tmp/dojo-run-length-encoding-2.almd:22:52
+  in variable i
+  hint: Did you mean `s`?
+  try:
+      // i  →  s
+      s
+   |
+22 |       let count = int.parse(string.slice(s, i + 1, i + 2)).unwrap()
+   |                                                    ^
+error[E002]: undefined method 'unwrap' on result
+  --> /tmp/dojo-run-length-encoding-2.almd:22:56
+  in method call .unwrap()
+  hint: Almide doesn't use method-call syntax. Write `result.<fn>(x)` (or `x |> result.<fn>`) — there is no method `unwrap` on `result`. Run `almide explain E002` for examples.
+   |
+22 |       let count = int.parse(string.slice(s, i + 1, i + 2)).unwrap()
+   |                                                        ^
+error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
+  --> /tmp/dojo-run-length-encoding-2.almd:6:41
+  in fn 'rle_encode'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
+  |
+6 |       let count = int.to_string(i + 2 - chars.index_of(c, 0))
+  |                                         ^^^^^
 error[E001]: type mismatch in fn 'rle_decode': expected String but got Unit
-  --> /tmp/dojo-run-length-encoding-2.almd:19:17
+  --> /tmp/dojo-run-length-encoding-2.almd:22:56
   in fn 'rle_decode'
   hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
    |
-19 |   var decoded = List[String]()
-   |                 ^^^^
+22 |       let count = int.parse(string.slice(s, i + 1, i + 2)).unwrap()
+   |                                                        ^
 
-9 error(s) found
+17 error(s) found
 Compile error for /tmp/dojo-run-length-encoding-2.almd:
 compile failed
 FAILED: /tmp/dojo-run-length-encoding-2.almd
@@ -307,32 +424,32 @@ FAILED: /tmp/dojo-run-length-encoding-2.almd
 
 ```almide
 fn rle_encode(s: String) -> String = {
-  var acc = List[(Int, String)]()
-  for c in string.chars(s) {
-    let (count, rest) = match acc.first() {
-      some((n, _)) => (n + 1, acc.drop(1)),
-      none => (1, acc)
-    };
-    acc = acc + [(count, c)]
-  };
-  var encoded = List[String]()
-  for (count, c) in acc {
-    encoded = encoded + [int.to_string(count) + c]
-  };
-  string.join(encoded, "")
+  let result = ""
+  let chars = string.chars(s)
+  for (i, c) in chars.enumerate() {
+    if i + 1 < chars.len() && c == chars[i + 1] {
+      let count = int.to_string(i + 2 - chars.index_of(c, 0))
+      result = result + count + string.from_codepoint(c)
+    } else {
+      result = result + int.to_string(1) + string.from_codepoint(c)
+    }
+  }
+  result
 }
 
 fn rle_decode(s: String) -> String = {
-  let encoded = string.split(s, "")
-  var decoded = List[String]()
-  for chunk in encoded {
-    let count = match int.parse(chunk) {
-      ok(n) => n,
-      err(_) => "Invalid encoded string"
-    };
-    decoded = decoded + [string.repeat("", count)]
-  };
-  string.join(decoded, "")
+  let chars = string.chars(s)
+  let result = ""
+  for (i, c) in chars.enumerate() {
+    if i + 1 < chars.len() && string.is_digit(chars[i + 1]) {
+      let count = int.parse(string.slice(s, i + 1, i + 2))
+      result = result + string.repeat(string.from_codepoint(c), count)
+      i += 1
+    } else {
+      result = result + string.from_codepoint(c)
+    }
+  }
+  result
 }
 ```
 
@@ -340,78 +457,180 @@ fn rle_decode(s: String) -> String = {
 
 ```
 Compiling /tmp/dojo-run-length-encoding-3.almd
-error: operator '+' requires numeric, String, or List types but got List and List[(Unknown, String)]
-  --> /tmp/dojo-run-length-encoding-3.almd:8:26
-  in operator +
-  hint: Use + with numeric types, String, or List
+error: '&&' is not valid in Almide at line 5:28
+  --> /tmp/dojo-run-length-encoding-3.almd:5:28
+  hint: Use 'and' for logical AND. Example: if a and b then ...
   |
-8 |     acc = acc + [(count, c)]
-  |                          ^
-error: operator '+' requires numeric, String, or List types but got List and List[String]
-  --> /tmp/dojo-run-length-encoding-3.almd:12:49
-  in operator +
-  hint: Use + with numeric types, String, or List
+5 |     if i + 1 < chars.len() && c == chars[i + 1] {
+  |                            ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 8:7 (got Else 'else')
+  --> /tmp/dojo-run-length-encoding-3.almd:8:7
+  |
+8 |     } else {
+  |       ^
+error: '&&' is not valid in Almide at line 19:28
+  --> /tmp/dojo-run-length-encoding-3.almd:19:28
+  hint: Use 'and' for logical AND. Example: if a and b then ...
    |
-12 |     encoded = encoded + [int.to_string(count) + c]
-   |                                                 ^
-error[E005]: argument 'list' expects List[String] but got List
-  --> /tmp/dojo-run-length-encoding-3.almd:14:24
-  in call to string.join()
+19 |     if i + 1 < chars.len() && string.is_digit(chars[i + 1]) {
+   |                            ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-3.almd:22:10
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+22 |       i += 1
+   |          ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 23:7 (got Else 'else')
+  --> /tmp/dojo-run-length-encoding-3.almd:23:7
+   |
+23 |     } else {
+   |       ^
+error[E003]: undefined variable 'i'
+  --> /tmp/dojo-run-length-encoding-3.almd:6:33
+  in variable i
+  hint: Did you mean `s`?
+  try:
+      // i  →  s
+      s
+  |
+6 |       let count = int.to_string(i + 2 - chars.index_of(c, 0))
+  |                                 ^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-run-length-encoding-3.almd:6:56
+  in variable c
+  hint: Did you mean `s`?
+  try:
+      // c  →  s
+      s
+  |
+6 |       let count = int.to_string(i + 2 - chars.index_of(c, 0))
+  |                                                        ^
+error[E004]: list.index_of() expects 2 argument(s) but got 3
+  --> /tmp/dojo-run-length-encoding-3.almd:6:41
+  in call to list.index_of()
+  hint: Check the number of arguments
+  try:
+      // list.index_of() takes 2 arg(s) — you passed 3
+      list.index_of(<xs: List[A]>, <x: A>)
+  |
+6 |       let count = int.to_string(i + 2 - chars.index_of(c, 0))
+  |                                         ^^^^^
+error: operator '-' requires numeric types but got Unknown and Option[Int]
+  --> /tmp/dojo-run-length-encoding-3.almd:6:41
+  in operator -
+  hint: Use numeric types (Int or Float)
+  |
+6 |       let count = int.to_string(i + 2 - chars.index_of(c, 0))
+  |                                         ^^^^^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-run-length-encoding-3.almd:7:55
+  in variable c
+  hint: Did you mean `s`?
+  try:
+      // c  →  s
+      s
+  |
+7 |       result = result + count + string.from_codepoint(c)
+  |                                                       ^
+error[E009]: cannot reassign immutable binding 'result'
+  --> /tmp/dojo-run-length-encoding-3.almd:7:55
+  in result = ...
+  hint: Use 'var result = ...' instead of 'let result = ...' to declare a mutable variable
+  try:
+      // let result = ...  →  var result = ...
+      var result = <initial value>
+  |
+2 |   let result = ""
+  |   ---------------------- 'result' declared here
+...
+7 |       result = result + count + string.from_codepoint(c)
+  |                                                       ^
+error[E003]: undefined variable 'i'
+  --> /tmp/dojo-run-length-encoding-3.almd:20:45
+  in variable i
+  hint: Did you mean `s`?
+  try:
+      // i  →  s
+      s
+   |
+20 |       let count = int.parse(string.slice(s, i + 1, i + 2))
+   |                                             ^
+error[E003]: undefined variable 'i'
+  --> /tmp/dojo-run-length-encoding-3.almd:20:52
+  in variable i
+  hint: Did you mean `s`?
+  try:
+      // i  →  s
+      s
+   |
+20 |       let count = int.parse(string.slice(s, i + 1, i + 2))
+   |                                                    ^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-run-length-encoding-3.almd:21:61
+  in variable c
+  hint: Did you mean `s`?
+  try:
+      // c  →  s
+      s
+   |
+21 |       result = result + string.repeat(string.from_codepoint(c), count)
+   |                                                             ^
+error[E005]: argument 'n' expects Int but got Result[Int, String]
+  --> /tmp/dojo-run-length-encoding-3.almd:21:65
+  in call to string.repeat()
   hint: Fix the argument type
    |
-14 |   string.join(encoded, "")
-   |                        ^^
-error: operator '+' requires numeric, String, or List types but got List and List[String]
-  --> /tmp/dojo-run-length-encoding-3.almd:25:44
-  in operator +
-  hint: Use + with numeric types, String, or List
+21 |       result = result + string.repeat(string.from_codepoint(c), count)
+   |                                                                 ^^^^^
+error[E009]: cannot reassign immutable binding 'result'
+  --> /tmp/dojo-run-length-encoding-3.almd:21:65
+  in result = ...
+  hint: Use 'var result = ...' instead of 'let result = ...' to declare a mutable variable
+  try:
+      // let result = ...  →  var result = ...
+      var result = <initial value>
    |
-25 |     decoded = decoded + [string.repeat("", count)]
-   |                                            ^^^^^
-error[E005]: argument 'list' expects List[String] but got List
-  --> /tmp/dojo-run-length-encoding-3.almd:27:24
-  in call to string.join()
-  hint: Fix the argument type
-   |
-27 |   string.join(decoded, "")
-   |                        ^^
-error[E001]: type mismatch in method call: expected List but got fn() -> ?0
-  --> /tmp/dojo-run-length-encoding-3.almd:4:31
-  in method call
+17 |   let result = ""
+   |   ---------------------- 'result' declared here
+...
+21 |       result = result + string.repeat(string.from_codepoint(c), count)
+   |                                                                 ^^^^^
+error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
+  --> /tmp/dojo-run-length-encoding-3.almd:7:55
+  in fn 'rle_encode'
   hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
   |
-4 |     let (count, rest) = match acc.first() {
-  |                               ^^^
-error[E001]: type mismatch in method call: expected List but got fn(Int) -> List
-  --> /tmp/dojo-run-length-encoding-3.almd:5:31
-  in method call
-  hint: Fix the expression type or change the expected type
-  |
-5 |       some((n, _)) => (n + 1, acc.drop(1)),
-  |                               ^^^
-error[E001]: type mismatch in call to string.join(): expected List[String] but got List
-  --> /tmp/dojo-run-length-encoding-3.almd:14:24
-  in call to string.join()
+7 |       result = result + count + string.from_codepoint(c)
+  |                                                       ^
+error[E001]: type mismatch in call to string.repeat(): expected Int but got Result[Int, String]
+  --> /tmp/dojo-run-length-encoding-3.almd:21:65
+  in call to string.repeat()
   hint: Fix the expression type or change the expected type
    |
-14 |   string.join(encoded, "")
-   |                        ^^
-error[E001]: type mismatch in match arm: expected Int but got String
-  --> /tmp/dojo-run-length-encoding-3.almd:23:17
-  in match arm
-  hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm. Or use `int.parse(s)` to convert String to Int (returns Result[Int, String])
-   |
-23 |       err(_) => "Invalid encoded string"
-   |                 ^^^^^^^^^^^^^^^^^^^^^^^^
-error[E001]: type mismatch in call to string.join(): expected List[String] but got List
-  --> /tmp/dojo-run-length-encoding-3.almd:27:24
-  in call to string.join()
+21 |       result = result + string.repeat(string.from_codepoint(c), count)
+   |                                                                 ^^^^^
+error[E001]: type mismatch in fn 'rle_decode': expected String but got Unit
+  --> /tmp/dojo-run-length-encoding-3.almd:21:65
+  in fn 'rle_decode'
   hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
    |
-27 |   string.join(decoded, "")
-   |                        ^^
+21 |       result = result + string.repeat(string.from_codepoint(c), count)
+   |                                                                 ^^^^^
 
-10 error(s) found
+19 error(s) found
 Compile error for /tmp/dojo-run-length-encoding-3.almd:
 compile failed
 FAILED: /tmp/dojo-run-length-encoding-3.almd

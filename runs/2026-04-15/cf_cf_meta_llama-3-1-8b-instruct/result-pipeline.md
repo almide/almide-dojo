@@ -114,6 +114,9 @@ error[E002]: undefined function 'flat_map'
   --> /tmp/dojo-result-pipeline-1.almd:12:15
   in call to flat_map()
   hint: Did you mean `float.max`?
+  try:
+      // flat_map(...)  →  float.max(...)
+      float.max(...)
    |
 12 |   |> flat_map(validate_positive)
    |               ^^^^^^^^^^^^^^^^^
@@ -121,6 +124,9 @@ error[E002]: undefined function 'flat_map'
   --> /tmp/dojo-result-pipeline-1.almd:13:43
   in call to flat_map()
   hint: Did you mean `float.max`?
+  try:
+      // flat_map(...)  →  float.max(...)
+      float.max(...)
    |
 13 |   |> flat_map((n) => validate_range(n, 1, 100))
    |                                           ^^^
@@ -180,6 +186,9 @@ error[E002]: undefined function 'flat_map'
   --> /tmp/dojo-result-pipeline-2.almd:12:15
   in call to flat_map()
   hint: Did you mean `float.max`?
+  try:
+      // flat_map(...)  →  float.max(...)
+      float.max(...)
    |
 12 |   |> flat_map(validate_positive)
    |               ^^^^^^^^^^^^^^^^^
@@ -187,6 +196,9 @@ error[E002]: undefined function 'flat_map'
   --> /tmp/dojo-result-pipeline-2.almd:13:43
   in call to flat_map()
   hint: Did you mean `float.max`?
+  try:
+      // flat_map(...)  →  float.max(...)
+      float.max(...)
    |
 13 |   |> flat_map((n) => validate_range(n, 1, 100))
    |                                           ^^^
@@ -246,6 +258,9 @@ error[E002]: undefined function 'flat_map'
   --> /tmp/dojo-result-pipeline-3.almd:12:15
   in call to flat_map()
   hint: Did you mean `float.max`?
+  try:
+      // flat_map(...)  →  float.max(...)
+      float.max(...)
    |
 12 |   |> flat_map(validate_positive)
    |               ^^^^^^^^^^^^^^^^^
@@ -253,6 +268,9 @@ error[E002]: undefined function 'flat_map'
   --> /tmp/dojo-result-pipeline-3.almd:13:43
   in call to flat_map()
   hint: Did you mean `float.max`?
+  try:
+      // flat_map(...)  →  float.max(...)
+      float.max(...)
    |
 13 |   |> flat_map((n) => validate_range(n, 1, 100))
    |                                           ^^^

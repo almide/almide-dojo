@@ -19,65 +19,72 @@ type JVal =
   | JObj(List[(String, JVal)])
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
-  match obj {
-    JObj(xs) => list.find(xs, fn (k, v) => k == key) |> Option.map(| (_, v) | v)
-    _ => none
-  }
+  match obj
+  | JObj(xs) =>
+    list.find(xs, fn (k, v) =>
+      match k
+      | Some(k) =>
+        if k == key then some(v) else none
+        else none
+    )
+  | _ => none
 
 fn jcount(val: JVal) -> Int =
-  match val {
-    JNull | JBool(_) | JNum(_) | JStr(_) => 1
-    JArr(xs) => list.sum(xs, jcount)
-    JObj(xs) => list.sum(xs, fn (_, v) => jcount(v))
-  }
+  match val
+  | JNull => 1
+  | JBool(_) => 1
+  | JNum(_) => 1
+  | JStr(_) => 1
+  | JArr(xs) => list.sum(xs, fn x => jcount(x))
+  | JObj(_) => list.sum(list.map(val, fn (k, v) => jcount(v)), fn x => x)
 
 fn jflatten_strings(val: JVal) -> List[String] =
-  match val {
-    JStr(s) => [s]
-    JArr(xs) => list.flat_map(xs, jflatten_strings)
-    JObj(xs) => list.flat_map(xs, fn (_, v) => jflatten_strings(v))
-    _ => []
-  }
-
-effect fn main() -> Unit = {}
+  match val
+  | JStr(s) => [s]
+  | JArr(xs)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-0.almd
-error: Expected expression at line 11:31 (got Fn 'fn')
-  --> /tmp/dojo-mini-json-query-0.almd:11:31
+error: Expected LBrace at line 11:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-0.almd:11:3
    |
-11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |> Option.map(| (_, v) | v)
-   |                               ^
-error: Expected function name at line 11:34 (got LParen '(')
-  --> /tmp/dojo-mini-json-query-0.almd:11:34
+11 |   | JObj(xs) =>
+   |   ^
+error: Expected function name at line 12:22 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-0.almd:12:22
    |
-11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |> Option.map(| (_, v) | v)
-   |                                  ^
-error: Expected FatArrow at line 17:11 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-0.almd:17:11
+12 |     list.find(xs, fn (k, v) =>
+   |                      ^
+error: Expected LBrace at line 22:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-0.almd:22:3
    |
-17 |     JNull | JBool(_) | JNum(_) | JStr(_) => 1
-   |           ^
-error: Expected function name at line 19:33 (got LParen '(')
-  --> /tmp/dojo-mini-json-query-0.almd:19:33
-   |
-19 |     JObj(xs) => list.sum(xs, fn (_, v) => jcount(v))
-   |                                 ^
-error: Expected expression at line 26:35 (got Fn 'fn')
+22 |   | JNull => 1
+   |   ^
+error: Expected LParen at line 26:35 (got FatArrow '=>')
   --> /tmp/dojo-mini-json-query-0.almd:26:35
    |
-26 |     JObj(xs) => list.flat_map(xs, fn (_, v) => jflatten_strings(v))
+26 |   | JArr(xs) => list.sum(xs, fn x => jcount(x))
    |                                   ^
-error: Expected function name at line 26:38 (got LParen '(')
-  --> /tmp/dojo-mini-json-query-0.almd:26:38
+error: Expected function name at line 27:42 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-0.almd:27:42
    |
-26 |     JObj(xs) => list.flat_map(xs, fn (_, v) => jflatten_strings(v))
-   |                                      ^
+27 |   | JObj(_) => list.sum(list.map(val, fn (k, v) => jcount(v)), fn x => x)
+   |                                          ^
+error: Expected LParen at line 27:69 (got FatArrow '=>')
+  --> /tmp/dojo-mini-json-query-0.almd:27:69
+   |
+27 |   | JObj(_) => list.sum(list.map(val, fn (k, v) => jcount(v)), fn x => x)
+   |                                                                     ^
+error: Expected LBrace at line 31:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-0.almd:31:3
+   |
+31 |   | JStr(s) => [s]
+   |   ^
 
-6 error(s) found
+7 error(s) found
 Compile error for /tmp/dojo-mini-json-query-0.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-0.almd
@@ -98,65 +105,72 @@ type JVal =
   | JObj(List[(String, JVal)])
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
-  match obj {
-    JObj(xs) => list.find(xs, fn (k, v) => k == key) |-> Option.map(| (_, v) | v)
-    _ => none
-  }
+  match obj
+  | JObj(xs) =>
+    list.find(xs, fn (k, v) =>
+      match k
+      | Some(k) =>
+        if k == key then some(v) else none
+      | _ => none
+    )
+  | _ => none
 
 fn jcount(val: JVal) -> Int =
-  match val {
-    JNull | JBool(_) | JNum(_) | JStr(_) => 1
-    JArr(xs) => list.sum(xs, jcount)
-    JObj(xs) => list.sum(xs, fn (_, v) => jcount(v))
-  }
+  match val
+  | JNull => 1
+  | JBool(_) => 1
+  | JNum(_) => 1
+  | JStr(_) => 1
+  | JArr(xs) => list.sum(xs, fn x => jcount(x))
+  | JObj(_) => list.sum(list.map(val, fn (k, v) => jcount(v)), fn x => x)
 
 fn jflatten_strings(val: JVal) -> List[String] =
-  match val {
-    JStr(s) => [s]
-    JArr(xs) => list.flat_map(xs, jflatten_strings)
-    JObj(xs) => list.flat_map(xs, fn (_, v) => jflatten_strings(v))
-    _ => []
-  }
-
-effect fn main() -> Unit = {}
+  match val
+  | JStr(s) => [s]
+  | JArr(xs) => list
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-1.almd
-error: Expected expression at line 11:31 (got Fn 'fn')
-  --> /tmp/dojo-mini-json-query-1.almd:11:31
+error: Expected LBrace at line 11:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-1.almd:11:3
    |
-11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |-> Option.map(| (_, v) | v)
-   |                               ^
-error: Expected function name at line 11:34 (got LParen '(')
-  --> /tmp/dojo-mini-json-query-1.almd:11:34
+11 |   | JObj(xs) =>
+   |   ^
+error: Expected function name at line 12:22 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-1.almd:12:22
    |
-11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |-> Option.map(| (_, v) | v)
-   |                                  ^
-error: Expected FatArrow at line 17:11 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-1.almd:17:11
+12 |     list.find(xs, fn (k, v) =>
+   |                      ^
+error: Expected LBrace at line 22:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-1.almd:22:3
    |
-17 |     JNull | JBool(_) | JNum(_) | JStr(_) => 1
-   |           ^
-error: Expected function name at line 19:33 (got LParen '(')
-  --> /tmp/dojo-mini-json-query-1.almd:19:33
-   |
-19 |     JObj(xs) => list.sum(xs, fn (_, v) => jcount(v))
-   |                                 ^
-error: Expected expression at line 26:35 (got Fn 'fn')
+22 |   | JNull => 1
+   |   ^
+error: Expected LParen at line 26:35 (got FatArrow '=>')
   --> /tmp/dojo-mini-json-query-1.almd:26:35
    |
-26 |     JObj(xs) => list.flat_map(xs, fn (_, v) => jflatten_strings(v))
+26 |   | JArr(xs) => list.sum(xs, fn x => jcount(x))
    |                                   ^
-error: Expected function name at line 26:38 (got LParen '(')
-  --> /tmp/dojo-mini-json-query-1.almd:26:38
+error: Expected function name at line 27:42 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-1.almd:27:42
    |
-26 |     JObj(xs) => list.flat_map(xs, fn (_, v) => jflatten_strings(v))
-   |                                      ^
+27 |   | JObj(_) => list.sum(list.map(val, fn (k, v) => jcount(v)), fn x => x)
+   |                                          ^
+error: Expected LParen at line 27:69 (got FatArrow '=>')
+  --> /tmp/dojo-mini-json-query-1.almd:27:69
+   |
+27 |   | JObj(_) => list.sum(list.map(val, fn (k, v) => jcount(v)), fn x => x)
+   |                                                                     ^
+error: Expected LBrace at line 31:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-1.almd:31:3
+   |
+31 |   | JStr(s) => [s]
+   |   ^
 
-6 error(s) found
+7 error(s) found
 Compile error for /tmp/dojo-mini-json-query-1.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-1.almd
@@ -177,65 +191,71 @@ type JVal =
   | JObj(List[(String, JVal)])
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
-  match obj {
-    JObj(xs) => list.find(xs, fn (k, v) => k == key) |-> some(| (_, v) | v)
-    _ => none
-  }
+  match obj
+  | JObj(xs) =>
+    list.find(xs, fn (k, v) =>
+      match k
+      | Some(k) =>
+        if k == key then some(v) else none
+      | _ => none
+    )
+  | _ => none
 
 fn jcount(val: JVal) -> Int =
-  match val {
-    JNull | JBool(_) | JNum(_) | JStr(_) => 1
-    JArr(xs) => list.sum(xs, jcount)
-    JObj(xs) => list.sum(xs, fn (_, v) => jcount(v))
-  }
+  match val
+  | JNull => 1
+  | JBool(_) => 1
+  | JNum(_) => 1
+  | JStr(_) => 1
+  | JArr(xs) => list.fold(xs, 0, fn (acc, x) => acc + jcount(x))
+  | JObj(_) => list.sum(list.map(val, fn (k, v) => jcount(v)), fn x => x)
 
 fn jflatten_strings(val: JVal) -> List[String] =
-  match val {
-    JStr(s) => [s]
-    JArr(xs) => list.flat_map(xs, jflatten_strings)
-    JObj(xs) => list.flat_map(xs, fn (_, v) => jflatten_strings(v))
-    _ => []
-  }
-
-effect fn main() -> Unit = {}
+  match val
+  | JStr(s) => [s
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-2.almd
-error: Expected expression at line 11:31 (got Fn 'fn')
-  --> /tmp/dojo-mini-json-query-2.almd:11:31
+error: Expected LBrace at line 11:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-2.almd:11:3
    |
-11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |-> some(| (_, v) | v)
-   |                               ^
-error: Expected function name at line 11:34 (got LParen '(')
-  --> /tmp/dojo-mini-json-query-2.almd:11:34
+11 |   | JObj(xs) =>
+   |   ^
+error: Expected function name at line 12:22 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-2.almd:12:22
    |
-11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |-> some(| (_, v) | v)
-   |                                  ^
-error: Expected FatArrow at line 17:11 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-2.almd:17:11
+12 |     list.find(xs, fn (k, v) =>
+   |                      ^
+error: Expected LBrace at line 22:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-2.almd:22:3
    |
-17 |     JNull | JBool(_) | JNum(_) | JStr(_) => 1
-   |           ^
-error: Expected function name at line 19:33 (got LParen '(')
-  --> /tmp/dojo-mini-json-query-2.almd:19:33
+22 |   | JNull => 1
+   |   ^
+error: Expected function name at line 26:37 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-2.almd:26:37
    |
-19 |     JObj(xs) => list.sum(xs, fn (_, v) => jcount(v))
-   |                                 ^
-error: Expected expression at line 26:35 (got Fn 'fn')
-  --> /tmp/dojo-mini-json-query-2.almd:26:35
+26 |   | JArr(xs) => list.fold(xs, 0, fn (acc, x) => acc + jcount(x))
+   |                                     ^
+error: Expected function name at line 27:42 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-2.almd:27:42
    |
-26 |     JObj(xs) => list.flat_map(xs, fn (_, v) => jflatten_strings(v))
-   |                                   ^
-error: Expected function name at line 26:38 (got LParen '(')
-  --> /tmp/dojo-mini-json-query-2.almd:26:38
+27 |   | JObj(_) => list.sum(list.map(val, fn (k, v) => jcount(v)), fn x => x)
+   |                                          ^
+error: Expected LParen at line 27:69 (got FatArrow '=>')
+  --> /tmp/dojo-mini-json-query-2.almd:27:69
    |
-26 |     JObj(xs) => list.flat_map(xs, fn (_, v) => jflatten_strings(v))
-   |                                      ^
+27 |   | JObj(_) => list.sum(list.map(val, fn (k, v) => jcount(v)), fn x => x)
+   |                                                                     ^
+error: Expected LBrace at line 31:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-2.almd:31:3
+   |
+31 |   | JStr(s) => [s
+   |   ^
 
-6 error(s) found
+7 error(s) found
 Compile error for /tmp/dojo-mini-json-query-2.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-2.almd
@@ -256,65 +276,71 @@ type JVal =
   | JObj(List[(String, JVal)])
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
-  match obj {
-    JObj(xs) => list.find(xs, fn (k, v) => k == key) |-> some(v)
-    _ => none
-  }
+  match obj
+  | JObj(xs) =>
+    list.find(xs, fn (k, v) =>
+      match k
+      | Some(k) =>
+        if k == key then some(v) else none
+      | _ => none
+    )
+  | _ => none
 
 fn jcount(val: JVal) -> Int =
-  match val {
-    JNull | JBool(_) | JNum(_) | JStr(_) => 1
-    JArr(xs) => list.sum(xs, jcount)
-    JObj(xs) => list.sum(xs, fn (_, v) => jcount(v))
-  }
+  match val
+  | JNull => 1
+  | JBool(_) => 1
+  | JNum(_) => 1
+  | JStr(_) => 1
+  | JArr(xs) => list.fold(xs, 0, fn (acc, x) => acc + jcount(x))
+  | JObj(xs) => list.sum(list.map(xs, fn (k, v) => jcount(v)), fn x => x)
 
 fn jflatten_strings(val: JVal) -> List[String] =
-  match val {
-    JStr(s) => [s]
-    JArr(xs) => list.flat_map(xs, jflatten_strings)
-    JObj(xs) => list.flat_map(xs, fn (_, v) => jflatten_strings(v))
-    _ => []
-  }
-
-effect fn main() -> Unit = {}
+  match val
+  | JStr(s) => [
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-3.almd
-error: Expected expression at line 11:31 (got Fn 'fn')
-  --> /tmp/dojo-mini-json-query-3.almd:11:31
+error: Expected LBrace at line 11:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-3.almd:11:3
    |
-11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |-> some(v)
-   |                               ^
-error: Expected function name at line 11:34 (got LParen '(')
-  --> /tmp/dojo-mini-json-query-3.almd:11:34
+11 |   | JObj(xs) =>
+   |   ^
+error: Expected function name at line 12:22 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-3.almd:12:22
    |
-11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |-> some(v)
-   |                                  ^
-error: Expected FatArrow at line 17:11 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-3.almd:17:11
+12 |     list.find(xs, fn (k, v) =>
+   |                      ^
+error: Expected LBrace at line 22:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-3.almd:22:3
    |
-17 |     JNull | JBool(_) | JNum(_) | JStr(_) => 1
-   |           ^
-error: Expected function name at line 19:33 (got LParen '(')
-  --> /tmp/dojo-mini-json-query-3.almd:19:33
+22 |   | JNull => 1
+   |   ^
+error: Expected function name at line 26:37 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-3.almd:26:37
    |
-19 |     JObj(xs) => list.sum(xs, fn (_, v) => jcount(v))
-   |                                 ^
-error: Expected expression at line 26:35 (got Fn 'fn')
-  --> /tmp/dojo-mini-json-query-3.almd:26:35
+26 |   | JArr(xs) => list.fold(xs, 0, fn (acc, x) => acc + jcount(x))
+   |                                     ^
+error: Expected function name at line 27:42 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-3.almd:27:42
    |
-26 |     JObj(xs) => list.flat_map(xs, fn (_, v) => jflatten_strings(v))
-   |                                   ^
-error: Expected function name at line 26:38 (got LParen '(')
-  --> /tmp/dojo-mini-json-query-3.almd:26:38
+27 |   | JObj(xs) => list.sum(list.map(xs, fn (k, v) => jcount(v)), fn x => x)
+   |                                          ^
+error: Expected LParen at line 27:69 (got FatArrow '=>')
+  --> /tmp/dojo-mini-json-query-3.almd:27:69
    |
-26 |     JObj(xs) => list.flat_map(xs, fn (_, v) => jflatten_strings(v))
-   |                                      ^
+27 |   | JObj(xs) => list.sum(list.map(xs, fn (k, v) => jcount(v)), fn x => x)
+   |                                                                     ^
+error: Expected LBrace at line 31:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-3.almd:31:3
+   |
+31 |   | JStr(s) => [
+   |   ^
 
-6 error(s) found
+7 error(s) found
 Compile error for /tmp/dojo-mini-json-query-3.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-3.almd

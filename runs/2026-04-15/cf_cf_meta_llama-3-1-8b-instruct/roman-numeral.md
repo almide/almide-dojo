@@ -26,13 +26,13 @@ fn to_roman(n: Int) -> String {
     (4, "IV"),
     (1, "I")
   ];
-  let result = match symbols.find(|&(v, _)| v >= n) {
-    Some((v, s)) => {
-      let (x, y) = (n / v, n % v);
-      String::from_str_repeat(s, x) + to_roman(y)
+  let result = String.new();
+  for (v, s) in symbols {
+    while n >= v {
+      result += s;
+      n -= v;
     }
-    None => ""
-  };
+  }
   result
 }
 ```
@@ -44,6 +44,16 @@ Compiling /tmp/dojo-roman-numeral-0.almd
 error: Missing '=' before function body at line 1:31
   --> /tmp/dojo-roman-numeral-0.almd:1:31
   hint: Almide requires '=' before the body. Write: fn to_roman(...) -> Type = { ... }
+  |
+1 | fn to_roman(n: Int) -> String {
+  |                               ^
+
+1 error(s) found
+Compile error for /tmp/dojo-roman-numeral-0.almd:
+compile failed
+FAILED: /tmp/dojo-roman-numeral-0.almd
+
+1/1 test file(s) failed
 
 ```
 
@@ -66,13 +76,13 @@ fn to_roman(n: Int) -> String = {
     (4, "IV"),
     (1, "I")
   ];
-  let result = match symbols.find(|&(v, _)| v >= n) {
-    Some((v, s)) => {
-      let (x, y) = (n / v, n % v);
-      String::from_str_repeat(s, x) + to_roman(y)
+  let result = String.new();
+  for (v, s) in symbols {
+    while n >= v {
+      result += s;
+      n -= v;
     }
-    None => ""
-  };
+  }
   result
 }
 ```
@@ -81,11 +91,52 @@ fn to_roman(n: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-roman-numeral-1.almd
-error: Expected expression at line 17:35 (got Pipe '|')
-  --> /tmp/dojo-roman-numeral-1.almd:17:35
-error: Expected '}' to close block opened at line 1:33
-  --> /tmp/dojo-roman-numeral-1.almd:17:36
-  hint: Add '}' or check for a missing delimiter inside the block
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-roman-numeral-1.almd:20:15
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+20 |       result += s;
+   |               ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-roman-numeral-1.almd:21:10
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+21 |       n -= v;
+   |          ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 23:3 (got RBrace '}')
+  --> /tmp/dojo-roman-numeral-1.almd:23:3
+   |
+23 |   }
+   |   ^
+error[E001]: type mismatch in method call: expected String but got fn() -> ?0
+  --> /tmp/dojo-roman-numeral-1.almd:17:16
+  in method call
+  hint: Fix the expression type or change the expected type
+   |
+17 |   let result = String.new();
+   |                ^^^^^^
+error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
+  --> /tmp/dojo-roman-numeral-1.almd:17:16
+  in fn 'to_roman'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
+   |
+17 |   let result = String.new();
+   |                ^^^^^^
+
+5 error(s) found
+Compile error for /tmp/dojo-roman-numeral-1.almd:
+compile failed
+FAILED: /tmp/dojo-roman-numeral-1.almd
+
+1/1 test file(s) failed
 
 ```
 
@@ -108,13 +159,13 @@ fn to_roman(n: Int) -> String = {
     (4, "IV"),
     (1, "I")
   ];
-  let result = match symbols.find(|&(v, _)| v >= n) {
-    Some((v, s)) => {
-      let (x, y) = (n / v, n % v);
-      String::from_str_repeat(s, x) + to_roman(y)
+  let result = String.new();
+  for (v, s) in symbols {
+    while n >= v {
+      result += s;
+      n -= v;
     }
-    None => ""
-  };
+  }
   result
 }
 ```
@@ -123,11 +174,52 @@ fn to_roman(n: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-roman-numeral-2.almd
-error: Expected expression at line 17:35 (got Pipe '|')
-  --> /tmp/dojo-roman-numeral-2.almd:17:35
-error: Expected '}' to close block opened at line 1:33
-  --> /tmp/dojo-roman-numeral-2.almd:17:36
-  hint: Add '}' or check for a missing delimiter inside the block
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-roman-numeral-2.almd:20:15
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+20 |       result += s;
+   |               ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-roman-numeral-2.almd:21:10
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+21 |       n -= v;
+   |          ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 23:3 (got RBrace '}')
+  --> /tmp/dojo-roman-numeral-2.almd:23:3
+   |
+23 |   }
+   |   ^
+error[E001]: type mismatch in method call: expected String but got fn() -> ?0
+  --> /tmp/dojo-roman-numeral-2.almd:17:16
+  in method call
+  hint: Fix the expression type or change the expected type
+   |
+17 |   let result = String.new();
+   |                ^^^^^^
+error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
+  --> /tmp/dojo-roman-numeral-2.almd:17:16
+  in fn 'to_roman'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
+   |
+17 |   let result = String.new();
+   |                ^^^^^^
+
+5 error(s) found
+Compile error for /tmp/dojo-roman-numeral-2.almd:
+compile failed
+FAILED: /tmp/dojo-roman-numeral-2.almd
+
+1/1 test file(s) failed
 
 ```
 
@@ -150,13 +242,13 @@ fn to_roman(n: Int) -> String = {
     (4, "IV"),
     (1, "I")
   ];
-  let result = match symbols.find(|&(v, _)| v >= n) {
-    Some((v, s)) => {
-      let (x, y) = (n / v, n % v);
-      String::from_str_repeat(s, x) + to_roman(y)
+  let result = String.new();
+  for (v, s) in symbols {
+    while n >= v {
+      result += s;
+      n -= v;
     }
-    None => ""
-  };
+  }
   result
 }
 ```
@@ -165,10 +257,51 @@ fn to_roman(n: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-roman-numeral-3.almd
-error: Expected expression at line 17:35 (got Pipe '|')
-  --> /tmp/dojo-roman-numeral-3.almd:17:35
-error: Expected '}' to close block opened at line 1:33
-  --> /tmp/dojo-roman-numeral-3.almd:17:36
-  hint: Add '}' or check for a missing delimiter inside the block
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-roman-numeral-3.almd:20:15
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+20 |       result += s;
+   |               ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-roman-numeral-3.almd:21:10
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+21 |       n -= v;
+   |          ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 23:3 (got RBrace '}')
+  --> /tmp/dojo-roman-numeral-3.almd:23:3
+   |
+23 |   }
+   |   ^
+error[E001]: type mismatch in method call: expected String but got fn() -> ?0
+  --> /tmp/dojo-roman-numeral-3.almd:17:16
+  in method call
+  hint: Fix the expression type or change the expected type
+   |
+17 |   let result = String.new();
+   |                ^^^^^^
+error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
+  --> /tmp/dojo-roman-numeral-3.almd:17:16
+  in fn 'to_roman'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
+   |
+17 |   let result = String.new();
+   |                ^^^^^^
+
+5 error(s) found
+Compile error for /tmp/dojo-roman-numeral-3.almd:
+compile failed
+FAILED: /tmp/dojo-roman-numeral-3.almd
+
+1/1 test file(s) failed
 
 ```
