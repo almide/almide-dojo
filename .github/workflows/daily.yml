@@ -26,10 +26,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Almide
+      - name: Install Almide (from llm-first-phase2 branch, temporary until v0.14.6 release)
         run: |
-          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          cargo install --git https://github.com/almide/almide --branch llm-first-phase2 --bin almide --locked
           almide --version
 
       - name: Run all tasks
