@@ -69,6 +69,23 @@ let SYSTEM_PROMPT = """
     - Non-exhaustive match is an error: cover all constructors or use `_` catch-all
     - Calling an `effect fn` (fs, process, env, random, etc.) from a pure `fn` is an error — mark the caller `effect fn`
 
+  Foreign-language idioms that DO NOT WORK in Almide (do not use, even if they're natural in OCaml/Haskell/JS/Rust):
+    - `let x = ... in expr`             // OCaml/Haskell. WRONG. In Almide just: `let x = ...` then the next expression.
+                                        // Multiple lets:  `let x = 1\nlet y = 2\nx + y`  — no `in`.
+    - `let rec name(...) = ...`         // OCaml. WRONG. Top-level fn: `fn name(...) -> R = ...` (recursion is automatic).
+    - `while cond do ... done`          // Pascal/Ruby. WRONG. Pure code: use recursion or `list.fold`.
+                                        // In `effect fn` only: `while cond { ... }` (curly braces, no `do`).
+    - `for x in xs do ...`              // No for-loop. Use `list.map` / `list.fold` / `list.for_each` (effect fn).
+    - `xs.head` `xs.tail` `xs.length`   // No field access on list. Use `list.first(xs)`, `list.drop(xs, 1)`, `list.len(xs)`.
+    - `s.length` `s.toUpperCase()`      // No string methods. Use `string.len(s)`, `string.to_upper(s)`.
+    - `Some(x)` `None` `Ok` `Err`       // Capitalized constructors are wrong. Use lowercase: `some(x)`, `none`, `ok(x)`, `err(e)`.
+    - `return x`                        // No `return`. The last expression of the body IS the value.
+    - `n.abs()` `n.toString()`          // No method calls on values. Use `int.abs(n)`, `int.to_string(n)`.
+
+  When you don't know a stdlib function name, prefer pipe-forms with what's already known
+  (`string.chars(s) |> list.filter(...)`) over guessing a fancy name. Hallucinating `string.from_code_points`,
+  `list.head`, etc. fails immediately. Stick to the documented stdlib.
+
   Auto-imported (no `import` needed): string, list, int, float, math, map, result, option, value, set.
   Other stdlib modules (fs, env, io, process, json, random, regex, datetime, http, log, testing, error) need explicit `import`.
   """
