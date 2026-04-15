@@ -53,6 +53,8 @@ fn hint_for_code(code: String) -> String =
     "Non-exhaustive match. List every constructor of the type, or add `_ => ...` as a catch-all. For `Option[T]`: handle both `some(v)` and `none`. For `Result[T, E]`: handle both `ok(v)` and `err(e)`."
   else if code == "E011" then
     "You mutated a `var` inside a closure in a pure `fn`. Two fixes: (1) mark the enclosing fn as `effect fn`; (2) rewrite with `list.fold` or recursion so no mutation is needed inside the closure."
+  else if code == "E012" then
+    "Duplicate definition. The harness appends `tests.almd` after your code, so DO NOT include `test \"...\" { ... }` blocks or any function with the same name as one already defined in the task's tests. Submit only the requested function definition(s)."
   else ""
 
 // Extract every distinct "error[Exxx]" code from a diagnostic blob.
