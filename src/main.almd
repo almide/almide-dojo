@@ -210,6 +210,52 @@ effect fn fix_loop(task: Task, model: String, max_retries: Int) -> Result[RunRes
 
 // ── Metrics recording ──
 //
+// ── Failure classification ──
+//
+// Each RunResult is classified into a category and (when present) a
+// primary diagnostic code. The category drives the dashboard breakdown;
+// the code drives the "top diagnostic codes" leaderboard that surfaces
+// the diagnostics most likely to mislead an LLM.
+
+fn primary_diagnostic_code(diag: String) -> String =
+  match string.index_of(diag, "error[E") {
+    none => ""
+    some(i) => {
+      let after = string.drop(diag, i + 6)
+      match string.index_of(after, "]") {
+        none => ""
+        some(j) => string.take(after, j)
+      }
+    }
+  }
+
+fn category_from_code(code: String) -> String =
+  if code == "E001" then "type-error"
+  else if code == "E002" then "type-error"
+  else if code == "E005" then "type-error"
+  else if code == "E003" then "name-error"
+  else if code == "E004" then "import-error"
+  else "compile-error"
+
+fn classify_failure(diag: String) -> (String, String) = {
+  let code = primary_diagnostic_code(diag)
+  if code != "" then (category_from_code(code), code)
+  else if string.contains(diag, "Expected ") then ("parse-error", "")
+  else if string.contains(diag, "panicked") then ("runtime-error", "")
+  else if string.contains(diag, "thread '") then ("runtime-error", "")
+  else if string.contains(diag, "assertion") then ("wrong-output", "")
+  else if string.contains(diag, "test failed") then ("wrong-output", "")
+  else if string.contains(diag, "timed out") then ("timeout", "")
+  else if string.contains(diag, "Timeout") then ("timeout", "")
+  else ("unknown", "")
+}
+
+fn classify(result: RunResult) -> (String, String) =
+  if result.success then
+    (if result.retries == 0 then "pass-1shot" else "pass-retry", "")
+  else
+    classify_failure(result.final_diagnostic)
+
 // Per-task markdown report at runs/YYYY-MM-DD/<task>.md.
 // Summaries only — raw model outputs are not committed by convention.
 
@@ -235,12 +281,17 @@ fn render_attempts(attempts: List[Attempt]) -> String =
     "## Attempts\n\n" + body
   }
 
-fn render_report(result: RunResult) -> String =
+fn render_report(result: RunResult) -> String = {
+  let c = classify(result)
+  let code_line = if c.1 == "" then "" else "- **diagnostic code**: `" + c.1 + "`\n"
   "# " + result.task + "\n\n" +
   "- **model**: `" + result.model + "`\n" +
   "- **success**: " + (if result.success then "yes" else "no") + "\n" +
-  "- **retries**: " + int.to_string(result.retries) + "\n\n" +
+  "- **retries**: " + int.to_string(result.retries) + "\n" +
+  "- **category**: " + c.0 + "\n" +
+  code_line + "\n" +
   render_attempts(result.attempts)
+}
 
 fn model_slug(model: String) -> String =
   model
@@ -348,6 +399,12 @@ effect fn list_all_tasks() -> Result[List[String], String] = {
   else ok(all)
 }
 
+let CATEGORY_ORDER = [
+  "pass-1shot", "pass-retry",
+  "parse-error", "type-error", "name-error", "import-error",
+  "compile-error", "runtime-error", "wrong-output", "timeout", "unknown",
+]
+
 fn render_summary(date: String, model: String, results: List[RunResult]) -> String = {
   let total = list.len(results)
   let passed = list.count(results, (r) => r.success)
@@ -355,12 +412,32 @@ fn render_summary(date: String, model: String, results: List[RunResult]) -> Stri
   let total_retries = results
     |> list.map((r) => r.retries)
     |> list.sum
+
   let rows = results
     |> list.map((r) => {
+      let c = classify(r)
       let success_mark = if r.success then "pass" else "FAIL"
-      "| `" + r.task + "` | " + success_mark + " | " + int.to_string(r.retries) + " |"
+      let code_cell = if c.1 == "" then "—" else "`" + c.1 + "`"
+      "| `" + r.task + "` | " + success_mark + " | " + c.0 + " | " + code_cell + " | " + int.to_string(r.retries) + " |"
     })
     |> string.join("\n")
+
+  let cat_lines = CATEGORY_ORDER
+    |> list.filter_map((cat) => {
+      let n = list.count(results, (r) => classify(r).0 == cat)
+      if n > 0 then some("- " + cat + ": " + int.to_string(n)) else none
+    })
+    |> string.join("\n")
+
+  let codes = results
+    |> list.map((r) => classify(r).1)
+    |> list.filter((c) => c != "")
+  let unique_codes = list.unique(codes) |> list.sort
+  let code_lines = unique_codes
+    |> list.map((code) => "- `" + code + "`: " + int.to_string(list.count(codes, (c) => c == code)))
+    |> string.join("\n")
+  let codes_section = if list.is_empty(unique_codes) then ""
+    else "\n## Top diagnostic codes\n\n" + code_lines + "\n"
 
   "# MSR run " + date + "\n\n" +
   "- **model**: `" + model + "`\n" +
@@ -369,9 +446,11 @@ fn render_summary(date: String, model: String, results: List[RunResult]) -> Stri
   "- **1-shot passes**: " + int.to_string(one_shot) + " / " + int.to_string(total) + "\n" +
   "- **total retries**: " + int.to_string(total_retries) + "\n\n" +
   "## Per-task\n\n" +
-  "| task | result | retries |\n" +
-  "|---|---|---|\n" +
-  rows + "\n"
+  "| task | result | category | code | retries |\n" +
+  "|---|---|---|---|---|\n" +
+  rows + "\n\n" +
+  "## By category\n\n" + cat_lines + "\n" +
+  codes_section
 }
 
 effect fn write_summary(date: String, model: String, results: List[RunResult]) -> Result[String, String] = {
@@ -511,6 +590,47 @@ test "render_report contains task name and model" {
   assert(string.contains(out, "fizzbuzz"))
   assert(string.contains(out, "claude-sonnet-4-6"))
   assert(string.contains(out, "success"))
+}
+
+test "primary_diagnostic_code extracts E003" {
+  assert_eq(primary_diagnostic_code("error[E003]: undefined variable 'x'"), "E003")
+}
+
+test "primary_diagnostic_code returns empty when no code" {
+  assert_eq(primary_diagnostic_code("error: Expected identifier"), "")
+}
+
+test "classify_failure name-error from E003" {
+  let r = classify_failure("error[E003]: undefined variable 'x'")
+  assert_eq(r.0, "name-error")
+  assert_eq(r.1, "E003")
+}
+
+test "classify_failure type-error from E001" {
+  let r = classify_failure("error[E001]: type mismatch")
+  assert_eq(r.0, "type-error")
+  assert_eq(r.1, "E001")
+}
+
+test "classify_failure parse-error when only Expected" {
+  let r = classify_failure("error: Expected identifier at 1:1")
+  assert_eq(r.0, "parse-error")
+  assert_eq(r.1, "")
+}
+
+test "classify_failure runtime-error from panic" {
+  let r = classify_failure("thread 'main' panicked at 'index out of bounds'")
+  assert_eq(r.0, "runtime-error")
+}
+
+test "classify pass-1shot when success and zero retries" {
+  let r = RunResult { task: "x", model: "m", success: true, retries: 0, final_diagnostic: "", final_code: "", attempts: [] }
+  assert_eq(classify(r).0, "pass-1shot")
+}
+
+test "classify pass-retry when success after retries" {
+  let r = RunResult { task: "x", model: "m", success: true, retries: 2, final_diagnostic: "", final_code: "", attempts: [] }
+  assert_eq(classify(r).0, "pass-retry")
 }
 
 test "model_slug sanitizes provider string" {

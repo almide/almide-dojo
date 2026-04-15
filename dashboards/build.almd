@@ -40,7 +40,11 @@ fn parse_task_row(line: String) -> (String, String, Int) = {
     |> list.filter((c) => c != "")
   let name = list.get(cols, 0) |> option.unwrap_or("") |> string.replace("`", "")
   let result = list.get(cols, 1) |> option.unwrap_or("")
-  let retries = list.get(cols, 2) |> option.unwrap_or("0")
+  // Old format: name | result | retries (3 cols)
+  // New format: name | result | category | code | retries (5 cols)
+  // Take the last column as retries either way.
+  let n = list.len(cols)
+  let retries = if n > 0 then list.get(cols, n - 1) |> option.unwrap_or("0") else "0"
   (name, result, match int.parse(retries) { ok(n) => n, err(_) => 0 })
 }
 
@@ -244,9 +248,16 @@ test "parse_int_field extracts tasks" {
   assert_eq(parse_int_field(lines, "**tasks**: "), 5)
 }
 
-test "parse_task_row extracts columns" {
+test "parse_task_row extracts columns (3-col legacy)" {
   let row = parse_task_row("| `fizzbuzz` | pass | 0 |")
   assert_eq(row.0, "fizzbuzz")
   assert_eq(row.1, "pass")
   assert_eq(row.2, 0)
+}
+
+test "parse_task_row extracts columns (5-col with category/code)" {
+  let row = parse_task_row("| `anagram-check` | FAIL | name-error | `E003` | 3 |")
+  assert_eq(row.0, "anagram-check")
+  assert_eq(row.1, "FAIL")
+  assert_eq(row.2, 3)
 }
