@@ -2,7 +2,7 @@
 // Used by the backfill subcommand to reconstruct RunResults from the
 // historical run files on disk.
 
-import self.types.{RunResult}
+import self.types.{RunResult, Attempt}
 
 fn parse_field_from_lines(lines: List[String], prefix: String) -> String =
   lines
@@ -39,11 +39,22 @@ fn first_fenced_block(s: String) -> String =
     }
   }
 
-fn extract_final_diagnostic(content: String) -> String = {
-  // New format: per-attempt blocks marked "**Diagnostic:**". Take the last one.
+// Pull every per-attempt diagnostic from the report, in order.
+// Each "**Diagnostic:**" marker is followed by a fenced block with the
+// compiler/runtime output for that attempt.
+fn extract_all_diagnostics(content: String) -> List[String] = {
   let parts = string.split(content, "**Diagnostic:**")
-  if list.len(parts) > 1 then
-    first_fenced_block(list.get(parts, list.len(parts) - 1) |> option.unwrap_or(""))
+  if list.len(parts) <= 1 then []
+  else
+    list.drop(parts, 1)
+      |> list.map(first_fenced_block)
+      |> list.filter((s) => s != "")
+}
+
+fn extract_final_diagnostic(content: String) -> String = {
+  let diags = extract_all_diagnostics(content)
+  if not list.is_empty(diags) then
+    list.get(diags, list.len(diags) - 1) |> option.unwrap_or("")
   else
     // Legacy format: single "## Final diagnostic" section.
     match string.index_of(content, "## Final diagnostic") {
@@ -63,14 +74,21 @@ fn parse_task_md(filename: String, content: String) -> RunResult = {
   let retries = parse_int_from_lines(lines, "**retries**: ")
   let model = parse_field_from_lines(lines, "**model**: ")
   let success = success_str == "yes"
-  let diag = if success then "" else extract_final_diagnostic(content)
+  let all_diags = extract_all_diagnostics(content)
+  let final_diag = if success then "" else extract_final_diagnostic(content)
+  // Reconstruct Attempt list: one Attempt per diagnostic block (passed=false,
+  // since passing attempts don't emit a diagnostic). Code is empty in
+  // backfill — we only kept diagnostics for the recoverable/unrecoverable
+  // analysis.
+  let attempts = all_diags
+    |> list.map((d) => Attempt { code: "", diagnostic: d, passed: false })
   RunResult {
     task: task_name_from_filename(filename),
     model: model,
     success: success,
     retries: retries,
-    final_diagnostic: diag,
+    final_diagnostic: final_diag,
     final_code: "",
-    attempts: [],
+    attempts: attempts,
   }
 }

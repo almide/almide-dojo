@@ -115,6 +115,7 @@ type DayRun = {
   tasks: List[(String, String, String, String, Int)],
   categories: List[(String, Int)],
   codes: List[(String, Int)],
+  recoverable_codes: List[(String, Int)],
 }
 
 fn parse_summary(date: String, content: String) -> DayRun = {
@@ -128,7 +129,11 @@ fn parse_summary(date: String, content: String) -> DayRun = {
     total_retries: parse_int_field(lines, "**total retries**: "),
     tasks: parse_task_rows(lines),
     categories: parse_section_kv(lines, "## By category"),
-    codes: parse_section_kv(lines, "## Top diagnostic codes"),
+    // After moving from "## Top diagnostic codes" to a recoverable /
+    // unrecoverable split, the unrecoverable section is the actionable
+    // backlog: codes the model could not fix in N retries.
+    codes: parse_section_kv(lines, "## Unrecoverable diagnostic codes"),
+    recoverable_codes: parse_section_kv(lines, "## Recoverable diagnostic codes"),
   }
 }
 
@@ -145,6 +150,9 @@ fn run_to_json(run: DayRun) -> String = {
   let codes_json = run.codes
     |> list.map((c) => "{\"code\":\"" + c.0 + "\",\"count\":" + int.to_string(c.1) + "}")
     |> string.join(",")
+  let recov_json = run.recoverable_codes
+    |> list.map((c) => "{\"code\":\"" + c.0 + "\",\"count\":" + int.to_string(c.1) + "}")
+    |> string.join(",")
   "{" +
     "\"date\":\"" + run.date + "\"," +
     "\"model\":\"" + run.model + "\"," +
@@ -154,7 +162,8 @@ fn run_to_json(run: DayRun) -> String = {
     "\"totalRetries\":" + int.to_string(run.total_retries) + "," +
     "\"tasks\":[" + tasks_json + "]," +
     "\"categories\":[" + cats_json + "]," +
-    "\"codes\":[" + codes_json + "]" +
+    "\"codes\":[" + codes_json + "]," +
+    "\"recoverable\":[" + recov_json + "]" +
   "}"
 }
 
@@ -269,27 +278,30 @@ fn generate_html(runs: List[DayRun], metas: List[TaskMeta]) -> String = {
     "    options: { indexAxis: 'y', scales: { x: { stacked: true, ticks: { color: '#8b949e' } }, y: { stacked: true, ticks: { color: '#8b949e', font: { size: 11 } } } }, plugins: { legend: { labels: { color: '#c9d1d9', boxWidth: 12 } } } }",
     "  });",
     "}",
-    "if (latestEntries.length > 0) {",
-    "  var codeAgg = {};",
+    "function aggregateCodes(field) {",
+    "  var agg = {};",
     "  latestEntries.forEach(function(d){",
-    "    (d.codes || []).forEach(function(c){ codeAgg[c.code] = (codeAgg[c.code] || 0) + c.count; });",
+    "    (d[field] || []).forEach(function(c){ agg[c.code] = (agg[c.code] || 0) + c.count; });",
     "  });",
-    "  var topCodes = Object.keys(codeAgg)",
-    "    .map(function(k){ return { code: k, count: codeAgg[k] }; })",
+    "  return Object.keys(agg)",
+    "    .map(function(k){ return { code: k, count: agg[k] }; })",
     "    .sort(function(a,b){ return b.count - a.count; })",
     "    .slice(0, 10);",
-    "  if (topCodes.length > 0) {",
-    "    new Chart(document.getElementById('codesChart'), {",
+    "}",
+    "function renderCodesChart(canvasId, boxId, codes, color, label) {",
+    "  if (codes.length > 0) {",
+    "    new Chart(document.getElementById(canvasId), {",
     "      type: 'bar',",
-    "      data: {",
-    "        labels: topCodes.map(function(c){ return c.code; }),",
-    "        datasets: [{ label: 'Failures (latest day)', data: topCodes.map(function(c){ return c.count; }), backgroundColor: '#f85149' }]",
-    "      },",
+    "      data: { labels: codes.map(function(c){ return c.code; }), datasets: [{ label: label, data: codes.map(function(c){ return c.count; }), backgroundColor: color }] },",
     "      options: { scales: { y: { ticks: { color: '#8b949e' }, beginAtZero: true }, x: { ticks: { color: '#8b949e' } } }, plugins: { legend: { display: false } } }",
     "    });",
     "  } else {",
-    "    document.getElementById('codesBox').style.display = 'none';",
+    "    document.getElementById(boxId).style.display = 'none';",
     "  }",
+    "}",
+    "if (latestEntries.length > 0) {",
+    "  renderCodesChart('codesChart', 'codesBox', aggregateCodes('codes'), '#f85149', 'Unrecoverable failures');",
+    "  renderCodesChart('recovChart', 'recovBox', aggregateCodes('recoverable'), '#3fb950', 'Recovered after retry');",
     "}",
     "if (latestEntries.length > 0) {",
     "  var allTags = Array.from(new Set([].concat.apply([], Object.values(TASK_TAGS)))).sort();",
@@ -339,7 +351,8 @@ fn generate_html(runs: List[DayRun], metas: List[TaskMeta]) -> String = {
   "<div class=\"grid\" id=\"metrics\"></div>\n" +
   "<div class=\"chart-box\"><h2>Pass Rate Over Time</h2><canvas id=\"passChart\"></canvas></div>\n" +
   "<div class=\"chart-box\"><h2>Failure Breakdown by Category (Latest Run)</h2><canvas id=\"catChart\"></canvas></div>\n" +
-  "<div class=\"chart-box\" id=\"codesBox\"><h2>Top Diagnostic Codes (Latest Day, Aggregated)</h2><canvas id=\"codesChart\"></canvas></div>\n" +
+  "<div class=\"chart-box\" id=\"codesBox\"><h2>Unrecoverable Diagnostic Codes — backlog for almide compiler (latest day, all models)</h2><p style=\"color:#8b949e;font-size:0.85rem;margin-bottom:1rem\">Codes that LLMs could not recover from in 3 retries. Each one is a candidate for clearer hint text or compiler fix.</p><canvas id=\"codesChart\"></canvas></div>\n" +
+  "<div class=\"chart-box\" id=\"recovBox\"><h2>Recoverable Diagnostic Codes — diagnostic worked (latest day, all models)</h2><p style=\"color:#8b949e;font-size:0.85rem;margin-bottom:1rem\">Codes the model fixed after seeing the diagnostic. These hints already do their job.</p><canvas id=\"recovChart\"></canvas></div>\n" +
   "<div class=\"chart-box\"><h2>Pass Rate by Almide Feature × Model (Latest Run)</h2><div id=\"tagHeatmap\" style=\"overflow-x:auto\"></div></div>\n" +
   "<div class=\"chart-box\"><h2>Per-Task Results (Latest Run)</h2><div id=\"taskTable\"></div></div>\n" +
   "<script>" + js + "</script>\n" +

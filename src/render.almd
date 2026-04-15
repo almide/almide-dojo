@@ -62,15 +62,32 @@ fn render_summary(date: String, model: String, results: List[RunResult]) -> Stri
     })
     |> string.join("\n")
 
-  let codes = results
-    |> list.map((r) => classifier.classify(r).1)
+  // Recoverable: first-failed code for tasks that eventually passed via retry.
+  // The diagnostic was good enough that the model recovered.
+  let recoverable_codes = results
+    |> list.filter((r) => r.success and r.retries > 0)
+    |> list.map(classifier.first_failed_code)
     |> list.filter((c) => c != "")
-  let unique_codes = list.unique(codes) |> list.sort
-  let code_lines = unique_codes
-    |> list.map((code) => "- `" + code + "`: " + int.to_string(list.count(codes, (c) => c == code)))
+  let recov_unique = list.unique(recoverable_codes) |> list.sort
+  let recov_lines = recov_unique
+    |> list.map((code) => "- `" + code + "`: " + int.to_string(list.count(recoverable_codes, (c) => c == code)))
     |> string.join("\n")
-  let codes_section = if list.is_empty(unique_codes) then ""
-    else "\n## Top diagnostic codes\n\n" + code_lines + "\n"
+  let recov_section = if list.is_empty(recov_unique) then ""
+    else "\n## Recoverable diagnostic codes (passed after retry)\n\n" + recov_lines + "\n"
+
+  // Unrecoverable: final-failed code for tasks that did NOT pass.
+  // These are the diagnostics the model could not act on usefully —
+  // primary backlog for almide compiler / hint improvements.
+  let unrecov_codes = results
+    |> list.filter((r) => not r.success)
+    |> list.map(classifier.final_failed_code)
+    |> list.filter((c) => c != "")
+  let unrecov_unique = list.unique(unrecov_codes) |> list.sort
+  let unrecov_lines = unrecov_unique
+    |> list.map((code) => "- `" + code + "`: " + int.to_string(list.count(unrecov_codes, (c) => c == code)))
+    |> string.join("\n")
+  let unrecov_section = if list.is_empty(unrecov_unique) then ""
+    else "\n## Unrecoverable diagnostic codes (still failing after " + int.to_string(3) + " retries)\n\n" + unrecov_lines + "\n"
 
   "# MSR run " + date + "\n\n" +
   "- **model**: `" + model + "`\n" +
@@ -83,5 +100,6 @@ fn render_summary(date: String, model: String, results: List[RunResult]) -> Stri
   "|---|---|---|---|---|\n" +
   rows + "\n\n" +
   "## By category\n\n" + cat_lines + "\n" +
-  codes_section
+  recov_section +
+  unrecov_section
 }

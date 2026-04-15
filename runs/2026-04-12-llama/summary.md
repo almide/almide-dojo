@@ -50,7 +50,7 @@
 - name-error: 1
 - unknown: 4
 
-## Top diagnostic codes
+## Unrecoverable diagnostic codes (still failing after 3 retries)
 
 - `E001`: 2
 - `E002`: 4

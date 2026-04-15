@@ -51,7 +51,7 @@
 - import-error: 1
 - unknown: 2
 
-## Top diagnostic codes
+## Unrecoverable diagnostic codes (still failing after 3 retries)
 
 - `E001`: 3
 - `E002`: 5

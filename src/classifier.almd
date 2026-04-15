@@ -5,7 +5,7 @@
 // "top diagnostic codes" leaderboard that surfaces the diagnostics most
 // likely to mislead an LLM.
 
-import self.types.{RunResult}
+import self.types.{RunResult, Attempt}
 
 fn primary_diagnostic_code(diag: String) -> String =
   match string.index_of(diag, "error[E") {
@@ -45,6 +45,19 @@ fn classify(result: RunResult) -> (String, String) =
     (if result.retries == 0 then "pass-1shot" else "pass-retry", "")
   else
     classify_failure(result.final_diagnostic)
+
+// Diagnostic code from the FIRST failed attempt — used to track
+// "recoverable" diagnostics: ones the model later fixed given feedback.
+fn first_failed_code(result: RunResult) -> String =
+  match list.find(result.attempts, (a) => not a.passed) {
+    none => ""
+    some(a) => primary_diagnostic_code(a.diagnostic)
+  }
+
+// Diagnostic code from the LAST failed attempt — used to track
+// "unrecoverable" diagnostics: ones the model couldn't fix in N retries.
+fn final_failed_code(result: RunResult) -> String =
+  primary_diagnostic_code(result.final_diagnostic)
 
 fn category_order() -> List[String] = [
   "pass-1shot", "pass-retry",

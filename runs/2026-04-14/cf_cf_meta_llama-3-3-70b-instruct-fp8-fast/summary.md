@@ -50,7 +50,12 @@
 - name-error: 3
 - unknown: 2
 
-## Top diagnostic codes
+## Recoverable diagnostic codes (passed after retry)
+
+- `E002`: 8
+- `E003`: 1
+
+## Unrecoverable diagnostic codes (still failing after 3 retries)
 
 - `E001`: 2
 - `E002`: 5

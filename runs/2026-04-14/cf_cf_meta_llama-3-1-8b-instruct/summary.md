@@ -49,7 +49,7 @@
 - name-error: 7
 - import-error: 1
 
-## Top diagnostic codes
+## Unrecoverable diagnostic codes (still failing after 3 retries)
 
 - `E001`: 6
 - `E002`: 5
