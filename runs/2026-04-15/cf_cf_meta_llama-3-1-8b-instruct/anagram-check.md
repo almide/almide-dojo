@@ -11,9 +11,7 @@
 
 ```almide
 fn is_anagram(a: String, b: String) -> Bool = 
-  let a = string.to_lower(a)
-  let b = string.to_lower(b)
-  let a_chars = list.filter(string.chars(a), (c) => c != ' ')
-  let b_chars = list.filter(string.chars(b), (c) => c != ' ')
+  let a_chars = string.to_lower(a) |> string.chars |> list.filter((c) => c != ' ')
+  let b_chars = string.to_lower(b) |> string.chars |> list.filter((c) => c != ' ')
   list.sort(a_chars) == list.sort(b_chars)
 ```

@@ -3,7 +3,8 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: unknown
+- **category**: type-error
+- **diagnostic code**: `E002`
 
 ## Attempts
 
@@ -11,18 +12,26 @@
 
 ```almide
 fn reverse(s: String) -> String = 
-  let chars = s.chars;
-  let reversed = chars.fold([], (acc, x) => acc + [x]);
-  reversed.reverse.map(String.from_char).join
+  let chars = string.chars(s)
+  let reversed = list.fold(chars, [], (acc, x) => acc + [x])
+  string.from_chars(reversed)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-string-reverse-0.almd
-Compile error for /tmp/dojo-string-reverse-0.almd:
-error: could not compile `almide-out` (bin "almide-out" test) due to 3 previous errors; 2 warnings emitted
+error[E002]: undefined function 'string.from_chars'
+  --> /tmp/dojo-string-reverse-0.almd:4:21
+  in call to string.from_chars()
+  hint: No function 'from_chars' in module 'string'. See docs/CHEATSHEET.md for available functions
+  |
+4 |   string.from_chars(reversed)
+  |                     ^^^^^^^^
 
+1 error(s) found
+Compile error for /tmp/dojo-string-reverse-0.almd:
+compile failed
 FAILED: /tmp/dojo-string-reverse-0.almd
 
 1/1 test file(s) failed
@@ -33,18 +42,26 @@ FAILED: /tmp/dojo-string-reverse-0.almd
 
 ```almide
 fn reverse(s: String) -> String = 
-  let chars = s.chars;
-  let reversed = chars.fold([], (acc, x) => acc + [x]);
-  reversed.join
+  let chars = string.chars(s)
+  let reversed = list.fold(chars, [], (acc, x) => acc + [x])
+  string.from_chars(reversed)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-string-reverse-1.almd
-Compile error for /tmp/dojo-string-reverse-1.almd:
-error: could not compile `almide-out` (bin "almide-out" test) due to 2 previous errors; 2 warnings emitted
+error[E002]: undefined function 'string.from_chars'
+  --> /tmp/dojo-string-reverse-1.almd:4:21
+  in call to string.from_chars()
+  hint: No function 'from_chars' in module 'string'. See docs/CHEATSHEET.md for available functions
+  |
+4 |   string.from_chars(reversed)
+  |                     ^^^^^^^^
 
+1 error(s) found
+Compile error for /tmp/dojo-string-reverse-1.almd:
+compile failed
 FAILED: /tmp/dojo-string-reverse-1.almd
 
 1/1 test file(s) failed
@@ -55,18 +72,26 @@ FAILED: /tmp/dojo-string-reverse-1.almd
 
 ```almide
 fn reverse(s: String) -> String = 
-  let chars = s.chars;
-  let reversed = chars.fold([], (acc, x) => acc + [x]);
-  reversed.reverse.join
+  let chars = string.chars(s)
+  let reversed = list.fold(chars, [], (acc, x) => acc + [x])
+  string.from_chars(reversed)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-string-reverse-2.almd
-Compile error for /tmp/dojo-string-reverse-2.almd:
-error: could not compile `almide-out` (bin "almide-out" test) due to 2 previous errors; 2 warnings emitted
+error[E002]: undefined function 'string.from_chars'
+  --> /tmp/dojo-string-reverse-2.almd:4:21
+  in call to string.from_chars()
+  hint: No function 'from_chars' in module 'string'. See docs/CHEATSHEET.md for available functions
+  |
+4 |   string.from_chars(reversed)
+  |                     ^^^^^^^^
 
+1 error(s) found
+Compile error for /tmp/dojo-string-reverse-2.almd:
+compile failed
 FAILED: /tmp/dojo-string-reverse-2.almd
 
 1/1 test file(s) failed
@@ -77,18 +102,26 @@ FAILED: /tmp/dojo-string-reverse-2.almd
 
 ```almide
 fn reverse(s: String) -> String = 
-  let chars = s.chars;
-  let reversed = chars.fold([], (acc, x) => acc + [x]);
-  reversed.join
+  let chars = string.chars(s)
+  let reversed = list.fold(chars, [], (acc, x) => acc + [x])
+  string.from_chars(reversed)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-string-reverse-3.almd
-Compile error for /tmp/dojo-string-reverse-3.almd:
-error: could not compile `almide-out` (bin "almide-out" test) due to 2 previous errors; 2 warnings emitted
+error[E002]: undefined function 'string.from_chars'
+  --> /tmp/dojo-string-reverse-3.almd:4:21
+  in call to string.from_chars()
+  hint: No function 'from_chars' in module 'string'. See docs/CHEATSHEET.md for available functions
+  |
+4 |   string.from_chars(reversed)
+  |                     ^^^^^^^^
 
+1 error(s) found
+Compile error for /tmp/dojo-string-reverse-3.almd:
+compile failed
 FAILED: /tmp/dojo-string-reverse-3.almd
 
 1/1 test file(s) failed
