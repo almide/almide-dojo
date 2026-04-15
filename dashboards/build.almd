@@ -84,6 +84,27 @@ fn parse_section_kv(lines: List[String], header: String) -> List[(String, Int)] 
   }
 }
 
+// ── meta.toml tag extraction ──
+
+fn extract_quoted_strings(s: String) -> List[String] =
+  string.split(s, "\"")
+    |> list.enumerate
+    |> list.filter((entry) => entry.0 % 2 == 1)
+    |> list.map((entry) => entry.1)
+
+fn parse_meta_tags(content: String) -> List[String] = {
+  let lines = string.split(content, "\n")
+  match lines |> list.find((l) => string.starts_with(string.trim(l), "tags")) {
+    none => []
+    some(l) => extract_quoted_strings(l)
+  }
+}
+
+type TaskMeta = {
+  name: String,
+  tags: List[String],
+}
+
 type DayRun = {
   date: String,
   model: String,
@@ -139,9 +160,19 @@ fn run_to_json(run: DayRun) -> String = {
 
 // ── HTML generation ──
 
-fn generate_html(runs: List[DayRun]) -> String = {
+fn meta_to_json(m: TaskMeta) -> String = {
+  let tags_json = m.tags
+    |> list.map((t) => "\"" + t + "\"")
+    |> string.join(",")
+  "\"" + m.name + "\":[" + tags_json + "]"
+}
+
+fn generate_html(runs: List[DayRun], metas: List[TaskMeta]) -> String = {
   let data_json = runs
     |> list.map((r) => run_to_json(r))
+    |> string.join(",")
+  let metas_json = metas
+    |> list.map(meta_to_json)
     |> string.join(",")
 
   let css = "* { margin: 0; padding: 0; box-sizing: border-box; } " +
@@ -164,6 +195,12 @@ fn generate_html(runs: List[DayRun]) -> String = {
     ".card .sub { color: #8b949e; font-size: 0.8rem; margin-top: 0.5rem; } " +
     ".model-head { margin: 1rem 0 0.5rem; color: #8b949e; font-size: 0.9rem; font-weight: 600; } " +
     ".model-head:first-child { margin-top: 0; } " +
+    ".heatmap { font-size: 0.7rem; border-collapse: collapse; width: 100%; } " +
+    ".heatmap th, .heatmap td { padding: 0.35rem 0.5rem; border: 1px solid #21262d; text-align: center; } " +
+    ".heatmap thead th { color: #8b949e; font-weight: 600; writing-mode: vertical-rl; transform: rotate(180deg); height: 7em; vertical-align: bottom; } " +
+    ".heatmap tbody th { text-align: left; font-weight: 500; color: #c9d1d9; padding: 0.4rem 0.75rem; writing-mode: horizontal-tb; transform: none; height: auto; } " +
+    ".heatmap td.na { color: #6e7681; background: #0d1117; } " +
+    ".heatmap td.cell { color: #fff; font-weight: 600; } " +
     "canvas { max-height: 300px; }"
 
   // JS uses no template literals to avoid Almide interpolation conflicts.
@@ -171,6 +208,7 @@ fn generate_html(runs: List[DayRun]) -> String = {
   // that hit when concatenating ~80 string literals with `+`.
   let js = string.join([
     "var DATA = [" + data_json + "];",
+    "var TASK_TAGS = {" + metas_json + "};",
     "var PALETTE = ['#3fb950','#58a6ff','#d29922','#f85149','#a371f7','#ff7b72','#79c0ff','#ffa657'];",
     "var CAT_COLORS = {",
     "  'pass-1shot':'#3fb950','pass-retry':'#56d364',",
@@ -254,6 +292,29 @@ fn generate_html(runs: List[DayRun]) -> String = {
     "  }",
     "}",
     "if (latestEntries.length > 0) {",
+    "  var allTags = Array.from(new Set([].concat.apply([], Object.values(TASK_TAGS)))).sort();",
+    "  var heatHtml = '<table class=\"heatmap\"><thead><tr><th></th>';",
+    "  allTags.forEach(function(tag){ heatHtml += '<th>' + tag + '</th>'; });",
+    "  heatHtml += '</tr></thead><tbody>';",
+    "  latestEntries.forEach(function(d){",
+    "    heatHtml += '<tr><th>' + d.model + '</th>';",
+    "    allTags.forEach(function(tag){",
+    "      var matching = d.tasks.filter(function(t){ return (TASK_TAGS[t.name] || []).indexOf(tag) >= 0; });",
+    "      if (matching.length === 0) {",
+    "        heatHtml += '<td class=\"na\">—</td>';",
+    "      } else {",
+    "        var passed = matching.filter(function(t){ return t.result === 'pass'; }).length;",
+    "        var pct = Math.round(100 * passed / matching.length);",
+    "        var hue = Math.round(pct * 1.2);",
+    "        heatHtml += '<td class=\"cell\" style=\"background:hsl(' + hue + ',55%,28%)\" title=\"' + passed + '/' + matching.length + ' (' + pct + '%)\">' + passed + '/' + matching.length + '</td>';",
+    "      }",
+    "    });",
+    "    heatHtml += '</tr>';",
+    "  });",
+    "  heatHtml += '</tbody></table>';",
+    "  document.getElementById('tagHeatmap').innerHTML = heatHtml;",
+    "}",
+    "if (latestEntries.length > 0) {",
     "  document.getElementById('taskTable').innerHTML = latestEntries.map(function(d){",
     "    var rows = d.tasks.map(function(t){",
     "      var cls = t.result === 'pass' ? 'pass' : 'fail';",
@@ -279,6 +340,7 @@ fn generate_html(runs: List[DayRun]) -> String = {
   "<div class=\"chart-box\"><h2>Pass Rate Over Time</h2><canvas id=\"passChart\"></canvas></div>\n" +
   "<div class=\"chart-box\"><h2>Failure Breakdown by Category (Latest Run)</h2><canvas id=\"catChart\"></canvas></div>\n" +
   "<div class=\"chart-box\" id=\"codesBox\"><h2>Top Diagnostic Codes (Latest Day, Aggregated)</h2><canvas id=\"codesChart\"></canvas></div>\n" +
+  "<div class=\"chart-box\"><h2>Pass Rate by Almide Feature × Model (Latest Run)</h2><div id=\"tagHeatmap\" style=\"overflow-x:auto\"></div></div>\n" +
   "<div class=\"chart-box\"><h2>Per-Task Results (Latest Run)</h2><div id=\"taskTable\"></div></div>\n" +
   "<script>" + js + "</script>\n" +
   "</body>\n</html>"
@@ -315,9 +377,21 @@ effect fn main() -> Unit = {
         println("No summary files found")
         process.exit(1)
       } else {
-        let html = generate_html(runs)
+        let tiers = ["basic", "intermediate", "advanced"]
+        let metas = tiers
+          |> list.flat_map((tier) =>
+            match fs.list_dir("tasks/" + tier) {
+              err(_) => []
+              ok(names) => names
+                |> list.filter_map((name) =>
+                  match fs.read_text("tasks/" + tier + "/" + name + "/meta.toml") {
+                    ok(content) => some(TaskMeta { name: name, tags: parse_meta_tags(content) })
+                    err(_) => none
+                  })
+            })
+        let html = generate_html(runs, metas)
         match fs.write("dashboards/index.html", html) {
-          ok(_) => println("Generated dashboards/index.html (" + int.to_string(list.len(runs)) + " runs)")
+          ok(_) => println("Generated dashboards/index.html (" + int.to_string(list.len(runs)) + " runs, " + int.to_string(list.len(metas)) + " task metas)")
           err(e) => {
             println("Failed to write: " + e)
             process.exit(1)
