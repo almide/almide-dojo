@@ -83,7 +83,9 @@ FAILED: /tmp/dojo-title-case-2.almd
 fn title_case(s: String) -> String = {
   let words = string.split(s, " ")
   let capitalized_words = list.map(words, string.capitalize)
-  string.join(capitalized_words, " ")
+  let lowercased_words = list.map(words, string.to_lower)
+  let result = list.zip_with(capitalized_words, lowercased_words, (x, y) => x + y)
+  string.join(result, " ")
 }
 ```
 

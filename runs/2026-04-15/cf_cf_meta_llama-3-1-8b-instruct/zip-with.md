@@ -3,8 +3,7 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: type-error
-- **diagnostic code**: `E001`
+- **category**: parse-error
 
 ## Attempts
 
@@ -13,9 +12,10 @@
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
   match (xs, ys) {
-    (nil, _) => nil
-    (_, nil) => nil
-    (cons(x, xs), cons(y, ys)) => cons(f(x, y), zip_with(xs, ys, f))
+    (xs, ys) if xs.is_empty() && ys.is_empty() => []
+    (xs, ys) if xs.is_empty() => []
+    (xs, ys) if ys.is_empty() => []
+    (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
   }
 ```
 
@@ -23,12 +23,12 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
 
 ```
 Compiling /tmp/dojo-zip-with-0.almd
-error: 'nil' does not exist in Almide at line 3:17
-  --> /tmp/dojo-zip-with-0.almd:3:17
-  hint: Almide has no null. Use Option[T] with 'some(v)' / 'none'.
+error: '&&' is not valid in Almide at line 3:31
+  --> /tmp/dojo-zip-with-0.almd:3:31
+  hint: Use 'and' for logical AND. Example: if a and b then ...
   |
-3 |     (nil, _) => nil
-  |                 ^
+3 |     (xs, ys) if xs.is_empty() && ys.is_empty() => []
+  |                               ^
 
 1 error(s) found
 Compile error for /tmp/dojo-zip-with-0.almd:
@@ -44,9 +44,10 @@ FAILED: /tmp/dojo-zip-with-0.almd
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
   match (xs, ys) {
-    (none, _) => none
-    (_, none) => none
-    (some(x), some(y)) => some(f(x, y)) + [zip_with(xs, ys, f)]
+    (xs, ys) if xs.is_empty() and ys.is_empty() => []
+    (xs, ys) if xs.is_empty() => []
+    (xs, ys) if ys.is_empty() => []
+    (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
   }
 ```
 
@@ -54,22 +55,14 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
 
 ```
 Compiling /tmp/dojo-zip-with-1.almd
-error: operator '+' requires numeric, String, or List types but got Option[Int] and List[List[Int]]
-  --> /tmp/dojo-zip-with-1.almd:5:61
-  in operator +
-  hint: Use + with numeric types, String, or List
+error: Expected RParen at line 6:8 (got Colon ':')
+  --> /tmp/dojo-zip-with-1.almd:6:8
+  hint: Missing ')'. Check for an unclosed '(' earlier in this expression
   |
-5 |     (some(x), some(y)) => some(f(x, y)) + [zip_with(xs, ys, f)]
-  |                                                             ^
-error[E001]: type mismatch in fn 'zip_with': expected List[Int] but got Option[Int]
-  --> /tmp/dojo-zip-with-1.almd:5:61
-  in fn 'zip_with'
-  hint: Fix the expression type or change the expected type
-  |
-5 |     (some(x), some(y)) => some(f(x, y)) + [zip_with(xs, ys, f)]
-  |                                                             ^
+6 |     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+  |        ^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-zip-with-1.almd:
 compile failed
 FAILED: /tmp/dojo-zip-with-1.almd
@@ -83,9 +76,10 @@ FAILED: /tmp/dojo-zip-with-1.almd
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
   match (xs, ys) {
-    (none, _) => none
-    (_, none) => none
-    (some(x), some(y)) => [f(x, y)] + zip_with(list.drop(xs, 1), list.drop(ys, 1), f)
+    (xs, ys) if xs.is_empty() and ys.is_empty() => []
+    (xs, ys) if xs.is_empty() => []
+    (xs, ys) if ys.is_empty() => []
+    (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
   }
 ```
 
@@ -93,22 +87,14 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
 
 ```
 Compiling /tmp/dojo-zip-with-2.almd
-error[E001]: type mismatch in match arm: expected Option[?0] but got List[Int]
-  --> /tmp/dojo-zip-with-2.almd:5:84
-  in match arm
-  hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
+error: Expected RParen at line 6:8 (got Colon ':')
+  --> /tmp/dojo-zip-with-2.almd:6:8
+  hint: Missing ')'. Check for an unclosed '(' earlier in this expression
   |
-5 |     (some(x), some(y)) => [f(x, y)] + zip_with(list.drop(xs, 1), list.drop(ys, 1), f)
-  |                                                                                    ^
-error[E001]: type mismatch in fn 'zip_with': expected List[Int] but got Option[?0]
-  --> /tmp/dojo-zip-with-2.almd:5:84
-  in fn 'zip_with'
-  hint: Fix the expression type or change the expected type
-  |
-5 |     (some(x), some(y)) => [f(x, y)] + zip_with(list.drop(xs, 1), list.drop(ys, 1), f)
-  |                                                                                    ^
+6 |     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+  |        ^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-zip-with-2.almd:
 compile failed
 FAILED: /tmp/dojo-zip-with-2.almd
@@ -122,10 +108,10 @@ FAILED: /tmp/dojo-zip-with-2.almd
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
   match (xs, ys) {
-    (none, none) => none
-    (some(x), some(y)) => [f(x, y)] + zip_with(list.drop(xs, 1), list.drop(ys, 1), f)
-    (some(x), none) => [x]
-    (none, some(y)) => [y]
+    (xs, ys) if xs.is_empty() and ys.is_empty() => []
+    (xs, ys) if xs.is_empty() => []
+    (xs, ys) if ys.is_empty() => []
+    (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
   }
 ```
 
@@ -133,36 +119,14 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
 
 ```
 Compiling /tmp/dojo-zip-with-3.almd
-error[E001]: type mismatch in match arm: expected Option[?0] but got List[Int]
-  --> /tmp/dojo-zip-with-3.almd:6:25
-  in match arm
-  hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
+error: Expected RParen at line 6:8 (got Colon ':')
+  --> /tmp/dojo-zip-with-3.almd:6:8
+  hint: Missing ')'. Check for an unclosed '(' earlier in this expression
   |
-6 |     (none, some(y)) => [y]
-  |                         ^
-error[E001]: type mismatch in match arm: expected Option[?0] but got List[Unknown]
-  --> /tmp/dojo-zip-with-3.almd:6:25
-  in match arm
-  hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
-  |
-6 |     (none, some(y)) => [y]
-  |                         ^
-error[E001]: type mismatch in match arm: expected Option[?0] but got List[Unknown]
-  --> /tmp/dojo-zip-with-3.almd:6:25
-  in match arm
-  hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
-  |
-6 |     (none, some(y)) => [y]
-  |                         ^
-error[E001]: type mismatch in fn 'zip_with': expected List[Int] but got Option[?0]
-  --> /tmp/dojo-zip-with-3.almd:6:25
-  in fn 'zip_with'
-  hint: Fix the expression type or change the expected type
-  |
-6 |     (none, some(y)) => [y]
-  |                         ^
+6 |     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+  |        ^
 
-4 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-zip-with-3.almd:
 compile failed
 FAILED: /tmp/dojo-zip-with-3.almd

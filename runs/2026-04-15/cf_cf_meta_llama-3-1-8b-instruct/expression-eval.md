@@ -1,9 +1,9 @@
 # expression-eval
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
-- **success**: no
-- **retries**: 3
-- **category**: parse-error
+- **success**: yes
+- **retries**: 1
+- **category**: pass-retry
 
 ## Attempts
 
@@ -16,25 +16,28 @@ type Expr =
   | Mul(Expr, Expr)
   | Neg(Expr)
 
-fn eval(expr: Expr) -> Int =
-  match expr
-  | Num(n) => n
-  | Add(a, b) => eval(a) + eval(b)
-  | Mul(a, b) => eval(a) * eval(b)
-  | Neg(a) => -eval(a)
+fn eval(expr: Expr) -> Int {
+  match expr {
+    Num(n) => n
+    Add(a, b) => eval(a) + eval(b)
+    Mul(a, b) => eval(a) * eval(b)
+    Neg(e) => -eval(e)
+  }
+}
 
-This function uses pattern matching to handle each variant of the `Expr` type. For `Num`, it simply returns the integer value. For `Add` and `Mul`, it recursively evaluates the two subexpressions and then performs the addition or multiplication. For `Neg`, it recursively evaluates the subexpression and then negates the result.
+This evaluator recursively breaks down the expression into its constituent parts, evaluates each part, and then combines the results according to the operator. The `match` statement is used to pattern-match the `expr` against the different variants of the `Expr` type, and the corresponding evaluation logic is applied in each case.
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-expression-eval-0.almd
-error: Expected LBrace at line 9:3 (got Pipe '|')
-  --> /tmp/dojo-expression-eval-0.almd:9:3
+error: Missing '=' before function body at line 7:28
+  --> /tmp/dojo-expression-eval-0.almd:7:28
+  hint: Almide requires '=' before the body. Write: fn eval(...) -> Type = { ... }
   |
-9 |   | Num(n) => n
-  |   ^
+7 | fn eval(expr: Expr) -> Int {
+  |                            ^
 
 1 error(s) found
 Compile error for /tmp/dojo-expression-eval-0.almd:
@@ -45,7 +48,7 @@ FAILED: /tmp/dojo-expression-eval-0.almd
 
 ```
 
-### Attempt 2 (FAIL)
+### Attempt 2 (PASS)
 
 ```almide
 type Expr =
@@ -54,101 +57,11 @@ type Expr =
   | Mul(Expr, Expr)
   | Neg(Expr)
 
-fn eval(expr: Expr) -> Int =
-  match expr
-  | Num(n) => n
-  | Add(a, b) => eval(a) + eval(b)
-  | Mul(a, b) => eval(a) * eval(b)
-  | Neg(a) => -(eval(a))
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-expression-eval-1.almd
-error: Expected LBrace at line 9:3 (got Pipe '|')
-  --> /tmp/dojo-expression-eval-1.almd:9:3
-  |
-9 |   | Num(n) => n
-  |   ^
-
-1 error(s) found
-Compile error for /tmp/dojo-expression-eval-1.almd:
-compile failed
-FAILED: /tmp/dojo-expression-eval-1.almd
-
-1/1 test file(s) failed
-
-```
-
-### Attempt 3 (FAIL)
-
-```almide
-type Expr =
-  | Num(Int)
-  | Add(Expr, Expr)
-  | Mul(Expr, Expr)
-  | Neg(Expr)
-
-fn eval(expr: Expr) -> Int =
-  match expr
-  | Num(n) => n
-  | Add(a, b) => eval(a) + eval(b)
-  | Mul(a, b) => eval(a) * eval(b)
-  | Neg(a) => -(eval(a))
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-expression-eval-2.almd
-error: Expected LBrace at line 9:3 (got Pipe '|')
-  --> /tmp/dojo-expression-eval-2.almd:9:3
-  |
-9 |   | Num(n) => n
-  |   ^
-
-1 error(s) found
-Compile error for /tmp/dojo-expression-eval-2.almd:
-compile failed
-FAILED: /tmp/dojo-expression-eval-2.almd
-
-1/1 test file(s) failed
-
-```
-
-### Attempt 4 (FAIL)
-
-```almide
-type Expr =
-  | Num(Int)
-  | Add(Expr, Expr)
-  | Mul(Expr, Expr)
-  | Neg(Expr)
-
-fn eval(expr: Expr) -> Int =
-  match expr
-  | Num(n) => n
-  | Add(a, b) => eval(a) + eval(b)
-  | Mul(a, b) => eval(a) * eval(b)
-  | Neg(a) => -(eval(a))
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-expression-eval-3.almd
-error: Expected LBrace at line 9:3 (got Pipe '|')
-  --> /tmp/dojo-expression-eval-3.almd:9:3
-  |
-9 |   | Num(n) => n
-  |   ^
-
-1 error(s) found
-Compile error for /tmp/dojo-expression-eval-3.almd:
-compile failed
-FAILED: /tmp/dojo-expression-eval-3.almd
-
-1/1 test file(s) failed
-
+fn eval(expr: Expr) -> Int = 
+  match expr {
+    Num(n) => n
+    Add(a, b) => eval(a) + eval(b)
+    Mul(a, b) => eval(a) * eval(b)
+    Neg(e) => -eval(e)
+  }
 ```

@@ -11,19 +11,29 @@
 
 ```almide
 fn to_roman(n: Int) -> String {
-  let numeral_values = [ (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I") ]
-  let result = match numeral_values.find_by(|(value, _)| value <= n) {
-    Some((value, symbol)) => {
-      let remaining = n - value
-      if remaining == 0 {
-        symbol
-      } else {
-        symbol + to_roman(remaining)
-      }
+  let symbols = [
+    (1000, "M"),
+    (900, "CM"),
+    (500, "D"),
+    (400, "CD"),
+    (100, "C"),
+    (90, "XC"),
+    (50, "L"),
+    (40, "XL"),
+    (10, "X"),
+    (9, "IX"),
+    (5, "V"),
+    (4, "IV"),
+    (1, "I")
+  ];
+  let result = String.Builder.new();
+  for (value, symbol) in symbols {
+    while n >= value {
+      result.append(symbol);
+      n -= value;
     }
-    None => ""
   }
-  result
+  result.finish()
 }
 ```
 
@@ -51,19 +61,29 @@ FAILED: /tmp/dojo-roman-numeral-0.almd
 
 ```almide
 fn to_roman(n: Int) -> String = {
-  let numeral_values = [ (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I") ]
-  let result = match numeral_values.find_by(|(value, _)| value < n) {
-    Some((value, symbol)) => {
-      let remaining = n - value
-      if remaining == 0 {
-        symbol
-      } else {
-        symbol + to_roman(remaining)
-      }
+  let symbols = [
+    (1000, "M"),
+    (900, "CM"),
+    (500, "D"),
+    (400, "CD"),
+    (100, "C"),
+    (90, "XC"),
+    (50, "L"),
+    (40, "XL"),
+    (10, "X"),
+    (9, "IX"),
+    (5, "V"),
+    (4, "IV"),
+    (1, "I")
+  ];
+  let result = String.Builder.new();
+  for (value, symbol) in symbols {
+    while n >= value {
+      result.append(symbol);
+      n -= value;
     }
-    None => ""
   }
-  result
+  result.finish()
 }
 ```
 
@@ -71,38 +91,33 @@ fn to_roman(n: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-roman-numeral-1.almd
-error: Expected expression at line 3:45 (got Pipe '|')
-  --> /tmp/dojo-roman-numeral-1.almd:3:45
-  |
-3 |   let result = match numeral_values.find_by(|(value, _)| value < n) {
-  |                                             ^
-error: Expected Then at line 6:25 (got LBrace '{')
-  --> /tmp/dojo-roman-numeral-1.almd:6:25
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
-  |
-6 |       if remaining == 0 {
-  |                         ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 8:9 (got Else 'else')
-  --> /tmp/dojo-roman-numeral-1.almd:8:9
-  |
-8 |       } else {
-  |         ^
-error[E003]: undefined variable 'value'
-  --> /tmp/dojo-roman-numeral-1.almd:5:27
-  in variable value
-  hint: Check the variable name
-  |
-5 |       let remaining = n - value
-  |                           ^^^^^
-error[E003]: undefined variable 'symbol'
-  --> /tmp/dojo-roman-numeral-1.almd:7:9
-  in variable symbol
-  hint: Check the variable name
-  |
-7 |         symbol
-  |         ^^^^^^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-roman-numeral-1.almd:21:10
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+21 |       n -= value;
+   |          ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 23:3 (got RBrace '}')
+  --> /tmp/dojo-roman-numeral-1.almd:23:3
+   |
+23 |   }
+   |   ^
+error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
+  --> /tmp/dojo-roman-numeral-1.almd:17:16
+  in fn 'to_roman'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
+   |
+17 |   let result = String.Builder.new();
+   |                ^^^^^^
 
-5 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-roman-numeral-1.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-1.almd
@@ -115,19 +130,29 @@ FAILED: /tmp/dojo-roman-numeral-1.almd
 
 ```almide
 fn to_roman(n: Int) -> String = {
-  let numeral_values = [ (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I") ]
-  let result = match numeral_values.find(|(value, _)| value < n) {
-    Some((value, symbol)) => {
-      let remaining = n - value
-      if remaining == 0 {
-        symbol
-      } else {
-        symbol + to_roman(remaining)
-      }
+  let symbols = [
+    (1000, "M"),
+    (900, "CM"),
+    (500, "D"),
+    (400, "CD"),
+    (100, "C"),
+    (90, "XC"),
+    (50, "L"),
+    (40, "XL"),
+    (10, "X"),
+    (9, "IX"),
+    (5, "V"),
+    (4, "IV"),
+    (1, "I")
+  ];
+  let result = String.Builder.new();
+  for (value, symbol) in symbols {
+    while n >= value {
+      result.append(symbol);
+      n -= value;
     }
-    None => ""
   }
-  result
+  result.finish()
 }
 ```
 
@@ -135,38 +160,33 @@ fn to_roman(n: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-roman-numeral-2.almd
-error: Expected expression at line 3:42 (got Pipe '|')
-  --> /tmp/dojo-roman-numeral-2.almd:3:42
-  |
-3 |   let result = match numeral_values.find(|(value, _)| value < n) {
-  |                                          ^
-error: Expected Then at line 6:25 (got LBrace '{')
-  --> /tmp/dojo-roman-numeral-2.almd:6:25
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
-  |
-6 |       if remaining == 0 {
-  |                         ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 8:9 (got Else 'else')
-  --> /tmp/dojo-roman-numeral-2.almd:8:9
-  |
-8 |       } else {
-  |         ^
-error[E003]: undefined variable 'value'
-  --> /tmp/dojo-roman-numeral-2.almd:5:27
-  in variable value
-  hint: Check the variable name
-  |
-5 |       let remaining = n - value
-  |                           ^^^^^
-error[E003]: undefined variable 'symbol'
-  --> /tmp/dojo-roman-numeral-2.almd:7:9
-  in variable symbol
-  hint: Check the variable name
-  |
-7 |         symbol
-  |         ^^^^^^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-roman-numeral-2.almd:21:10
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+21 |       n -= value;
+   |          ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 23:3 (got RBrace '}')
+  --> /tmp/dojo-roman-numeral-2.almd:23:3
+   |
+23 |   }
+   |   ^
+error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
+  --> /tmp/dojo-roman-numeral-2.almd:17:16
+  in fn 'to_roman'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
+   |
+17 |   let result = String.Builder.new();
+   |                ^^^^^^
 
-5 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-roman-numeral-2.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-2.almd
@@ -179,19 +199,29 @@ FAILED: /tmp/dojo-roman-numeral-2.almd
 
 ```almide
 fn to_roman(n: Int) -> String = {
-  let numeral_values = [ (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I") ]
-  let result = match numeral_values.find(|(value, symbol)| value < n) {
-    Some((value, symbol)) => {
-      let remaining = n - value
-      if remaining == 0 {
-        symbol
-      } else {
-        symbol + to_roman(remaining)
-      }
+  let symbols = [
+    (1000, "M"),
+    (900, "CM"),
+    (500, "D"),
+    (400, "CD"),
+    (100, "C"),
+    (90, "XC"),
+    (50, "L"),
+    (40, "XL"),
+    (10, "X"),
+    (9, "IX"),
+    (5, "V"),
+    (4, "IV"),
+    (1, "I")
+  ];
+  let result = String.Builder.new();
+  for (value, symbol) in symbols {
+    while n >= value {
+      result.append(symbol);
+      n -= value;
     }
-    None => ""
   }
-  result
+  result.finish()
 }
 ```
 
@@ -199,38 +229,33 @@ fn to_roman(n: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-roman-numeral-3.almd
-error: Expected expression at line 3:42 (got Pipe '|')
-  --> /tmp/dojo-roman-numeral-3.almd:3:42
-  |
-3 |   let result = match numeral_values.find(|(value, symbol)| value < n) {
-  |                                          ^
-error: Expected Then at line 6:25 (got LBrace '{')
-  --> /tmp/dojo-roman-numeral-3.almd:6:25
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
-  |
-6 |       if remaining == 0 {
-  |                         ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 8:9 (got Else 'else')
-  --> /tmp/dojo-roman-numeral-3.almd:8:9
-  |
-8 |       } else {
-  |         ^
-error[E003]: undefined variable 'value'
-  --> /tmp/dojo-roman-numeral-3.almd:5:27
-  in variable value
-  hint: Check the variable name
-  |
-5 |       let remaining = n - value
-  |                           ^^^^^
-error[E003]: undefined variable 'symbol'
-  --> /tmp/dojo-roman-numeral-3.almd:7:9
-  in variable symbol
-  hint: Check the variable name
-  |
-7 |         symbol
-  |         ^^^^^^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-roman-numeral-3.almd:21:10
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+21 |       n -= value;
+   |          ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 23:3 (got RBrace '}')
+  --> /tmp/dojo-roman-numeral-3.almd:23:3
+   |
+23 |   }
+   |   ^
+error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
+  --> /tmp/dojo-roman-numeral-3.almd:17:16
+  in fn 'to_roman'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
+   |
+17 |   let result = String.Builder.new();
+   |                ^^^^^^
 
-5 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-roman-numeral-3.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-3.almd
