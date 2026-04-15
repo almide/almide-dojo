@@ -23,26 +23,33 @@ fn parse_int_from_lines(lines: List[String], prefix: String) -> Int = {
   match int.parse(num) { ok(n) => n, err(_) => 0 }
 }
 
-fn extract_final_diagnostic(content: String) -> String = {
-  let parts = string.split(content, "**Diagnostic:**")
-  if list.len(parts) <= 1 then ""
-  else {
-    let last = list.get(parts, list.len(parts) - 1) |> option.unwrap_or("")
-    match string.index_of(last, "```") {
-      none => ""
-      some(i) => {
-        let after_open = string.drop(last, i + 3)
-        let body_start = match string.index_of(after_open, "\n") {
-          some(j) => string.drop(after_open, j + 1)
-          none => after_open
-        }
-        match string.index_of(body_start, "```") {
-          none => string.trim(body_start)
-          some(k) => string.trim(string.take(body_start, k))
-        }
+fn first_fenced_block(s: String) -> String =
+  match string.index_of(s, "```") {
+    none => ""
+    some(i) => {
+      let after_open = string.drop(s, i + 3)
+      let body_start = match string.index_of(after_open, "\n") {
+        some(j) => string.drop(after_open, j + 1)
+        none => after_open
+      }
+      match string.index_of(body_start, "```") {
+        none => string.trim(body_start)
+        some(k) => string.trim(string.take(body_start, k))
       }
     }
   }
+
+fn extract_final_diagnostic(content: String) -> String = {
+  // New format: per-attempt blocks marked "**Diagnostic:**". Take the last one.
+  let parts = string.split(content, "**Diagnostic:**")
+  if list.len(parts) > 1 then
+    first_fenced_block(list.get(parts, list.len(parts) - 1) |> option.unwrap_or(""))
+  else
+    // Legacy format: single "## Final diagnostic" section.
+    match string.index_of(content, "## Final diagnostic") {
+      none => ""
+      some(i) => first_fenced_block(string.drop(content, i))
+    }
 }
 
 fn task_name_from_filename(filename: String) -> String =

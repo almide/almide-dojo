@@ -33,25 +33,56 @@ fn parse_int_field(lines: List[String], prefix: String) -> Int = {
   match int.parse(num) { ok(n) => n, err(_) => 0 }
 }
 
-fn parse_task_row(line: String) -> (String, String, Int) = {
+fn parse_task_row(line: String) -> (String, String, String, String, Int) = {
   let cols = line
     |> string.split("|")
     |> list.map((c) => string.trim(c))
     |> list.filter((c) => c != "")
   let name = list.get(cols, 0) |> option.unwrap_or("") |> string.replace("`", "")
   let result = list.get(cols, 1) |> option.unwrap_or("")
-  // Old format: name | result | retries (3 cols)
-  // New format: name | result | category | code | retries (5 cols)
-  // Take the last column as retries either way.
   let n = list.len(cols)
+  // Old format: name | result | retries (3 cols)        → category="" code=""
+  // New format: name | result | category | code | retries (5 cols)
+  let category = if n >= 5 then list.get(cols, 2) |> option.unwrap_or("") else ""
+  let code = if n >= 5 then
+    list.get(cols, 3) |> option.unwrap_or("") |> string.replace("`", "") |> string.replace("—", "")
+  else ""
   let retries = if n > 0 then list.get(cols, n - 1) |> option.unwrap_or("0") else "0"
-  (name, result, match int.parse(retries) { ok(n) => n, err(_) => 0 })
+  (name, result, category, code, match int.parse(retries) { ok(n) => n, err(_) => 0 })
 }
 
-fn parse_task_rows(lines: List[String]) -> List[(String, String, Int)] =
+fn parse_task_rows(lines: List[String]) -> List[(String, String, String, String, Int)] =
   lines
     |> list.filter((line) => string.starts_with(string.trim(line), "|") and string.contains(line, "`"))
     |> list.map((line) => parse_task_row(line))
+
+// Parse sections like "## By category" or "## Top diagnostic codes" whose
+// bodies are a list of "- key: N" or "- `key`: N" lines.
+fn parse_kv_line(line: String) -> (String, Int) = {
+  let trimmed = string.trim(line)
+  let body = if string.starts_with(trimmed, "- ") then string.drop(trimmed, 2) else trimmed
+  match string.index_of(body, ": ") {
+    none => ("", 0)
+    some(i) => {
+      let key = string.take(body, i) |> string.replace("`", "") |> string.trim
+      let val_str = string.drop(body, i + 2) |> string.trim
+      (key, match int.parse(val_str) { ok(n) => n, err(_) => 0 })
+    }
+  }
+}
+
+fn parse_section_kv(lines: List[String], header: String) -> List[(String, Int)] = {
+  let after = lines |> list.drop_while((l) => not string.starts_with(string.trim(l), header))
+  if list.is_empty(after) then []
+  else {
+    let body = list.drop(after, 1)
+      |> list.take_while((l) => not string.starts_with(string.trim(l), "## "))
+    body
+      |> list.filter((l) => string.starts_with(string.trim(l), "- "))
+      |> list.map(parse_kv_line)
+      |> list.filter((kv) => kv.0 != "")
+  }
+}
 
 type DayRun = {
   date: String,
@@ -60,7 +91,9 @@ type DayRun = {
   passed: Int,
   one_shot: Int,
   total_retries: Int,
-  tasks: List[(String, String, Int)],
+  tasks: List[(String, String, String, String, Int)],
+  categories: List[(String, Int)],
+  codes: List[(String, Int)],
 }
 
 fn parse_summary(date: String, content: String) -> DayRun = {
@@ -73,6 +106,8 @@ fn parse_summary(date: String, content: String) -> DayRun = {
     one_shot: parse_int_field(lines, "**1-shot passes**: "),
     total_retries: parse_int_field(lines, "**total retries**: "),
     tasks: parse_task_rows(lines),
+    categories: parse_section_kv(lines, "## By category"),
+    codes: parse_section_kv(lines, "## Top diagnostic codes"),
   }
 }
 
@@ -81,7 +116,13 @@ fn parse_summary(date: String, content: String) -> DayRun = {
 fn run_to_json(run: DayRun) -> String = {
   let tasks_json = run.tasks
     |> list.map((t) =>
-      "{\"name\":\"" + t.0 + "\",\"result\":\"" + t.1 + "\",\"retries\":" + int.to_string(t.2) + "}")
+      "{\"name\":\"" + t.0 + "\",\"result\":\"" + t.1 + "\",\"category\":\"" + t.2 + "\",\"code\":\"" + t.3 + "\",\"retries\":" + int.to_string(t.4) + "}")
+    |> string.join(",")
+  let cats_json = run.categories
+    |> list.map((c) => "{\"name\":\"" + c.0 + "\",\"count\":" + int.to_string(c.1) + "}")
+    |> string.join(",")
+  let codes_json = run.codes
+    |> list.map((c) => "{\"code\":\"" + c.0 + "\",\"count\":" + int.to_string(c.1) + "}")
     |> string.join(",")
   "{" +
     "\"date\":\"" + run.date + "\"," +
@@ -90,7 +131,9 @@ fn run_to_json(run: DayRun) -> String = {
     "\"passed\":" + int.to_string(run.passed) + "," +
     "\"oneShot\":" + int.to_string(run.one_shot) + "," +
     "\"totalRetries\":" + int.to_string(run.total_retries) + "," +
-    "\"tasks\":[" + tasks_json + "]" +
+    "\"tasks\":[" + tasks_json + "]," +
+    "\"categories\":[" + cats_json + "]," +
+    "\"codes\":[" + codes_json + "]" +
   "}"
 }
 
@@ -123,54 +166,106 @@ fn generate_html(runs: List[DayRun]) -> String = {
     ".model-head:first-child { margin-top: 0; } " +
     "canvas { max-height: 300px; }"
 
-  // JS uses no template literals to avoid Almide interpolation conflicts
-  let js = "var DATA = [" + data_json + "];" +
-    "var PALETTE = ['#3fb950','#58a6ff','#d29922','#f85149','#a371f7','#ff7b72','#79c0ff','#ffa657'];" +
-    "var byModel = {};" +
-    "DATA.forEach(function(d){ if(!byModel[d.model]) byModel[d.model]=[]; byModel[d.model].push(d); });" +
-    "var allDates = Array.from(new Set(DATA.map(function(d){return d.date;}))).sort();" +
-    "var models = Object.keys(byModel).sort();" +
-    "var latestDate = allDates[allDates.length - 1];" +
-    "var latestEntries = DATA.filter(function(d){ return d.date === latestDate; })" +
-    "  .sort(function(a,b){ return a.model < b.model ? -1 : 1; });" +
-    "if (latestEntries.length > 0) {" +
-    "  document.getElementById('metrics').innerHTML = latestEntries.map(function(d){" +
-    "    var pct = d.total > 0 ? Math.round(100 * d.passed / d.total) : 0;" +
-    "    var os = d.total > 0 ? Math.round(100 * d.oneShot / d.total) : 0;" +
-    "    return '<div class=\"card\"><h2>' + d.model + '</h2>' +" +
-    "      '<div class=\"metric green\">' + pct + '%</div>' +" +
-    "      '<div class=\"sub\">' + d.passed + '/' + d.total + ' pass · 1-shot ' + os + '% · retries ' + d.totalRetries + '</div></div>';" +
-    "  }).join('');" +
-    "}" +
-    "if (DATA.length > 0) {" +
-    "  var passDatasets = models.map(function(model, i){" +
-    "    var byDate = {};" +
-    "    byModel[model].forEach(function(d){ byDate[d.date] = d; });" +
-    "    return {" +
-    "      label: model," +
-    "      data: allDates.map(function(dt){ var d = byDate[dt]; return d && d.total > 0 ? Math.round(100 * d.passed / d.total) : null; })," +
-    "      borderColor: PALETTE[i % PALETTE.length]," +
-    "      backgroundColor: PALETTE[i % PALETTE.length]," +
-    "      tension: 0.3," +
-    "      spanGaps: true" +
-    "    };" +
-    "  });" +
-    "  new Chart(document.getElementById('passChart'), {" +
-    "    type: 'line'," +
-    "    data: { labels: allDates, datasets: passDatasets }," +
-    "    options: { scales: { y: { min: 0, max: 100, ticks: { color: '#8b949e' } }, x: { ticks: { color: '#8b949e' } } }, plugins: { legend: { labels: { color: '#c9d1d9' } } } }" +
-    "  });" +
-    "}" +
-    "if (latestEntries.length > 0) {" +
-    "  document.getElementById('taskTable').innerHTML = latestEntries.map(function(d){" +
-    "    var rows = d.tasks.map(function(t){" +
-    "      var cls = t.result === 'pass' ? 'pass' : 'fail';" +
-    "      return '<tr><td>' + t.name + '</td><td><span class=\"tag ' + cls + '\">' + t.result + '</span></td><td>' + t.retries + '</td></tr>';" +
-    "    }).join('');" +
-    "    return '<h3 class=\"model-head\">' + d.model + '</h3>' +" +
-    "      '<table><thead><tr><th>Task</th><th>Result</th><th>Retries</th></tr></thead><tbody>' + rows + '</tbody></table>';" +
-    "  }).join('');" +
-    "}"
+  // JS uses no template literals to avoid Almide interpolation conflicts.
+  // Built via string.join to avoid Rust format! recursion-limit blowups
+  // that hit when concatenating ~80 string literals with `+`.
+  let js = string.join([
+    "var DATA = [" + data_json + "];",
+    "var PALETTE = ['#3fb950','#58a6ff','#d29922','#f85149','#a371f7','#ff7b72','#79c0ff','#ffa657'];",
+    "var CAT_COLORS = {",
+    "  'pass-1shot':'#3fb950','pass-retry':'#56d364',",
+    "  'parse-error':'#a371f7','type-error':'#f85149','name-error':'#ff7b72',",
+    "  'import-error':'#79c0ff','compile-error':'#d29922','runtime-error':'#ffa657',",
+    "  'wrong-output':'#ec8e2c','timeout':'#8b949e','unknown':'#6e7681'",
+    "};",
+    "var CAT_ORDER = ['pass-1shot','pass-retry','parse-error','type-error','name-error','import-error','compile-error','runtime-error','wrong-output','timeout','unknown'];",
+    "var byModel = {};",
+    "DATA.forEach(function(d){ if(!byModel[d.model]) byModel[d.model]=[]; byModel[d.model].push(d); });",
+    "var allDates = Array.from(new Set(DATA.map(function(d){return d.date;}))).sort();",
+    "var models = Object.keys(byModel).sort();",
+    "var latestDate = allDates[allDates.length - 1];",
+    "var latestEntries = DATA.filter(function(d){ return d.date === latestDate; })",
+    "  .sort(function(a,b){ return a.model < b.model ? -1 : 1; });",
+    "if (latestEntries.length > 0) {",
+    "  document.getElementById('metrics').innerHTML = latestEntries.map(function(d){",
+    "    var pct = d.total > 0 ? Math.round(100 * d.passed / d.total) : 0;",
+    "    var os = d.total > 0 ? Math.round(100 * d.oneShot / d.total) : 0;",
+    "    return '<div class=\"card\"><h2>' + d.model + '</h2>' +",
+    "      '<div class=\"metric green\">' + pct + '%</div>' +",
+    "      '<div class=\"sub\">' + d.passed + '/' + d.total + ' pass · 1-shot ' + os + '% · retries ' + d.totalRetries + '</div></div>';",
+    "  }).join('');",
+    "}",
+    "if (DATA.length > 0) {",
+    "  var passDatasets = models.map(function(model, i){",
+    "    var byDate = {};",
+    "    byModel[model].forEach(function(d){ byDate[d.date] = d; });",
+    "    return {",
+    "      label: model,",
+    "      data: allDates.map(function(dt){ var d = byDate[dt]; return d && d.total > 0 ? Math.round(100 * d.passed / d.total) : null; }),",
+    "      borderColor: PALETTE[i % PALETTE.length],",
+    "      backgroundColor: PALETTE[i % PALETTE.length],",
+    "      tension: 0.3,",
+    "      spanGaps: true",
+    "    };",
+    "  });",
+    "  new Chart(document.getElementById('passChart'), {",
+    "    type: 'line',",
+    "    data: { labels: allDates, datasets: passDatasets },",
+    "    options: { scales: { y: { min: 0, max: 100, ticks: { color: '#8b949e' } }, x: { ticks: { color: '#8b949e' } } }, plugins: { legend: { labels: { color: '#c9d1d9' } } } }",
+    "  });",
+    "}",
+    "if (latestEntries.length > 0) {",
+    "  var catDatasets = CAT_ORDER.map(function(cat){",
+    "    return {",
+    "      label: cat,",
+    "      data: latestEntries.map(function(d){",
+    "        var hit = (d.categories || []).find(function(c){ return c.name === cat; });",
+    "        return hit ? hit.count : 0;",
+    "      }),",
+    "      backgroundColor: CAT_COLORS[cat] || '#6e7681'",
+    "    };",
+    "  }).filter(function(ds){ return ds.data.some(function(n){ return n > 0; }); });",
+    "  new Chart(document.getElementById('catChart'), {",
+    "    type: 'bar',",
+    "    data: { labels: latestEntries.map(function(d){ return d.model; }), datasets: catDatasets },",
+    "    options: { indexAxis: 'y', scales: { x: { stacked: true, ticks: { color: '#8b949e' } }, y: { stacked: true, ticks: { color: '#8b949e', font: { size: 11 } } } }, plugins: { legend: { labels: { color: '#c9d1d9', boxWidth: 12 } } } }",
+    "  });",
+    "}",
+    "if (latestEntries.length > 0) {",
+    "  var codeAgg = {};",
+    "  latestEntries.forEach(function(d){",
+    "    (d.codes || []).forEach(function(c){ codeAgg[c.code] = (codeAgg[c.code] || 0) + c.count; });",
+    "  });",
+    "  var topCodes = Object.keys(codeAgg)",
+    "    .map(function(k){ return { code: k, count: codeAgg[k] }; })",
+    "    .sort(function(a,b){ return b.count - a.count; })",
+    "    .slice(0, 10);",
+    "  if (topCodes.length > 0) {",
+    "    new Chart(document.getElementById('codesChart'), {",
+    "      type: 'bar',",
+    "      data: {",
+    "        labels: topCodes.map(function(c){ return c.code; }),",
+    "        datasets: [{ label: 'Failures (latest day)', data: topCodes.map(function(c){ return c.count; }), backgroundColor: '#f85149' }]",
+    "      },",
+    "      options: { scales: { y: { ticks: { color: '#8b949e' }, beginAtZero: true }, x: { ticks: { color: '#8b949e' } } }, plugins: { legend: { display: false } } }",
+    "    });",
+    "  } else {",
+    "    document.getElementById('codesBox').style.display = 'none';",
+    "  }",
+    "}",
+    "if (latestEntries.length > 0) {",
+    "  document.getElementById('taskTable').innerHTML = latestEntries.map(function(d){",
+    "    var rows = d.tasks.map(function(t){",
+    "      var cls = t.result === 'pass' ? 'pass' : 'fail';",
+    "      var catCell = t.category ? '<span class=\"tag\" style=\"background:' + (CAT_COLORS[t.category] || '#6e7681') + '22;color:' + (CAT_COLORS[t.category] || '#c9d1d9') + '\">' + t.category + '</span>' : '';",
+    "      var codeCell = t.code ? '<code>' + t.code + '</code>' : '—';",
+    "      return '<tr><td>' + t.name + '</td><td><span class=\"tag ' + cls + '\">' + t.result + '</span></td><td>' + catCell + '</td><td>' + codeCell + '</td><td>' + t.retries + '</td></tr>';",
+    "    }).join('');",
+    "    return '<h3 class=\"model-head\">' + d.model + '</h3>' +",
+    "      '<table><thead><tr><th>Task</th><th>Result</th><th>Category</th><th>Code</th><th>Retries</th></tr></thead><tbody>' + rows + '</tbody></table>';",
+    "  }).join('');",
+    "}",
+  ], "")
 
   "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n" +
   "<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
@@ -182,6 +277,8 @@ fn generate_html(runs: List[DayRun]) -> String = {
   "<p class=\"subtitle\">Modification Survival Rate across LLM models</p>\n" +
   "<div class=\"grid\" id=\"metrics\"></div>\n" +
   "<div class=\"chart-box\"><h2>Pass Rate Over Time</h2><canvas id=\"passChart\"></canvas></div>\n" +
+  "<div class=\"chart-box\"><h2>Failure Breakdown by Category (Latest Run)</h2><canvas id=\"catChart\"></canvas></div>\n" +
+  "<div class=\"chart-box\" id=\"codesBox\"><h2>Top Diagnostic Codes (Latest Day, Aggregated)</h2><canvas id=\"codesChart\"></canvas></div>\n" +
   "<div class=\"chart-box\"><h2>Per-Task Results (Latest Run)</h2><div id=\"taskTable\"></div></div>\n" +
   "<script>" + js + "</script>\n" +
   "</body>\n</html>"
@@ -252,12 +349,56 @@ test "parse_task_row extracts columns (3-col legacy)" {
   let row = parse_task_row("| `fizzbuzz` | pass | 0 |")
   assert_eq(row.0, "fizzbuzz")
   assert_eq(row.1, "pass")
-  assert_eq(row.2, 0)
+  assert_eq(row.2, "")
+  assert_eq(row.3, "")
+  assert_eq(row.4, 0)
 }
 
 test "parse_task_row extracts columns (5-col with category/code)" {
   let row = parse_task_row("| `anagram-check` | FAIL | name-error | `E003` | 3 |")
   assert_eq(row.0, "anagram-check")
   assert_eq(row.1, "FAIL")
-  assert_eq(row.2, 3)
+  assert_eq(row.2, "name-error")
+  assert_eq(row.3, "E003")
+  assert_eq(row.4, 3)
+}
+
+test "parse_task_row 5-col with em-dash code is empty" {
+  let row = parse_task_row("| `clamp` | pass | pass-1shot | — | 0 |")
+  assert_eq(row.2, "pass-1shot")
+  assert_eq(row.3, "")
+}
+
+test "parse_kv_line extracts plain key" {
+  let kv = parse_kv_line("- pass-1shot: 6")
+  assert_eq(kv.0, "pass-1shot")
+  assert_eq(kv.1, 6)
+}
+
+test "parse_kv_line strips backticks" {
+  let kv = parse_kv_line("- `E003`: 7")
+  assert_eq(kv.0, "E003")
+  assert_eq(kv.1, 7)
+}
+
+test "parse_section_kv finds By category section" {
+  let lines = [
+    "## Per-task",
+    "...",
+    "## By category",
+    "",
+    "- pass-1shot: 5",
+    "- type-error: 10",
+    "",
+    "## Top diagnostic codes",
+    "",
+    "- `E001`: 2",
+  ]
+  let cats = parse_section_kv(lines, "## By category")
+  assert_eq(list.len(cats), 2)
+  let first = list.get(cats, 0) |> option.unwrap_or(("", 0))
+  assert_eq(first.0, "pass-1shot")
+  assert_eq(first.1, 5)
+  let codes = parse_section_kv(lines, "## Top diagnostic codes")
+  assert_eq(list.len(codes), 1)
 }
