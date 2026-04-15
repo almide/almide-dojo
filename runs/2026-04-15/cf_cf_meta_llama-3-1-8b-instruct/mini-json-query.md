@@ -19,97 +19,48 @@ type JVal =
   | JObj(List[(String, JVal)])
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
-  match obj {
-    JObj(xs) =>
-      list.find(xs, (k, v) => k == key) |> list.map((_, v) => some(v)) |>
-      list.default(none),
-    _ => none
-  }
+  match obj
+  | JObj(xs) =>
+    list.find(xs, (k, v) => k == key) >>= (k, v) => some(v)
+  | _ => none
 
 fn jcount(val: JVal) -> Int =
-  match val {
-    JNull => 1
-    | JBool(_) => 1
-    | JNum(_) => 1
-    | JStr(_) => 1
-    | JArr(xs) => list.sum(xs, jcount)
-    | JObj(xs) => list.sum(xs, (k, v) => jcount(v))
-  }
+  match val
+  | JNull => 1
+  | JBool(_) => 1
+  | JNum(_) => 1
+  | JStr(_) => 1
+  | JArr(xs) => list.sum(xs, jcount)
+  | JObj(xs) => list.sum(xs, (k, v) => jcount(v))
 
 fn jflatten_strings(val: JVal) -> List[String] =
-  match val {
-    JStr(s) => [s]
-    | JArr(xs) => list.flat_map(xs, jflatten_strings)
-    | JObj(xs) =>
+  match val
+  | JStr(s) => [s]
+  | JArr(xs) => list.flat_map(xs, jflatten_strings)
+  | JObj(xs) => list.flat_map(xs, (k, v
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-0.almd
-error: Expected pattern at line 20:5 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-0.almd:20:5
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+error: Expected LBrace at line 11:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-0.almd:11:3
    |
-20 |     | JBool(_) => 1
-   |     ^
-error: Expected pattern at line 30:5 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-0.almd:30:5
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+11 |   | JObj(xs) =>
+   |   ^
+error: Expected LBrace at line 17:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-0.almd:17:3
    |
-30 |     | JArr(xs) => list.flat_map(xs, jflatten_strings)
-   |     ^
-error[E005]: argument 'f' expects fn((String, JVal)) -> Bool but got fn(String, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-0.almd:12:36
-  in call to list.find()
-  hint: Fix the argument type
+17 |   | JNull => 1
+   |   ^
+error: Expected LBrace at line 26:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-0.almd:26:3
    |
-12 |       list.find(xs, (k, v) => k == key) |> list.map((_, v) => some(v)) |>
-   |                                    ^^^
-error[E005]: argument 'xs' expects List[A] but got Option[(String, JVal)]
-  --> /tmp/dojo-mini-json-query-0.almd:12:68
-  in call to list.map()
-  hint: Fix the argument type
-   |
-12 |       list.find(xs, (k, v) => k == key) |> list.map((_, v) => some(v)) |>
-   |                                                                    ^
-error[E005]: argument 'f' expects fn(A) -> B but got fn(?2, ?3) -> Option[?3]
-  --> /tmp/dojo-mini-json-query-0.almd:12:68
-  in call to list.map()
-  hint: Fix the argument type
-   |
-12 |       list.find(xs, (k, v) => k == key) |> list.map((_, v) => some(v)) |>
-   |                                                                    ^
-error[E002]: undefined function 'list.default'
-  --> /tmp/dojo-mini-json-query-0.almd:13:20
-  in call to list.default()
-  hint: No function 'default' in module 'list'. See docs/CHEATSHEET.md for available functions
-   |
-13 |       list.default(none),
-   |                    ^^^^
-error[E001]: type mismatch in call to list.find(): expected fn((String, JVal)) -> Bool but got fn(String, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-0.almd:12:36
-  in call to list.find()
-  hint: Fix the expression type or change the expected type
-   |
-12 |       list.find(xs, (k, v) => k == key) |> list.map((_, v) => some(v)) |>
-   |                                    ^^^
-error[E001]: type mismatch in call to list.map(): expected List[A] but got Option[(String, JVal)]
-  --> /tmp/dojo-mini-json-query-0.almd:12:68
-  in call to list.map()
-  hint: Fix the expression type or change the expected type
-   |
-12 |       list.find(xs, (k, v) => k == key) |> list.map((_, v) => some(v)) |>
-   |                                                                    ^
-error[E001]: type mismatch in call to list.map(): expected fn(A) -> B but got fn(?2, ?3) -> Option[?3]
-  --> /tmp/dojo-mini-json-query-0.almd:12:68
-  in call to list.map()
-  hint: Fix the expression type or change the expected type
-   |
-12 |       list.find(xs, (k, v) => k == key) |> list.map((_, v) => some(v)) |>
-   |                                                                    ^
+26 |   | JStr(s) => [s]
+   |   ^
 
-9 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-mini-json-query-0.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-0.almd
@@ -130,83 +81,48 @@ type JVal =
   | JObj(List[(String, JVal)])
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
-  match obj {
-    JObj(xs) =>
-      list.find(xs, (k, v) => k == key) |>
-      option.unwrap_or(none),
-    _ => none
-  }
+  match obj
+  | JObj(xs) =>
+    list.find(xs, (k, v) => k == key) >>= (k, v) => some(v)
+  | _ => none
 
 fn jcount(val: JVal) -> Int =
-  match val {
-    JNull => 1
-    | JBool(_) => 1
-    | JNum(_) => 1
-    | JStr(_) => 1
-    | JArr(xs) => list.sum(xs, jcount)
-    | JObj(xs) => list.sum(xs, (k, v) => jcount(v))
-  }
+  match val
+  | JNull => 1
+  | JBool(_) => 1
+  | JNum(_) => 1
+  | JStr(_) => 1
+  | JArr(xs) => list.sum(xs, jcount)
+  | JObj(xs) => list.sum(xs, (k, v) => jcount(v))
 
 fn jflatten_strings(val: JVal) -> List[String] =
-  match val {
-    JStr(s) => [s]
-    | JArr(xs) => list.flat_map(xs, jflatten_strings)
-    | JObj(xs) => list.flat_map(xs, (k, v) => jflatten_strings
+  match val
+  | JStr(s) => [s]
+  | JArr(xs) => list.flat_map(xs, jflatten_strings)
+  | JObj(xs) => list.flat_map(xs, (k, v) => jflatten
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-1.almd
-error: Expected pattern at line 20:5 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-1.almd:20:5
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+error: Expected LBrace at line 11:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-1.almd:11:3
    |
-20 |     | JBool(_) => 1
-   |     ^
-error: Expected pattern at line 30:5 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-1.almd:30:5
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+11 |   | JObj(xs) =>
+   |   ^
+error: Expected LBrace at line 17:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-1.almd:17:3
    |
-30 |     | JArr(xs) => list.flat_map(xs, jflatten_strings)
-   |     ^
-error[E005]: argument 'f' expects fn((String, JVal)) -> Bool but got fn(String, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-1.almd:12:36
-  in call to list.find()
-  hint: Fix the argument type
+17 |   | JNull => 1
+   |   ^
+error: Expected LBrace at line 26:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-1.almd:26:3
    |
-12 |       list.find(xs, (k, v) => k == key) |>
-   |                                    ^^^
-error[E001]: type mismatch in call to list.find(): expected fn((String, JVal)) -> Bool but got fn(String, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-1.almd:12:36
-  in call to list.find()
-  hint: Fix the expression type or change the expected type
-   |
-12 |       list.find(xs, (k, v) => k == key) |>
-   |                                    ^^^
-error[E001]: type mismatch in call to option.unwrap_or(): expected (String, JVal) but got Option[?2]
-  --> /tmp/dojo-mini-json-query-1.almd:13:24
-  in call to option.unwrap_or()
-  hint: Fix the expression type or change the expected type
-   |
-13 |       option.unwrap_or(none),
-   |                        ^^^^
-error[E001]: type mismatch in match arm: expected (String, JVal) but got Option[?3]
-  --> /tmp/dojo-mini-json-query-1.almd:14:10
-  in match arm
-  hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
-   |
-14 |     _ => none
-   |          ^^^^
-error[E001]: type mismatch in fn 'jget': expected Option[JVal] but got (String, JVal)
-  --> /tmp/dojo-mini-json-query-1.almd:14:10
-  in fn 'jget'
-  hint: Fix the expression type or change the expected type
-   |
-14 |     _ => none
-   |          ^^^^
+26 |   | JStr(s) => [s]
+   |   ^
 
-7 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-mini-json-query-1.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-1.almd
@@ -227,69 +143,48 @@ type JVal =
   | JObj(List[(String, JVal)])
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
-  match obj {
-    JObj(xs) =>
-      list.find(xs, (k, v) => k == key) |>
-      option.map(option.unwrap_or(none)),
-    _ => none
-  }
+  match obj
+  | JObj(xs) =>
+    list.find(xs, (k, v) => k == key) >>= (k, v) => some(v)
+  | _ => none
 
 fn jcount(val: JVal) -> Int =
-  match val {
-    JNull => 1
-    | JBool(_) => 1
-    | JNum(_) => 1
-    | JStr(_) => 1
-    | JArr(xs) => list.sum(xs, jcount)
-    | JObj(xs) => list.sum(xs, (k, v) => jcount(v))
-  }
+  match val
+  | JNull => 1
+  | JBool(_) => 1
+  | JNum(_) => 1
+  | JStr(_) => 1
+  | JArr(xs) => list.sum(xs, jcount)
+  | JObj(xs) => list.sum(xs, (k, v) => jcount(v))
 
 fn jflatten_strings(val: JVal) -> List[String] =
-  match val {
-    JStr(s) => [s]
-    | JArr(xs) => list.flat_map(xs, jflatten_strings)
-    | JObj(xs) => list.flat_map(xs, (k, v) => j
+  match val
+  | JStr(s) => [s]
+  | JArr(xs) => list.flat_map(xs, jflatten_strings)
+  | JObj(xs) => list.flat_map(xs, (k, v) => jflatten
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-2.almd
-error: Expected pattern at line 20:5 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-2.almd:20:5
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+error: Expected LBrace at line 11:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-2.almd:11:3
    |
-20 |     | JBool(_) => 1
-   |     ^
-error: Expected pattern at line 30:5 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-2.almd:30:5
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+11 |   | JObj(xs) =>
+   |   ^
+error: Expected LBrace at line 17:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-2.almd:17:3
    |
-30 |     | JArr(xs) => list.flat_map(xs, jflatten_strings)
-   |     ^
-error[E005]: argument 'f' expects fn((String, JVal)) -> Bool but got fn(String, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-2.almd:12:36
-  in call to list.find()
-  hint: Fix the argument type
+17 |   | JNull => 1
+   |   ^
+error: Expected LBrace at line 26:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-2.almd:26:3
    |
-12 |       list.find(xs, (k, v) => k == key) |>
-   |                                    ^^^
-error[E004]: option.unwrap_or() expects 2 argument(s) but got 1
-  --> /tmp/dojo-mini-json-query-2.almd:13:35
-  in call to option.unwrap_or()
-  hint: Check the number of arguments
-   |
-13 |       option.map(option.unwrap_or(none)),
-   |                                   ^^^^
-error[E001]: type mismatch in call to list.find(): expected fn((String, JVal)) -> Bool but got fn(String, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-2.almd:12:36
-  in call to list.find()
-  hint: Fix the expression type or change the expected type
-   |
-12 |       list.find(xs, (k, v) => k == key) |>
-   |                                    ^^^
+26 |   | JStr(s) => [s]
+   |   ^
 
-5 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-mini-json-query-2.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-2.almd
@@ -310,69 +205,51 @@ type JVal =
   | JObj(List[(String, JVal)])
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
-  match obj {
-    JObj(xs) =>
-      list.find(xs, (k, v) => k == key) |>
-      option.map(option.unwrap_or(none)),
-    _ => none
-  }
+  match obj
+  | JObj(xs) =>
+    let found = list.find(xs, (k, v) => k == key)
+    match found
+    | some((k, v)) => some(v)
+    | none => none
+  | _ => none
 
 fn jcount(val: JVal) -> Int =
-  match val {
-    JNull => 1
-    | JBool(_) => 1
-    | JNum(_) => 1
-    | JStr(_) => 1
-    | JArr(xs) => list.sum(xs, jcount)
-    | JObj(xs) => list.sum(xs, (k, v) => jcount(v))
-  }
+  match val
+  | JNull => 1
+  | JBool(_) => 1
+  | JNum(_) => 1
+  | JStr(_) => 1
+  | JArr(xs) => list.sum(xs, jcount)
+  | JObj(xs) => list.sum(xs, (k, v) => jcount(v))
 
 fn jflatten_strings(val: JVal) -> List[String] =
-  match val {
-    JStr(s) => [s]
-    | JArr(xs) => list.flat_map(xs, jflatten_strings)
-    | JObj(xs) => list.flat_map(xs, (k, v) => j
+  match val
+  | JStr(s) => [s]
+  | JArr(xs) => list.flat_map(xs, jflatten_strings)
+  | JObj(xs
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-3.almd
-error: Expected pattern at line 20:5 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-3.almd:20:5
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+error: Expected LBrace at line 11:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-3.almd:11:3
    |
-20 |     | JBool(_) => 1
-   |     ^
-error: Expected pattern at line 30:5 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-3.almd:30:5
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+11 |   | JObj(xs) =>
+   |   ^
+error: Expected LBrace at line 20:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-3.almd:20:3
    |
-30 |     | JArr(xs) => list.flat_map(xs, jflatten_strings)
-   |     ^
-error[E005]: argument 'f' expects fn((String, JVal)) -> Bool but got fn(String, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-3.almd:12:36
-  in call to list.find()
-  hint: Fix the argument type
+20 |   | JNull => 1
+   |   ^
+error: Expected LBrace at line 29:3 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-3.almd:29:3
    |
-12 |       list.find(xs, (k, v) => k == key) |>
-   |                                    ^^^
-error[E004]: option.unwrap_or() expects 2 argument(s) but got 1
-  --> /tmp/dojo-mini-json-query-3.almd:13:35
-  in call to option.unwrap_or()
-  hint: Check the number of arguments
-   |
-13 |       option.map(option.unwrap_or(none)),
-   |                                   ^^^^
-error[E001]: type mismatch in call to list.find(): expected fn((String, JVal)) -> Bool but got fn(String, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-3.almd:12:36
-  in call to list.find()
-  hint: Fix the expression type or change the expected type
-   |
-12 |       list.find(xs, (k, v) => k == key) |>
-   |                                    ^^^
+29 |   | JStr(s) => [s]
+   |   ^
 
-5 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-mini-json-query-3.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-3.almd

@@ -14,28 +14,27 @@ fn binary_search(xs: List[Int], target: Int) -> Option[Int] =
   if list.len(xs) == 0 then
     none
   else
-    let lo = 0
-    let hi = list.len(xs) - 1
-    let result = binary_search_helper(xs, target, lo, hi)
-    result
-
-fn binary_search_helper(xs: List[Int], target: Int, lo: Int, hi: Int) -> Option[Int] =
-  if lo > hi then
-    none
-  else
-    let mid = (lo + hi) / 2
-    let mid_val = list.get(xs, mid)
-    match mid_val {
-      some(x) =>
-        if x == target then
-          some(mid)
-        else if x < target then
-          binary_search_helper(xs, target, mid + 1, hi)
+    let
+      low = 0
+      high = list.len(xs) - 1
+    in
+    let
+      fn recur(low: Int, high: Int) -> Option[Int] =
+        if low > high then
+          none
         else
-          binary_search_helper(xs, target, lo, mid - 1)
-      none =>
-        none
-    }
+          let
+            mid = (low + high) / 2
+            mid_val = list.get(xs, mid).unwrap_or(0)
+          in
+          if mid_val == target then
+            some(mid)
+          else if mid_val < target then
+            recur(mid + 1, high)
+          else
+            recur(low, mid - 1)
+    in
+    recur(low, high)
 ```
 
 **Diagnostic:**
@@ -47,15 +46,15 @@ error: 'let' is not an expression in Almide
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-5 |     let lo = 0
+5 |     let
   |     ^^^
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-binary-search-0.almd:14:5
+  --> /tmp/dojo-binary-search-0.almd:14:11
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
    |
-14 |     let mid = (lo + hi) / 2
-   |     ^^^
+14 |           let
+   |           ^^^
 
 2 error(s) found
 Compile error for /tmp/dojo-binary-search-0.almd:
@@ -73,27 +72,26 @@ fn binary_search(xs: List[Int], target: Int) -> Option[Int] =
   if list.len(xs) == 0 then
     none
   else
-    let lo = 0
-    let hi = list.len(xs) - 1
-    { let result = binary_search_helper(xs, target, lo, hi); result }
-
-fn binary_search_helper(xs: List[Int], target: Int, lo: Int, hi: Int) -> Option[Int] =
-  if lo > hi then
-    none
-  else
-    let mid = (lo + hi) / 2
-    let mid_val = list.get(xs, mid)
-    match mid_val {
-      some(x) =>
-        if x == target then
-          some(mid)
-        else if x < target then
-          binary_search_helper(xs, target, mid + 1, hi)
-        else
-          binary_search_helper(xs, target, lo, mid - 1)
-      none =>
+    let
+      low = 0
+      high = list.len(xs) - 1
+    in
+    let recur(low: Int, high: Int) -> Option[Int] =
+      if low > high then
         none
-    }
+      else
+        let
+          mid = (low + high) / 2
+          mid_val = list.get(xs, mid).unwrap_or(0)
+        in
+        if mid_val == target then
+          some(mid)
+        else if mid_val < target then
+          recur(mid + 1, high)
+        else
+          recur(low, mid - 1)
+    in
+    recur(low, high)
 ```
 
 **Diagnostic:**
@@ -105,17 +103,10 @@ error: 'let' is not an expression in Almide
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-5 |     let lo = 0
+5 |     let
   |     ^^^
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-binary-search-1.almd:13:5
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
-   |
-13 |     let mid = (lo + hi) / 2
-   |     ^^^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-binary-search-1.almd:
 compile failed
 FAILED: /tmp/dojo-binary-search-1.almd
@@ -131,27 +122,38 @@ fn binary_search(xs: List[Int], target: Int) -> Option[Int] =
   if list.len(xs) == 0 then
     none
   else
-    let lo = 0
-    let hi = list.len(xs) - 1
-    { let result = binary_search_helper(xs, target, lo, hi); result }
+    let
+      low = 0
+      high = list.len(xs) - 1
+    in
+    let recur(low: Int, high: Int) -> Option[Int] =
+      if low > high then
+        none
+      else
+        let
+          mid = (low + high) / 2
+          mid_val = list.get(xs, mid).unwrap_or(0)
+        in
+        if mid_val == target then
+          some(mid)
+        else if mid_val < target then
+          recur(mid + 1, high)
+        else
+          recur(low, mid - 1)
+    in
+    recur(low, high)
 
-fn binary_search_helper(xs: List[Int], target: Int, lo: Int, hi: Int) -> Option[Int] =
-  if lo > hi then
+// Use a block to define the recur function inside the main function
+fn binary_search(xs: List[Int], target: Int) -> Option[Int] =
+  if list.len(xs) == 0 then
     none
   else
-    let mid = (lo + hi) / 2
-    let mid_val = list.get(xs, mid)
-    match mid_val {
-      some(x) =>
-        if x == target then
-          some(mid)
-        else if x < target then
-          binary_search_helper(xs, target, mid + 1, hi)
-        else
-          binary_search_helper(xs, target, lo, mid - 1)
-      none =>
-        none
-    }
+    let
+      low = 0
+      high = list.len(xs) - 1
+    in
+    {
+      let recur(low: Int, high: Int) -> Option
 ```
 
 **Diagnostic:**
@@ -163,14 +165,14 @@ error: 'let' is not an expression in Almide
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-5 |     let lo = 0
+5 |     let
   |     ^^^
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-binary-search-2.almd:13:5
+  --> /tmp/dojo-binary-search-2.almd:31:5
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
    |
-13 |     let mid = (lo + hi) / 2
+31 |     let
    |     ^^^
 
 2 error(s) found
@@ -189,26 +191,27 @@ fn binary_search(xs: List[Int], target: Int) -> Option[Int] =
   if list.len(xs) == 0 then
     none
   else
-    let lo = 0
-    let hi = list.len(xs) - 1
-    { let result = binary_search_helper(xs, target, lo, hi); result }
-
-fn binary_search_helper(xs: List[Int], target: Int, lo: Int, hi: Int) -> Option[Int] =
-  if lo > hi then
-    none
-  else
-    let mid = (lo + hi) / 2
-    let mid_val = list.get(xs, mid)
-    match mid_val {
-      some(x) =>
-        if x == target then
-          some(mid)
-        else if x < target then
-          binary_search_helper(xs, target, mid + 1, hi)
+    let
+      low = 0
+      high = list.len(xs) - 1
+    in
+    {
+      let recur(low: Int, high: Int) -> Option[Int] =
+        if low > high then
+          none
         else
-          binary_search_helper(xs, target, lo, mid - 1)
-      none =>
-        none
+          let
+            mid = (low + high) / 2
+            mid_val = list.get(xs, mid).unwrap_or(0)
+          in
+          if mid_val == target then
+            some(mid)
+          else if mid_val < target then
+            recur(mid + 1, high)
+          else
+            recur(low, mid - 1)
+      in
+      recur(low, high)
     }
 ```
 
@@ -221,17 +224,10 @@ error: 'let' is not an expression in Almide
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-5 |     let lo = 0
+5 |     let
   |     ^^^
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-binary-search-3.almd:13:5
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
-   |
-13 |     let mid = (lo + hi) / 2
-   |     ^^^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-binary-search-3.almd:
 compile failed
 FAILED: /tmp/dojo-binary-search-3.almd

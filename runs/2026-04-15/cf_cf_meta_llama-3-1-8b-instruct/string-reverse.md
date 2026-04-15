@@ -4,7 +4,7 @@
 - **success**: no
 - **retries**: 3
 - **category**: type-error
-- **diagnostic code**: `E002`
+- **diagnostic code**: `E005`
 
 ## Attempts
 
@@ -13,29 +13,23 @@
 ```almide
 fn reverse(s: String) -> String = 
   let chars = string.chars(s)
-  list.fold(chars, "", (acc, x) => acc + [x])
+  let reversed = list.reverse(chars)
+  string.from_chars(reversed)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-string-reverse-0.almd
-error[E005]: argument 'f' expects fn(String, String) -> String but got fn(List[?1], ?1) -> List[?1]
-  --> /tmp/dojo-string-reverse-0.almd:3:43
-  in call to list.fold()
-  hint: Fix the argument type
+error[E002]: undefined function 'string.from_chars'
+  --> /tmp/dojo-string-reverse-0.almd:4:21
+  in call to string.from_chars()
+  hint: Did you mean `string.from_bytes`?
   |
-3 |   list.fold(chars, "", (acc, x) => acc + [x])
-  |                                           ^
-error[E001]: type mismatch in call to list.fold(): expected fn(String, String) -> String but got fn(List[?1], ?1) -> List[?1]
-  --> /tmp/dojo-string-reverse-0.almd:3:43
-  in call to list.fold()
-  hint: Fix the expression type or change the expected type
-  |
-3 |   list.fold(chars, "", (acc, x) => acc + [x])
-  |                                           ^
+4 |   string.from_chars(reversed)
+  |                     ^^^^^^^^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-string-reverse-0.almd:
 compile failed
 FAILED: /tmp/dojo-string-reverse-0.almd
@@ -49,13 +43,25 @@ FAILED: /tmp/dojo-string-reverse-0.almd
 ```almide
 fn reverse(s: String) -> String = 
   let chars = string.chars(s)
-  list.fold(chars, "", (acc, x) => acc + x)
+  let reversed = list.reverse(chars)
+  string.from_chars(reversed)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-string-reverse-1.almd
+error[E002]: undefined function 'string.from_chars'
+  --> /tmp/dojo-string-reverse-1.almd:4:21
+  in call to string.from_chars()
+  hint: Did you mean `string.from_bytes`?
+  |
+4 |   string.from_chars(reversed)
+  |                     ^^^^^^^^
+
+1 error(s) found
+Compile error for /tmp/dojo-string-reverse-1.almd:
+compile failed
 FAILED: /tmp/dojo-string-reverse-1.almd
 
 1/1 test file(s) failed
@@ -67,20 +73,21 @@ FAILED: /tmp/dojo-string-reverse-1.almd
 ```almide
 fn reverse(s: String) -> String = 
   let chars = string.chars(s)
-  list.fold(chars, "", (acc, x) => acc + string.to_char(x))
+  let reversed = list.reverse(chars)
+  string.from_chars(reversed)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-string-reverse-2.almd
-error[E002]: undefined function 'string.to_char'
-  --> /tmp/dojo-string-reverse-2.almd:3:57
-  in call to string.to_char()
-  hint: No function 'to_char' in module 'string'. See docs/CHEATSHEET.md for available functions
+error[E002]: undefined function 'string.from_chars'
+  --> /tmp/dojo-string-reverse-2.almd:4:21
+  in call to string.from_chars()
+  hint: Did you mean `string.from_bytes`?
   |
-3 |   list.fold(chars, "", (acc, x) => acc + string.to_char(x))
-  |                                                         ^
+4 |   string.from_chars(reversed)
+  |                     ^^^^^^^^
 
 1 error(s) found
 Compile error for /tmp/dojo-string-reverse-2.almd:
@@ -96,22 +103,30 @@ FAILED: /tmp/dojo-string-reverse-2.almd
 ```almide
 fn reverse(s: String) -> String = 
   let chars = string.chars(s)
-  list.fold(chars, "", (acc, x) => acc + string.to_char(x))
+  let reversed = list.reverse(chars)
+  string.from_bytes(reversed)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-string-reverse-3.almd
-error[E002]: undefined function 'string.to_char'
-  --> /tmp/dojo-string-reverse-3.almd:3:57
-  in call to string.to_char()
-  hint: No function 'to_char' in module 'string'. See docs/CHEATSHEET.md for available functions
+error[E005]: argument 'bytes' expects List[Int] but got List[String]
+  --> /tmp/dojo-string-reverse-3.almd:4:21
+  in call to string.from_bytes()
+  hint: Fix the argument type
   |
-3 |   list.fold(chars, "", (acc, x) => acc + string.to_char(x))
-  |                                                         ^
+4 |   string.from_bytes(reversed)
+  |                     ^^^^^^^^
+error[E001]: type mismatch in call to string.from_bytes(): expected List[Int] but got List[String]
+  --> /tmp/dojo-string-reverse-3.almd:4:21
+  in call to string.from_bytes()
+  hint: Fix the expression type or change the expected type
+  |
+4 |   string.from_bytes(reversed)
+  |                     ^^^^^^^^
 
-1 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-string-reverse-3.almd:
 compile failed
 FAILED: /tmp/dojo-string-reverse-3.almd
