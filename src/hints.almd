@@ -55,6 +55,10 @@ fn hint_for_code(code: String) -> String =
     "You mutated a `var` inside a closure in a pure `fn`. Two fixes: (1) mark the enclosing fn as `effect fn`; (2) rewrite with `list.fold` or recursion so no mutation is needed inside the closure."
   else if code == "E012" then
     "Duplicate definition. The harness appends `tests.almd` after your code, so DO NOT include `test \"...\" { ... }` blocks or any function with the same name as one already defined in the task's tests. Submit only the requested function definition(s)."
+  else if code == "E013" then
+    "List values have no fields like `.head` `.tail` `.length`. Use stdlib functions: " +
+    "`list.first(xs)` (returns Option[T]), `list.drop(xs, 1)` for tail, `list.len(xs)` for length. " +
+    "Or pattern match: `match xs { [] => ..., [x, ...rest] => ... }`."
   else ""
 
 // Extract every distinct "error[Exxx]" code from a diagnostic blob.
