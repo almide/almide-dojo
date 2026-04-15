@@ -2,7 +2,21 @@
 
 > Daily modification-survival-rate (MSR) measurement for [Almide](https://github.com/almide/almide).
 
-Almide's existence rests on one metric: **how often LLM-written code survives modification**. Almide Dojo makes that measurement continuous.
+**📊 Live dashboard: <https://almide.github.io/almide-dojo/>**
+
+Almide's existence rests on one metric: **how often LLM-written code survives modification**. Almide Dojo makes that measurement continuous — and feeds the failures back as a backlog for improving Almide's compiler diagnostics and stdlib.
+
+## The metric that matters
+
+The headline is **final pass rate after up to 3 retries** — i.e. *did the model converge to a passing solution given diagnostic feedback*. 1-shot rate is informational only; the real signal is whether the diagnostic loop is good enough for the model to recover. Anything that improves retry-success — clearer diagnostics, better hints, smarter retry prompts, fixed compiler bugs — counts as a win.
+
+## What the dashboard shows
+
+- **Pass rate over time** — per model (final pass after retries; this is the headline)
+- **Failure breakdown by category** — `parse-error` / `type-error` / `name-error` / `import-error` / `runtime-error` / `wrong-output` / `unknown` per model. The categories tell you *why* the retry loop didn't converge.
+- **Top diagnostic codes** — which `error[E0xx]` codes are most often blocking LLMs even after 3 retries (drives the diagnostic-improvement backlog in `almide/almide`)
+- **Pass rate by Almide feature × model** — heatmap over `tasks/*/meta.toml` `tags`, surfacing which language features each model handles vs. trips on
+- **Per-task results** with category, code, and retry count
 
 ## What happens here
 
