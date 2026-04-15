@@ -1,0 +1,6 @@
+import self.hints
+
+effect fn main() -> Unit = {
+  let diag = "error[E005]: argument type\nerror[E001]: type mismatch"
+  println(hints.hints_block(diag))
+}

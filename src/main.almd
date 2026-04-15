@@ -27,6 +27,7 @@ import datetime
 import almai
 import self.types.{Task, Attempt, RunResult, AttemptResult}
 import self.classifier
+import self.hints
 import self.render
 import self.backfill
 
@@ -128,7 +129,8 @@ effect fn compile_and_test(task: Task, solution: String, attempt: Int) -> Result
 fn build_retry_prompt(original: String, prev_code: String, diag: String) -> String =
   "Original task:\n\n" + original + "\n\n" +
   "You previously wrote this code:\n\n" + prev_code + "\n\n" +
-  "It failed to compile or test. Diagnostic output:\n\n" + diag + "\n\n" +
+  "It failed to compile or test. Diagnostic output:\n\n" + diag +
+  hints.hints_block(diag) + "\n\n" +
   "Fix the code and return ONLY the corrected Almide source. No markdown fences, no explanation."
 
 effect fn attempt_once(

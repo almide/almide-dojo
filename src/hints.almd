@@ -1,0 +1,91 @@
+// Curated retry-time hints keyed on Almide diagnostic codes.
+//
+// The harness extracts every error[Exxx] code from a failed attempt's
+// diagnostic and appends the matching hints to the next retry prompt.
+// Goal: lift the retry-success rate by giving the model the pattern-fix
+// it would need to derive on its own.
+//
+// Source of truth for each hint:
+//   - malicious-hints.md (failures we've observed in past runs)
+//   - SPEC.md / CHEATSHEET.md in almide/almide
+//   - dojo runs that recovered (= what worked) vs unrecoverable codes
+//
+// Edit freely; the dashboard's recovery-rate-by-code chart will surface
+// whether each hint moves the needle.
+
+fn hint_for_code(code: String) -> String =
+  if code == "E001" then
+    "Type mismatch. Three common causes: " +
+    "(1) `match` arms return different types — make every arm yield the same type; " +
+    "(2) `if cond then a` without `else` is Unit, not a value — every `if` used as an expression needs `else`; " +
+    "(3) function declared `-> T` but the last expression is a different type. Re-check the signature."
+  else if code == "E002" then
+    "Undefined function. Common causes: " +
+    "(1) typo in the function name; " +
+    "(2) module not imported (e.g. `fs`, `process`, `datetime` need explicit `import`); " +
+    "(3) using a method that doesn't exist — `list.push` is mutating Unit; for immutable append use `xs + [item]`. " +
+    "Auto-imported (no import needed): string, list, int, float, math, map, result, option, value, set."
+  else if code == "E003" then
+    "Undefined variable. Three traps: " +
+    "(1) typo or out-of-scope reference; " +
+    "(2) you used a stdlib module name (`list`, `string`, `option`, `value`, `error`) as a local variable — rename the local; " +
+    "(3) you tried to capture a name from an outer `let` that hasn't been bound yet (let bindings see only earlier ones in the same block)."
+  else if code == "E004" then
+    "Module/import error. Stdlib modules NOT auto-imported (need explicit `import`): " +
+    "fs, env, io, process, json, random, regex, datetime, http, log, testing, error. " +
+    "Bundled (also need import): args, path, time, encoding, hash, url, csv. " +
+    "Wildcard imports `import x.*` are forbidden. Use selective `import x.{A, B}` only if your project allows."
+  else if code == "E005" then
+    "Argument type mismatch in a function call. Two patterns to check: " +
+    "(1) you passed a `Result[T, E]` or `Option[T]` where the bare `T` was expected — unwrap with `match` or use `option.unwrap_or` / `result.unwrap_or`; " +
+    "(2) you called `list.push(xs, item)` and used the return value — `list.push` returns Unit; for immutable append use `xs + [item]`. " +
+    "If you need a fold, use `list.fold(xs, init, (acc, x) => ...)` (no foldLeft/foldRight)."
+  else ""
+
+// Extract every distinct "error[Exxx]" code from a diagnostic blob.
+// Used by the harness to look up hints for ALL codes the compiler raised,
+// not just the first one.
+fn extract_all_codes(diag: String) -> List[String] = {
+  let parts = string.split(diag, "error[E")
+  list.drop(parts, 1)
+    |> list.filter_map((p) =>
+      match string.index_of(p, "]") {
+        none => none
+        some(i) => some("E" + string.take(p, i))
+      })
+    |> list.unique
+}
+
+// Render the hints block for a diagnostic. Returns "" if no hints apply.
+fn hints_block(diag: String) -> String = {
+  let codes = extract_all_codes(diag)
+  let lines = codes
+    |> list.filter_map((c) => {
+      let h = hint_for_code(c)
+      if h == "" then none else some("- **[" + c + "]** " + h)
+    })
+  if list.is_empty(lines) then ""
+  else
+    "\n\n## Likely fix patterns (curated from past failures)\n\n" +
+    string.join(lines, "\n")
+}
+
+test "extract_all_codes finds multiple distinct codes" {
+  let d = "error[E001]: ...\nerror[E003]: ...\nerror[E001]: ..."
+  let codes = extract_all_codes(d)
+  assert_eq(list.len(codes), 2)
+}
+
+test "extract_all_codes returns empty when no codes" {
+  assert_eq(list.len(extract_all_codes("error: Expected identifier")), 0)
+}
+
+test "hints_block produces a section when codes match" {
+  let block = hints_block("error[E005]: argument type")
+  assert(string.contains(block, "Likely fix patterns"))
+  assert(string.contains(block, "E005"))
+}
+
+test "hints_block empty for unmatched codes" {
+  assert_eq(hints_block("plain message no codes"), "")
+}
