@@ -11,11 +11,11 @@
 
 ```almide
 fn title_case(s: String) -> String = 
-  string.join(
-    list.map(
-      string.split(s, " "), 
-      (word) => string.capitalize(string.to_lower(word))
-    ), 
-    " "
-  )
+    string.join(
+        list.map(
+            string.split(s, " "),
+            (word) => string.capitalize(string.to_lower(word))
+        ),
+        " "
+    )
 ```

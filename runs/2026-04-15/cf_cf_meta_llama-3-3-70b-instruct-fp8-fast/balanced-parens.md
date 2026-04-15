@@ -3,8 +3,7 @@
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: no
 - **retries**: 3
-- **category**: type-error
-- **diagnostic code**: `E002`
+- **category**: parse-error
 
 ## Attempts
 
@@ -13,21 +12,33 @@
 ```almide
 fn is_balanced(s: String) -> Bool = 
   let 
-    stack = []
-    pairs = map.from_list([(")", "("), ("]", "["), ("}", "{")])
+    stack = list.new[String]()
+    pairs = map.from_list([
+      (")", "("), 
+      ("]", "["),
+      ("}", "{")
+    ])
+    chars = string.chars(s)
   in 
-    string.chars(s).fold(true, (acc, c) => 
-      if acc then 
-        if list.find(["(", "[", "{"], (x) => x == c).is_some() then 
-          stack + [c]
-        else if list.find([")", "]", "}"], (x) => x == c).is_some() then 
-          if stack.is_empty() then false 
-          else if map.get(pairs, c).unwrap() == stack.last().unwrap() then 
-            stack.drop_end(1)
-          else false
-        else stack
-      else []
-    ).is_empty()
+    list.fold(chars, true, (acc, ch) => 
+      if list.contains(["(", "[", "{"], ch) then 
+        list.push(stack, ch) |> list.len(_) > 0
+      else if list.contains([")", "]", "}"], ch) then 
+        if list.is_empty(stack) then false 
+        else 
+          let 
+            last = list.last(stack)
+          in 
+            if last == none then false 
+            else 
+              let 
+                last_val = option.unwrap_or(last, "")
+              in 
+                if last_val == map.get(pairs, ch) then 
+                  list.drop_end(stack, 1) |> list.len(_) >= 0
+                else false
+      else acc
+    )
 ```
 
 **Diagnostic:**
@@ -39,69 +50,117 @@ error: Expected identifier at line 2:7 (got Newline '')
   |
 2 |   let
   |       ^
-error: Expected expression at line 5:3 (got In 'in')
-  --> /tmp/dojo-balanced-parens-0.almd:5:3
+error: Expected expression at line 10:3 (got In 'in')
+  --> /tmp/dojo-balanced-parens-0.almd:10:3
+   |
+10 |   in
+   |   ^
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-balanced-parens-0.almd:17:11
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+   |
+17 |           let
+   |           ^^^
+error: Expected expression at line 19:11 (got In 'in')
+  --> /tmp/dojo-balanced-parens-0.almd:19:11
+   |
+19 |           in
+   |           ^
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-balanced-parens-0.almd:22:15
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+   |
+22 |               let
+   |               ^^^
+error: Expected expression at line 24:15 (got In 'in')
+  --> /tmp/dojo-balanced-parens-0.almd:24:15
+   |
+24 |               in
+   |               ^
+error: Expected expression at line 28:7 (got Else 'else')
+  --> /tmp/dojo-balanced-parens-0.almd:28:7
+   |
+28 |       else acc
+   |       ^
+error[E002]: undefined function 'list.new'
+  --> /tmp/dojo-balanced-parens-0.almd:3:21
+  in call to list.new()
+  hint: Did you mean `[] (empty list literal)`?
   |
-5 |   in
-  |   ^
+3 |     stack = list.new[String]()
+  |                     ^
 error[E003]: undefined variable 'stack'
-  --> /tmp/dojo-balanced-parens-0.almd:9:11
-  in variable stack
-  hint: Check the variable name
-  |
-9 |           stack + [c]
-  |           ^^^^^
-error[E003]: undefined variable 'stack'
-  --> /tmp/dojo-balanced-parens-0.almd:11:14
+  --> /tmp/dojo-balanced-parens-0.almd:18:30
   in variable stack
   hint: Check the variable name
    |
-11 |           if stack.is_empty() then false
-   |              ^^^^^
+18 |             last = list.last(stack)
+   |                              ^^^^^
+error[E003]: undefined variable 'last'
+  --> /tmp/dojo-balanced-parens-0.almd:23:45
+  in variable last
+  hint: Check the variable name
+   |
+23 |                 last_val = option.unwrap_or(last, "")
+   |                                             ^^^^
+error[E003]: undefined variable 'last_val'
+  --> /tmp/dojo-balanced-parens-0.almd:25:20
+  in variable last_val
+  hint: Check the variable name
+   |
+25 |                 if last_val == map.get(pairs, ch) then
+   |                    ^^^^^^^^
 error[E003]: undefined variable 'pairs'
-  --> /tmp/dojo-balanced-parens-0.almd:12:27
+  --> /tmp/dojo-balanced-parens-0.almd:25:40
   in variable pairs
   hint: Check the variable name
    |
-12 |           else if map.get(pairs, c).unwrap() == stack.last().unwrap() then
-   |                           ^^^^^
+25 |                 if last_val == map.get(pairs, ch) then
+   |                                        ^^^^^
+error[E003]: undefined variable 'ch'
+  --> /tmp/dojo-balanced-parens-0.almd:25:47
+  in variable ch
+  hint: Did you mean `s`?
+  try:
+      // ch  →  s
+      s
+   |
+25 |                 if last_val == map.get(pairs, ch) then
+   |                                               ^^
 error[E003]: undefined variable 'stack'
-  --> /tmp/dojo-balanced-parens-0.almd:12:49
+  --> /tmp/dojo-balanced-parens-0.almd:26:33
   in variable stack
   hint: Check the variable name
    |
-12 |           else if map.get(pairs, c).unwrap() == stack.last().unwrap() then
-   |                                                 ^^^^^
-error[E003]: undefined variable 'stack'
-  --> /tmp/dojo-balanced-parens-0.almd:13:13
-  in variable stack
-  hint: Check the variable name
+26 |                   list.drop_end(stack, 1) |> list.len(_) >= 0
+   |                                 ^^^^^
+error[E004]: list.len() expects 1 argument(s) but got 2
+  --> /tmp/dojo-balanced-parens-0.almd:26:55
+  in call to list.len()
+  hint: Check the number of arguments
+  try:
+      // list.len() takes 1 arg(s) — you passed 2
+      list.len(<xs: List[A]>)
    |
-13 |             stack.drop_end(1)
-   |             ^^^^^
-error[E003]: undefined variable 'stack'
-  --> /tmp/dojo-balanced-parens-0.almd:15:14
-  in variable stack
-  hint: Check the variable name
-   |
-15 |         else stack
-   |              ^^^^^
-error[E001]: type mismatch in method call: expected Option[?6] but got fn() -> ?7
-  --> /tmp/dojo-balanced-parens-0.almd:12:34
-  in method call
+26 |                   list.drop_end(stack, 1) |> list.len(_) >= 0
+   |                                                       ^
+error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
+  --> /tmp/dojo-balanced-parens-0.almd:27:22
+  in fn 'is_balanced'
   hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Bool:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type Bool
    |
-12 |           else if map.get(pairs, c).unwrap() == stack.last().unwrap() then
-   |                                  ^
-error[E001]: type mismatch in method call: expected Bool but got fn() -> Bool
-  --> /tmp/dojo-balanced-parens-0.almd:6:18
-  in method call
-  hint: Fix the expression type or change the expected type
-  |
-6 |     string.chars(s).fold(true, (acc, c) =>
-  |                  ^
+27 |                 else false
+   |                      ^^^^^
 
-10 error(s) found
+16 error(s) found
 Compile error for /tmp/dojo-balanced-parens-0.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-0.almd
@@ -114,113 +173,40 @@ FAILED: /tmp/dojo-balanced-parens-0.almd
 
 ```almide
 fn is_balanced(s: String) -> Bool = 
-  let 
-    stack = ref []
-    pairs = map.from_list([(")", "("), ("]", "["), ("}", "{")])
-  in 
-    string.chars(s).fold(true, (acc, c) => 
-      if acc then 
-        if list.find(["(", "[", "{"], (x) => x == c).is_some() then 
-          stack := stack + [c]
-        else if list.find([")", "]", "}"], (x) => x == c).is_some() then 
-          if stack.is_empty() then false 
-          else if map.get(pairs, c).unwrap() == stack.last().unwrap() then 
-            stack := stack.drop_end(1)
-          else false
-        else stack
-      else stack
-    ).is_empty()
+  list.fold(string.chars(s), [] : List[String], (acc, ch) => 
+    if list.contains(["(", "[", "{"], ch) then 
+      acc + [ch]
+    else if list.contains([")", "]", "}"], ch) then 
+      if list.is_empty(acc) then false 
+      else 
+        let last = list.last(acc) in 
+          if last == none then false 
+          else 
+            let last_val = option.unwrap_or(last, "") in 
+              if (last_val == "(" && ch == ")") || 
+                 (last_val == "[" && ch == "]") || 
+                 (last_val == "{" && ch == "}") then 
+                list.drop_end(acc, 1)
+              else false
+    else acc
+  ) == []
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-1.almd
-error: Expected identifier at line 2:7 (got Newline '')
-  --> /tmp/dojo-balanced-parens-1.almd:2:7
-  |
-2 |   let
-  |       ^
-error: Expected expression at line 3:18 (got RBracket ']')
-  --> /tmp/dojo-balanced-parens-1.almd:3:18
-  |
-3 |     stack = ref []
-  |                  ^
-error: Expected expression at line 5:3 (got In 'in')
-  --> /tmp/dojo-balanced-parens-1.almd:5:3
-  |
-5 |   in
-  |   ^
-error: Expected ')' to close function call opened at line 6:25
-  --> /tmp/dojo-balanced-parens-1.almd:9:17
+error: Expected ')' to close function call opened at line 2:12
+  --> /tmp/dojo-balanced-parens-1.almd:2:33
   hint: Add ')' or check for a missing delimiter inside the function call
   |
-6 |     string.chars(s).fold(true, (acc, c) =>
-  |                         --------------- '(' opened here
-...
-9 |           stack := stack + [c]
-  |                 ^
-error: Expected ')' to close function call opened at line 6:25 at line 9:17
-  --> /tmp/dojo-balanced-parens-1.almd:6:25
+2 |   list.fold(string.chars(s), [] : List[String], (acc, ch) =>
+  |            --------------- '(' opened here
   |
-6 |     string.chars(s).fold(true, (acc, c) =>
-  |                         ^
-error: Expected expression at line 13:19 (got Colon ':')
-  --> /tmp/dojo-balanced-parens-1.almd:13:19
-   |
-13 |             stack := stack.drop_end(1)
-   |                   ^
-error[E003]: undefined variable 'stack'
-  --> /tmp/dojo-balanced-parens-1.almd:11:14
-  in variable stack
-  hint: Check the variable name
-   |
-11 |           if stack.is_empty() then false
-   |              ^^^^^
-error[E003]: undefined variable 'pairs'
-  --> /tmp/dojo-balanced-parens-1.almd:12:27
-  in variable pairs
-  hint: Check the variable name
-   |
-12 |           else if map.get(pairs, c).unwrap() == stack.last().unwrap() then
-   |                           ^^^^^
-error[E003]: undefined variable 'c'
-  --> /tmp/dojo-balanced-parens-1.almd:12:34
-  in variable c
-  hint: Check the variable name
-   |
-12 |           else if map.get(pairs, c).unwrap() == stack.last().unwrap() then
-   |                                  ^
-error[E003]: undefined variable 'stack'
-  --> /tmp/dojo-balanced-parens-1.almd:12:49
-  in variable stack
-  hint: Check the variable name
-   |
-12 |           else if map.get(pairs, c).unwrap() == stack.last().unwrap() then
-   |                                                 ^^^^^
-error[E003]: undefined variable 'stack'
-  --> /tmp/dojo-balanced-parens-1.almd:13:13
-  in variable stack
-  hint: Check the variable name
-   |
-13 |             stack := stack.drop_end(1)
-   |             ^^^^^
-error[E001]: type mismatch in method call: expected Option[?2] but got fn() -> ?3
-  --> /tmp/dojo-balanced-parens-1.almd:12:34
-  in method call
-  hint: Fix the expression type or change the expected type
-   |
-12 |           else if map.get(pairs, c).unwrap() == stack.last().unwrap() then
-   |                                  ^
-error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
-  --> /tmp/dojo-balanced-parens-1.almd:12:16
-  in fn 'is_balanced'
-  hint: Fix the expression type or change the expected type
-   |
-12 |           else if map.get(pairs, c).unwrap() == stack.last().unwrap() then
-   |                ^^
+2 |   list.fold(string.chars(s), [] : List[String], (acc, ch) =>
+  |                                 ^
 
-13 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-balanced-parens-1.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-1.almd
@@ -233,31 +219,38 @@ FAILED: /tmp/dojo-balanced-parens-1.almd
 
 ```almide
 fn is_balanced(s: String) -> Bool = 
-  string.chars(s).fold((true, []), (acc, c) => 
-    if acc.0 then 
-      if list.find(["(", "[", "{"], (x) => x == c).is_some() then 
-        (true, acc.1 + [c])
-      else if list.find([")", "]", "}"], (x) => x == c).is_some() then 
-        if acc.1.is_empty() then (false, acc.1) 
-        else if map.from_list([(")", "("), ("]", "["), ("}", "{")]).get(c).unwrap() == acc.1.last().unwrap() then 
-          (true, acc.1.drop_end(1))
-        else (false, acc.1)
-      else (true, acc.1)
-    else (false, acc.1)
-  ).0
+  list.fold(string.chars(s), [] : List[String], (acc, ch) => 
+    if list.contains(["(", "[", "{"], ch) then 
+      acc + [ch]
+    else if list.contains([")", "]", "}"], ch) then 
+      if list.is_empty(acc) then false 
+      else 
+        let last = list.last(acc) in 
+          if last == none then false 
+          else 
+            let last_val = option.unwrap_or(last, "") in 
+              if (last_val == "(" && ch == ")") || 
+                 (last_val == "[" && ch == "]") || 
+                 (last_val == "{" && ch == "}") then 
+                list.drop_end(acc, 1)
+              else false
+    else acc
+  ) == []
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-2.almd
-error[E001]: type mismatch in method call: expected Option[String] but got fn() -> ?6
-  --> /tmp/dojo-balanced-parens-2.almd:8:62
-  in method call
-  hint: Fix the expression type or change the expected type
+error: Expected ')' to close function call opened at line 2:12
+  --> /tmp/dojo-balanced-parens-2.almd:2:33
+  hint: Add ')' or check for a missing delimiter inside the function call
   |
-8 |         else if map.from_list([(")", "("), ("]", "["), ("}", "{")]).get(c).unwrap() == acc.1.last().unwrap() then
-  |                                                              ^^^
+2 |   list.fold(string.chars(s), [] : List[String], (acc, ch) =>
+  |            --------------- '(' opened here
+  |
+2 |   list.fold(string.chars(s), [] : List[String], (acc, ch) =>
+  |                                 ^
 
 1 error(s) found
 Compile error for /tmp/dojo-balanced-parens-2.almd:
@@ -272,102 +265,40 @@ FAILED: /tmp/dojo-balanced-parens-2.almd
 
 ```almide
 fn is_balanced(s: String) -> Bool = 
-  string.chars(s).fold((true, []), (acc, c) => 
-    if acc.0 then 
-      if list.find(["(", "[", "{"], (x) => x == c).is_some() then 
-        (true, acc.1 + [c])
-      else if list.find([")", "]", "}"], (x) => x == c).is_some() then 
-        if acc.1.is_empty() then (false, acc.1) 
-        else if map.from_list([(")", "("), ("]", "["), ("}", "{")]).get(c).is_some() && map.from_list([(")", "("), ("]", "["), ("}", "{")]).get(c).unwrap() == acc.1.last().unwrap() then 
-          (true, acc.1.drop_end(1))
-        else (false, acc.1)
-      else (true, acc.1)
-    else (false, acc.1)
-  ).0
+  list.fold(string.chars(s), [] : List[String], (acc, ch) => 
+    if list.contains(["(", "[", "{"], ch) then 
+      acc + [ch]
+    else if list.contains([")", "]", "}"], ch) then 
+      if list.is_empty(acc) then false 
+      else 
+        let last = list.last(acc) in 
+          if last == none then false 
+          else 
+            let last_val = option.unwrap_or(last, "") in 
+              if (last_val == "(" && ch == ")") || 
+                 (last_val == "[" && ch == "]") || 
+                 (last_val == "{" && ch == "}") then 
+                list.drop_end(acc, 1)
+              else false
+    else acc
+  ) == []
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-3.almd
-error: '&&' is not valid in Almide at line 8:86
-  --> /tmp/dojo-balanced-parens-3.almd:8:86
-  hint: Use 'and' for logical AND. Example: if a and b then ...
+error: Expected ')' to close function call opened at line 2:12
+  --> /tmp/dojo-balanced-parens-3.almd:2:33
+  hint: Add ')' or check for a missing delimiter inside the function call
   |
-8 |         else if map.from_list([(")", "("), ("]", "["), ("}", "{")]).get(c).is_some() && map.from_list([(")", "("), ("]", "["), ("}", "{")]).get(c).unwrap() == acc.1.last().unwrap() then
-  |                                                                                      ^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-3.almd:15:47
-  in call to is_balanced()
-  hint: Check the function name
-   |
-15 | test "balanced empty" { assert_eq(is_balanced(""), true) }
-   |                                               ^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-3.almd:16:55
-  in call to is_balanced()
-  hint: Check the function name
-   |
-16 | test "balanced simple parens" { assert_eq(is_balanced("()"), true) }
-   |                                                       ^^^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-3.almd:17:48
-  in call to is_balanced()
-  hint: Check the function name
-   |
-17 | test "balanced nested" { assert_eq(is_balanced("([{}])"), true) }
-   |                                                ^^^^^^^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-3.almd:18:52
-  in call to is_balanced()
-  hint: Check the function name
-   |
-18 | test "balanced sequential" { assert_eq(is_balanced("()[]{}"), true) }
-   |                                                    ^^^^^^^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-3.almd:19:51
-  in call to is_balanced()
-  hint: Check the function name
-   |
-19 | test "balanced with text" { assert_eq(is_balanced("fn foo(x: Int) -> { x }"), true) }
-   |                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-3.almd:20:49
-  in call to is_balanced()
-  hint: Check the function name
-   |
-20 | test "unbalanced cross" { assert_eq(is_balanced("([)]"), false) }
-   |                                                 ^^^^^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-3.almd:21:48
-  in call to is_balanced()
-  hint: Check the function name
-   |
-21 | test "unbalanced open" { assert_eq(is_balanced("("), false) }
-   |                                                ^^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-3.almd:22:49
-  in call to is_balanced()
-  hint: Check the function name
-   |
-22 | test "unbalanced close" { assert_eq(is_balanced(")"), false) }
-   |                                                 ^^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-3.almd:23:55
-  in call to is_balanced()
-  hint: Check the function name
-   |
-23 | test "unbalanced extra close" { assert_eq(is_balanced("())"), false) }
-   |                                                       ^^^^^
-error[E002]: undefined function 'is_balanced'
-  --> /tmp/dojo-balanced-parens-3.almd:24:52
-  in call to is_balanced()
-  hint: Check the function name
-   |
-24 | test "unbalanced mismatch" { assert_eq(is_balanced("(]"), false) }
-   |                                                    ^^^^
+2 |   list.fold(string.chars(s), [] : List[String], (acc, ch) =>
+  |            --------------- '(' opened here
+  |
+2 |   list.fold(string.chars(s), [] : List[String], (acc, ch) =>
+  |                                 ^
 
-11 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-balanced-parens-3.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-3.almd

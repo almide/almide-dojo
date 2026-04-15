@@ -11,5 +11,5 @@
 
 ```almide
 fn partition(xs: List[Int], predicate: (Int) -> Bool) -> (List[Int], List[Int]) = 
-  list.partition(xs, predicate)
+    list.partition(xs, predicate)
 ```

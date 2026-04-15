@@ -1,27 +1,61 @@
 # max-of-list
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
-- **success**: no
-- **retries**: 3
-- **category**: unknown
+- **success**: yes
+- **retries**: 2
+- **category**: pass-retry
 
 ## Attempts
 
 ### Attempt 1 (FAIL)
 
 ```almide
-fn max_of_list(xs: List[Int]) -> Option[Int] = 
-  if list.is_empty(xs) then none 
-  else some(list.fold(xs, xs.head, (max, x) => if max > x then max else x))
+fn max_of_list(xs: List[Int]) -> Option[Int] =
+  if list.is_empty(xs) then
+    none
+  else
+    some(list.reduce(xs, (x) => x, (max, x) => if x > max then x else max))
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-max-of-list-0.almd
-Compile error for /tmp/dojo-max-of-list-0.almd:
-error: could not compile `almide-out` (bin "almide-out" test) due to 1 previous error; 2 warnings emitted
+error[E004]: list.reduce() expects 2 argument(s) but got 3
+  --> /tmp/dojo-max-of-list-0.almd:5:71
+  in call to list.reduce()
+  hint: Check the number of arguments
+  try:
+      // list.reduce() takes 2 arg(s) — you passed 3
+      list.reduce(<xs: List[A]>, <f: fn(A, A) -> A>)
+  |
+5 |     some(list.reduce(xs, (x) => x, (max, x) => if x > max then x else max))
+  |                                                                       ^^^
+error[E005]: argument 'f' expects fn(Int, Int) -> Int but got fn(?1) -> ?1
+  --> /tmp/dojo-max-of-list-0.almd:5:71
+  in call to list.reduce()
+  hint: Fix the argument type
+  |
+5 |     some(list.reduce(xs, (x) => x, (max, x) => if x > max then x else max))
+  |                                                                       ^^^
+error[E001]: type mismatch in call to list.reduce(): expected fn(Int, Int) -> Int but got fn(?1) -> ?1
+  --> /tmp/dojo-max-of-list-0.almd:5:71
+  in call to list.reduce()
+  hint: Fix the expression type or change the expected type
+  |
+5 |     some(list.reduce(xs, (x) => x, (max, x) => if x > max then x else max))
+  |                                                                       ^^^
+error[E001]: type mismatch in fn 'max_of_list': expected Option[Int] but got Option[Option[Int]]
+  --> /tmp/dojo-max-of-list-0.almd:5:71
+  in fn 'max_of_list'
+  hint: Fix the expression type or change the expected type
+  |
+5 |     some(list.reduce(xs, (x) => x, (max, x) => if x > max then x else max))
+  |                                                                       ^^^
 
+4 error(s) found
+Compile error for /tmp/dojo-max-of-list-0.almd:
+compile failed
 FAILED: /tmp/dojo-max-of-list-0.almd
 
 1/1 test file(s) failed
@@ -31,62 +65,40 @@ FAILED: /tmp/dojo-max-of-list-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn max_of_list(xs: List[Int]) -> Option[Int] = 
-  if list.is_empty(xs) then none 
-  else some(list.fold(xs, xs.head, (max, x) => if max >= x then max else x))
+fn max_of_list(xs: List[Int]) -> Option[Int] =
+  if list.is_empty(xs) then
+    none
+  else
+    some(list.reduce(xs, (max, x) => if x > max then x else max))
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-max-of-list-1.almd
-Compile error for /tmp/dojo-max-of-list-1.almd:
-error: could not compile `almide-out` (bin "almide-out" test) due to 1 previous error; 2 warnings emitted
+error[E001]: type mismatch in fn 'max_of_list': expected Option[Int] but got Option[Option[Int]]
+  --> /tmp/dojo-max-of-list-1.almd:5:61
+  in fn 'max_of_list'
+  hint: Fix the expression type or change the expected type
+  |
+5 |     some(list.reduce(xs, (max, x) => if x > max then x else max))
+  |                                                             ^^^
 
+1 error(s) found
+Compile error for /tmp/dojo-max-of-list-1.almd:
+compile failed
 FAILED: /tmp/dojo-max-of-list-1.almd
 
 1/1 test file(s) failed
 
 ```
 
-### Attempt 3 (FAIL)
+### Attempt 3 (PASS)
 
 ```almide
-fn max_of_list(xs: List[Int]) -> Option[Int] = 
-  if list.is_empty(xs) then none 
-  else some(list.fold(xs, xs.head, (max, x) => if max > x then max else x))
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-max-of-list-2.almd
-Compile error for /tmp/dojo-max-of-list-2.almd:
-error: could not compile `almide-out` (bin "almide-out" test) due to 1 previous error; 2 warnings emitted
-
-FAILED: /tmp/dojo-max-of-list-2.almd
-
-1/1 test file(s) failed
-
-```
-
-### Attempt 4 (FAIL)
-
-```almide
-fn max_of_list(xs: List[Int]) -> Option[Int] = 
-  if list.is_empty(xs) then none 
-  else some(list.fold(xs, xs.head, (max, x) => if max >= x then max else x))
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-max-of-list-3.almd
-Compile error for /tmp/dojo-max-of-list-3.almd:
-error: could not compile `almide-out` (bin "almide-out" test) due to 1 previous error; 2 warnings emitted
-
-FAILED: /tmp/dojo-max-of-list-3.almd
-
-1/1 test file(s) failed
-
+fn max_of_list(xs: List[Int]) -> Option[Int] =
+  if list.is_empty(xs) then
+    none
+  else
+    list.reduce(xs, (max, x) => if x > max then x else max)
 ```

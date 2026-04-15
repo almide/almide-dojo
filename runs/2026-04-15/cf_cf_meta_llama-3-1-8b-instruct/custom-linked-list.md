@@ -351,3 +351,28 @@ FAILED: /tmp/dojo-custom-linked-list-3.almd
 1/1 test file(s) failed
 
 ```
+[], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+   |
+26 |     | Cons(x, xs) => Cons(f(x), my_map(xs, f))
+   |     ^
+error: Expected pattern at line 32:5 (got Pipe '|')
+  --> /tmp/dojo-custom-linked-list-3.almd:32:5
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+   |
+32 |     | Cons(x, xs) =>
+   |     ^
+error: Expected pattern at line 39:1 (got Test 'test')
+  --> /tmp/dojo-custom-linked-list-3.almd:39:1
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+   |
+39 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
+   | ^
+
+6 error(s) found
+Compile error for /tmp/dojo-custom-linked-list-3.almd:
+compile failed
+FAILED: /tmp/dojo-custom-linked-list-3.almd
+
+1/1 test file(s) failed
+
+```

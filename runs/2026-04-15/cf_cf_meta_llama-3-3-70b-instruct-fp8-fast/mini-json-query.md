@@ -3,8 +3,7 @@
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: no
 - **retries**: 3
-- **category**: type-error
-- **diagnostic code**: `E002`
+- **category**: parse-error
 
 ## Attempts
 
@@ -21,92 +20,46 @@ type JVal =
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
   match obj {
-    JObj(x) =>
-      list.find(x, (x) => x.0 == key).map((x) => x.1)
+    JObj(pairs) =>
+      list.find(pairs, (pair) => pair.0 == key)
+        |> option.map((pair) => pair.1)
     _ => none
   }
 
 fn jcount(val: JVal) -> Int =
   match val {
-    JNull => 1
-    JBool(_) => 1
-    JNum(_) => 1
-    JStr(_) => 1
-    JArr(arr) => list.sum(arr.map(jcount), 0)
-    JObj(obj) =>
-      list.sum(
-        list.map(obj, (x) => jcount(x.1)),
-        0
-      )
+    JNull | JBool(_) | JNum(_) | JStr(_) => 1
+    JArr(xs) => list.sum(xs, (x) => jcount(x))
+    JObj(pairs) => list.sum(pairs, (pair) => jcount(pair.1))
   }
 
 fn jflatten_strings(val: JVal) -> List[String] =
   match val {
     JStr(s) => [s]
-    JArr(arr) => list.flat_map(arr.map(jflatten_strings), (x) => x)
-    JObj
+    JArr(xs) => list.flat_map(xs, (x) => jflatten_strings(x))
+    JObj(pairs) => list.flat_map(pairs, (pair) => j
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-0.almd
-error: Expected FatArrow at line 34:9 (got Newline '')
-  --> /tmp/dojo-mini-json-query-0.almd:34:9
+error: Expected FatArrow at line 19:11 (got Pipe '|')
+  --> /tmp/dojo-mini-json-query-0.almd:19:11
    |
-34 |     JObj
-   |         ^
-error[E004]: list.sum() expects 1 argument(s) but got 2
-  --> /tmp/dojo-mini-json-query-0.almd:22:44
-  in call to list.sum()
-  hint: Check the number of arguments
+19 |     JNull | JBool(_) | JNum(_) | JStr(_) => 1
+   |           ^
+error: Expected ')' to close function call opened at line 28:33
+  --> /tmp/dojo-mini-json-query-0.almd:30:1
+  hint: Add ')' or check for a missing delimiter inside the function call
    |
-22 |     JArr(arr) => list.sum(arr.map(jcount), 0)
-   |                                            ^
-error[E004]: list.sum() expects 1 argument(s) but got 2
-  --> /tmp/dojo-mini-json-query-0.almd:26:9
-  in call to list.sum()
-  hint: Check the number of arguments
-   |
-26 |         0
-   |         ^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-0.almd:46:68
-  in call to jflatten_strings()
-  hint: Check the function name
-   |
-46 | test "jflatten_strings leaf str" { assert_eq(jflatten_strings(JStr("hi")), ["hi"]) }
-   |                                                                    ^^^^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-0.almd:47:68
-  in call to jflatten_strings()
-  hint: Check the function name
-   |
-47 | test "jflatten_strings leaf num" { assert_eq(jflatten_strings(JNum(1)), []) }
-   |                                                                    ^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-0.almd:48:95
-  in call to jflatten_strings()
-  hint: Check the function name
-   |
-48 | test "jflatten_strings arr mixed" { assert_eq(jflatten_strings(JArr([JStr("a"), JNum(1), JStr("b")])), ["a", "b"]) }
-   |                                                                                               ^^^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-0.almd:49:116
-  in call to jflatten_strings()
-  hint: Check the function name
-   |
-49 | test "jflatten_strings nested" { assert_eq(jflatten_strings(JObj([("x", JStr("hello")), ("y", JArr([JStr("world"), JNull]))])), ["hello", "world"]) }
-   |                                                                                                                    ^^^^^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-0.almd:50:65
-  in call to jflatten_strings()
-  hint: Check the function name
-   |
-50 | test "jflatten_strings empty" { assert_eq(jflatten_strings(JArr([])), []) }
-   |                                                                 ^
+28 |     JObj(pairs) => list.flat_map(pairs, (pair) => j
+   |                                 --------------- '(' opened here
+...
+30 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
+   | ^^^^
 
-8 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-mini-json-query-0.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-0.almd
@@ -128,8 +81,9 @@ type JVal =
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
   match obj {
-    JObj(x) =>
-      list.find(x, (x) => x.0 == key).map((x) => x.1)
+    JObj(pairs) =>
+      list.find(pairs, (pair) => pair.0 == key)
+        |> option.map((pair) => pair.1)
     _ => none
   }
 
@@ -139,73 +93,75 @@ fn jcount(val: JVal) -> Int =
     JBool(_) => 1
     JNum(_) => 1
     JStr(_) => 1
-    JArr(arr) => list.sum(list.map(arr, jcount))
-    JObj(obj) =>
-      list.sum(
-        list.map(obj, (x) => jcount(x.1))
-      )
+    JArr(xs) => list.sum(xs, (x) => jcount(x))
+    JObj(pairs) => list.sum(pairs, (pair) => jcount(pair.1))
   }
 
 fn jflatten_strings(val: JVal) -> List[String] =
   match val {
     JStr(s) => [s]
-    JArr(arr) => list.flat_map(list.map(arr, jflatten_strings), (x) => x)
-    JObj(obj) => list.flat_map(list
+    JArr(xs) => list.flat_map(xs, (x) => jflatten_strings(x))
+    JObj(pairs) => list.flat_map
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-1.almd
-error: Expected ')' to close function call opened at line 33:31
-  --> /tmp/dojo-mini-json-query-1.almd:35:1
-  hint: Add ')' or check for a missing delimiter inside the function call
+error: Expected pattern at line 33:1 (got Test 'test')
+  --> /tmp/dojo-mini-json-query-1.almd:33:1
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-33 |     JObj(obj) => list.flat_map(list
-   |                               --------------- '(' opened here
-...
-35 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
-   | ^^^^
-error: Expected ')' to close function call opened at line 33:31 at line 35:1
-  --> /tmp/dojo-mini-json-query-1.almd:33:31
+33 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
+   | ^
+error[E004]: list.sum() expects 1 argument(s) but got 2
+  --> /tmp/dojo-mini-json-query-1.almd:23:44
+  in call to list.sum()
+  hint: Check the number of arguments
+  try:
+      // list.sum() takes 1 arg(s) — you passed 2
+      list.sum(<xs: List[Int]>)
    |
-33 |     JObj(obj) => list.flat_map(list
-   |                               ^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-1.almd:45:68
-  in call to jflatten_strings()
-  hint: Check the function name
+23 |     JArr(xs) => list.sum(xs, (x) => jcount(x))
+   |                                            ^
+error[E005]: argument 'xs' expects List[Int] but got List[JVal]
+  --> /tmp/dojo-mini-json-query-1.almd:23:44
+  in call to list.sum()
+  hint: Fix the argument type
    |
-45 | test "jflatten_strings leaf str" { assert_eq(jflatten_strings(JStr("hi")), ["hi"]) }
-   |                                                                    ^^^^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-1.almd:46:68
-  in call to jflatten_strings()
-  hint: Check the function name
+23 |     JArr(xs) => list.sum(xs, (x) => jcount(x))
+   |                                            ^
+error[E004]: list.sum() expects 1 argument(s) but got 2
+  --> /tmp/dojo-mini-json-query-1.almd:24:53
+  in call to list.sum()
+  hint: Check the number of arguments
+  try:
+      // list.sum() takes 1 arg(s) — you passed 2
+      list.sum(<xs: List[Int]>)
    |
-46 | test "jflatten_strings leaf num" { assert_eq(jflatten_strings(JNum(1)), []) }
-   |                                                                    ^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-1.almd:47:95
-  in call to jflatten_strings()
-  hint: Check the function name
+24 |     JObj(pairs) => list.sum(pairs, (pair) => jcount(pair.1))
+   |                                                     ^^^^
+error[E005]: argument 'xs' expects List[Int] but got List[(String, JVal)]
+  --> /tmp/dojo-mini-json-query-1.almd:24:53
+  in call to list.sum()
+  hint: Fix the argument type
    |
-47 | test "jflatten_strings arr mixed" { assert_eq(jflatten_strings(JArr([JStr("a"), JNum(1), JStr("b")])), ["a", "b"]) }
-   |                                                                                               ^^^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-1.almd:48:116
-  in call to jflatten_strings()
-  hint: Check the function name
+24 |     JObj(pairs) => list.sum(pairs, (pair) => jcount(pair.1))
+   |                                                     ^^^^
+error[E001]: type mismatch in call to list.sum(): expected List[Int] but got List[JVal]
+  --> /tmp/dojo-mini-json-query-1.almd:23:44
+  in call to list.sum()
+  hint: Fix the expression type or change the expected type
    |
-48 | test "jflatten_strings nested" { assert_eq(jflatten_strings(JObj([("x", JStr("hello")), ("y", JArr([JStr("world"), JNull]))])), ["hello", "world"]) }
-   |                                                                                                                    ^^^^^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-1.almd:49:65
-  in call to jflatten_strings()
-  hint: Check the function name
+23 |     JArr(xs) => list.sum(xs, (x) => jcount(x))
+   |                                            ^
+error[E001]: type mismatch in call to list.sum(): expected List[Int] but got List[(String, JVal)]
+  --> /tmp/dojo-mini-json-query-1.almd:24:53
+  in call to list.sum()
+  hint: Fix the expression type or change the expected type
    |
-49 | test "jflatten_strings empty" { assert_eq(jflatten_strings(JArr([])), []) }
-   |                                                                 ^
+24 |     JObj(pairs) => list.sum(pairs, (pair) => jcount(pair.1))
+   |                                                     ^^^^
 
 7 error(s) found
 Compile error for /tmp/dojo-mini-json-query-1.almd:
@@ -229,8 +185,9 @@ type JVal =
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
   match obj {
-    JObj(x) =>
-      list.find(x, (x) => x.0 == key).map((x) => x.1)
+    JObj(pairs) =>
+      list.find(pairs, (pair) => pair.0 == key)
+        |> option.map((pair) => pair.1)
     _ => none
   }
 
@@ -240,75 +197,31 @@ fn jcount(val: JVal) -> Int =
     JBool(_) => 1
     JNum(_) => 1
     JStr(_) => 1
-    JArr(arr) => list.sum(list.map(arr, jcount))
-    JObj(obj) =>
-      list.sum(
-        list.map(obj, (x) => jcount(x.1))
-      )
+    JArr(xs) => list.fold(xs, 0, (acc, x) => acc + jcount(x))
+    JObj(pairs) => list.fold(pairs, 0, (acc, pair) => acc + jcount(pair.1))
   }
 
 fn jflatten_strings(val: JVal) -> List[String] =
   match val {
     JStr(s) => [s]
-    JArr(arr) => list.flat_map(arr, jflatten_strings)
-    JObj(obj) => list.flat_map(list.map(obj, (x) => j
+    JArr(xs) => list.flat_map(xs, (x) => j
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-2.almd
-error: Expected ')' to close function call opened at line 33:40
-  --> /tmp/dojo-mini-json-query-2.almd:35:1
+error: Expected ')' to close function call opened at line 30:30
+  --> /tmp/dojo-mini-json-query-2.almd:32:1
   hint: Add ')' or check for a missing delimiter inside the function call
    |
-33 |     JObj(obj) => list.flat_map(list.map(obj, (x) => j
-   |                                        --------------- '(' opened here
+30 |     JArr(xs) => list.flat_map(xs, (x) => j
+   |                              --------------- '(' opened here
 ...
-35 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
+32 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
    | ^^^^
-error: Expected ')' to close function call opened at line 33:40 at line 35:1
-  --> /tmp/dojo-mini-json-query-2.almd:33:40
-   |
-33 |     JObj(obj) => list.flat_map(list.map(obj, (x) => j
-   |                                        ^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-2.almd:45:68
-  in call to jflatten_strings()
-  hint: Check the function name
-   |
-45 | test "jflatten_strings leaf str" { assert_eq(jflatten_strings(JStr("hi")), ["hi"]) }
-   |                                                                    ^^^^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-2.almd:46:68
-  in call to jflatten_strings()
-  hint: Check the function name
-   |
-46 | test "jflatten_strings leaf num" { assert_eq(jflatten_strings(JNum(1)), []) }
-   |                                                                    ^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-2.almd:47:95
-  in call to jflatten_strings()
-  hint: Check the function name
-   |
-47 | test "jflatten_strings arr mixed" { assert_eq(jflatten_strings(JArr([JStr("a"), JNum(1), JStr("b")])), ["a", "b"]) }
-   |                                                                                               ^^^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-2.almd:48:116
-  in call to jflatten_strings()
-  hint: Check the function name
-   |
-48 | test "jflatten_strings nested" { assert_eq(jflatten_strings(JObj([("x", JStr("hello")), ("y", JArr([JStr("world"), JNull]))])), ["hello", "world"]) }
-   |                                                                                                                    ^^^^^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-2.almd:49:65
-  in call to jflatten_strings()
-  hint: Check the function name
-   |
-49 | test "jflatten_strings empty" { assert_eq(jflatten_strings(JArr([])), []) }
-   |                                                                 ^
 
-7 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-mini-json-query-2.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-2.almd
@@ -330,8 +243,9 @@ type JVal =
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
   match obj {
-    JObj(x) =>
-      list.find(x, (x) => x.0 == key).map((x) => x.1)
+    JObj(pairs) =>
+      list.find(pairs, (pair) => pair.0 == key)
+        |> option.map((pair) => pair.1)
     _ => none
   }
 
@@ -341,75 +255,31 @@ fn jcount(val: JVal) -> Int =
     JBool(_) => 1
     JNum(_) => 1
     JStr(_) => 1
-    JArr(arr) => list.sum(list.map(arr, jcount))
-    JObj(obj) =>
-      list.sum(
-        list.map(obj, (x) => jcount(x.1))
-      )
+    JArr(xs) => list.fold(xs, 0, (acc, x) => acc + jcount(x))
+    JObj(pairs) => list.fold(pairs, 0, (acc, pair) => acc + jcount(pair.1))
   }
 
 fn jflatten_strings(val: JVal) -> List[String] =
   match val {
     JStr(s) => [s]
-    JArr(arr) => list.flat_map(arr, jflatten_strings)
-    JObj(obj) => list.flat_map(list.map(obj, (x) => j
+    JArr(xs) => list.flat_map(xs, (x) => j
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-3.almd
-error: Expected ')' to close function call opened at line 33:40
-  --> /tmp/dojo-mini-json-query-3.almd:35:1
+error: Expected ')' to close function call opened at line 30:30
+  --> /tmp/dojo-mini-json-query-3.almd:32:1
   hint: Add ')' or check for a missing delimiter inside the function call
    |
-33 |     JObj(obj) => list.flat_map(list.map(obj, (x) => j
-   |                                        --------------- '(' opened here
+30 |     JArr(xs) => list.flat_map(xs, (x) => j
+   |                              --------------- '(' opened here
 ...
-35 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
+32 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
    | ^^^^
-error: Expected ')' to close function call opened at line 33:40 at line 35:1
-  --> /tmp/dojo-mini-json-query-3.almd:33:40
-   |
-33 |     JObj(obj) => list.flat_map(list.map(obj, (x) => j
-   |                                        ^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-3.almd:45:68
-  in call to jflatten_strings()
-  hint: Check the function name
-   |
-45 | test "jflatten_strings leaf str" { assert_eq(jflatten_strings(JStr("hi")), ["hi"]) }
-   |                                                                    ^^^^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-3.almd:46:68
-  in call to jflatten_strings()
-  hint: Check the function name
-   |
-46 | test "jflatten_strings leaf num" { assert_eq(jflatten_strings(JNum(1)), []) }
-   |                                                                    ^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-3.almd:47:95
-  in call to jflatten_strings()
-  hint: Check the function name
-   |
-47 | test "jflatten_strings arr mixed" { assert_eq(jflatten_strings(JArr([JStr("a"), JNum(1), JStr("b")])), ["a", "b"]) }
-   |                                                                                               ^^^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-3.almd:48:116
-  in call to jflatten_strings()
-  hint: Check the function name
-   |
-48 | test "jflatten_strings nested" { assert_eq(jflatten_strings(JObj([("x", JStr("hello")), ("y", JArr([JStr("world"), JNull]))])), ["hello", "world"]) }
-   |                                                                                                                    ^^^^^
-error[E002]: undefined function 'jflatten_strings'
-  --> /tmp/dojo-mini-json-query-3.almd:49:65
-  in call to jflatten_strings()
-  hint: Check the function name
-   |
-49 | test "jflatten_strings empty" { assert_eq(jflatten_strings(JArr([])), []) }
-   |                                                                 ^
 
-7 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-mini-json-query-3.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-3.almd

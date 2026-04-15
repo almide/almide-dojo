@@ -86,3 +86,74 @@ FAILED: /tmp/dojo-anagram-check-3.almd
 1/1 test file(s) failed
 
 ```
+d
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 3 (FAIL)
+
+```almide
+fn is_anagram(a: String, b: String) -> Bool = 
+  let a_chars = string.chars(string.to_lower(a)) |> list.filter cheating(x => x != " ")
+  let b_chars = string.chars(string.to_lower(b)) |> list.filter cheating(x => x != " ")
+  list.sort(a_chars) == list.sort(b_chars)
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-anagram-check-2.almd
+error: Lambda parameter must be wrapped in parentheses
+  --> /tmp/dojo-anagram-check-2.almd:2:76
+  in lambda syntax
+  hint: Almide lambdas require parentheses around parameters. Write `(x) => expr` instead of `x => expr`
+  |
+2 |   let a_chars = string.chars(string.to_lower(a)) |> list.filter cheating(x => x != " ")
+  |                                                                            ^^
+error: Lambda parameter must be wrapped in parentheses
+  --> /tmp/dojo-anagram-check-2.almd:3:76
+  in lambda syntax
+  hint: Almide lambdas require parentheses around parameters. Write `(x) => expr` instead of `x => expr`
+  |
+3 |   let b_chars = string.chars(string.to_lower(b)) |> list.filter cheating(x => x != " ")
+  |                                                                            ^^
+error[E004]: list.filter() expects 2 argument(s) but got 1
+  --> /tmp/dojo-anagram-check-2.almd:2:46
+  in call to list.filter()
+  hint: Check the number of arguments
+  try:
+      // list.filter() takes 2 arg(s) — you passed 1
+      list.filter(<xs: List[A]>, <f: fn(A) -> Bool>)
+  |
+2 |   let a_chars = string.chars(string.to_lower(a)) |> list.filter cheating(x => x != " ")
+  |                                              ^
+error[E004]: list.filter() expects 2 argument(s) but got 1
+  --> /tmp/dojo-anagram-check-2.almd:3:46
+  in call to list.filter()
+  hint: Check the number of arguments
+  try:
+      // list.filter() takes 2 arg(s) — you passed 1
+      list.filter(<xs: List[A]>, <f: fn(A) -> Bool>)
+  |
+3 |   let b_chars = string.chars(string.to_lower(b)) |> list.filter cheating(x => x != " ")
+  |                                              ^
+
+4 error(s) found
+Compile error for /tmp/dojo-anagram-check-2.almd:
+compile failed
+FAILED: /tmp/dojo-anagram-check-2.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 4 (PASS)
+
+```almide
+fn is_anagram(a: String, b: String) -> Bool = 
+  let a_chars = string.chars(string.to_lower(a)) |> list.filter((x) => x != " ")
+  let b_chars = string.chars(string.to_lower(b)) |> list.filter((x) => x != " ")
+  list.sort(a_chars) == list.sort(b_chars)
+```

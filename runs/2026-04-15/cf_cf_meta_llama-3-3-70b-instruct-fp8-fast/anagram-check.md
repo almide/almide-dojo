@@ -1,61 +1,45 @@
 # anagram-check
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
-- **success**: no
-- **retries**: 3
-- **category**: name-error
-- **diagnostic code**: `E003`
+- **success**: yes
+- **retries**: 1
+- **category**: pass-retry
 
 ## Attempts
 
 ### Attempt 1 (FAIL)
 
 ```almide
-fn is_anagram(a: String, b: String) -> Bool = 
-  let 
-    clean = (s) => list.filter(string.chars(s), (c) => c != " ")
-    sorted_chars = (s) => list.sort(clean(string.to_lower(s)))
-  in 
-  sorted_chars(a) == sorted_chars(b)
+fn is_anagram(a: String, b: String) -> Bool =
+  let a_chars = list.filter(string.chars(string.to_lower(a)), (ch) => not string.is_whitespace(ch))
+  let b_chars = list.filter(string.chars(string.to_lower(b)), (ch) => not string.is_whitespace(ch))
+  in list.sort(a_chars) == list.sort(b_chars)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-anagram-check-0.almd
-error: Expected identifier at line 2:7 (got Newline '')
-  --> /tmp/dojo-anagram-check-0.almd:2:7
+error: Expected expression at line 4:3 (got In 'in')
+  --> /tmp/dojo-anagram-check-0.almd:4:3
   |
-2 |   let
-  |       ^
-error: Expected expression at line 5:3 (got In 'in')
-  --> /tmp/dojo-anagram-check-0.almd:5:3
-  |
-5 |   in
+4 |   in list.sort(a_chars) == list.sort(b_chars)
   |   ^
-error[E002]: undefined function 'clean'
-  --> /tmp/dojo-anagram-check-0.almd:4:59
-  in call to clean()
-  hint: Check the function name
+error[E001]: type mismatch in fn 'is_anagram': expected Bool but got Unit
+  --> /tmp/dojo-anagram-check-0.almd:3:96
+  in fn 'is_anagram'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Bool:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type Bool
   |
-4 |     sorted_chars = (s) => list.sort(clean(string.to_lower(s)))
-  |                                                           ^
-error[E002]: undefined function 'sorted_chars'
-  --> /tmp/dojo-anagram-check-0.almd:6:16
-  in call to sorted_chars()
-  hint: Check the function name
-  |
-6 |   sorted_chars(a) == sorted_chars(b)
-  |                ^
-error[E002]: undefined function 'sorted_chars'
-  --> /tmp/dojo-anagram-check-0.almd:6:35
-  in call to sorted_chars()
-  hint: Check the function name
-  |
-6 |   sorted_chars(a) == sorted_chars(b)
-  |                                   ^
+3 |   let b_chars = list.filter(string.chars(string.to_lower(b)), (ch) => not string.is_whitespace(ch))
+  |                                                                                                ^^
 
-5 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-anagram-check-0.almd:
 compile failed
 FAILED: /tmp/dojo-anagram-check-0.almd
@@ -64,96 +48,11 @@ FAILED: /tmp/dojo-anagram-check-0.almd
 
 ```
 
-### Attempt 2 (FAIL)
+### Attempt 2 (PASS)
 
 ```almide
-fn is_anagram(a: String, b: String) -> Bool = 
-  let clean = (s) => list.filter(string.chars(s), (c) => c != " ")
-  let sorted_chars = (s) => list.sort(clean(string.to_lower(s)))
-  in sorted_chars(a) == sorted_chars(b)
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-anagram-check-1.almd
-error: Expected expression at line 4:3 (got In 'in')
-  --> /tmp/dojo-anagram-check-1.almd:4:3
-  |
-4 |   in sorted_chars(a) == sorted_chars(b)
-  |   ^
-error[E001]: type mismatch in fn 'is_anagram': expected Bool but got Unit
-  --> /tmp/dojo-anagram-check-1.almd:3:39
-  in fn 'is_anagram'
-  hint: Fix the expression type or change the expected type
-  |
-3 |   let sorted_chars = (s) => list.sort(clean(string.to_lower(s)))
-  |                                       ^^^^^
-
-2 error(s) found
-Compile error for /tmp/dojo-anagram-check-1.almd:
-compile failed
-FAILED: /tmp/dojo-anagram-check-1.almd
-
-1/1 test file(s) failed
-
-```
-
-### Attempt 3 (FAIL)
-
-```almide
-fn is_anagram(a: String, b: String) -> Bool = 
-  let clean = (s) => list.filter(string.chars(s), (c) => c != " ")
-  let sorted_chars = (s) => list.sort(clean(string.to_lower(s)))
-  sorted_chars(a) == sorted_chars(b)
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-anagram-check-2.almd
-Compile error for /tmp/dojo-anagram-check-2.almd:
-error: could not compile `almide-out` (bin "almide-out" test) due to 1 previous error
-
-FAILED: /tmp/dojo-anagram-check-2.almd
-
-1/1 test file(s) failed
-
-```
-
-### Attempt 4 (FAIL)
-
-```almide
-fn is_anagram(a: String, b: String) -> Bool = 
-  let clean = (s) => list.filter(string.chars(s), (c) => c != " ")
-  let sorted_chars = (s) => list.sort(clean(string.to_lower(s)), string.compare)
-  sorted_chars(a) == sorted_chars(b)
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-anagram-check-3.almd
-error[E003]: undefined variable 'string'
-  --> /tmp/dojo-anagram-check-3.almd:3:66
-  in variable string
-  hint: Check the variable name
-  |
-3 |   let sorted_chars = (s) => list.sort(clean(string.to_lower(s)), string.compare)
-  |                                                                  ^^^^^^
-error[E004]: list.sort() expects 1 argument(s) but got 2
-  --> /tmp/dojo-anagram-check-3.almd:3:66
-  in call to list.sort()
-  hint: Check the number of arguments
-  |
-3 |   let sorted_chars = (s) => list.sort(clean(string.to_lower(s)), string.compare)
-  |                                                                  ^^^^^^
-
-2 error(s) found
-Compile error for /tmp/dojo-anagram-check-3.almd:
-compile failed
-FAILED: /tmp/dojo-anagram-check-3.almd
-
-1/1 test file(s) failed
-
+fn is_anagram(a: String, b: String) -> Bool =
+  let a_chars = list.filter(string.chars(string.to_lower(a)), (ch) => not string.is_whitespace(ch))
+  let b_chars = list.filter(string.chars(string.to_lower(b)), (ch) => not string.is_whitespace(ch))
+  list.sort(a_chars) == list.sort(b_chars)
 ```

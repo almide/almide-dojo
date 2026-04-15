@@ -11,31 +11,42 @@
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
-  list.map(list.zip(xs, ys), (a, b) => f(a, b))
+  list.map(list.zip(xs, ys), (pair) => f(pair._1, pair._2))
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-zip-with-0.almd
-error[E005]: argument 'f' expects fn((Int, Int)) -> B but got fn(Int, Int) -> Int
-  --> /tmp/dojo-zip-with-0.almd:2:40
-  in call to list.map()
-  hint: Fix the argument type
-  |
-2 |   list.map(list.zip(xs, ys), (a, b) => f(a, b))
-  |                                        ^
-error[E001]: type mismatch in call to list.map(): expected fn((Int, Int)) -> B but got fn(Int, Int) -> Int
-  --> /tmp/dojo-zip-with-0.almd:2:40
-  in call to list.map()
-  hint: Fix the expression type or change the expected type
-  |
-2 |   list.map(list.zip(xs, ys), (a, b) => f(a, b))
-  |                                        ^
-
-2 error(s) found
 Compile error for /tmp/dojo-zip-with-0.almd:
-compile failed
+codegen produced invalid Rust — this is an Almide bug.
+Please file a minimal repro at https://github.com/almide/almide/issues
+
+--- rustc output (edited to hide generated paths) ---
+error[E0609]: no field `_1` on type `(i64, i64)`
+   --> <generated.rs>:247:42
+    |
+247 |         move |pair| __cap_2.clone()(pair._1, pair._2)
+    |                                          ^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+247 -         move |pair| __cap_2.clone()(pair._1, pair._2)
+247 +         move |pair| __cap_2.clone()(pair.1, pair._2)
+    |
+
+
+error[E0609]: no field `_2` on type `(i64, i64)`
+   --> <generated.rs>:247:51
+    |
+247 |         move |pair| __cap_2.clone()(pair._1, pair._2)
+    |                                                   ^^ unknown field
+    |
+    = note: available fields are: `0`, `1`
+
+
+error: could not compile `almide-generated` (bin "almide-generated" test) due to 2 previous errors; 2 warnings emitted
+
 FAILED: /tmp/dojo-zip-with-0.almd
 
 1/1 test file(s) failed
@@ -46,5 +57,5 @@ FAILED: /tmp/dojo-zip-with-0.almd
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
-  list.map(list.zip(xs, ys), (x) => f(x.0, x.1))
+  list.map(list.zip(xs, ys), (pair) => f(pair.0, pair.1))
 ```

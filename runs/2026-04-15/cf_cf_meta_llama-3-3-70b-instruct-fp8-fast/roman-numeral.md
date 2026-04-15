@@ -3,78 +3,158 @@
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: no
 - **retries**: 3
-- **category**: type-error
-- **diagnostic code**: `E002`
+- **category**: parse-error
 
 ## Attempts
 
 ### Attempt 1 (FAIL)
 
 ```almide
-fn to_roman(n: Int) -> String =
-  let values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
-  let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
-  let pairs = list.zip(values, symbols)
-  let rec loop(n: Int, pairs: List[(Int, String)], acc: String): String =
-    if n == 0 then acc
-    else
-      let (v, s) = list.head(pairs)
-      let rest = list.tail(pairs)
-      if n >= v then loop(n - v, pairs, acc + s)
-      else loop(n, rest, acc)
-  loop(n, pairs, "")
+fn to_roman(n: Int) -> String = 
+  let pairs = [
+    (1000, "M"),
+    (900, "CM"),
+    (500, "D"),
+    (400, "CD"),
+    (100, "C"),
+    (90, "XC"),
+    (50, "L"),
+    (40, "XL"),
+    (10, "X"),
+    (9, "IX"),
+    (5, "V"),
+    (4, "IV"),
+    (1, "I")
+  ] in
+  let f = (n, acc, pairs) => 
+    if list.is_empty(pairs) then acc
+    else 
+      let (value, symbol) = list.first(pairs) in
+      let count = n / value in
+      let new_n = n % value in
+      let new_acc = string.repeat(symbol, count) + acc in
+      let new_pairs = list.drop(pairs, 1) in
+      f(new_n, new_acc, new_pairs)
+  in f(n, "", pairs)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-roman-numeral-0.almd
-error: Expected Eq at line 5:11 (got Ident 'loop')
-  --> /tmp/dojo-roman-numeral-0.almd:5:11
-  hint: Missing '=' before value. Write: let x = value
-  |
-5 |   let rec loop(n: Int, pairs: List[(Int, String)], acc: String): String =
-  |           ^
+error: `let ... in <expr>` is OCaml/Haskell syntax
+  --> /tmp/dojo-roman-numeral-0.almd:16:5
+  in let ... in
+  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
+  try:
+      let x = 1
+      let y = 2
+      x + y
+   |
+16 |   ] in
+   |     ^^
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-roman-numeral-0.almd:8:7
+  --> /tmp/dojo-roman-numeral-0.almd:20:7
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
-  |
-8 |       let (v, s) = list.head(pairs)
-  |       ^^^
-error: 'let' is not an expression in Almide at line 8:7
-  --> /tmp/dojo-roman-numeral-0.almd:8:7
-  |
-8 |       let (v, s) = list.head(pairs)
-  |       ^
-error: 'loop' is not valid in Almide at line 10:22
-  --> /tmp/dojo-roman-numeral-0.almd:10:22
-  hint: Use 'while true { ... }' or 'do { guard COND else ok(()) ... }' for loops.
    |
-10 |       if n >= v then loop(n - v, pairs, acc + s)
-   |                      ^
-error: 'loop' is not valid in Almide at line 12:3
-  --> /tmp/dojo-roman-numeral-0.almd:12:3
-  hint: Use 'while true { ... }' or 'do { guard COND else ok(()) ... }' for loops.
+20 |       let (value, symbol) = list.first(pairs) in
+   |       ^^^
+error: `let ... in <expr>` is OCaml/Haskell syntax
+  --> /tmp/dojo-roman-numeral-0.almd:21:29
+  in let ... in
+  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
+  try:
+      let x = 1
+      let y = 2
+      x + y
    |
-12 |   loop(n, pairs, "")
+21 |       let count = n / value in
+   |                             ^^
+error: `let ... in <expr>` is OCaml/Haskell syntax
+  --> /tmp/dojo-roman-numeral-0.almd:22:29
+  in let ... in
+  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
+  try:
+      let x = 1
+      let y = 2
+      x + y
+   |
+22 |       let new_n = n % value in
+   |                             ^^
+error: `let ... in <expr>` is OCaml/Haskell syntax
+  --> /tmp/dojo-roman-numeral-0.almd:23:56
+  in let ... in
+  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
+  try:
+      let x = 1
+      let y = 2
+      x + y
+   |
+23 |       let new_acc = string.repeat(symbol, count) + acc in
+   |                                                        ^^
+error: `let ... in <expr>` is OCaml/Haskell syntax
+  --> /tmp/dojo-roman-numeral-0.almd:24:43
+  in let ... in
+  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
+  try:
+      let x = 1
+      let y = 2
+      x + y
+   |
+24 |       let new_pairs = list.drop(pairs, 1) in
+   |                                           ^^
+error: Expected expression at line 26:3 (got In 'in')
+  --> /tmp/dojo-roman-numeral-0.almd:26:3
+   |
+26 |   in f(n, "", pairs)
    |   ^
-error[E002]: undefined function 'list.tail'
-  --> /tmp/dojo-roman-numeral-0.almd:9:28
-  in call to list.tail()
-  hint: Did you mean `list.drop(xs, 1)`?
-  |
-9 |       let rest = list.tail(pairs)
-  |                            ^^^^^
+error[E003]: undefined variable 'new_n'
+  --> /tmp/dojo-roman-numeral-0.almd:25:9
+  in variable new_n
+  hint: Check the variable name
+   |
+25 |       f(new_n, new_acc, new_pairs)
+   |         ^^^^^
+error[E003]: undefined variable 'new_acc'
+  --> /tmp/dojo-roman-numeral-0.almd:25:16
+  in variable new_acc
+  hint: Check the variable name
+   |
+25 |       f(new_n, new_acc, new_pairs)
+   |                ^^^^^^^
+error[E003]: undefined variable 'new_pairs'
+  --> /tmp/dojo-roman-numeral-0.almd:25:25
+  in variable new_pairs
+  hint: Check the variable name
+   |
+25 |       f(new_n, new_acc, new_pairs)
+   |                         ^^^^^^^^^
+error[E002]: undefined function 'f'
+  --> /tmp/dojo-roman-numeral-0.almd:25:25
+  in call to f()
+  hint: Did you mean `n`?
+  try:
+      // f(...)  →  n(...)
+      n(...)
+   |
+25 |       f(new_n, new_acc, new_pairs)
+   |                         ^^^^^^^^^
 error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
-  --> /tmp/dojo-roman-numeral-0.almd:9:28
+  --> /tmp/dojo-roman-numeral-0.almd:25:25
   in fn 'to_roman'
   hint: Fix the expression type or change the expected type
-  |
-9 |       let rest = list.tail(pairs)
-  |                            ^^^^^
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
+   |
+25 |       f(new_n, new_acc, new_pairs)
+   |                         ^^^^^^^^^
 
-7 error(s) found
+12 error(s) found
 Compile error for /tmp/dojo-roman-numeral-0.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-0.almd
@@ -87,57 +167,100 @@ FAILED: /tmp/dojo-roman-numeral-0.almd
 
 ```almide
 fn to_roman(n: Int) -> String = 
-  let values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
-  let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
-  let pairs = list.zip(values, symbols)
-  let rec loop(n: Int, pairs: List[(Int, String)], acc: String): String =
-    if n == 0 then acc
+  let pairs = [
+    (1000, "M"),
+    (900, "CM"),
+    (500, "D"),
+    (400, "CD"),
+    (100, "C"),
+    (90, "XC"),
+    (50, "L"),
+    (40, "XL"),
+    (10, "X"),
+    (9, "IX"),
+    (5, "V"),
+    (4, "IV"),
+    (1, "I")
+  ]
+  let f = (n, acc, pairs) => 
+    if list.is_empty(pairs) then acc
     else 
-      match pairs {
-        some((v, s) + rest) => 
-          if n >= v then loop(n - v, pairs, acc + s)
-          else loop(n, rest, acc)
-        none => acc
-      }
-  loop(n, pairs, "")
+      let (value, symbol) = list.first(pairs)
+      let count = n / value
+      let new_n = n % value
+      let new_acc = string.repeat(symbol, count) + acc
+      let new_pairs = list.drop(pairs, 1)
+      f(new_n, new_acc, new_pairs)
+  in 
+  f(n, "", pairs)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-roman-numeral-1.almd
-error: Expected Eq at line 5:11 (got Ident 'loop')
-  --> /tmp/dojo-roman-numeral-1.almd:5:11
-  hint: Missing '=' before value. Write: let x = value
-  |
-5 |   let rec loop(n: Int, pairs: List[(Int, String)], acc: String): String =
-  |           ^
-error: Expected RParen at line 9:21 (got Plus '+')
-  --> /tmp/dojo-roman-numeral-1.almd:9:21
-  hint: Missing ')'. Check for an unclosed '(' earlier in this expression
-  |
-9 |         some((v, s) + rest) =>
-  |                     ^
-error: 'loop' is not valid in Almide at line 10:26
-  --> /tmp/dojo-roman-numeral-1.almd:10:26
-  hint: Use 'while true { ... }' or 'do { guard COND else ok(()) ... }' for loops.
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-roman-numeral-1.almd:20:7
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
    |
-10 |           if n >= v then loop(n - v, pairs, acc + s)
-   |                          ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 13:7 (got RBrace '}')
-  --> /tmp/dojo-roman-numeral-1.almd:13:7
+20 |       let (value, symbol) = list.first(pairs)
+   |       ^^^
+error: Expected expression at line 26:3 (got In 'in')
+  --> /tmp/dojo-roman-numeral-1.almd:26:3
    |
-13 |       }
-   |       ^
-error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
-  --> /tmp/dojo-roman-numeral-1.almd:4:32
-  in fn 'to_roman'
-  hint: Fix the expression type or change the expected type
-  |
-4 |   let pairs = list.zip(values, symbols)
-  |                                ^^^^^^^
+26 |   in
+   |   ^
+error[E003]: undefined variable 'value'
+  --> /tmp/dojo-roman-numeral-1.almd:21:23
+  in variable value
+  hint: Check the variable name
+   |
+21 |       let count = n / value
+   |                       ^^^^^
+error[E003]: undefined variable 'value'
+  --> /tmp/dojo-roman-numeral-1.almd:22:23
+  in variable value
+  hint: Check the variable name
+   |
+22 |       let new_n = n % value
+   |                       ^^^^^
+error[E003]: undefined variable 'symbol'
+  --> /tmp/dojo-roman-numeral-1.almd:23:35
+  in variable symbol
+  hint: Check the variable name
+   |
+23 |       let new_acc = string.repeat(symbol, count) + acc
+   |                                   ^^^^^^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-roman-numeral-1.almd:23:52
+  in variable acc
+  hint: Check the variable name
+   |
+23 |       let new_acc = string.repeat(symbol, count) + acc
+   |                                                    ^^^
+error[E002]: undefined function 'f'
+  --> /tmp/dojo-roman-numeral-1.almd:25:25
+  in call to f()
+  hint: Did you mean `n`?
+  try:
+      // f(...)  →  n(...)
+      n(...)
+   |
+25 |       f(new_n, new_acc, new_pairs)
+   |                         ^^^^^^^^^
+error[E002]: undefined function 'f'
+  --> /tmp/dojo-roman-numeral-1.almd:27:12
+  in call to f()
+  hint: Did you mean `n`?
+  try:
+      // f(...)  →  n(...)
+      n(...)
+   |
+27 |   f(n, "", pairs)
+   |            ^^^^^
 
-5 error(s) found
+8 error(s) found
 Compile error for /tmp/dojo-roman-numeral-1.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-1.almd
@@ -150,43 +273,67 @@ FAILED: /tmp/dojo-roman-numeral-1.almd
 
 ```almide
 fn to_roman(n: Int) -> String = 
-  let values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
-  let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
-  let pairs = list.zip(values, symbols)
-  let loop = (n: Int, pairs: List[(Int, String)], acc: String) => 
-    if n == 0 then acc
-    else 
-      match pairs {
-        some((v, s)) => 
-          if n >= v then loop(n - v, pairs, acc + s)
-          else loop(n, list.tail(pairs), acc)
-        none => acc
-      }
-  loop(n, pairs, "")
+  let pairs = [
+    (1000, "M"),
+    (900, "CM"),
+    (500, "D"),
+    (400, "CD"),
+    (100, "C"),
+    (90, "XC"),
+    (50, "L"),
+    (40, "XL"),
+    (10, "X"),
+    (9, "IX"),
+    (5, "V"),
+    (4, "IV"),
+    (1, "I")
+  ]
+  in 
+  {
+    fn f(n: Int, acc: String, pairs: List[(Int, String)]) -> String = 
+      if list.is_empty(pairs) then acc
+      else 
+        let first = list.first(pairs)
+        let (value, symbol) = first
+        let count = n / value
+        let new_n = n % value
+        let new_acc = string.repeat(symbol, count) + acc
+        let new_pairs = list.drop(pairs, 1)
+        in f(new_n, new_acc, new_pairs)
+    ;
+    f(n, "", pairs)
+  }
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-roman-numeral-2.almd
-error: 'loop' is not valid in Almide at line 10:26
-  --> /tmp/dojo-roman-numeral-2.almd:10:26
-  hint: Use 'while true { ... }' or 'do { guard COND else ok(()) ... }' for loops.
+error: Expected expression at line 17:3 (got In 'in')
+  --> /tmp/dojo-roman-numeral-2.almd:17:3
    |
-10 |           if n >= v then loop(n - v, pairs, acc + s)
-   |                          ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 13:7 (got RBrace '}')
-  --> /tmp/dojo-roman-numeral-2.almd:13:7
+17 |   in
+   |   ^
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-roman-numeral-2.almd:22:9
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
    |
-13 |       }
-   |       ^
+22 |         let first = list.first(pairs)
+   |         ^^^
 error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
-  --> /tmp/dojo-roman-numeral-2.almd:4:32
+  --> /tmp/dojo-roman-numeral-2.almd:15:9
   in fn 'to_roman'
   hint: Fix the expression type or change the expected type
-  |
-4 |   let pairs = list.zip(values, symbols)
-  |                                ^^^^^^^
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
+   |
+15 |     (1, "I")
+   |         ^^^
 
 3 error(s) found
 Compile error for /tmp/dojo-roman-numeral-2.almd:
@@ -201,55 +348,70 @@ FAILED: /tmp/dojo-roman-numeral-2.almd
 
 ```almide
 fn to_roman(n: Int) -> String = 
-  let values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
-  let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
-  let pairs = list.zip(values, symbols)
-  let rec_loop = (n: Int, pairs: List[(Int, String)], acc: String) => 
-    if n == 0 then acc
-    else 
-      match list.head(pairs) {
-        some((v, s)) => 
-          if n >= v then rec_loop(n - v, pairs, acc + s)
-          else rec_loop(n, list.tail(pairs), acc)
-        none => acc
-      }
-  rec_loop(n, pairs, "")
+  let pairs = [
+    (1000, "M"),
+    (900, "CM"),
+    (500, "D"),
+    (400, "CD"),
+    (100, "C"),
+    (90, "XC"),
+    (50, "L"),
+    (40, "XL"),
+    (10, "X"),
+    (9, "IX"),
+    (5, "V"),
+    (4, "IV"),
+    (1, "I")
+  ]
+  in 
+  {
+    fn f(n: Int, acc: String, pairs: List[(Int, String)]) -> String = 
+      if list.is_empty(pairs) then acc
+      else 
+        {
+          let first = list.first(pairs)
+          let (value, symbol) = first
+          let count = n / value
+          let new_n = n % value
+          let new_acc = string.repeat(symbol, count) + acc
+          let new_pairs = list.drop(pairs, 1)
+          f(new_n, new_acc, new_pairs)
+        }
+    ;
+    f(n, "", pairs)
+  }
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-roman-numeral-3.almd
-error[E002]: undefined function 'list.head'
-  --> /tmp/dojo-roman-numeral-3.almd:8:23
-  in call to list.head()
-  hint: Did you mean `list.first`?
-  |
-8 |       match list.head(pairs) {
-  |                       ^^^^^
-error[E002]: undefined function 'rec_loop'
-  --> /tmp/dojo-roman-numeral-3.almd:10:55
-  in call to rec_loop()
-  hint: Check the function name
+error: Expected expression at line 17:3 (got In 'in')
+  --> /tmp/dojo-roman-numeral-3.almd:17:3
    |
-10 |           if n >= v then rec_loop(n - v, pairs, acc + s)
-   |                                                       ^
-error[E002]: undefined function 'list.tail'
-  --> /tmp/dojo-roman-numeral-3.almd:11:38
-  in call to list.tail()
-  hint: Did you mean `list.drop(xs, 1)`?
+17 |   in
+   |   ^
+error: Semicolons are not used in Almide at line 31:5
+  --> /tmp/dojo-roman-numeral-3.almd:31:5
+  hint: Remove the ';'. Almide uses newlines to separate statements.
    |
-11 |           else rec_loop(n, list.tail(pairs), acc)
-   |                                      ^^^^^
-error[E002]: undefined function 'rec_loop'
-  --> /tmp/dojo-roman-numeral-3.almd:11:46
-  in call to rec_loop()
-  hint: Check the function name
+31 |     ;
+   |     ^
+error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
+  --> /tmp/dojo-roman-numeral-3.almd:15:9
+  in fn 'to_roman'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
    |
-11 |           else rec_loop(n, list.tail(pairs), acc)
-   |                                              ^^^
+15 |     (1, "I")
+   |         ^^^
 
-4 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-roman-numeral-3.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-3.almd
