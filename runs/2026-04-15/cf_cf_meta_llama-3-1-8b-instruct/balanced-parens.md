@@ -10,40 +10,85 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn is_balanced(s: String) -> Bool {
-  let stack = list.new()
-  for c in string.chars(s) {
-    if c == '(' || c == '[' || c == '{' {
-      list.push(stack, c)
-    } else if c == ')' || c == ']' || c == '}' {
-      if list.is_empty(stack) {
-        return false
-      }
-      let opening = list.last(stack)
-      list.drop_end(stack, 1)
-      if (c == ')' && opening != '(') ||
-         (c == ']' && opening != '[') ||
-         (c == '}' && opening != '{') {
-        return false
-      }
-    }
-  }
-  list.is_empty(stack)
-}
+
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-0.almd
-error: Missing '=' before function body at line 1:35
-  --> /tmp/dojo-balanced-parens-0.almd:1:35
-  hint: Almide requires '=' before the body. Write: fn is_balanced(...) -> Type = { ... }
+error[E002]: undefined function 'is_balanced'
+  --> /tmp/dojo-balanced-parens-0.almd:3:47
+  in call to is_balanced()
+  hint: Check the function name
   |
-1 | fn is_balanced(s: String) -> Bool {
-  |                                   ^
+3 | test "balanced empty" { assert_eq(is_balanced(""), true) }
+  |                                               ^^
+error[E002]: undefined function 'is_balanced'
+  --> /tmp/dojo-balanced-parens-0.almd:4:55
+  in call to is_balanced()
+  hint: Check the function name
+  |
+4 | test "balanced simple parens" { assert_eq(is_balanced("()"), true) }
+  |                                                       ^^^^
+error[E002]: undefined function 'is_balanced'
+  --> /tmp/dojo-balanced-parens-0.almd:5:48
+  in call to is_balanced()
+  hint: Check the function name
+  |
+5 | test "balanced nested" { assert_eq(is_balanced("([{}])"), true) }
+  |                                                ^^^^^^^^
+error[E002]: undefined function 'is_balanced'
+  --> /tmp/dojo-balanced-parens-0.almd:6:52
+  in call to is_balanced()
+  hint: Check the function name
+  |
+6 | test "balanced sequential" { assert_eq(is_balanced("()[]{}"), true) }
+  |                                                    ^^^^^^^^
+error[E002]: undefined function 'is_balanced'
+  --> /tmp/dojo-balanced-parens-0.almd:7:51
+  in call to is_balanced()
+  hint: Check the function name
+  |
+7 | test "balanced with text" { assert_eq(is_balanced("fn foo(x: Int) -> { x }"), true) }
+  |                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+error[E002]: undefined function 'is_balanced'
+  --> /tmp/dojo-balanced-parens-0.almd:8:49
+  in call to is_balanced()
+  hint: Check the function name
+  |
+8 | test "unbalanced cross" { assert_eq(is_balanced("([)]"), false) }
+  |                                                 ^^^^^^
+error[E002]: undefined function 'is_balanced'
+  --> /tmp/dojo-balanced-parens-0.almd:9:48
+  in call to is_balanced()
+  hint: Check the function name
+  |
+9 | test "unbalanced open" { assert_eq(is_balanced("("), false) }
+  |                                                ^^^
+error[E002]: undefined function 'is_balanced'
+  --> /tmp/dojo-balanced-parens-0.almd:10:49
+  in call to is_balanced()
+  hint: Check the function name
+   |
+10 | test "unbalanced close" { assert_eq(is_balanced(")"), false) }
+   |                                                 ^^^
+error[E002]: undefined function 'is_balanced'
+  --> /tmp/dojo-balanced-parens-0.almd:11:55
+  in call to is_balanced()
+  hint: Check the function name
+   |
+11 | test "unbalanced extra close" { assert_eq(is_balanced("())"), false) }
+   |                                                       ^^^^^
+error[E002]: undefined function 'is_balanced'
+  --> /tmp/dojo-balanced-parens-0.almd:12:52
+  in call to is_balanced()
+  hint: Check the function name
+   |
+12 | test "unbalanced mismatch" { assert_eq(is_balanced("(]"), false) }
+   |                                                    ^^^^
 
-1 error(s) found
+10 error(s) found
 Compile error for /tmp/dojo-balanced-parens-0.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-0.almd
@@ -55,66 +100,67 @@ FAILED: /tmp/dojo-balanced-parens-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn is_balanced(s: String) -> Bool = {
-  let stack = list.new()
-  for c in string.chars(s) {
-    if c == '(' || c == '[' || c == '{' {
+fn is_balanced(s: String) -> Bool = 
+  let stack = list.new(String)
+  for c in string.chars(s) do 
+    if c == '(' or c == '[' or c == '{' then 
       list.push(stack, c)
-    } else if c == ')' || c == ']' || c == '}' {
-      if list.is_empty(stack) {
+    else if c == ')' or c == ']' or c == '}' then 
+      if list.is_empty(stack) then 
         return false
-      }
-      let opening = list.last(stack)
+      let top = list.last(stack)
+      if (c == ')' and top != '(') or (c == ']' and top != '[') or (c == '}' and top != '{') then 
+        return false
       list.drop_end(stack, 1)
-      if (c == ')' && opening != '(') ||
-         (c == ']' && opening != '[') ||
-         (c == '}' && opening != '{') {
-        return false
-      }
-    }
-  }
+    end
+  end
   list.is_empty(stack)
-}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-1.almd
-error: '||' is not valid in Almide at line 4:17
-  --> /tmp/dojo-balanced-parens-1.almd:4:17
-  hint: Use 'or' for logical OR. Example: if a or b then ...
+error: Expected LBrace at line 3:28 (got Ident 'do')
+  --> /tmp/dojo-balanced-parens-1.almd:3:28
   |
-4 |     if c == '(' || c == '[' || c == '{' {
-  |                 ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 6:7 (got Else 'else')
-  --> /tmp/dojo-balanced-parens-1.almd:6:7
+3 |   for c in string.chars(s) do
+  |                            ^
+error: 'return' is not needed in Almide at line 8:9
+  --> /tmp/dojo-balanced-parens-1.almd:8:9
+  hint: The last expression in a block is the return value. Use 'guard ... else' for early returns.
   |
-6 |     } else if c == ')' || c == ']' || c == '}' {
-  |       ^
+8 |         return false
+  |         ^
+error: 'return' is not needed in Almide at line 11:9
+  --> /tmp/dojo-balanced-parens-1.almd:11:9
+  hint: The last expression in a block is the return value. Use 'guard ... else' for early returns.
+   |
+11 |         return false
+   |         ^
 error[E002]: undefined function 'list.new'
-  --> /tmp/dojo-balanced-parens-1.almd:2:23
+  --> /tmp/dojo-balanced-parens-1.almd:2:24
   in call to list.new()
   hint: Did you mean `[] (empty list literal)`?
   |
-2 |   let stack = list.new()
-  |                       ^
-error[E003]: undefined variable 'c'
-  --> /tmp/dojo-balanced-parens-1.almd:5:24
-  in variable c
-  hint: Did you mean `s`?
-  |
-5 |       list.push(stack, c)
-  |                        ^
-error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
-  --> /tmp/dojo-balanced-parens-1.almd:5:24
-  in fn 'is_balanced'
-  hint: Fix the expression type or change the expected type
-  |
-5 |       list.push(stack, c)
-  |                        ^
+2 |   let stack = list.new(String)
+  |                        ^^^^^^
+error[E003]: undefined variable 'end'
+  --> /tmp/dojo-balanced-parens-1.almd:13:5
+  in variable end
+  hint: Check the variable name
+   |
+13 |     end
+   |     ^^^
+error[E003]: undefined variable 'end'
+  --> /tmp/dojo-balanced-parens-1.almd:14:3
+  in variable end
+  hint: Check the variable name
+   |
+14 |   end
+   |   ^^^
 
-5 error(s) found
+6 error(s) found
 Compile error for /tmp/dojo-balanced-parens-1.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-1.almd
@@ -126,69 +172,70 @@ FAILED: /tmp/dojo-balanced-parens-1.almd
 ### Attempt 3 (FAIL)
 
 ```almide
-fn is_balanced(s: String) -> Bool = {
+fn is_balanced(s: String) -> Bool = 
   let stack = []
-  for c in string.chars(s) {
-    if c == '(' || c == '[' || c == '{' {
+  for c in string.chars(s) do 
+    if c == '(' or c == '[' or c == '{' then 
       stack = stack + [c]
-    } else if c == ')' || c == ']' || c == '}' {
-      if list.is_empty(stack) {
+    else if c == ')' or c == ']' or c == '}' then 
+      if list.is_empty(stack) then 
         return false
-      }
-      let opening = list.last(stack)
+      let top = list.last(stack)
+      if (c == ')' and top != '(') or (c == ']' and top != '[') or (c == '}' and top != '{') then 
+        return false
       stack = list.drop_end(stack, 1)
-      if (c == ')' && opening != '(') ||
-         (c == ']' && opening != '[') ||
-         (c == '}' && opening != '{') {
-        return false
-      }
-    }
-  }
+    end
+  end
   list.is_empty(stack)
-}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-2.almd
-error: '||' is not valid in Almide at line 4:17
-  --> /tmp/dojo-balanced-parens-2.almd:4:17
-  hint: Use 'or' for logical OR. Example: if a or b then ...
+error: Expected LBrace at line 3:28 (got Ident 'do')
+  --> /tmp/dojo-balanced-parens-2.almd:3:28
   |
-4 |     if c == '(' || c == '[' || c == '{' {
-  |                 ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 6:7 (got Else 'else')
-  --> /tmp/dojo-balanced-parens-2.almd:6:7
+3 |   for c in string.chars(s) do
+  |                            ^
+error: 'return' is not needed in Almide at line 8:9
+  --> /tmp/dojo-balanced-parens-2.almd:8:9
+  hint: The last expression in a block is the return value. Use 'guard ... else' for early returns.
   |
-6 |     } else if c == ')' || c == ']' || c == '}' {
-  |       ^
-error[E003]: undefined variable 'c'
-  --> /tmp/dojo-balanced-parens-2.almd:5:24
-  in variable c
-  hint: Did you mean `s`?
-  |
-5 |       stack = stack + [c]
-  |                        ^
+8 |         return false
+  |         ^
+error: 'return' is not needed in Almide at line 11:9
+  --> /tmp/dojo-balanced-parens-2.almd:11:9
+  hint: The last expression in a block is the return value. Use 'guard ... else' for early returns.
+   |
+11 |         return false
+   |         ^
 error[E009]: cannot reassign immutable binding 'stack'
-  --> /tmp/dojo-balanced-parens-2.almd:5:24
+  --> /tmp/dojo-balanced-parens-2.almd:12:36
   in stack = ...
   hint: Use 'var stack = ...' instead of 'let stack = ...' to declare a mutable variable
-  |
-2 |   let stack = []
-  |   --------------------- 'stack' declared here
+   |
+ 2 |   let stack = []
+   |   --------------------- 'stack' declared here
 ...
-5 |       stack = stack + [c]
-  |                        ^
-error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
-  --> /tmp/dojo-balanced-parens-2.almd:5:24
-  in fn 'is_balanced'
-  hint: Fix the expression type or change the expected type
-  |
-5 |       stack = stack + [c]
-  |                        ^
+12 |       stack = list.drop_end(stack, 1)
+   |                                    ^
+error[E003]: undefined variable 'end'
+  --> /tmp/dojo-balanced-parens-2.almd:13:5
+  in variable end
+  hint: Check the variable name
+   |
+13 |     end
+   |     ^^^
+error[E003]: undefined variable 'end'
+  --> /tmp/dojo-balanced-parens-2.almd:14:3
+  in variable end
+  hint: Check the variable name
+   |
+14 |   end
+   |   ^^^
 
-5 error(s) found
+6 error(s) found
 Compile error for /tmp/dojo-balanced-parens-2.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-2.almd
@@ -200,59 +247,86 @@ FAILED: /tmp/dojo-balanced-parens-2.almd
 ### Attempt 4 (FAIL)
 
 ```almide
-fn is_balanced(s: String) -> Bool = {
-  var stack = []
-  for c in string.chars(s) {
-    if c == '(' || c == '[' || c == '{' {
+fn is_balanced(s: String) -> Bool = 
+  let var stack = []
+  for c in string.chars(s) do 
+    if c == '(' or c == '[' or c == '{' then 
       stack = stack + [c]
-    } else if c == ')' || c == ']' || c == '}' {
-      if list.is_empty(stack) {
+    else if c == ')' or c == ']' or c == '}' then 
+      if list.is_empty(stack) then 
         return false
-      }
-      let opening = list.last(stack)
+      let top = list.last(stack)
+      if (c == ')' and top != '(') or (c == ']' and top != '[') or (c == '}' and top != '{') then 
+        return false
       stack = list.drop_end(stack, 1)
-      if (c == ')' && opening != '(') ||
-         (c == ']' && opening != '[') ||
-         (c == '}' && opening != '{') {
-        return false
-      }
-    }
-  }
+    end
+  end
   list.is_empty(stack)
-}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-3.almd
-error: '||' is not valid in Almide at line 4:17
-  --> /tmp/dojo-balanced-parens-3.almd:4:17
-  hint: Use 'or' for logical OR. Example: if a or b then ...
+error: Expected identifier at line 2:7 (got Var 'var')
+  --> /tmp/dojo-balanced-parens-3.almd:2:7
   |
-4 |     if c == '(' || c == '[' || c == '{' {
-  |                 ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 6:7 (got Else 'else')
-  --> /tmp/dojo-balanced-parens-3.almd:6:7
-  |
-6 |     } else if c == ')' || c == ']' || c == '}' {
+2 |   let var stack = []
   |       ^
-error[E003]: undefined variable 'c'
-  --> /tmp/dojo-balanced-parens-3.almd:5:24
-  in variable c
-  hint: Did you mean `s`?
+error: Expected LBrace at line 3:28 (got Ident 'do')
+  --> /tmp/dojo-balanced-parens-3.almd:3:28
   |
-5 |       stack = stack + [c]
-  |                        ^
-error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
-  --> /tmp/dojo-balanced-parens-3.almd:5:24
-  in fn 'is_balanced'
-  hint: Fix the expression type or change the expected type
+3 |   for c in string.chars(s) do
+  |                            ^
+error: 'return' is not needed in Almide at line 8:9
+  --> /tmp/dojo-balanced-parens-3.almd:8:9
+  hint: The last expression in a block is the return value. Use 'guard ... else' for early returns.
   |
-5 |       stack = stack + [c]
-  |                        ^
+8 |         return false
+  |         ^
+error: 'return' is not needed in Almide at line 11:9
+  --> /tmp/dojo-balanced-parens-3.almd:11:9
+  hint: The last expression in a block is the return value. Use 'guard ... else' for early returns.
+   |
+11 |         return false
+   |         ^
+error[E003]: undefined variable 'stack'
+  --> /tmp/dojo-balanced-parens-3.almd:9:27
+  in variable stack
+  hint: Check the variable name
+  |
+9 |       let top = list.last(stack)
+  |                           ^^^^^
+error[E003]: undefined variable 'stack'
+  --> /tmp/dojo-balanced-parens-3.almd:12:29
+  in variable stack
+  hint: Check the variable name
+   |
+12 |       stack = list.drop_end(stack, 1)
+   |                             ^^^^^
+error[E003]: undefined variable 'end'
+  --> /tmp/dojo-balanced-parens-3.almd:13:5
+  in variable end
+  hint: Check the variable name
+   |
+13 |     end
+   |     ^^^
+error[E003]: undefined variable 'end'
+  --> /tmp/dojo-balanced-parens-3.almd:14:3
+  in variable end
+  hint: Check the variable name
+   |
+14 |   end
+   |   ^^^
+error[E003]: undefined variable 'stack'
+  --> /tmp/dojo-balanced-parens-3.almd:15:17
+  in variable stack
+  hint: Check the variable name
+   |
+15 |   list.is_empty(stack)
+   |                 ^^^^^
 
-4 error(s) found
+9 error(s) found
 Compile error for /tmp/dojo-balanced-parens-3.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-3.almd

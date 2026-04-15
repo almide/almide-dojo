@@ -11,12 +11,9 @@
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
-  match xs {
-    | [] => []
-    | x :: xs_tail => match ys {
-      | [] => []
-      | y :: ys_tail => f(x, y) :: zip_with(xs_tail, ys_tail, f)
-    }
+  match (xs, ys) {
+    (xs, ys) if xs.is_empty() or ys.is_empty() => []
+    (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
   }
 ```
 
@@ -24,12 +21,12 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
 
 ```
 Compiling /tmp/dojo-zip-with-0.almd
-error: Expected pattern at line 3:5 (got Pipe '|')
-  --> /tmp/dojo-zip-with-0.almd:3:5
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+error: Expected RParen at line 4:8 (got Colon ':')
+  --> /tmp/dojo-zip-with-0.almd:4:8
+  hint: Missing ')'. Check for an unclosed '(' earlier in this expression
   |
-3 |     | [] => []
-  |     ^
+4 |     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+  |        ^
 
 1 error(s) found
 Compile error for /tmp/dojo-zip-with-0.almd:
@@ -44,12 +41,9 @@ FAILED: /tmp/dojo-zip-with-0.almd
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
-  match xs {
-    | [] => []
-    | x :: xs_tail => match ys {
-      | [] => []
-      | y :: ys_tail => f(x, y) :: zip_with(xs_tail, ys_tail, f)
-    }
+  match (xs, ys) {
+    (xs, ys) if xs.is_empty() or ys.is_empty() => []
+    (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
   }
 ```
 
@@ -57,12 +51,12 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
 
 ```
 Compiling /tmp/dojo-zip-with-1.almd
-error: Expected pattern at line 3:5 (got Pipe '|')
-  --> /tmp/dojo-zip-with-1.almd:3:5
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+error: Expected RParen at line 4:8 (got Colon ':')
+  --> /tmp/dojo-zip-with-1.almd:4:8
+  hint: Missing ')'. Check for an unclosed '(' earlier in this expression
   |
-3 |     | [] => []
-  |     ^
+4 |     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+  |        ^
 
 1 error(s) found
 Compile error for /tmp/dojo-zip-with-1.almd:
@@ -77,12 +71,9 @@ FAILED: /tmp/dojo-zip-with-1.almd
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
-  match xs {
-    | [] => []
-    | x :: xs_tail => match ys {
-      | [] => []
-      | y :: ys_tail => f(x, y) :: zip_with(xs_tail, ys_tail, f)
-    }
+  match (xs, ys) {
+    (xs, ys) if xs.is_empty() or ys.is_empty() => []
+    (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
   }
 ```
 
@@ -90,12 +81,12 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
 
 ```
 Compiling /tmp/dojo-zip-with-2.almd
-error: Expected pattern at line 3:5 (got Pipe '|')
-  --> /tmp/dojo-zip-with-2.almd:3:5
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+error: Expected RParen at line 4:8 (got Colon ':')
+  --> /tmp/dojo-zip-with-2.almd:4:8
+  hint: Missing ')'. Check for an unclosed '(' earlier in this expression
   |
-3 |     | [] => []
-  |     ^
+4 |     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+  |        ^
 
 1 error(s) found
 Compile error for /tmp/dojo-zip-with-2.almd:
@@ -110,12 +101,9 @@ FAILED: /tmp/dojo-zip-with-2.almd
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
-  match xs {
-    | [] => []
-    | x :: xs_tail => match ys {
-      | [] => []
-      | y :: ys_tail => f(x, y) :: zip_with(xs_tail, ys_tail, f)
-    }
+  match (xs, ys) {
+    (xs, ys) if xs.is_empty() or ys.is_empty() => []
+    (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
   }
 ```
 
@@ -123,12 +111,12 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
 
 ```
 Compiling /tmp/dojo-zip-with-3.almd
-error: Expected pattern at line 3:5 (got Pipe '|')
-  --> /tmp/dojo-zip-with-3.almd:3:5
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+error: Expected RParen at line 4:8 (got Colon ':')
+  --> /tmp/dojo-zip-with-3.almd:4:8
+  hint: Missing ')'. Check for an unclosed '(' earlier in this expression
   |
-3 |     | [] => []
-  |     ^
+4 |     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+  |        ^
 
 1 error(s) found
 Compile error for /tmp/dojo-zip-with-3.almd:
