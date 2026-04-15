@@ -10,5 +10,6 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn list_sum(xs: List[Int]) -> Int = list.sum(xs)
+fn list_sum(xs: List[Int]) -> Int = 
+  list.sum(xs)
 ```

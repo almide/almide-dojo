@@ -1,17 +1,19 @@
 # sum-digits
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
-- **success**: no
-- **retries**: 3
-- **category**: unknown
+- **success**: yes
+- **retries**: 1
+- **category**: pass-retry
 
 ## Attempts
 
 ### Attempt 1 (FAIL)
 
 ```almide
-fn sum_digits(n: Int) -> Int =
-  let sum = if n == 0 then 0 else (n % 10) + sum_digits(n / 10)
+fn sum_digits(n: Int) -> Int = 
+  let sum = 
+    if n == 0 then 0 
+    else sum_digits(int.abs(n) / 10) + int.abs(n) % 10 
   in sum
 ```
 
@@ -19,13 +21,13 @@ fn sum_digits(n: Int) -> Int =
 
 ```
 Compiling /tmp/dojo-sum-digits-0.almd
-error: Expected expression at line 3:3 (got In 'in')
-  --> /tmp/dojo-sum-digits-0.almd:3:3
+error: Expected expression at line 5:3 (got In 'in')
+  --> /tmp/dojo-sum-digits-0.almd:5:3
   |
-3 |   in sum
+5 |   in sum
   |   ^
 error[E001]: type mismatch in fn 'sum_digits': expected Int but got Unit
-  --> /tmp/dojo-sum-digits-0.almd:2:61
+  --> /tmp/dojo-sum-digits-0.almd:4:53
   in fn 'sum_digits'
   hint: Fix the expression type or change the expected type
   try:
@@ -35,8 +37,8 @@ error[E001]: type mismatch in fn 'sum_digits': expected Int but got Unit
       // Or inline:
       //   <expression>                   // must have type Int
   |
-2 |   let sum = if n == 0 then 0 else (n % 10) + sum_digits(n / 10)
-  |                                                             ^^
+4 |     else sum_digits(int.abs(n) / 10) + int.abs(n) % 10
+  |                                                     ^^
 
 2 error(s) found
 Compile error for /tmp/dojo-sum-digits-0.almd:
@@ -47,53 +49,10 @@ FAILED: /tmp/dojo-sum-digits-0.almd
 
 ```
 
-### Attempt 2 (FAIL)
+### Attempt 2 (PASS)
 
 ```almide
-fn sum_digits(n: Int) -> Int =
-  if n == 0 then 0 else (n % 10) + sum_digits(int.abs(n) / 10)
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-sum-digits-1.almd
-FAILED: /tmp/dojo-sum-digits-1.almd
-
-1/1 test file(s) failed
-
-```
-
-### Attempt 3 (FAIL)
-
-```almide
-fn sum_digits(n: Int) -> Int =
-  if n == 0 then 0 else (n % 10) + sum_digits(int.abs(n) / 10)
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-sum-digits-2.almd
-FAILED: /tmp/dojo-sum-digits-2.almd
-
-1/1 test file(s) failed
-
-```
-
-### Attempt 4 (FAIL)
-
-```almide
-fn sum_digits(n: Int) -> Int =
-  if n == 0 then 0 else (n % 10) + sum_digits(int.abs(n) / 10)
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-sum-digits-3.almd
-FAILED: /tmp/dojo-sum-digits-3.almd
-
-1/1 test file(s) failed
-
+fn sum_digits(n: Int) -> Int = 
+  if n == 0 then 0 
+  else sum_digits(int.abs(n) / 10) + int.abs(n) % 10
 ```

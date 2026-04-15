@@ -1,9 +1,10 @@
 # is-prime
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
-- **success**: yes
+- **success**: no
 - **retries**: 3
-- **category**: pass-retry
+- **category**: type-error
+- **diagnostic code**: `E002`
 
 ## Attempts
 
@@ -14,24 +15,25 @@ fn is_prime(n: Int) -> Bool =
   if n <= 1 then false
   else if n == 2 then true
   else if n % 2 == 0 then false
-  else 
-    let is_divisor = (x: Int) => x > 1 && x < n && n % x == 0
-    not (list.any(list.range(3, n), is_divisor))
+  else list.all[Int](list.range(3, int.sqrt(n) + 1), fn(x) => n % x != 0)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-prime-0.almd
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-is-prime-0.almd:6:5
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+error: Expected expression at line 5:54 (got Fn 'fn')
+  --> /tmp/dojo-is-prime-0.almd:5:54
   |
-6 |     let is_divisor = (x: Int) => x > 1 && x < n && n % x == 0
-  |     ^^^
+5 |   else list.all[Int](list.range(3, int.sqrt(n) + 1), fn(x) => n % x != 0)
+  |                                                      ^
+error: Expected function name at line 5:56 (got LParen '(')
+  --> /tmp/dojo-is-prime-0.almd:5:56
+  |
+5 |   else list.all[Int](list.range(3, int.sqrt(n) + 1), fn(x) => n % x != 0)
+  |                                                        ^
 
-1 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-is-prime-0.almd:
 compile failed
 FAILED: /tmp/dojo-is-prime-0.almd
@@ -47,20 +49,20 @@ fn is_prime(n: Int) -> Bool =
   if n < 1 then false
   else if n == 2 then true
   else if n % 2 == 0 then false
-  else 
-    not (list.any(list.range(3, n), (x: Int) => x > 1 && x < n && n % x == 0))
+  else list.all[Int](list.range(3, int.sqrt(n) + 1), (x) => n % x != 0)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-prime-1.almd
-error: '&&' is not valid in Almide at line 6:55
-  --> /tmp/dojo-is-prime-1.almd:6:55
-  hint: Use 'and' for logical AND. Example: if a and b then ...
+error[E002]: undefined function 'int.sqrt'
+  --> /tmp/dojo-is-prime-1.almd:5:45
+  in call to int.sqrt()
+  hint: No function 'sqrt' in module 'int'. See docs/CHEATSHEET.md for available functions
   |
-6 |     not (list.any(list.range(3, n), (x: Int) => x > 1 && x < n && n % x == 0))
-  |                                                       ^
+5 |   else list.all[Int](list.range(3, int.sqrt(n) + 1), (x) => n % x != 0)
+  |                                             ^
 
 1 error(s) found
 Compile error for /tmp/dojo-is-prime-1.almd:
@@ -78,27 +80,60 @@ fn is_prime(n: Int) -> Bool =
   if n < 1 then false
   else if n == 2 then true
   else if n % 2 == 0 then false
-  else 
-    not (list.any(list.range(3, n), (x: Int) => x > 1 and x < n and n % x == 0))
+  else list.all[Int](list.range(3, math.sqrt(n) + 1), (x) => n % x != 0)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-prime-2.almd
+error[E003]: undefined variable 'math'
+  --> /tmp/dojo-is-prime-2.almd:5:36
+  in variable math
+  hint: Did you mean `math.e`?
+  try:
+      // math  →  math.e
+      math.e
+  |
+5 |   else list.all[Int](list.range(3, math.sqrt(n) + 1), (x) => n % x != 0)
+  |                                    ^^^^
+
+1 error(s) found
+Compile error for /tmp/dojo-is-prime-2.almd:
+compile failed
 FAILED: /tmp/dojo-is-prime-2.almd
 
 1/1 test file(s) failed
 
 ```
 
-### Attempt 4 (PASS)
+### Attempt 4 (FAIL)
 
 ```almide
 fn is_prime(n: Int) -> Bool = 
-  if n < 2 then false
+  if n < 1 then false
   else if n == 2 then true
   else if n % 2 == 0 then false
-  else 
-    not (list.any(list.range(3, n), (x: Int) => x * x <= n and n % x == 0))
+  else list.all[Int](list.range(3, int.sqrt(n) + 1), (x) => n % x != 0)
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-is-prime-3.almd
+error[E002]: undefined function 'int.sqrt'
+  --> /tmp/dojo-is-prime-3.almd:5:45
+  in call to int.sqrt()
+  hint: No function 'sqrt' in module 'int'. See docs/CHEATSHEET.md for available functions
+  |
+5 |   else list.all[Int](list.range(3, int.sqrt(n) + 1), (x) => n % x != 0)
+  |                                             ^
+
+1 error(s) found
+Compile error for /tmp/dojo-is-prime-3.almd:
+compile failed
+FAILED: /tmp/dojo-is-prime-3.almd
+
+1/1 test file(s) failed
+
 ```
