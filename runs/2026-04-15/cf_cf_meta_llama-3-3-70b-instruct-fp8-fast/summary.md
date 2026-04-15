@@ -16,7 +16,7 @@
 | `caesar-cipher` | FAIL | import-error | `E004` | 3 |
 | `clamp` | pass | pass-1shot | — | 0 |
 | `count-vowels` | pass | pass-retry | — | 1 |
-| `custom-linked-list` | FAIL | type-error | `E002` | 3 |
+| `custom-linked-list` | FAIL | parse-error | — | 3 |
 | `expression-eval` | pass | pass-retry | — | 1 |
 | `factorial` | pass | pass-1shot | — | 0 |
 | `fibonacci` | pass | pass-1shot | — | 0 |
@@ -28,15 +28,15 @@
 | `list-sum` | pass | pass-1shot | — | 0 |
 | `matrix-ops` | FAIL | type-error | `E001` | 3 |
 | `max-of-list` | FAIL | unknown | — | 3 |
-| `mini-json-query` | FAIL | type-error | `E002` | 3 |
+| `mini-json-query` | FAIL | parse-error | — | 3 |
 | `partition-list` | pass | pass-1shot | — | 0 |
 | `remove-duplicates` | pass | pass-1shot | — | 0 |
 | `repeat-string` | pass | pass-1shot | — | 0 |
 | `result-pipeline` | FAIL | unknown | — | 3 |
 | `roman-numeral` | FAIL | type-error | `E002` | 3 |
-| `run-length-encoding` | FAIL | name-error | `E003` | 3 |
+| `run-length-encoding` | FAIL | parse-error | — | 3 |
 | `string-reverse` | FAIL | type-error | `E002` | 3 |
-| `sum-digits` | FAIL | type-error | `E001` | 3 |
+| `sum-digits` | FAIL | parse-error | — | 3 |
 | `title-case` | pass | pass-1shot | — | 0 |
 | `word-count` | pass | pass-retry | — | 1 |
 | `zip-with` | pass | pass-retry | — | 1 |
@@ -45,8 +45,9 @@
 
 - pass-1shot: 12
 - pass-retry: 5
-- type-error: 8
-- name-error: 2
+- parse-error: 4
+- type-error: 5
+- name-error: 1
 - import-error: 1
 - unknown: 2
 

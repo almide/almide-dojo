@@ -43,8 +43,13 @@ let SYSTEM_PROMPT = """
     fn name(x: T) -> R = expr                 // no `return`; the last expression is the value
     if cond then a else b                     // every `if` used as an expression MUST have `else`
     match v { some(x) => ..., none => ... }   // match must be exhaustive
-    (x) => expr                               // lambda
-    Modules use dot: list.map, string.len
+    (x) => expr                               // LAMBDA: parentheses around params are MANDATORY.
+                                              // `x => expr` is a parse error. Always write `(x) =>`.
+    Modules use dot, NOT method syntax:
+      string.len(s)        not   s.len()
+      int.abs(n)           not   n.abs()
+      list.map(xs, f)      not   xs.map(f)
+      xs |> list.map(f)    is the pipe form for chaining
 
   Types:
     Option[T]: some(v) / none. Result[T, E]: ok(v) / err(e).

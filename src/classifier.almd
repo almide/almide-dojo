@@ -28,16 +28,23 @@ fn category_from_code(code: String) -> String =
   else "compile-error"
 
 fn classify_failure(diag: String) -> (String, String) = {
-  let code = primary_diagnostic_code(diag)
-  if code != "" then (category_from_code(code), code)
+  // Parse errors win over Exxx codes: a syntax failure (lambda parens
+  // missing, method syntax, etc.) usually cascades into many downstream
+  // E002 "undefined function" errors. Without this priority, the cascade
+  // hides the real root cause in the dashboard breakdown.
+  if string.contains(diag, "Lambda parameter must be wrapped") then ("parse-error", "")
   else if string.contains(diag, "Expected ") then ("parse-error", "")
-  else if string.contains(diag, "panicked") then ("runtime-error", "")
-  else if string.contains(diag, "thread '") then ("runtime-error", "")
-  else if string.contains(diag, "assertion") then ("wrong-output", "")
-  else if string.contains(diag, "test failed") then ("wrong-output", "")
-  else if string.contains(diag, "timed out") then ("timeout", "")
-  else if string.contains(diag, "Timeout") then ("timeout", "")
-  else ("unknown", "")
+  else {
+    let code = primary_diagnostic_code(diag)
+    if code != "" then (category_from_code(code), code)
+    else if string.contains(diag, "panicked") then ("runtime-error", "")
+    else if string.contains(diag, "thread '") then ("runtime-error", "")
+    else if string.contains(diag, "assertion") then ("wrong-output", "")
+    else if string.contains(diag, "test failed") then ("wrong-output", "")
+    else if string.contains(diag, "timed out") then ("timeout", "")
+    else if string.contains(diag, "Timeout") then ("timeout", "")
+    else ("unknown", "")
+  }
 }
 
 fn classify(result: RunResult) -> (String, String) =
