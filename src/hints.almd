@@ -40,6 +40,19 @@ fn hint_for_code(code: String) -> String =
     "(1) you passed a `Result[T, E]` or `Option[T]` where the bare `T` was expected — unwrap with `match` or use `option.unwrap_or` / `result.unwrap_or`; " +
     "(2) you called `list.push(xs, item)` and used the return value — `list.push` returns Unit; for immutable append use `xs + [item]`. " +
     "If you need a fold, use `list.fold(xs, init, (acc, x) => ...)` (no foldLeft/foldRight)."
+  else if code == "E006" then
+    "Cannot call an `effect fn` from a pure `fn`. Either mark the caller as `effect fn`, or avoid the effect (IO, mutation, etc.). " +
+    "Pure fn cannot invoke: fs, process, env, random, io, datetime.now, and any user-defined effect fn."
+  else if code == "E007" then
+    "`fan {}` blocks are only valid inside an `effect fn`. If you need parallelism, mark the enclosing fn as `effect fn`. For pure computation, use `list.map` / `list.fold` instead."
+  else if code == "E008" then
+    "Cannot capture a mutable (`var`) binding inside a `fan {}` block. Refactor the shared value into a `let` before the fan block, or compute it inside each arm independently."
+  else if code == "E009" then
+    "Cannot reassign an immutable binding. `let x = ...` is final. If you need to rebind, declare with `var x = ...`. Better: restructure using `match` or recursion to avoid mutation entirely."
+  else if code == "E010" then
+    "Non-exhaustive match. List every constructor of the type, or add `_ => ...` as a catch-all. For `Option[T]`: handle both `some(v)` and `none`. For `Result[T, E]`: handle both `ok(v)` and `err(e)`."
+  else if code == "E011" then
+    "You mutated a `var` inside a closure in a pure `fn`. Two fixes: (1) mark the enclosing fn as `effect fn`; (2) rewrite with `list.fold` or recursion so no mutation is needed inside the closure."
   else ""
 
 // Extract every distinct "error[Exxx]" code from a diagnostic blob.

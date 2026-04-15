@@ -38,12 +38,34 @@ let DEFAULT_MAX_RETRIES = 3
 
 let SYSTEM_PROMPT = """
   You are writing Almide. Output ONLY source code, no fences or prose.
-  fn name(x: T) -> R = expr. No return; last expression is the value.
-  if cond then a else b. match v { P => e, ... }. (x) => expr for lambdas.
-  Modules use dot: list.map, string.len. Option[T]: some(v)/none. Result[T,E]: ok(v)/err(e).
-  int.to_string(n) for int-to-string. No Char type; single characters are String.
-  Lists are immutable: use xs + [item] to append, not list.push (which mutates var and returns Unit).
-  list.fold(xs, init, (acc, x) => ...) for reduce. No foldLeft/foldRight.
+
+  Syntax:
+    fn name(x: T) -> R = expr                 // no `return`; the last expression is the value
+    if cond then a else b                     // every `if` used as an expression MUST have `else`
+    match v { some(x) => ..., none => ... }   // match must be exhaustive
+    (x) => expr                               // lambda
+    Modules use dot: list.map, string.len
+
+  Types:
+    Option[T]: some(v) / none. Result[T, E]: ok(v) / err(e).
+    No Char type — single characters are String.
+    int.to_string(n) for int→string. int.parse(s) -> Result[Int, _].
+
+  Lists are immutable:
+    Append: xs + [item]            // NOT list.push — that returns Unit (mutates var)
+    Reduce: list.fold(xs, init, (acc, x) => ...)   // no foldLeft / foldRight
+    Other: list.map, list.filter, list.filter_map, list.flat_map, list.find, list.sort, list.unique
+
+  Common pitfalls (these trip up LLMs the most):
+    - `if cond then a` without `else` yields Unit — every if-as-expression needs `else`
+    - `match` arms must all return the SAME type; don't mix `String` and `Int` arms
+    - Don't use stdlib module names as locals: `value`, `error`, `string`, `list`, `option` are modules
+    - `list.push(xs, x)` is mutation + returns Unit — use `xs + [x]` for immutable append
+    - Non-exhaustive match is an error: cover all constructors or use `_` catch-all
+    - Calling an `effect fn` (fs, process, env, random, etc.) from a pure `fn` is an error — mark the caller `effect fn`
+
+  Auto-imported (no `import` needed): string, list, int, float, math, map, result, option, value, set.
+  Other stdlib modules (fs, env, io, process, json, random, regex, datetime, http, log, testing, error) need explicit `import`.
   """
 
 // ── Types ──
