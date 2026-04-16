@@ -199,6 +199,8 @@ let SYSTEM_PROMPT = """
   - fn list.zip[A, B](xs: List[A], ys: List[B]) -> List[(A, B)]
   - fn list.binary_search(xs: List[Int], target: Int) -> Option[Int]
   - fn list.zip_with[A, B, C](xs: List[A], ys: List[B], f: fn(A, B) -> C) -> List[C]
+  - fn list.split_at[A](xs: List[A], n: Int) -> (List[A], List[A])
+  - fn list.iterate[A](seed: A, f: fn(A) -> A, n: Int) -> List[A]
 
   ### int
   - fn int.abs(n: Int) -> Int

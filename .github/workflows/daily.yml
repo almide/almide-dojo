@@ -26,10 +26,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Almide (from llm-first-phase2 branch, temporary until v0.14.6 release)
+      - name: Install Almide v0.14.6
         run: |
-          cargo install --git https://github.com/almide/almide --branch llm-first-phase2 --bin almide --locked --force
-          almide --version  # expect `almide 0.14.6-phase2` — if you see 0.14.5 the install silently cached
+          cargo install --git https://github.com/almide/almide --tag v0.14.6 --bin almide --locked --force
+          almide --version  # expect `almide 0.14.6`
 
       - name: Run all tasks
         env:
