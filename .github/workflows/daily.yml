@@ -28,8 +28,8 @@ jobs:
 
       - name: Install Almide v0.14.6
         run: |
-          cargo install --git https://github.com/almide/almide --tag v0.14.7 --bin almide --locked --force
-          almide --version  # expect `almide 0.14.7`
+          cargo install --git https://github.com/almide/almide --tag v0.14.6 --bin almide --locked --force
+          almide --version  # expect `almide 0.14.6` (v0.14.7 has almai dispatch regression — see almide issue)
 
       - name: Run all tasks
         env:
