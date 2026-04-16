@@ -10,7 +10,7 @@
 
 | task | result | category | code | retries |
 |---|---|---|---|---|
-| `anagram-check` | FAIL | unknown | — | 3 |
+| `anagram-check` | FAIL | parse-error | — | 3 |
 | `balanced-parens` | FAIL | parse-error | — | 3 |
 | `binary-search` | FAIL | unknown | — | 3 |
 | `caesar-cipher` | FAIL | name-error | `E003` | 3 |
@@ -45,10 +45,10 @@
 
 - pass-1shot: 11
 - pass-retry: 3
-- parse-error: 9
+- parse-error: 10
 - type-error: 2
 - name-error: 2
-- unknown: 3
+- unknown: 2
 
 ## Retry distribution
 
@@ -70,5 +70,5 @@
 - `E001`: 2
 - `E002`: 2
 - `E003`: 4
-- `E004`: 1
+- `E004`: 2
 - `E005`: 1

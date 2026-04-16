@@ -4,7 +4,7 @@
 - **tasks**: 30
 - **passed**: 19 / 30
 - **1-shot passes**: 11 / 30
-- **total retries**: 42
+- **total retries**: 45
 
 ## Per-task
 
@@ -34,7 +34,7 @@
 | `repeat-string` | pass | pass-1shot | — | 0 |
 | `result-pipeline` | FAIL | parse-error | — | 3 |
 | `roman-numeral` | FAIL | parse-error | — | 3 |
-| `run-length-encoding` | FAIL | unknown | — | 0 |
+| `run-length-encoding` | FAIL | parse-error | — | 3 |
 | `string-reverse` | pass | pass-1shot | — | 0 |
 | `sum-digits` | FAIL | parse-error | — | 3 |
 | `title-case` | pass | pass-1shot | — | 0 |
@@ -45,20 +45,19 @@
 
 - pass-1shot: 11
 - pass-retry: 8
-- parse-error: 9
+- parse-error: 10
 - name-error: 1
-- unknown: 1
 
 ## Retry distribution
 
 - pass-0: 11
-- fail-0: 1
+- fail-0: 0
 - pass-1: 4
 - fail-1: 0
 - pass-2: 4
 - fail-2: 0
 - pass-3: 0
-- fail-3: 10
+- fail-3: 11
 
 ## Recoverable diagnostic codes (passed after retry)
 
@@ -72,5 +71,5 @@
 
 - `E001`: 4
 - `E002`: 1
-- `E003`: 1
+- `E003`: 2
 - `E005`: 1

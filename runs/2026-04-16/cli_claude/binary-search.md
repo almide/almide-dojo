@@ -10,18 +10,17 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn binary_search_helper(xs: List[Int], target: Int, lo: Int, hi: Int) -> Option[Int] =
+fn bsearch(xs: List[Int], target: Int, lo: Int, hi: Int) -> Option[Int] =
   if lo > hi then none
   else
     let mid = (lo + hi) / 2
-    let v = option.unwrap_or(list.get(xs, mid), 0)
+    let v = list.get(xs, mid) |> option.unwrap_or(0)
     if v == target then some(mid)
-    else if v < target then binary_search_helper(xs, target, mid + 1, hi)
-    else binary_search_helper(xs, target, lo, mid - 1)
+    else if v < target then bsearch(xs, target, mid + 1, hi)
+    else bsearch(xs, target, lo, mid - 1)
 
 fn binary_search(xs: List[Int], target: Int) -> Option[Int] =
-  if list.is_empty(xs) then none
-  else binary_search_helper(xs, target, 0, list.len(xs) - 1)
+  bsearch(xs, target, 0, list.len(xs) - 1)
 ```
 
 **Diagnostic:**
@@ -48,17 +47,16 @@ FAILED: /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-binary-search-0.a
 ### Attempt 2 (PASS)
 
 ```almide
-fn binary_search_helper(xs: List[Int], target: Int, lo: Int, hi: Int) -> Option[Int] =
+fn bsearch(xs: List[Int], target: Int, lo: Int, hi: Int) -> Option[Int] =
   if lo > hi then none
   else {
     let mid = (lo + hi) / 2
-    let v = option.unwrap_or(list.get(xs, mid), 0)
+    let v = list.get(xs, mid) |> option.unwrap_or(0)
     if v == target then some(mid)
-    else if v < target then binary_search_helper(xs, target, mid + 1, hi)
-    else binary_search_helper(xs, target, lo, mid - 1)
+    else if v < target then bsearch(xs, target, mid + 1, hi)
+    else bsearch(xs, target, lo, mid - 1)
   }
 
 fn binary_search(xs: List[Int], target: Int) -> Option[Int] =
-  if list.is_empty(xs) then none
-  else binary_search_helper(xs, target, 0, list.len(xs) - 1)
+  bsearch(xs, target, 0, list.len(xs) - 1)
 ```

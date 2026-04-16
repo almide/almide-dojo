@@ -2,9 +2,9 @@
 
 - **model**: `cli:claude`
 - **tasks**: 30
-- **passed**: 29 / 30
-- **1-shot passes**: 25 / 30
-- **total retries**: 7
+- **passed**: 30 / 30
+- **1-shot passes**: 26 / 30
+- **total retries**: 4
 
 ## Per-task
 
@@ -33,7 +33,7 @@
 | `remove-duplicates` | pass | pass-1shot | — | 0 |
 | `repeat-string` | pass | pass-1shot | — | 0 |
 | `result-pipeline` | pass | pass-retry | — | 1 |
-| `roman-numeral` | FAIL | compile-error | `E0308` | 3 |
+| `roman-numeral` | pass | pass-1shot | — | 0 |
 | `run-length-encoding` | pass | pass-1shot | — | 0 |
 | `string-reverse` | pass | pass-1shot | — | 0 |
 | `sum-digits` | pass | pass-1shot | — | 0 |
@@ -43,25 +43,20 @@
 
 ## By category
 
-- pass-1shot: 25
+- pass-1shot: 26
 - pass-retry: 4
-- compile-error: 1
 
 ## Retry distribution
 
-- pass-0: 25
+- pass-0: 26
 - fail-0: 0
 - pass-1: 4
 - fail-1: 0
 - pass-2: 0
 - fail-2: 0
 - pass-3: 0
-- fail-3: 1
+- fail-3: 0
 
 ## Recoverable diagnostic codes (passed after retry)
 
-- `E0308`: 1
-
-## Unrecoverable diagnostic codes (still failing after 3 retries)
-
-- `E0308`: 1
+- `E001`: 1

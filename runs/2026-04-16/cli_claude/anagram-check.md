@@ -10,7 +10,8 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn normalize(s: String) -> List[String] = list.sort(list.filter(string.chars(string.to_lower(s)), (c) => c != " "))
-
-fn is_anagram(a: String, b: String) -> Bool = normalize(a) == normalize(b)
+fn is_anagram(a: String, b: String) -> Bool =
+  let na = string.chars(string.to_lower(a)) |> list.filter((c) => c != " ") |> list.sort
+  let nb = string.chars(string.to_lower(b)) |> list.filter((c) => c != " ") |> list.sort
+  na == nb
 ```
