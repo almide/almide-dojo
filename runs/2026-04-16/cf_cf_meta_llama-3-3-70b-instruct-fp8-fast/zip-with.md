@@ -46,5 +46,5 @@ FAILED: /tmp/dojo-zip-with-0.almd
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] = 
-  list.map(list.zip(xs, ys), (p) => f(p.0, p.1))
+  list.map(list.zip(xs, ys), (pair) => f(pair.0, pair.1))
 ```

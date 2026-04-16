@@ -10,7 +10,6 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn remove_duplicates(xs: List[Int]) -> List[Int] = {
+fn remove_duplicates(xs: List[Int]) -> List[Int] = 
   list.unique(xs)
-}
 ```

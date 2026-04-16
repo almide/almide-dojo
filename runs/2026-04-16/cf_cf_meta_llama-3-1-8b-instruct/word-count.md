@@ -12,12 +12,13 @@
 
 ```almide
 fn word_count(s: String) -> Map[String, Int] {
-    let words = string.split(s, " ").filter(|s| !s.is_empty())
-    let count = list.fold(words, map.new(), |m, word| {
-        let count = map.get_or(m, word, 0)
-        map.set(m, word, count + 1)
+    let words = string.split(s, " ").filter(|x| !x.is_empty())
+    let freq = list.fold(words, map.new(), |m, word| {
+        let count = map.get_or(m, word, 0) + 1
+        map.set(m, word, count)
+        m
     })
-    count
+    freq
 }
 ```
 
@@ -45,12 +46,13 @@ FAILED: /tmp/dojo-word-count-0.almd
 
 ```almide
 fn word_count(s: String) -> Map[String, Int] = {
-    let words = string.split(s, " ").filter(|s| !s.is_empty())
-    let count = list.fold(words, map.new(), |m, word| {
-        let count = map.get_or(m, word, 0)
-        map.set(m, word, count + 1)
+    let words = string.split(s, " ").filter(|x| !x.is_empty())
+    let freq = list.fold(words, map.new(), |m, word| {
+        let count = map.get_or(m, word, 0) + 1
+        map.set(m, word, count)
+        m
     })
-    count
+    freq
 }
 ```
 
@@ -62,18 +64,18 @@ error: '|x|' closure syntax is not valid in Almide at line 2:45
   --> /tmp/dojo-word-count-1.almd:2:45
   hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
   |
-2 |     let words = string.split(s, " ").filter(|s| !s.is_empty())
+2 |     let words = string.split(s, " ").filter(|x| !x.is_empty())
   |                                             ^
-error: '|x|' closure syntax is not valid in Almide at line 3:45
-  --> /tmp/dojo-word-count-1.almd:3:45
+error: '|x|' closure syntax is not valid in Almide at line 3:44
+  --> /tmp/dojo-word-count-1.almd:3:44
   hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
   |
-3 |     let count = list.fold(words, map.new(), |m, word| {
-  |                                             ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 6:6 (got RParen ')')
-  --> /tmp/dojo-word-count-1.almd:6:6
+3 |     let freq = list.fold(words, map.new(), |m, word| {
+  |                                            ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 7:6 (got RParen ')')
+  --> /tmp/dojo-word-count-1.almd:7:6
   |
-6 |     })
+7 |     })
   |      ^
 error[E003]: undefined variable 'm'
   --> /tmp/dojo-word-count-1.almd:4:32
@@ -83,14 +85,14 @@ error[E003]: undefined variable 'm'
       // m  →  s
       s
   |
-4 |         let count = map.get_or(m, word, 0)
+4 |         let count = map.get_or(m, word, 0) + 1
   |                                ^
 error[E003]: undefined variable 'word'
   --> /tmp/dojo-word-count-1.almd:4:35
   in variable word
   hint: Check the variable name
   |
-4 |         let count = map.get_or(m, word, 0)
+4 |         let count = map.get_or(m, word, 0) + 1
   |                                   ^^^^
 error[E003]: undefined variable 'm'
   --> /tmp/dojo-word-count-1.almd:5:17
@@ -100,17 +102,27 @@ error[E003]: undefined variable 'm'
       // m  →  s
       s
   |
-5 |         map.set(m, word, count + 1)
+5 |         map.set(m, word, count)
   |                 ^
 error[E003]: undefined variable 'word'
   --> /tmp/dojo-word-count-1.almd:5:20
   in variable word
   hint: Check the variable name
   |
-5 |         map.set(m, word, count + 1)
+5 |         map.set(m, word, count)
   |                    ^^^^
+error[E003]: undefined variable 'm'
+  --> /tmp/dojo-word-count-1.almd:6:9
+  in variable m
+  hint: Did you mean `s`?
+  try:
+      // m  →  s
+      s
+  |
+6 |         m
+  |         ^
 
-7 error(s) found
+8 error(s) found
 Compile error for /tmp/dojo-word-count-1.almd:
 compile failed
 FAILED: /tmp/dojo-word-count-1.almd
@@ -124,11 +136,12 @@ FAILED: /tmp/dojo-word-count-1.almd
 ```almide
 fn word_count(s: String) -> Map[String, Int] = {
     let words = string.split(s, " ").filter((x) => !x.is_empty())
-    let count = list.fold(words, map.new(), (m, word) => {
-        let count = map.get_or(m, word, 0)
-        map.set(m, word, count + 1)
+    let freq = list.fold(words, map.new(), (m, word) => {
+        let count = map.get_or(m, word, 0) + 1
+        map.set(m, word, count)
+        m
     })
-    count
+    freq
 }
 ```
 
@@ -143,12 +156,12 @@ error: '!' is not valid in Almide at line 2:52
 2 |     let words = string.split(s, " ").filter((x) => !x.is_empty())
   |                                                    ^
 error[E003]: undefined variable 'words'
-  --> /tmp/dojo-word-count-2.almd:3:27
+  --> /tmp/dojo-word-count-2.almd:3:26
   in variable words
   hint: Check the variable name
   |
-3 |     let count = list.fold(words, map.new(), (m, word) => {
-  |                           ^^^^^
+3 |     let freq = list.fold(words, map.new(), (m, word) => {
+  |                          ^^^^^
 
 2 error(s) found
 Compile error for /tmp/dojo-word-count-2.almd:
@@ -164,11 +177,12 @@ FAILED: /tmp/dojo-word-count-2.almd
 ```almide
 fn word_count(s: String) -> Map[String, Int] = {
     let words = string.split(s, " ").filter((x) => not x.is_empty())
-    let count = list.fold(words, map.new(), (m, word) => {
-        let count = map.get_or(m, word, 0)
-        map.set(m, word, count + 1)
+    let freq = list.fold(words, map.new(), (m, word) => {
+        let count = map.get_or(m, word, 0) + 1
+        map.set(m, word, count)
+        m
     })
-    count
+    freq
 }
 ```
 

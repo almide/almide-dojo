@@ -11,7 +11,5 @@
 
 ```almide
 fn remove_duplicates(xs: List[Int]) -> List[Int] = 
-  list.fold(xs, [], (acc, x) => 
-    if list.contains(acc, x) then acc 
-    else acc + [x])
+    list.unique_by(xs, (x) => x)
 ```

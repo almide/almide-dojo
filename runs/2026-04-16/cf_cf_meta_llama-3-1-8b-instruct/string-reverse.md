@@ -4,7 +4,7 @@
 - **success**: no
 - **retries**: 3
 - **category**: type-error
-- **diagnostic code**: `E002`
+- **diagnostic code**: `E005`
 
 ## Attempts
 
@@ -13,7 +13,8 @@
 ```almide
 fn reverse(s: String) -> String {
   let chars = string.chars(s)
-  string.from_chars(chars |> list.reverse)
+  let reversed = list.reverse(chars)
+  string.from_chars(reversed)
 }
 ```
 
@@ -42,7 +43,8 @@ FAILED: /tmp/dojo-string-reverse-0.almd
 ```almide
 fn reverse(s: String) -> String = {
   let chars = string.chars(s)
-  string.from_chars(chars |> list.reverse)
+  let reversed = list.reverse(chars)
+  string.from_chars(reversed)
 }
 ```
 
@@ -51,15 +53,15 @@ fn reverse(s: String) -> String = {
 ```
 Compiling /tmp/dojo-string-reverse-1.almd
 error[E002]: undefined function 'string.from_chars'
-  --> /tmp/dojo-string-reverse-1.almd:3:21
+  --> /tmp/dojo-string-reverse-1.almd:4:21
   in call to string.from_chars()
   hint: Did you mean `string.from_bytes`?
   try:
       // string.from_chars(...)  →  string.from_bytes(...)
       string.from_bytes(...)
   |
-3 |   string.from_chars(chars |> list.reverse)
-  |                     ^^^^^
+4 |   string.from_chars(reversed)
+  |                     ^^^^^^^^
 
 1 error(s) found
 Compile error for /tmp/dojo-string-reverse-1.almd:
@@ -75,7 +77,8 @@ FAILED: /tmp/dojo-string-reverse-1.almd
 ```almide
 fn reverse(s: String) -> String = {
   let chars = string.chars(s)
-  string.from_bytes(chars |> list.reverse |> list.to_bytes)
+  let reversed = list.reverse(chars)
+  string.from_bytes(string.to_bytes(string.from_chars(reversed)))
 }
 ```
 
@@ -83,13 +86,16 @@ fn reverse(s: String) -> String = {
 
 ```
 Compiling /tmp/dojo-string-reverse-2.almd
-error[E002]: undefined function 'list.to_bytes'
-  --> /tmp/dojo-string-reverse-2.almd:3:21
-  in call to list.to_bytes()
-  hint: No function 'to_bytes' in module 'list'. See docs/CHEATSHEET.md for available functions
+error[E002]: undefined function 'string.from_chars'
+  --> /tmp/dojo-string-reverse-2.almd:4:55
+  in call to string.from_chars()
+  hint: Did you mean `string.from_bytes`?
+  try:
+      // string.from_chars(...)  →  string.from_bytes(...)
+      string.from_bytes(...)
   |
-3 |   string.from_bytes(chars |> list.reverse |> list.to_bytes)
-  |                     ^^^^^
+4 |   string.from_bytes(string.to_bytes(string.from_chars(reversed)))
+  |                                                       ^^^^^^^^
 
 1 error(s) found
 Compile error for /tmp/dojo-string-reverse-2.almd:
@@ -105,7 +111,8 @@ FAILED: /tmp/dojo-string-reverse-2.almd
 ```almide
 fn reverse(s: String) -> String = {
   let chars = string.chars(s)
-  string.from_bytes(chars |> list.reverse |> list.to_list |> string.from_bytes)
+  let reversed = list.reverse(chars)
+  string.from_bytes(string.to_bytes(reversed))
 }
 ```
 
@@ -113,29 +120,22 @@ fn reverse(s: String) -> String = {
 
 ```
 Compiling /tmp/dojo-string-reverse-3.almd
-error[E002]: undefined function 'list.to_list'
-  --> /tmp/dojo-string-reverse-3.almd:3:21
-  in call to list.to_list()
-  hint: No function 'to_list' in module 'list'. See docs/CHEATSHEET.md for available functions
-  |
-3 |   string.from_bytes(chars |> list.reverse |> list.to_list |> string.from_bytes)
-  |                     ^^^^^
-error[E005]: argument 'bytes' expects List[Int] but got String
-  --> /tmp/dojo-string-reverse-3.almd:3:21
-  in call to string.from_bytes()
+error[E005]: argument 's' expects String but got List[String]
+  --> /tmp/dojo-string-reverse-3.almd:4:37
+  in call to string.to_bytes()
   hint: Fix the argument type
   |
-3 |   string.from_bytes(chars |> list.reverse |> list.to_list |> string.from_bytes)
-  |                     ^^^^^
-error[E001]: type mismatch in call to string.from_bytes(): expected List[Int] but got String
-  --> /tmp/dojo-string-reverse-3.almd:3:21
-  in call to string.from_bytes()
+4 |   string.from_bytes(string.to_bytes(reversed))
+  |                                     ^^^^^^^^
+error[E001]: type mismatch in call to string.to_bytes(): expected String but got List[String]
+  --> /tmp/dojo-string-reverse-3.almd:4:37
+  in call to string.to_bytes()
   hint: Fix the expression type or change the expected type
   |
-3 |   string.from_bytes(chars |> list.reverse |> list.to_list |> string.from_bytes)
-  |                     ^^^^^
+4 |   string.from_bytes(string.to_bytes(reversed))
+  |                                     ^^^^^^^^
 
-3 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-string-reverse-3.almd:
 compile failed
 FAILED: /tmp/dojo-string-reverse-3.almd

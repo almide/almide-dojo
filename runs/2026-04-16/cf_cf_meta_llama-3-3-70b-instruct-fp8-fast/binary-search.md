@@ -1,9 +1,9 @@
 # binary-search
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
-- **success**: no
+- **success**: yes
 - **retries**: 3
-- **category**: parse-error
+- **category**: pass-retry
 
 ## Attempts
 
@@ -11,23 +11,24 @@
 
 ```almide
 fn binary_search(xs: List[Int], target: Int) -> Option[Int] = 
-    let len = list.len(xs)
-    let low = 0
-    let high = len - 1
-in
-    if len == 0 then none
-    else 
-        let rec search(low: Int, high: Int) = 
-            if low > high then none
-            else 
-                let mid = (low + high) / 2
-                let mid_val = option.unwrap_or(list.get(xs, mid), -1)
-            in
-                if mid_val == target then some(mid)
-                else if mid_val < target then search(mid + 1, high)
-                else search(low, mid - 1)
-    in
-        search(low, high)
+  let len = list.len(xs) in
+  if len == 0 then 
+    none
+  else 
+    let rec search(low: Int, high: Int) = 
+      if low > high then 
+        none
+      else 
+        let mid = (low + high) / 2 in
+        let mid_val = option.unwrap_or(list.get(xs, mid), -1) in
+        if mid_val == target then 
+          some(mid)
+        else if mid_val < target then 
+          search(mid + 1, high)
+        else 
+          search(low, mid - 1)
+    in 
+    search(0, len - 1)
 ```
 
 **Diagnostic:**
@@ -35,75 +36,92 @@ in
 ```
 Compiling /tmp/dojo-binary-search-0.almd
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-binary-search-0.almd:8:9
+  --> /tmp/dojo-binary-search-0.almd:6:5
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-8 |         let rec search(low: Int, high: Int) =
-  |         ^^^
+6 |     let rec search(low: Int, high: Int) =
+  |     ^^^
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-binary-search-0.almd:11:17
+  --> /tmp/dojo-binary-search-0.almd:10:9
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
    |
-11 |                 let mid = (low + high) / 2
-   |                 ^^^
-error: Expected expression at line 17:5 (got In 'in')
-  --> /tmp/dojo-binary-search-0.almd:17:5
+10 |         let mid = (low + high) / 2 in
+   |         ^^^
+error: Expected expression at line 18:5 (got In 'in')
+  --> /tmp/dojo-binary-search-0.almd:18:5
    |
-17 |     in
+18 |     in
    |     ^
 error[E003]: undefined variable 'mid'
-  --> /tmp/dojo-binary-search-0.almd:12:61
+  --> /tmp/dojo-binary-search-0.almd:11:53
   in variable mid
   hint: Check the variable name
    |
-12 |                 let mid_val = option.unwrap_or(list.get(xs, mid), -1)
-   |                                                             ^^^
+11 |         let mid_val = option.unwrap_or(list.get(xs, mid), -1)
+   |                                                     ^^^
 error[E003]: undefined variable 'mid'
-  --> /tmp/dojo-binary-search-0.almd:14:48
+  --> /tmp/dojo-binary-search-0.almd:13:16
   in variable mid
   hint: Check the variable name
    |
-14 |                 if mid_val == target then some(mid)
-   |                                                ^^^
+13 |           some(mid)
+   |                ^^^
 error[E003]: undefined variable 'mid'
-  --> /tmp/dojo-binary-search-0.almd:15:54
+  --> /tmp/dojo-binary-search-0.almd:15:18
   in variable mid
   hint: Check the variable name
    |
-15 |                 else if mid_val < target then search(mid + 1, high)
-   |                                                      ^^^
+15 |           search(mid + 1, high)
+   |                  ^^^
+error[E003]: undefined variable 'high'
+  --> /tmp/dojo-binary-search-0.almd:15:27
+  in variable high
+  hint: Check the variable name
+   |
+15 |           search(mid + 1, high)
+   |                           ^^^^
 error[E002]: undefined function 'search'
-  --> /tmp/dojo-binary-search-0.almd:15:63
+  --> /tmp/dojo-binary-search-0.almd:15:27
   in call to search()
   hint: Check the function name
    |
-15 |                 else if mid_val < target then search(mid + 1, high)
-   |                                                               ^^^^
+15 |           search(mid + 1, high)
+   |                           ^^^^
+error[E003]: undefined variable 'low'
+  --> /tmp/dojo-binary-search-0.almd:17:18
+  in variable low
+  hint: Did you mean `len`?
+  try:
+      // low  →  len
+      len
+   |
+17 |           search(low, mid - 1)
+   |                  ^^^
 error[E003]: undefined variable 'mid'
-  --> /tmp/dojo-binary-search-0.almd:16:34
+  --> /tmp/dojo-binary-search-0.almd:17:23
   in variable mid
   hint: Check the variable name
    |
-16 |                 else search(low, mid - 1)
-   |                                  ^^^
+17 |           search(low, mid - 1)
+   |                       ^^^
 error[E002]: undefined function 'search'
-  --> /tmp/dojo-binary-search-0.almd:16:40
+  --> /tmp/dojo-binary-search-0.almd:17:29
   in call to search()
   hint: Check the function name
    |
-16 |                 else search(low, mid - 1)
-   |                                        ^
+17 |           search(low, mid - 1)
+   |                             ^
 error[E002]: undefined function 'search'
-  --> /tmp/dojo-binary-search-0.almd:18:21
+  --> /tmp/dojo-binary-search-0.almd:19:21
   in call to search()
   hint: Check the function name
    |
-18 |         search(low, high)
-   |                     ^^^^
+19 |     search(0, len - 1)
+   |                     ^
 
-10 error(s) found
+12 error(s) found
 Compile error for /tmp/dojo-binary-search-0.almd:
 compile failed
 FAILED: /tmp/dojo-binary-search-0.almd
@@ -116,37 +134,107 @@ FAILED: /tmp/dojo-binary-search-0.almd
 
 ```almide
 fn binary_search(xs: List[Int], target: Int) -> Option[Int] = 
-    if list.len(xs) == 0 then none
-    else 
-        let low = 0
-        let high = list.len(xs) - 1
-    in
-        let rec search(low: Int, high: Int) = 
-            if low > high then none
-            else 
-                let mid = (low + high) / 2
-                let mid_val = option.unwrap_or(list.get(xs, mid), -1)
-            in
-                if mid_val == target then some(mid)
-                else if mid_val < target then search(mid + 1, high)
-                else search(low, mid - 1)
-    in
-        search(low, high)
+  if list.len(xs) == 0 then 
+    none
+  else 
+    {
+      fn search(low: Int, high: Int) -> Option[Int] = 
+        if low > high then 
+          none
+        else 
+          let mid = (low + high) / 2 in
+          let mid_val = option.unwrap_or(list.get(xs, mid), -1) in
+          if mid_val == target then 
+            some(mid)
+          else if mid_val < target then 
+            search(mid + 1, high)
+          else 
+            search(low, mid - 1)
+      search(0, list.len(xs) - 1)
+    }
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-binary-search-1.almd
+error: Expected expression at line 6:7 (got Fn 'fn')
+  --> /tmp/dojo-binary-search-1.almd:6:7
+  |
+6 |       fn search(low: Int, high: Int) -> Option[Int] =
+  |       ^
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-binary-search-1.almd:4:9
+  --> /tmp/dojo-binary-search-1.almd:10:11
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
-  |
-4 |         let low = 0
-  |         ^^^
+   |
+10 |           let mid = (low + high) / 2 in
+   |           ^^^
+error[E003]: undefined variable 'mid'
+  --> /tmp/dojo-binary-search-1.almd:11:55
+  in variable mid
+  hint: Check the variable name
+   |
+11 |           let mid_val = option.unwrap_or(list.get(xs, mid), -1)
+   |                                                       ^^^
+error[E003]: undefined variable 'mid'
+  --> /tmp/dojo-binary-search-1.almd:13:18
+  in variable mid
+  hint: Check the variable name
+   |
+13 |             some(mid)
+   |                  ^^^
+error[E003]: undefined variable 'mid'
+  --> /tmp/dojo-binary-search-1.almd:15:20
+  in variable mid
+  hint: Check the variable name
+   |
+15 |             search(mid + 1, high)
+   |                    ^^^
+error[E003]: undefined variable 'high'
+  --> /tmp/dojo-binary-search-1.almd:15:29
+  in variable high
+  hint: Check the variable name
+   |
+15 |             search(mid + 1, high)
+   |                             ^^^^
+error[E002]: undefined function 'search'
+  --> /tmp/dojo-binary-search-1.almd:15:29
+  in call to search()
+  hint: Check the function name
+   |
+15 |             search(mid + 1, high)
+   |                             ^^^^
+error[E003]: undefined variable 'low'
+  --> /tmp/dojo-binary-search-1.almd:17:20
+  in variable low
+  hint: Check the variable name
+   |
+17 |             search(low, mid - 1)
+   |                    ^^^
+error[E003]: undefined variable 'mid'
+  --> /tmp/dojo-binary-search-1.almd:17:25
+  in variable mid
+  hint: Check the variable name
+   |
+17 |             search(low, mid - 1)
+   |                         ^^^
+error[E002]: undefined function 'search'
+  --> /tmp/dojo-binary-search-1.almd:17:31
+  in call to search()
+  hint: Check the function name
+   |
+17 |             search(low, mid - 1)
+   |                               ^
+error[E002]: undefined function 'search'
+  --> /tmp/dojo-binary-search-1.almd:18:32
+  in call to search()
+  hint: Check the function name
+   |
+18 |       search(0, list.len(xs) - 1)
+   |                                ^
 
-1 error(s) found
+11 error(s) found
 Compile error for /tmp/dojo-binary-search-1.almd:
 compile failed
 FAILED: /tmp/dojo-binary-search-1.almd
@@ -159,24 +247,26 @@ FAILED: /tmp/dojo-binary-search-1.almd
 
 ```almide
 fn binary_search(xs: List[Int], target: Int) -> Option[Int] = 
-    if list.len(xs) == 0 then none
-    else 
-        {
-            let low = 0
-            let high = list.len(xs) - 1
-            let rec search(low: Int, high: Int) = 
-                if low > high then none
-                else 
-                    {
-                        let mid = (low + high) / 2
-                        let mid_val = option.unwrap_or(list.get(xs, mid), -1)
-                    }
-                    in
-                        if mid_val == target then some(mid)
-                        else if mid_val < target then search(mid + 1, high)
-                        else search(low, mid - 1)
-            search(low, high)
-        }
+  if list.len(xs) == 0 then 
+    none
+  else 
+    {
+      let rec search(low: Int, high: Int) -> Option[Int] = 
+        if low > high then 
+          none
+        else 
+          {
+            let mid = (low + high) / 2;
+            let mid_val = option.unwrap_or(list.get(xs, mid), -1);
+            if mid_val == target then 
+              some(mid)
+            else if mid_val < target then 
+              search(mid + 1, high)
+            else 
+              search(low, mid - 1)
+          }
+      search(0, list.len(xs) - 1)
+    }
 ```
 
 **Diagnostic:**
@@ -184,91 +274,80 @@ fn binary_search(xs: List[Int], target: Int) -> Option[Int] =
 ```
 Compiling /tmp/dojo-binary-search-2.almd
 error: `let rec` is OCaml/SML syntax; Almide functions are recursive by default
-  --> /tmp/dojo-binary-search-2.almd:7:17
+  --> /tmp/dojo-binary-search-2.almd:6:11
   in let rec
   hint: Define recursive functions at top level: `fn name(args) -> ReturnType = body`. Almide has no `let rec` — call the fn directly, including from its own body.
   try:
       fn fact(n: Int) -> Int =
           if n == 0 then 1 else n * fact(n - 1)
   |
-7 |             let rec search(low: Int, high: Int) =
-  |                 ^^^
-error: Expected expression at line 14:21 (got In 'in')
-  --> /tmp/dojo-binary-search-2.almd:14:21
-   |
-14 |                     in
-   |                     ^
-error[E003]: undefined variable 'mid_val'
-  --> /tmp/dojo-binary-search-2.almd:15:28
-  in variable mid_val
+6 |       let rec search(low: Int, high: Int) -> Option[Int] =
+  |           ^^^
+error[E003]: undefined variable 'low'
+  --> /tmp/dojo-binary-search-2.almd:7:12
+  in variable low
+  hint: Check the variable name
+  |
+7 |         if low > high then
+  |            ^^^
+error[E003]: undefined variable 'high'
+  --> /tmp/dojo-binary-search-2.almd:7:18
+  in variable high
+  hint: Check the variable name
+  |
+7 |         if low > high then
+  |                  ^^^^
+error[E003]: undefined variable 'low'
+  --> /tmp/dojo-binary-search-2.almd:11:24
+  in variable low
   hint: Check the variable name
    |
-15 |                         if mid_val == target then some(mid)
-   |                            ^^^^^^^
-error[E003]: undefined variable 'mid'
-  --> /tmp/dojo-binary-search-2.almd:15:56
-  in variable mid
+11 |             let mid = (low + high) / 2;
+   |                        ^^^
+error[E003]: undefined variable 'high'
+  --> /tmp/dojo-binary-search-2.almd:11:30
+  in variable high
   hint: Check the variable name
    |
-15 |                         if mid_val == target then some(mid)
-   |                                                        ^^^
-error[E003]: undefined variable 'mid_val'
-  --> /tmp/dojo-binary-search-2.almd:16:33
-  in variable mid_val
+11 |             let mid = (low + high) / 2;
+   |                              ^^^^
+error[E003]: undefined variable 'high'
+  --> /tmp/dojo-binary-search-2.almd:16:31
+  in variable high
   hint: Check the variable name
    |
-16 |                         else if mid_val < target then search(mid + 1, high)
-   |                                 ^^^^^^^
-error[E003]: undefined variable 'mid'
-  --> /tmp/dojo-binary-search-2.almd:16:62
-  in variable mid
-  hint: Check the variable name
-   |
-16 |                         else if mid_val < target then search(mid + 1, high)
-   |                                                              ^^^
+16 |               search(mid + 1, high)
+   |                               ^^^^
 error[E002]: undefined function 'search'
-  --> /tmp/dojo-binary-search-2.almd:16:71
+  --> /tmp/dojo-binary-search-2.almd:16:31
   in call to search()
   hint: Check the function name
    |
-16 |                         else if mid_val < target then search(mid + 1, high)
-   |                                                                       ^^^^
-error[E003]: undefined variable 'mid'
-  --> /tmp/dojo-binary-search-2.almd:17:42
-  in variable mid
+16 |               search(mid + 1, high)
+   |                               ^^^^
+error[E003]: undefined variable 'low'
+  --> /tmp/dojo-binary-search-2.almd:18:22
+  in variable low
   hint: Check the variable name
    |
-17 |                         else search(low, mid - 1)
-   |                                          ^^^
+18 |               search(low, mid - 1)
+   |                      ^^^
 error[E002]: undefined function 'search'
-  --> /tmp/dojo-binary-search-2.almd:17:48
+  --> /tmp/dojo-binary-search-2.almd:18:33
   in call to search()
   hint: Check the function name
    |
-17 |                         else search(low, mid - 1)
-   |                                                ^
+18 |               search(low, mid - 1)
+   |                                 ^
 error[E002]: undefined function 'search'
-  --> /tmp/dojo-binary-search-2.almd:18:25
+  --> /tmp/dojo-binary-search-2.almd:20:32
   in call to search()
   hint: Check the function name
    |
-18 |             search(low, high)
-   |                         ^^^^
-error[E001]: type mismatch in if branches: expected Option[?1] but got Unit
-  --> /tmp/dojo-binary-search-2.almd:12:76
-  in if branches
-  hint: Both branches of `if/then/else` must have the same type
-  try:
-      // an if-arm is a statement (e.g. `x = y` or a bare `let`) — returns Unit.
-      // if/else is an *expression*: both arms must produce Option[?1]. Rebind via let instead:
-      //   let new_x = if cond then <then-value> else <else-value>
-      // Or for loop-like state, use recursion:
-      //   fn step(x: Option[?1]) -> Option[?1] = if cond then step(<update>) else x
-   |
-12 |                         let mid_val = option.unwrap_or(list.get(xs, mid), -1)
-   |                                                                            ^
+20 |       search(0, list.len(xs) - 1)
+   |                                ^
 
-11 error(s) found
+10 error(s) found
 Compile error for /tmp/dojo-binary-search-2.almd:
 compile failed
 FAILED: /tmp/dojo-binary-search-2.almd
@@ -277,65 +356,27 @@ FAILED: /tmp/dojo-binary-search-2.almd
 
 ```
 
-### Attempt 4 (FAIL)
+### Attempt 4 (PASS)
 
 ```almide
+fn binary_search_aux(low: Int, high: Int, xs: List[Int], target: Int) -> Option[Int] = 
+  if low > high then 
+    none
+  else 
+    {
+      let mid = (low + high) / 2;
+      let mid_val = option.unwrap_or(list.get(xs, mid), -1);
+      if mid_val == target then 
+        some(mid)
+      else if mid_val < target then 
+        binary_search_aux(mid + 1, high, xs, target)
+      else 
+        binary_search_aux(low, mid - 1, xs, target)
+    }
+
 fn binary_search(xs: List[Int], target: Int) -> Option[Int] = 
-    if list.len(xs) == 0 then none
-    else 
-        {
-            let low = 0
-            let high = list.len(xs) - 1
-            fn search(low: Int, high: Int) -> Option[Int] = 
-                if low > high then none
-                else 
-                    {
-                        let mid = (low + high) / 2
-                        let mid_val = option.unwrap_or(list.get(xs, mid), -1)
-                        if mid_val == target then some(mid)
-                        else if mid_val < target then search(mid + 1, high)
-                        else search(low, mid - 1)
-                    }
-            search(low, high)
-        }
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-binary-search-3.almd
-error: Expected expression at line 7:13 (got Fn 'fn')
-  --> /tmp/dojo-binary-search-3.almd:7:13
-  |
-7 |             fn search(low: Int, high: Int) -> Option[Int] =
-  |             ^
-error[E002]: undefined function 'search'
-  --> /tmp/dojo-binary-search-3.almd:14:71
-  in call to search()
-  hint: Check the function name
-   |
-14 |                         else if mid_val < target then search(mid + 1, high)
-   |                                                                       ^^^^
-error[E002]: undefined function 'search'
-  --> /tmp/dojo-binary-search-3.almd:15:48
-  in call to search()
-  hint: Check the function name
-   |
-15 |                         else search(low, mid - 1)
-   |                                                ^
-error[E002]: undefined function 'search'
-  --> /tmp/dojo-binary-search-3.almd:17:25
-  in call to search()
-  hint: Check the function name
-   |
-17 |             search(low, high)
-   |                         ^^^^
-
-4 error(s) found
-Compile error for /tmp/dojo-binary-search-3.almd:
-compile failed
-FAILED: /tmp/dojo-binary-search-3.almd
-
-1/1 test file(s) failed
-
+  if list.len(xs) == 0 then 
+    none
+  else 
+    binary_search_aux(0, list.len(xs) - 1, xs, target)
 ```

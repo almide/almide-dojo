@@ -19,12 +19,10 @@ fn is_balanced(s: String) -> Bool {
       if list.is_empty(stack) {
         return false
       }
-      let last = list.last(stack)
-      match (last, c) {
-        ("(", ")") => list.drop_end(stack, 1),
-        ("[", "]") => list.drop_end(stack, 1),
-        ("{", "}") => list.drop_end(stack, 1),
-        _ => return false
+      let top = list.last(stack)
+      list.drop_end(stack, 1)
+      if (c == ")" && top != "(") || (c == "]" && top != "[") || (c == "}" && top != "{") {
+        return false
       }
     }
   }
@@ -64,12 +62,10 @@ fn is_balanced(s: String) -> Bool = {
       if list.is_empty(stack) {
         return false
       }
-      let last = list.last(stack)
-      match (last, c) {
-        ("(", ")") => list.drop_end(stack, 1),
-        ("[", "]") => list.drop_end(stack, 1),
-        ("{", "}") => list.drop_end(stack, 1),
-        _ => return false
+      let top = list.last(stack)
+      list.drop_end(stack, 1)
+      if (c == ")" && top != "(") || (c == "]" && top != "[") || (c == "}" && top != "{") {
+        return false
       }
     }
   }
@@ -144,12 +140,10 @@ fn is_balanced(s: String) -> Bool = {
       if list.is_empty(stack) {
         return false
       }
-      let last = list.last(stack)
-      match (last, c) {
-        ("(", ")") => stack = list.drop_end(stack, 1),
-        ("[", "]") => stack = list.drop_end(stack, 1),
-        ("{", "}") => stack = list.drop_end(stack, 1),
-        _ => return false
+      let top = list.last(stack)
+      stack = list.drop_end(stack, 1)
+      if (c == ")" && top != "(") || (c == "]" && top != "[") || (c == "}" && top != "{") {
+        return false
       }
     }
   }
@@ -230,12 +224,10 @@ fn is_balanced(s: String) -> Bool = {
       if list.is_empty(stack) {
         return false
       }
-      let last = list.last(stack)
-      match (last, c) {
-        ("(", ")") => stack = list.drop_end(stack, 1),
-        ("[", "]") => stack = list.drop_end(stack, 1),
-        ("{", "}") => stack = list.drop_end(stack, 1),
-        _ => return false
+      let top = list.last(stack)
+      stack = list.drop_end(stack, 1)
+      if (c == ")" && top != "(") || (c == "]" && top != "[") || (c == "}" && top != "{") {
+        return false
       }
     }
   }

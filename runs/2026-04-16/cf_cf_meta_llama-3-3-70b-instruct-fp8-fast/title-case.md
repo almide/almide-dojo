@@ -11,6 +11,11 @@
 
 ```almide
 fn title_case(s: String) -> String = 
-  let parts = string.split(s, " ")
-  in string.join(list.map(parts, (word) => string.capitalize(string.to_lower(word))), " ")
+    string.join(
+        list.map(
+            string.split(s, " "),
+            (word) => string.capitalize(string.to_lower(word))
+        ),
+        " "
+    )
 ```

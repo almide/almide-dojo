@@ -10,12 +10,7 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn sum_digits(n: Int) -> Int =
+fn sum_digits(n: Int) -> Int = 
   let abs_n = int.abs(n)
-  in list.fold(
-    string.chars(int.to_string(abs_n)),
-    0,
-    (acc, ch) =>
-      acc + int.parse(ch).unwrap_or(0)
-  )
+  in list.fold(string.chars(int.to_string(abs_n)), 0, (acc, x) => acc + int.parse(x).unwrap_or(0))
 ```

@@ -3,52 +3,73 @@
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: no
 - **retries**: 3
-- **category**: name-error
-- **diagnostic code**: `E003`
+- **category**: parse-error
 
 ## Attempts
 
 ### Attempt 1 (FAIL)
 
 ```almide
-fn rle_encode(s: String) -> String = 
-  let encoded = list.fold(string.run_length_encode(s), "", (acc, (ch, count)) => acc + int.to_string(count) + ch)
-  in encoded
+fn rle_encode(s: String) -> String =
+  let chars = string.chars(s)
+  in string.join(
+    list.map(
+      string.run_length_encode(s),
+      (x) => int.to_string(x.1) + x.0
+    ),
+    ""
+  )
 
-fn rle_decode(s: String) -> String = 
-  if string.is_empty(s) then ""
-  else
-    let chars = string.chars(s)
-    in
-      list.fold(list.chunk(chars, 2), "", (acc, x) => 
-        match (list.get(x, 0), list.get(x, 1)) with
-          (some(count), some(ch)) => 
-            let count = int.parse(count) |> result.unwrap_or(0)
-            in acc + string.repeat(ch, count)
-          _ => acc
-      )
+fn rle_decode(s: String) -> String =
+  let parts = string.split(s, "")
+  in string.join(
+    list.flat_map(
+      list.zip(
+        list.map(
+          list.filter_map(
+            list.enumerate(parts),
+            (x) =>
+              if x.0 % 2 == 0 then
+                int.parse(x.1)
+              else none
+          ),
+          (x) => x
+        ),
+        list.drop(parts, 1)
+      ),
+      (x) => list.repeat(x.1, x.0)
+    ),
+    ""
+  )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-run-length-encoding-0.almd
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-run-length-encoding-0.almd:8:5
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
-  |
-8 |     let chars = string.chars(s)
-  |     ^^^
-error[E003]: undefined variable 'count'
-  --> /tmp/dojo-run-length-encoding-0.almd:2:102
-  in variable count
-  hint: Check the variable name
-  |
-2 |   let encoded = list.fold(string.run_length_encode(s), "", (acc, (ch, count)) => acc + int.to_string(count) + ch)
-  |                                                                                                      ^^^^^
+error[E005]: argument 'f' expects fn((Int, String)) -> Option[B] but got fn(?1) -> Result[Int, String]
+  --> /tmp/dojo-run-length-encoding-0.almd:22:20
+  in call to list.filter_map()
+  hint: Fix the argument type
+   |
+22 |               else none
+   |                    ^^^^
+error[E001]: type mismatch in if branches: expected Result[Int, String] but got Option[?2]
+  --> /tmp/dojo-run-length-encoding-0.almd:22:20
+  in if branches
+  hint: Both branches of `if/then/else` must have the same type
+   |
+22 |               else none
+   |                    ^^^^
+error[E001]: type mismatch in call to list.filter_map(): expected fn((Int, String)) -> Option[B] but got fn((Int, String)) -> Result[Int, String]
+  --> /tmp/dojo-run-length-encoding-0.almd:22:20
+  in call to list.filter_map()
+  hint: Fix the expression type or change the expected type
+   |
+22 |               else none
+   |                    ^^^^
 
-2 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-run-length-encoding-0.almd:
 compile failed
 FAILED: /tmp/dojo-run-length-encoding-0.almd
@@ -60,41 +81,46 @@ FAILED: /tmp/dojo-run-length-encoding-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn rle_encode(s: String) -> String = 
-  list.fold(string.run_length_encode(s), "", (acc, (ch, count)) => acc + int.to_string(count) + ch)
+fn rle_encode(s: String) -> String =
+  let chars = string.run_length_encode(s)
+  in string.join(
+    list.map(
+      chars,
+      (x) => int.to_string(x.1) + x.0
+    ),
+    ""
+  )
 
-fn rle_decode(s: String) -> String = 
-  if string.is_empty(s) then ""
-  else
-    list.fold(list.chunk(string.chars(s), 2), "", (acc, x) => 
-      match (list.get(x, 0), list.get(x, 1)) with
-        (some(count), some(ch)) => 
-          let parsed_count = int.parse(count) |> result.unwrap_or(0)
-          in acc + string.repeat(ch, parsed_count)
-        _ => acc
-    )
+fn rle_decode(s: String) -> String =
+  let parts = string.split(s, "")
+  in string.join(
+    list.flat_map(
+      list.zip(
+        list.map(
+          list.filter_map(
+            list.enumerate(parts),
+            (x) =>
+              if x.0 % 2 == 0 then
+                match int.parse(x.1) {
+                  ok(n) => some(n)
+                  err(_) => none
+                }
+              else none
+          ),
+          (x) => x
+        ),
+        list.drop(parts, 1)
+      ),
+      (x) => list.repeat(x.1, x.0)
+    ),
+    ""
+  )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-run-length-encoding-1.almd
-error: Expected LBrace at line 8:46 (got Ident 'with')
-  --> /tmp/dojo-run-length-encoding-1.almd:8:46
-  |
-8 |       match (list.get(x, 0), list.get(x, 1)) with
-  |                                              ^
-error[E003]: undefined variable 'count'
-  --> /tmp/dojo-run-length-encoding-1.almd:2:88
-  in variable count
-  hint: Check the variable name
-  |
-2 |   list.fold(string.run_length_encode(s), "", (acc, (ch, count)) => acc + int.to_string(count) + ch)
-  |                                                                                        ^^^^^
-
-2 error(s) found
-Compile error for /tmp/dojo-run-length-encoding-1.almd:
-compile failed
 FAILED: /tmp/dojo-run-length-encoding-1.almd
 
 1/1 test file(s) failed
@@ -104,44 +130,46 @@ FAILED: /tmp/dojo-run-length-encoding-1.almd
 ### Attempt 3 (FAIL)
 
 ```almide
-fn rle_encode(s: String) -> String = 
-  list.fold(string.run_length_encode(s), "", (acc, (ch, count)) => acc + int.to_string(count) + ch)
+fn rle_encode(s: String) -> String =
+  let chars = string.run_length_encode(s)
+  in string.join(
+    list.map(
+      chars,
+      (x) => int.to_string(x.1) + x.0
+    ),
+    ""
+  )
 
-fn rle_decode(s: String) -> String = 
-  if string.is_empty(s) then ""
-  else
-    list.fold(list.chunk(string.chars(s), 2), "", (acc, x) => 
-      match (list.get(x, 0), list.get(x, 1)) {
-        (some(count_str), some(ch)) => 
-          let parsed_count = int.parse(count_str) |> result.unwrap_or(0)
-          in acc + string.repeat(ch, parsed_count)
-        _ => acc
-      }
-    )
+fn rle_decode(s: String) -> String =
+  let parts = string.split(s, "")
+  in string.join(
+    list.flat_map(
+      list.zip(
+        list.map(
+          list.filter_map(
+            list.enumerate(parts),
+            (x) =>
+              if x.0 % 2 == 0 then
+                match int.parse(x.1) {
+                  ok(n) => some(n)
+                  err(_) => none
+                }
+              else none
+          ),
+          (x) => x
+        ),
+        list.drop(parts, 1)
+      ),
+      (x) => list.repeat(x.1, x.0)
+    ),
+    ""
+  )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-run-length-encoding-2.almd
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-run-length-encoding-2.almd:10:11
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
-   |
-10 |           let parsed_count = int.parse(count_str) |> result.unwrap_or(0)
-   |           ^^^
-error[E003]: undefined variable 'count'
-  --> /tmp/dojo-run-length-encoding-2.almd:2:88
-  in variable count
-  hint: Check the variable name
-  |
-2 |   list.fold(string.run_length_encode(s), "", (acc, (ch, count)) => acc + int.to_string(count) + ch)
-  |                                                                                        ^^^^^
-
-2 error(s) found
-Compile error for /tmp/dojo-run-length-encoding-2.almd:
-compile failed
 FAILED: /tmp/dojo-run-length-encoding-2.almd
 
 1/1 test file(s) failed
@@ -151,37 +179,79 @@ FAILED: /tmp/dojo-run-length-encoding-2.almd
 ### Attempt 4 (FAIL)
 
 ```almide
-fn rle_encode(s: String) -> String = 
-  list.fold(string.run_length_encode(s), "", (acc, (ch, cnt)) => acc + int.to_string(cnt) + ch)
+fn rle_encode(s: String) -> String =
+  let chars = string.run_length_encode(s)
+  in string.join(
+    list.map(
+      chars,
+      (x) => int.to_string(x.1) + x.0
+    ),
+    ""
+  )
 
-fn rle_decode(s: String) -> String = 
-  if string.is_empty(s) then ""
-  else
-    list.fold(list.chunk(string.chars(s), 2), "", (acc, x) => 
-      match (list.get(x, 0), list.get(x, 1)) {
-        (some(count_str), some(ch)) => 
-          acc + string.repeat(ch, result.unwrap_or(int.parse(count_str), 0))
-        _ => acc
-      }
-    )
+fn rle_decode(s: String) -> String =
+  let parts = string.split(s, "")
+  in string.join(
+    list.flat_map(
+      list.zip(
+        list.map(
+          list.filter_map(
+            list.enumerate(parts),
+            (x) =>
+              if x.0 % 2 == 0 then
+                match int.parse(x.1) {
+                  ok(n) => some(n)
+                  err(_) => none
+                }
+              else none
+          ),
+          (x) => x
+        ),
+        list.map(
+          list.filter_map(
+            list.enumerate(parts),
+            (x) =>
+              if x.0 % 2 == 1 then
+                match string.get(x.1, 0) {
+                  some(c) => some(c)
+                  none => none
+                }
+              else none
+          ),
+          (x) => x
+        )
+      ),
+      (x) => list.repeat(x.1, x.0)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-run-length-encoding-3.almd
-error[E003]: undefined variable 'cnt'
-  --> /tmp/dojo-run-length-encoding-3.almd:2:86
-  in variable cnt
-  hint: Did you mean `ch`?
+error: Expected ')' to close function call opened at line 14:18
+  --> /tmp/dojo-run-length-encoding-3.almd:45:1
+  hint: Add ')' or check for a missing delimiter inside the function call
+   |
+14 |     list.flat_map(
+   |                  --------------- '(' opened here
+...
+45 | test "rle_encode empty" { assert_eq(rle_encode(""), "") }
+   | ^^^^
+error[E001]: type mismatch in fn 'rle_decode': expected String but got Unit
+  --> /tmp/dojo-run-length-encoding-3.almd:12:31
+  in fn 'rle_decode'
+  hint: Fix the expression type or change the expected type
   try:
-      // cnt  →  ch
-      ch
-  |
-2 |   list.fold(string.run_length_encode(s), "", (acc, (ch, cnt)) => acc + int.to_string(cnt) + ch)
-  |                                                                                      ^^^
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
+   |
+12 |   let parts = string.split(s, "")
+   |                               ^^
 
-1 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-run-length-encoding-3.almd:
 compile failed
 FAILED: /tmp/dojo-run-length-encoding-3.almd

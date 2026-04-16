@@ -10,5 +10,6 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn flatten(xss: List[List[Int]]) -> List[Int] = list.flatten(xss)
+fn flatten(xss: List[List[Int]]) -> List[Int] = 
+  list.flatten(xss)
 ```

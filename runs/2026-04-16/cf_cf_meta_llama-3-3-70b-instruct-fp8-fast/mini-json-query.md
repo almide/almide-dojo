@@ -21,7 +21,7 @@ type JVal =
 fn jget(obj: JVal, key: String) -> Option[JVal] =
   match obj {
     JObj(pairs) =>
-      list.find(pairs, (k, _) => k == key) |> option.map((_, v) => v)
+      list.find(pairs, (x) => x.0 == key) |> option.map((x) => x.1)
     _ => none
   }
 
@@ -29,15 +29,14 @@ fn jcount(val: JVal) -> Int =
   match val {
     JNull | JBool(_) | JNum(_) | JStr(_) => 1
     JArr(xs) => list.sum(list.map(xs, jcount))
-    JObj(pairs) => list.sum(list.map(pairs, (_, v) => jcount(v)))
+    JObj(pairs) => list.sum(list.map(pairs, (x) => jcount(x.1)))
   }
 
 fn jflatten_strings(val: JVal) -> List[String] =
   match val {
     JStr(s) => [s]
-    JNull | JBool(_) | JNum(_) => []
     JArr(xs) => list.flat_map(xs, jflatten_strings)
-    JObj(pairs) => list.flat_map(pairs, (_, v)
+    JObj(pairs) => list.flat_map(pairs, (x) => jflatten_strings(x.1))
 ```
 
 **Diagnostic:**
@@ -49,44 +48,14 @@ error: Expected FatArrow at line 18:11 (got Pipe '|')
    |
 18 |     JNull | JBool(_) | JNum(_) | JStr(_) => 1
    |           ^
-error: Expected FatArrow at line 26:11 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-0.almd:26:11
+error: Expected pattern at line 29:1 (got Test 'test')
+  --> /tmp/dojo-mini-json-query-0.almd:29:1
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-26 |     JNull | JBool(_) | JNum(_) => []
-   |           ^
-error[E005]: argument 'f' expects fn((String, JVal)) -> Bool but got fn(String, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-0.almd:12:39
-  in call to list.find()
-  hint: Fix the argument type
-   |
-12 |       list.find(pairs, (k, _) => k == key) |> option.map((_, v) => v)
-   |                                       ^^^
-error[E005]: argument 'f' expects fn((String, JVal)) -> B but got fn(?2, ?3) -> ?3
-  --> /tmp/dojo-mini-json-query-0.almd:12:68
-  in call to option.map()
-  hint: Fix the argument type
-   |
- 4 |   | JNum(Int)
-   | ---------------------------- fn option.map() defined here
-...
-12 |       list.find(pairs, (k, _) => k == key) |> option.map((_, v) => v)
-   |                                                                    ^
-error[E001]: type mismatch in call to list.find(): expected fn((String, JVal)) -> Bool but got fn(String, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-0.almd:12:39
-  in call to list.find()
-  hint: Fix the expression type or change the expected type
-   |
-12 |       list.find(pairs, (k, _) => k == key) |> option.map((_, v) => v)
-   |                                       ^^^
-error[E001]: type mismatch in call to option.map(): expected fn((String, JVal)) -> B but got fn(?2, ?3) -> ?3
-  --> /tmp/dojo-mini-json-query-0.almd:12:68
-  in call to option.map()
-  hint: Fix the expression type or change the expected type
-   |
-12 |       list.find(pairs, (k, _) => k == key) |> option.map((_, v) => v)
-   |                                                                    ^
+29 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
+   | ^
 
-6 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-mini-json-query-0.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-0.almd
@@ -109,7 +78,7 @@ type JVal =
 fn jget(obj: JVal, key: String) -> Option[JVal] =
   match obj {
     JObj(pairs) =>
-      list.find(pairs, (k, v) => k == key) |> option.map((_, v) => v)
+      list.find(pairs, (x) => x.0 == key) |> option.map((x) => x.1)
     _ => none
   }
 
@@ -120,75 +89,27 @@ fn jcount(val: JVal) -> Int =
     JNum(_) => 1
     JStr(_) => 1
     JArr(xs) => list.sum(list.map(xs, jcount))
-    JObj(pairs) => list.sum(list.map(pairs, (_, v) => jcount(v)))
+    JObj(pairs) => list.sum(list.map(pairs, (x) => jcount(x.1)))
   }
 
 fn jflatten_strings(val: JVal) -> List[String] =
   match val {
     JStr(s) => [s]
-    JNull => []
-    JBool(_) => []
-    JNum(_) => []
     JArr(xs) => list.flat_map(xs, jflatten_strings)
-    JObj
+    JObj(pairs) => list.flat_map(pairs, (x) =>
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-1.almd
-error: Expected FatArrow at line 33:9 (got Newline '')
-  --> /tmp/dojo-mini-json-query-1.almd:33:9
+error: Expected expression at line 32:1 (got Test 'test')
+  --> /tmp/dojo-mini-json-query-1.almd:32:1
    |
-33 |     JObj
-   |         ^
-error[E005]: argument 'f' expects fn((String, JVal)) -> Bool but got fn(String, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-1.almd:12:39
-  in call to list.find()
-  hint: Fix the argument type
-   |
-12 |       list.find(pairs, (k, v) => k == key) |> option.map((_, v) => v)
-   |                                       ^^^
-error[E005]: argument 'f' expects fn((String, JVal)) -> B but got fn(?2, ?3) -> ?3
-  --> /tmp/dojo-mini-json-query-1.almd:12:68
-  in call to option.map()
-  hint: Fix the argument type
-   |
- 4 |   | JNum(Int)
-   | ---------------------------- fn option.map() defined here
-...
-12 |       list.find(pairs, (k, v) => k == key) |> option.map((_, v) => v)
-   |                                                                    ^
-error[E005]: argument 'f' expects fn((String, JVal)) -> B but got fn(?6, JVal) -> Int
-  --> /tmp/dojo-mini-json-query-1.almd:23:62
-  in call to list.map()
-  hint: Fix the argument type
-   |
-23 |     JObj(pairs) => list.sum(list.map(pairs, (_, v) => jcount(v)))
-   |                                                              ^
-error[E001]: type mismatch in call to list.find(): expected fn((String, JVal)) -> Bool but got fn(String, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-1.almd:12:39
-  in call to list.find()
-  hint: Fix the expression type or change the expected type
-   |
-12 |       list.find(pairs, (k, v) => k == key) |> option.map((_, v) => v)
-   |                                       ^^^
-error[E001]: type mismatch in call to option.map(): expected fn((String, JVal)) -> B but got fn(?2, ?3) -> ?3
-  --> /tmp/dojo-mini-json-query-1.almd:12:68
-  in call to option.map()
-  hint: Fix the expression type or change the expected type
-   |
-12 |       list.find(pairs, (k, v) => k == key) |> option.map((_, v) => v)
-   |                                                                    ^
-error[E001]: type mismatch in call to list.map(): expected fn((String, JVal)) -> B but got fn(?6, JVal) -> Int
-  --> /tmp/dojo-mini-json-query-1.almd:23:62
-  in call to list.map()
-  hint: Fix the expression type or change the expected type
-   |
-23 |     JObj(pairs) => list.sum(list.map(pairs, (_, v) => jcount(v)))
-   |                                                              ^
+32 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
+   | ^
 
-7 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-mini-json-query-1.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-1.almd
@@ -211,7 +132,7 @@ type JVal =
 fn jget(obj: JVal, key: String) -> Option[JVal] =
   match obj {
     JObj(pairs) =>
-      list.find(pairs, (k, v) => k == key) |> option.map((k, v) => v)
+      list.find(pairs, (x) => x.0 == key) |> option.map((x) => x.1)
     _ => none
   }
 
@@ -222,75 +143,27 @@ fn jcount(val: JVal) -> Int =
     JNum(_) => 1
     JStr(_) => 1
     JArr(xs) => list.sum(list.map(xs, jcount))
-    JObj(pairs) => list.sum(list.map(pairs, (_, v) => jcount(v)))
+    JObj(pairs) => list.sum(list.map(pairs, (x) => jcount(x.1)))
   }
 
 fn jflatten_strings(val: JVal) -> List[String] =
   match val {
     JStr(s) => [s]
-    JNull => []
-    JBool(_) => []
-    JNum(_) => []
     JArr(xs) => list.flat_map(xs, jflatten_strings)
-    J
+    JObj(pairs) => list.flat_map(pairs, (x) =>
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-2.almd
-error: Expected FatArrow at line 33:6 (got Newline '')
-  --> /tmp/dojo-mini-json-query-2.almd:33:6
+error: Expected expression at line 32:1 (got Test 'test')
+  --> /tmp/dojo-mini-json-query-2.almd:32:1
    |
-33 |     J
-   |      ^
-error[E005]: argument 'f' expects fn((String, JVal)) -> Bool but got fn(String, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-2.almd:12:39
-  in call to list.find()
-  hint: Fix the argument type
-   |
-12 |       list.find(pairs, (k, v) => k == key) |> option.map((k, v) => v)
-   |                                       ^^^
-error[E005]: argument 'f' expects fn((String, JVal)) -> B but got fn(?2, ?3) -> ?3
-  --> /tmp/dojo-mini-json-query-2.almd:12:68
-  in call to option.map()
-  hint: Fix the argument type
-   |
- 4 |   | JNum(Int)
-   | ---------------------------- fn option.map() defined here
-...
-12 |       list.find(pairs, (k, v) => k == key) |> option.map((k, v) => v)
-   |                                                                    ^
-error[E005]: argument 'f' expects fn((String, JVal)) -> B but got fn(?6, JVal) -> Int
-  --> /tmp/dojo-mini-json-query-2.almd:23:62
-  in call to list.map()
-  hint: Fix the argument type
-   |
-23 |     JObj(pairs) => list.sum(list.map(pairs, (_, v) => jcount(v)))
-   |                                                              ^
-error[E001]: type mismatch in call to list.find(): expected fn((String, JVal)) -> Bool but got fn(String, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-2.almd:12:39
-  in call to list.find()
-  hint: Fix the expression type or change the expected type
-   |
-12 |       list.find(pairs, (k, v) => k == key) |> option.map((k, v) => v)
-   |                                       ^^^
-error[E001]: type mismatch in call to option.map(): expected fn((String, JVal)) -> B but got fn(?2, ?3) -> ?3
-  --> /tmp/dojo-mini-json-query-2.almd:12:68
-  in call to option.map()
-  hint: Fix the expression type or change the expected type
-   |
-12 |       list.find(pairs, (k, v) => k == key) |> option.map((k, v) => v)
-   |                                                                    ^
-error[E001]: type mismatch in call to list.map(): expected fn((String, JVal)) -> B but got fn(?6, JVal) -> Int
-  --> /tmp/dojo-mini-json-query-2.almd:23:62
-  in call to list.map()
-  hint: Fix the expression type or change the expected type
-   |
-23 |     JObj(pairs) => list.sum(list.map(pairs, (_, v) => jcount(v)))
-   |                                                              ^
+32 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
+   | ^
 
-7 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-mini-json-query-2.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-2.almd
@@ -313,7 +186,7 @@ type JVal =
 fn jget(obj: JVal, key: String) -> Option[JVal] =
   match obj {
     JObj(pairs) =>
-      list.find(pairs, (k, v) => k == key) |> option.map((k, v) => v)
+      list.find(pairs, (x) => x.0 == key) |> option.map((x) => x.1)
     _ => none
   }
 
@@ -324,78 +197,27 @@ fn jcount(val: JVal) -> Int =
     JNum(_) => 1
     JStr(_) => 1
     JArr(xs) => list.sum(list.map(xs, jcount))
-    JObj(pairs) => list.sum(list.map(pairs, (_, v) => jcount(v)))
+    JObj(pairs) => list.sum(list.map(pairs, (x) => jcount(x.1)))
   }
 
 fn jflatten_strings(val: JVal) -> List[String] =
   match val {
     JStr(s) => [s]
-    JNull => []
-    JBool(_) => []
-    JNum(_) => []
-    JArr(xs) => list.flat_map(xs, jflatten
+    JArr(xs) => list.flat_map(xs, jflatten_strings)
+    JObj(pairs) => list.flat_map(pairs, (x) =>
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-3.almd
-error: Expected ')' to close function call opened at line 32:30
-  --> /tmp/dojo-mini-json-query-3.almd:34:1
-  hint: Add ')' or check for a missing delimiter inside the function call
+error: Expected expression at line 32:1 (got Test 'test')
+  --> /tmp/dojo-mini-json-query-3.almd:32:1
    |
-32 |     JArr(xs) => list.flat_map(xs, jflatten
-   |                              --------------- '(' opened here
-...
-34 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
-   | ^^^^
-error[E005]: argument 'f' expects fn((String, JVal)) -> Bool but got fn(String, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-3.almd:12:39
-  in call to list.find()
-  hint: Fix the argument type
-   |
-12 |       list.find(pairs, (k, v) => k == key) |> option.map((k, v) => v)
-   |                                       ^^^
-error[E005]: argument 'f' expects fn((String, JVal)) -> B but got fn(?2, ?3) -> ?3
-  --> /tmp/dojo-mini-json-query-3.almd:12:68
-  in call to option.map()
-  hint: Fix the argument type
-   |
- 4 |   | JNum(Int)
-   | ---------------------------- fn option.map() defined here
-...
-12 |       list.find(pairs, (k, v) => k == key) |> option.map((k, v) => v)
-   |                                                                    ^
-error[E005]: argument 'f' expects fn((String, JVal)) -> B but got fn(?6, JVal) -> Int
-  --> /tmp/dojo-mini-json-query-3.almd:23:62
-  in call to list.map()
-  hint: Fix the argument type
-   |
-23 |     JObj(pairs) => list.sum(list.map(pairs, (_, v) => jcount(v)))
-   |                                                              ^
-error[E001]: type mismatch in call to list.find(): expected fn((String, JVal)) -> Bool but got fn(String, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-3.almd:12:39
-  in call to list.find()
-  hint: Fix the expression type or change the expected type
-   |
-12 |       list.find(pairs, (k, v) => k == key) |> option.map((k, v) => v)
-   |                                       ^^^
-error[E001]: type mismatch in call to option.map(): expected fn((String, JVal)) -> B but got fn(?2, ?3) -> ?3
-  --> /tmp/dojo-mini-json-query-3.almd:12:68
-  in call to option.map()
-  hint: Fix the expression type or change the expected type
-   |
-12 |       list.find(pairs, (k, v) => k == key) |> option.map((k, v) => v)
-   |                                                                    ^
-error[E001]: type mismatch in call to list.map(): expected fn((String, JVal)) -> B but got fn(?6, JVal) -> Int
-  --> /tmp/dojo-mini-json-query-3.almd:23:62
-  in call to list.map()
-  hint: Fix the expression type or change the expected type
-   |
-23 |     JObj(pairs) => list.sum(list.map(pairs, (_, v) => jcount(v)))
-   |                                                              ^
+32 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
+   | ^
 
-7 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-mini-json-query-3.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-3.almd

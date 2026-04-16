@@ -10,83 +10,76 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn is_anagram(a: String, b: String) -> Bool =
-  let
-    clean = (string.to_lower >> string.chars >> list.filter((x) => not (string.is_whitespace(x))))
-    sorted_a = clean(a) |> list.sort
-    sorted_b = clean(b) |> list.sort
-  in
-  sorted_a == sorted_b
+fn is_anagram(a: String, b: String) -> Bool = 
+  let 
+    a_lower = string.to_lower(a)
+    b_lower = string.to_lower(b)
+    a_chars = list.filter(string.chars(a_lower), (x) => x != " ")
+    b_chars = list.filter(string.chars(b_lower), (x) => x != " ")
+    a_sorted = list.sort(a_chars)
+    b_sorted = list.sort(b_chars)
+  in 
+    a_sorted == b_sorted
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-anagram-check-0.almd
-error: Expected identifier at line 2:6 (got Newline '')
-  --> /tmp/dojo-anagram-check-0.almd:2:6
+error: Expected identifier at line 2:7 (got Newline '')
+  --> /tmp/dojo-anagram-check-0.almd:2:7
   |
 2 |   let
-  |      ^
-error: Expected expression at line 6:3 (got In 'in')
-  --> /tmp/dojo-anagram-check-0.almd:6:3
+  |       ^
+error: Expected expression at line 9:3 (got In 'in')
+  --> /tmp/dojo-anagram-check-0.almd:9:3
   |
-6 |   in
+9 |   in
   |   ^
-error[E004]: list.filter() expects 2 argument(s) but got 1
-  --> /tmp/dojo-anagram-check-0.almd:3:94
-  in call to list.filter()
-  hint: Check the number of arguments
-  try:
-      // list.filter() takes 2 arg(s) — you passed 1
-      list.filter(<xs: List[A]>, <f: fn(A) -> Bool>)
-  |
-3 |     clean = (string.to_lower >> string.chars >> list.filter((x) => not (string.is_whitespace(x))))
-  |                                                                                              ^
-error[E005]: argument 'xs' expects List[A] but got fn(String) -> Bool
-  --> /tmp/dojo-anagram-check-0.almd:3:94
-  in call to list.filter()
-  hint: Fix the argument type
-  |
-3 |     clean = (string.to_lower >> string.chars >> list.filter((x) => not (string.is_whitespace(x))))
-  |                                                                                              ^
-error[E002]: undefined function 'clean'
-  --> /tmp/dojo-anagram-check-0.almd:4:22
-  in call to clean()
-  hint: Check the function name
-  |
-4 |     sorted_a = clean(a) |> list.sort
-  |                      ^
-error[E002]: undefined function 'clean'
-  --> /tmp/dojo-anagram-check-0.almd:5:22
-  in call to clean()
-  hint: Check the function name
-  |
-5 |     sorted_b = clean(b) |> list.sort
-  |                      ^
-error[E003]: undefined variable 'sorted_a'
-  --> /tmp/dojo-anagram-check-0.almd:7:3
-  in variable sorted_a
+error[E003]: undefined variable 'a_lower'
+  --> /tmp/dojo-anagram-check-0.almd:5:40
+  in variable a_lower
   hint: Check the variable name
   |
-7 |   sorted_a == sorted_b
-  |   ^^^^^^^^
-error[E003]: undefined variable 'sorted_b'
-  --> /tmp/dojo-anagram-check-0.almd:7:15
-  in variable sorted_b
+5 |     a_chars = list.filter(string.chars(a_lower), (x) => x != " ")
+  |                                        ^^^^^^^
+error[E003]: undefined variable 'b_lower'
+  --> /tmp/dojo-anagram-check-0.almd:6:40
+  in variable b_lower
   hint: Check the variable name
   |
-7 |   sorted_a == sorted_b
-  |               ^^^^^^^^
-error[E001]: type mismatch in call to list.filter(): expected List[A] but got fn(String) -> Bool
-  --> /tmp/dojo-anagram-check-0.almd:3:94
-  in call to list.filter()
-  hint: Fix the expression type or change the expected type
+6 |     b_chars = list.filter(string.chars(b_lower), (x) => x != " ")
+  |                                        ^^^^^^^
+error[E003]: undefined variable 'a_chars'
+  --> /tmp/dojo-anagram-check-0.almd:7:26
+  in variable a_chars
+  hint: Check the variable name
   |
-3 |     clean = (string.to_lower >> string.chars >> list.filter((x) => not (string.is_whitespace(x))))
-  |                                                                                              ^
+7 |     a_sorted = list.sort(a_chars)
+  |                          ^^^^^^^
+error[E003]: undefined variable 'b_chars'
+  --> /tmp/dojo-anagram-check-0.almd:8:26
+  in variable b_chars
+  hint: Check the variable name
+  |
+8 |     b_sorted = list.sort(b_chars)
+  |                          ^^^^^^^
+error[E003]: undefined variable 'a_sorted'
+  --> /tmp/dojo-anagram-check-0.almd:10:5
+  in variable a_sorted
+  hint: Check the variable name
+   |
+10 |     a_sorted == b_sorted
+   |     ^^^^^^^^
+error[E003]: undefined variable 'b_sorted'
+  --> /tmp/dojo-anagram-check-0.almd:10:17
+  in variable b_sorted
+  hint: Check the variable name
+   |
+10 |     a_sorted == b_sorted
+   |                 ^^^^^^^^
 
-9 error(s) found
+8 error(s) found
 Compile error for /tmp/dojo-anagram-check-0.almd:
 compile failed
 FAILED: /tmp/dojo-anagram-check-0.almd
@@ -98,44 +91,51 @@ FAILED: /tmp/dojo-anagram-check-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn is_anagram(a: String, b: String) -> Bool =
-  let clean = (string.to_lower >> (string.chars >> list.filter((x) => not (string.is_whitespace(x)))))
-  in
-  (clean(a) |> list.sort) == (clean(b) |> list.sort)
+fn is_anagram(a: String, b: String) -> Bool = 
+  string.to_lower(a) |> (lower_a) => 
+  string.to_lower(b) |> (lower_b) => 
+  list.filter(string.chars(lower_a), (x) => x != " ") |> (a_chars) => 
+  list.filter(string.chars(lower_b), (x) => x != " ") |> (b_chars) => 
+  list.sort(a_chars) == list.sort(b_chars)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-anagram-check-1.almd
-error[E004]: list.filter() expects 2 argument(s) but got 1
-  --> /tmp/dojo-anagram-check-1.almd:2:97
-  in call to list.filter()
-  hint: Check the number of arguments
-  try:
-      // list.filter() takes 2 arg(s) — you passed 1
-      list.filter(<xs: List[A]>, <f: fn(A) -> Bool>)
-  |
-2 |   let clean = (string.to_lower >> (string.chars >> list.filter((x) => not (string.is_whitespace(x)))))
-  |                                                                                                 ^
-error[E005]: argument 'xs' expects List[A] but got fn(String) -> Bool
-  --> /tmp/dojo-anagram-check-1.almd:2:97
-  in call to list.filter()
-  hint: Fix the argument type
-  |
-2 |   let clean = (string.to_lower >> (string.chars >> list.filter((x) => not (string.is_whitespace(x)))))
-  |                                                                                                 ^
-error[E001]: type mismatch in call to list.filter(): expected List[A] but got fn(String) -> Bool
-  --> /tmp/dojo-anagram-check-1.almd:2:97
-  in call to list.filter()
-  hint: Fix the expression type or change the expected type
-  |
-2 |   let clean = (string.to_lower >> (string.chars >> list.filter((x) => not (string.is_whitespace(x)))))
-  |                                                                                                 ^
-
-3 error(s) found
 Compile error for /tmp/dojo-anagram-check-1.almd:
-compile failed
+codegen produced invalid Rust — this is an Almide bug.
+Please file a minimal repro at https://github.com/almide/almide/issues
+
+--- rustc output (edited to hide generated paths) ---
+error[E0308]: mismatched types
+   --> <generated.rs>:358:9
+    |
+358 | /         move |lower_a| {
+359 | |             let __cap_2: String = lower_a;
+360 | |             move |lower_b| {
+361 | |                 let __cap_3: String = lower_b;
+...   |
+372 | |             }).collect::<Vec<_>>())
+373 | |         }(almide_rt_string_to_lower(&*__cap_1))
+    | |_______________________________________________^ expected `()`, found closure
+    |
+    = note: expected unit type `()`
+                 found closure `{closure@<generated.rs>:358:9: 358:23}`
+
+
+error[E0308]: mismatched types
+   --> <generated.rs>:374:6
+    |
+355 | pub fn is_anagram(a: String, b: String) -> bool {
+    |                                            ---- expected `bool` because of return type
+...
+374 |     }(almide_rt_string_to_lower(&*a))
+    |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `bool`, found `String`
+
+
+error: could not compile `almide-generated` (bin "almide-generated" test) due to 2 previous errors
+
 FAILED: /tmp/dojo-anagram-check-1.almd
 
 1/1 test file(s) failed
@@ -145,8 +145,10 @@ FAILED: /tmp/dojo-anagram-check-1.almd
 ### Attempt 3 (PASS)
 
 ```almide
-fn is_anagram(a: String, b: String) -> Bool =
-  let clean = (string.to_lower >> (string.chars >> (xs) => list.filter(xs, (x) => not (string.is_whitespace(x)))))
-  in
-  (clean(a) |> list.sort) == (clean(b) |> list.sort)
+fn is_anagram(a: String, b: String) -> Bool = 
+  let lower_a = string.to_lower(a)
+  let lower_b = string.to_lower(b)
+  let a_chars = list.filter(string.chars(lower_a), (x) => x != " ")
+  let b_chars = list.filter(string.chars(lower_b), (x) => x != " ")
+  list.sort(a_chars) == list.sort(b_chars)
 ```
