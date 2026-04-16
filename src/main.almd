@@ -81,6 +81,8 @@ let SYSTEM_PROMPT = """
     - `Some(x)` `None` `Ok` `Err`       // Capitalized constructors are wrong. Use lowercase: `some(x)`, `none`, `ok(x)`, `err(e)`.
     - `return x`                        // No `return`. The last expression of the body IS the value.
     - `n.abs()` `n.toString()`          // No method calls on values. Use `int.abs(n)`, `int.to_string(n)`.
+    - `[first, ..rest]` rest-pattern    // Rust/Swift/JS. WRONG. Almide list pattern is fixed-length only.
+                                        // For head+tail split: `let head = list.first(xs) |> option.unwrap_or(default)` and `let rest = list.drop(xs, 1)` (or use `list.is_empty(xs)` + explicit first/drop).
 
   Auto-imported (no `import` needed): string, list, int, float, math, map, result, option, value, set.
   Other (need `import`): fs, env, io, process, json, random, regex, datetime, http, log, testing, error.
