@@ -2,7 +2,7 @@
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: yes
-- **retries**: 1
+- **retries**: 3
 - **category**: pass-retry
 
 ## Attempts
@@ -13,14 +13,11 @@
 fn is_prime(n: Int) -> Bool =
   if n <= 1 then
     false
-  else if n == 2 then
-    true
-  else if n % 2 == 0 then
-    false
   else
     list.all(
-      list.range(3, int.sqrt(n.to_float()).to_int() + 1),
-      (x) => n % x != 0
+      list.range(2, int.sqrt(n) |> int.to_float |> math.ceil |> int.to_string |> int.parse |> result.unwrap_or(0)),
+      (x) =>
+        n % x != 0
     )
 ```
 
@@ -29,7 +26,7 @@ fn is_prime(n: Int) -> Bool =
 ```
 Compiling /tmp/dojo-is-prime-0.almd
 error[E002]: undefined function 'int.sqrt'
-  --> /tmp/dojo-is-prime-0.almd:10:30
+  --> /tmp/dojo-is-prime-0.almd:6:30
   in call to int.sqrt()
   hint: Did you mean `float.sqrt(int.to_float(n))`?
   try:
@@ -38,11 +35,21 @@ error[E002]: undefined function 'int.sqrt'
       let root_f = float.sqrt(int.to_float(n))       // Float
       let root_i = float.to_int(root_f)              // Int (truncates)
       // — or inline: float.to_int(float.sqrt(int.to_float(n)))
-   |
-10 |       list.range(3, int.sqrt(n.to_float()).to_int() + 1),
-   |                              ^
+  |
+6 |       list.range(2, int.sqrt(n) |> int.to_float |> math.ceil |> int.to_string |> int.parse |> result.unwrap_or(0)),
+  |                              ^
+error[E003]: undefined variable 'math'
+  --> /tmp/dojo-is-prime-0.almd:6:52
+  in variable math
+  hint: Did you mean `math.e`?
+  try:
+      // math  →  math.e
+      math.e
+  |
+6 |       list.range(2, int.sqrt(n) |> int.to_float |> math.ceil |> int.to_string |> int.parse |> result.unwrap_or(0)),
+  |                                                    ^^^^
 
-1 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-is-prime-0.almd:
 compile failed
 FAILED: /tmp/dojo-is-prime-0.almd
@@ -51,19 +58,85 @@ FAILED: /tmp/dojo-is-prime-0.almd
 
 ```
 
-### Attempt 2 (PASS)
+### Attempt 2 (FAIL)
 
 ```almide
 fn is_prime(n: Int) -> Bool =
   if n <= 1 then
     false
-  else if n == 2 then
-    true
-  else if n % 2 == 0 then
+  else
+    list.all(
+      list.range(2, float.to_int(float.sqrt(int.to_float(n)))),
+      (x) =>
+        n % x != 0
+    )
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-is-prime-1.almd
+FAILED: /tmp/dojo-is-prime-1.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 3 (FAIL)
+
+```almide
+fn is_prime(n: Int) -> Bool =
+  if n <= 1 then
     false
   else
     list.all(
-      list.range(3, float.to_int(float.sqrt(int.to_float(n))) + 1),
-      (x) => n % x != 0
+      list.range(2, int.min(n - 1, int.to_int(math.sqrt(int.to_float(n)) + 1))),
+      (x) =>
+        n % x != 0
+    )
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-is-prime-2.almd
+error[E003]: undefined variable 'math'
+  --> /tmp/dojo-is-prime-2.almd:6:47
+  in variable math
+  hint: Did you mean `math.e`?
+  try:
+      // math  →  math.e
+      math.e
+  |
+6 |       list.range(2, int.min(n - 1, int.to_int(math.sqrt(int.to_float(n)) + 1))),
+  |                                               ^^^^
+error[E002]: undefined function 'int.to_int'
+  --> /tmp/dojo-is-prime-2.almd:6:76
+  in call to int.to_int()
+  hint: No function 'to_int' in module 'int'. See docs/CHEATSHEET.md for available functions
+  |
+6 |       list.range(2, int.min(n - 1, int.to_int(math.sqrt(int.to_float(n)) + 1))),
+  |                                                                            ^
+
+2 error(s) found
+Compile error for /tmp/dojo-is-prime-2.almd:
+compile failed
+FAILED: /tmp/dojo-is-prime-2.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 4 (PASS)
+
+```almide
+fn is_prime(n: Int) -> Bool =
+  if n <= 1 then
+    false
+  else
+    list.all(
+      list.range(2, int.min(n - 1, int.parse(int.to_string(int.abs(n))) |> result.unwrap_or(2))),
+      (x) =>
+        n % x != 0
     )
 ```

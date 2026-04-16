@@ -49,25 +49,28 @@ fn is_prime(n: Int) -> Bool =
   if n < 1 then false
   else if n == 2 then true
   else if n % 2 == 0 then false
-  else list.all[Int](list.range(3, int.ceil(math.sqrt(n))), fn(x) => n % x != 0)
+  else list.all[Int](list.range(3, int.sqrt(n) + 1), (x) => n % x != 0)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-prime-1.almd
-error: Expected expression at line 5:61 (got Fn 'fn')
-  --> /tmp/dojo-is-prime-1.almd:5:61
+error[E002]: undefined function 'int.sqrt'
+  --> /tmp/dojo-is-prime-1.almd:5:45
+  in call to int.sqrt()
+  hint: Did you mean `float.sqrt(int.to_float(n))`?
+  try:
+      // Almide has float.sqrt; int.sqrt doesn't exist.
+      // Convert → sqrt → (optionally) convert back:
+      let root_f = float.sqrt(int.to_float(n))       // Float
+      let root_i = float.to_int(root_f)              // Int (truncates)
+      // — or inline: float.to_int(float.sqrt(int.to_float(n)))
   |
-5 |   else list.all[Int](list.range(3, int.ceil(math.sqrt(n))), fn(x) => n % x != 0)
-  |                                                             ^
-error: Expected function name at line 5:63 (got LParen '(')
-  --> /tmp/dojo-is-prime-1.almd:5:63
-  |
-5 |   else list.all[Int](list.range(3, int.ceil(math.sqrt(n))), fn(x) => n % x != 0)
-  |                                                               ^
+5 |   else list.all[Int](list.range(3, int.sqrt(n) + 1), (x) => n % x != 0)
+  |                                             ^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-is-prime-1.almd:
 compile failed
 FAILED: /tmp/dojo-is-prime-1.almd
@@ -83,34 +86,13 @@ fn is_prime(n: Int) -> Bool =
   if n < 1 then false
   else if n == 2 then true
   else if n % 2 == 0 then false
-  else list.all[Int](list.range(3, int.ceil(math.sqrt(n))), (x) => n % x != 0)
+  else list.all[Int](list.range(3, float.to_int(float.sqrt(int.to_float(n))) + 1), (x) => n % x != 0)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-prime-2.almd
-error[E003]: undefined variable 'math'
-  --> /tmp/dojo-is-prime-2.almd:5:45
-  in variable math
-  hint: Did you mean `math.e`?
-  try:
-      // math  →  math.e
-      math.e
-  |
-5 |   else list.all[Int](list.range(3, int.ceil(math.sqrt(n))), (x) => n % x != 0)
-  |                                             ^^^^
-error[E002]: undefined function 'int.ceil'
-  --> /tmp/dojo-is-prime-2.almd:5:45
-  in call to int.ceil()
-  hint: No function 'ceil' in module 'int'. See docs/CHEATSHEET.md for available functions
-  |
-5 |   else list.all[Int](list.range(3, int.ceil(math.sqrt(n))), (x) => n % x != 0)
-  |                                             ^^^^
-
-2 error(s) found
-Compile error for /tmp/dojo-is-prime-2.almd:
-compile failed
 FAILED: /tmp/dojo-is-prime-2.almd
 
 1/1 test file(s) failed
@@ -121,10 +103,10 @@ FAILED: /tmp/dojo-is-prime-2.almd
 
 ```almide
 fn is_prime(n: Int) -> Bool = 
-  if n < 1 then false
+  if n < 2 then false
   else if n == 2 then true
   else if n % 2 == 0 then false
-  else list.all[Int](list.range(3, math.ceil(math.sqrt(n))), (x) => n % x != 0)
+  else list.all[Int](list.range(3, int.to_int(math.sqrt(int.to_float(n))) + 1), (x) => n % x != 0)
 ```
 
 **Diagnostic:**
@@ -132,25 +114,22 @@ fn is_prime(n: Int) -> Bool =
 ```
 Compiling /tmp/dojo-is-prime-3.almd
 error[E003]: undefined variable 'math'
-  --> /tmp/dojo-is-prime-3.almd:5:46
+  --> /tmp/dojo-is-prime-3.almd:5:47
   in variable math
   hint: Did you mean `math.e`?
   try:
       // math  →  math.e
       math.e
   |
-5 |   else list.all[Int](list.range(3, math.ceil(math.sqrt(n))), (x) => n % x != 0)
-  |                                              ^^^^
-error[E003]: undefined variable 'math'
-  --> /tmp/dojo-is-prime-3.almd:5:36
-  in variable math
-  hint: Did you mean `math.e`?
-  try:
-      // math  →  math.e
-      math.e
+5 |   else list.all[Int](list.range(3, int.to_int(math.sqrt(int.to_float(n))) + 1), (x) => n % x != 0)
+  |                                               ^^^^
+error[E002]: undefined function 'int.to_int'
+  --> /tmp/dojo-is-prime-3.almd:5:47
+  in call to int.to_int()
+  hint: No function 'to_int' in module 'int'. See docs/CHEATSHEET.md for available functions
   |
-5 |   else list.all[Int](list.range(3, math.ceil(math.sqrt(n))), (x) => n % x != 0)
-  |                                    ^^^^
+5 |   else list.all[Int](list.range(3, int.to_int(math.sqrt(int.to_float(n))) + 1), (x) => n % x != 0)
+  |                                               ^^^^
 
 2 error(s) found
 Compile error for /tmp/dojo-is-prime-3.almd:

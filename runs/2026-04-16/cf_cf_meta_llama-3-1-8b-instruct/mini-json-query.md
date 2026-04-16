@@ -20,10 +20,7 @@ type JVal =
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
   match obj {
-    JObj(xs) => match list.find(xs, (x, _) => x.0 == key) {
-      some(x) => some(x.1)
-      none => none
-    }
+    JObj(xs) => list.find(xs, fn (k, v) => k == key) |> option.map(fn (k, v) => v)
     _ => none
   }
 
@@ -33,94 +30,66 @@ fn jcount(val: JVal) -> Int =
     JBool(_) => 1
     JNum(_) => 1
     JStr(_) => 1
-    JArr(xs) => list.sum(xs, jcount)
-    JObj(xs) => list.sum(xs, (x, _) => jcount(x.1))
+    JArr(xs) => list.sum(xs, fn x => jcount(x))
+    JObj(xs) => list.sum(xs, fn (_, v) => jcount(v))
   }
 
 fn jflatten_strings(val: JVal) -> List[String] =
   match val {
     JStr(s) => [s]
-    JNum(_) => []
-    JBool(_) => []
-    JNull => []
-    JArr(xs) => list.flat_map(xs
+    JArr(xs) => list.flat_map(xs, fn x => jflatten_strings(x))
+    JObj(xs) => list.flat_map(xs, fn
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-0.almd
-error: Expected ')' to close function call opened at line 34:30
-  --> /tmp/dojo-mini-json-query-0.almd:36:1
-  hint: Add ')' or check for a missing delimiter inside the function call
+error: Expected expression at line 11:31 (got Fn 'fn')
+  --> /tmp/dojo-mini-json-query-0.almd:11:31
    |
-34 |     JArr(xs) => list.flat_map(xs
-   |                              --------------- '(' opened here
-...
-36 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
-   | ^^^^
-error[E005]: argument 'f' expects fn((String, JVal)) -> Bool but got fn(?0, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-0.almd:11:54
-  in call to list.find()
-  hint: Fix the argument type
+11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |> option.map(fn (k, v) => v)
+   |                               ^
+error: Expected function name at line 11:34 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-0.almd:11:34
    |
-11 |     JObj(xs) => match list.find(xs, (x, _) => x.0 == key) {
-   |                                                      ^^^
-error[E004]: list.sum() expects 1 argument(s) but got 2
-  --> /tmp/dojo-mini-json-query-0.almd:24:30
-  in call to list.sum()
-  hint: Check the number of arguments
-  try:
-      // list.sum() takes 1 arg(s) — you passed 2
-      list.sum(<xs: List[Int]>)
+11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |> option.map(fn (k, v) => v)
+   |                                  ^
+error: Expected function name at line 11:71 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-0.almd:11:71
    |
-24 |     JArr(xs) => list.sum(xs, jcount)
-   |                              ^^^^^^
-error[E005]: argument 'xs' expects List[Int] but got List[JVal]
-  --> /tmp/dojo-mini-json-query-0.almd:24:30
-  in call to list.sum()
-  hint: Fix the argument type
+11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |> option.map(fn (k, v) => v)
+   |                                                                       ^
+error: Expected expression at line 21:30 (got Fn 'fn')
+  --> /tmp/dojo-mini-json-query-0.almd:21:30
    |
-24 |     JArr(xs) => list.sum(xs, jcount)
-   |                              ^^^^^^
-error[E004]: list.sum() expects 1 argument(s) but got 2
-  --> /tmp/dojo-mini-json-query-0.almd:25:47
-  in call to list.sum()
-  hint: Check the number of arguments
-  try:
-      // list.sum() takes 1 arg(s) — you passed 2
-      list.sum(<xs: List[Int]>)
+21 |     JArr(xs) => list.sum(xs, fn x => jcount(x))
+   |                              ^
+error: Expected LParen at line 21:35 (got FatArrow '=>')
+  --> /tmp/dojo-mini-json-query-0.almd:21:35
    |
-25 |     JObj(xs) => list.sum(xs, (x, _) => jcount(x.1))
-   |                                               ^
-error[E005]: argument 'xs' expects List[Int] but got List[(String, JVal)]
-  --> /tmp/dojo-mini-json-query-0.almd:25:47
-  in call to list.sum()
-  hint: Fix the argument type
+21 |     JArr(xs) => list.sum(xs, fn x => jcount(x))
+   |                                   ^
+error: Expected function name at line 22:33 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-0.almd:22:33
    |
-25 |     JObj(xs) => list.sum(xs, (x, _) => jcount(x.1))
-   |                                               ^
-error[E001]: type mismatch in call to list.find(): expected fn((String, JVal)) -> Bool but got fn(?0, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-0.almd:11:54
-  in call to list.find()
-  hint: Fix the expression type or change the expected type
+22 |     JObj(xs) => list.sum(xs, fn (_, v) => jcount(v))
+   |                                 ^
+error: Expected expression at line 28:35 (got Fn 'fn')
+  --> /tmp/dojo-mini-json-query-0.almd:28:35
    |
-11 |     JObj(xs) => match list.find(xs, (x, _) => x.0 == key) {
-   |                                                      ^^^
-error[E001]: type mismatch in call to list.sum(): expected List[Int] but got List[JVal]
-  --> /tmp/dojo-mini-json-query-0.almd:24:30
-  in call to list.sum()
-  hint: Fix the expression type or change the expected type
+28 |     JArr(xs) => list.flat_map(xs, fn x => jflatten_strings(x))
+   |                                   ^
+error: Expected LParen at line 28:40 (got FatArrow '=>')
+  --> /tmp/dojo-mini-json-query-0.almd:28:40
    |
-24 |     JArr(xs) => list.sum(xs, jcount)
-   |                              ^^^^^^
-error[E001]: type mismatch in call to list.sum(): expected List[Int] but got List[(String, JVal)]
-  --> /tmp/dojo-mini-json-query-0.almd:25:47
-  in call to list.sum()
-  hint: Fix the expression type or change the expected type
+28 |     JArr(xs) => list.flat_map(xs, fn x => jflatten_strings(x))
+   |                                        ^
+error: Expected function name at line 29:37 (got Newline '')
+  --> /tmp/dojo-mini-json-query-0.almd:29:37
    |
-25 |     JObj(xs) => list.sum(xs, (x, _) => jcount(x.1))
-   |                                               ^
+29 |     JObj(xs) => list.flat_map(xs, fn
+   |                                     ^
 
 9 error(s) found
 Compile error for /tmp/dojo-mini-json-query-0.almd:
@@ -144,10 +113,7 @@ type JVal =
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
   match obj {
-    JObj(xs) => match list.find(xs, (x, _) => x.0 == key) {
-      some(x) => some(x.1)
-      none => none
-    }
+    JObj(xs) => list.find(xs, fn (k, v) => k == key) |> option.map(fn (k, v) => v)
     _ => none
   }
 
@@ -157,94 +123,66 @@ fn jcount(val: JVal) -> Int =
     JBool(_) => 1
     JNum(_) => 1
     JStr(_) => 1
-    JArr(xs) => list.sum(xs, jcount)
-    JObj(xs) => list.sum(xs, (x, _) => jcount(x.1))
+    JArr(xs) => list.sum(xs, fn x => jcount(x))
+    JObj(xs) => list.sum(xs, fn (_, v) => jcount(v))
   }
 
 fn jflatten_strings(val: JVal) -> List[String] =
   match val {
     JStr(s) => [s]
-    JNum(_) => []
-    JBool(_) => []
-    JNull => []
-    JArr(xs) => list.flat_map(xs, jflatten_strings
+    JArr(xs) => list.flat_map(xs, fn x => jflatten_strings(x))
+    JObj(xs) => list.flat_map(xs, fn (k, v)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-1.almd
-error: Expected ')' to close function call opened at line 34:30
-  --> /tmp/dojo-mini-json-query-1.almd:36:1
-  hint: Add ')' or check for a missing delimiter inside the function call
+error: Expected expression at line 11:31 (got Fn 'fn')
+  --> /tmp/dojo-mini-json-query-1.almd:11:31
    |
-34 |     JArr(xs) => list.flat_map(xs, jflatten_strings
-   |                              --------------- '(' opened here
-...
-36 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
-   | ^^^^
-error[E005]: argument 'f' expects fn((String, JVal)) -> Bool but got fn(?0, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-1.almd:11:54
-  in call to list.find()
-  hint: Fix the argument type
+11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |> option.map(fn (k, v) => v)
+   |                               ^
+error: Expected function name at line 11:34 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-1.almd:11:34
    |
-11 |     JObj(xs) => match list.find(xs, (x, _) => x.0 == key) {
-   |                                                      ^^^
-error[E004]: list.sum() expects 1 argument(s) but got 2
-  --> /tmp/dojo-mini-json-query-1.almd:24:30
-  in call to list.sum()
-  hint: Check the number of arguments
-  try:
-      // list.sum() takes 1 arg(s) — you passed 2
-      list.sum(<xs: List[Int]>)
+11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |> option.map(fn (k, v) => v)
+   |                                  ^
+error: Expected function name at line 11:71 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-1.almd:11:71
    |
-24 |     JArr(xs) => list.sum(xs, jcount)
-   |                              ^^^^^^
-error[E005]: argument 'xs' expects List[Int] but got List[JVal]
-  --> /tmp/dojo-mini-json-query-1.almd:24:30
-  in call to list.sum()
-  hint: Fix the argument type
+11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |> option.map(fn (k, v) => v)
+   |                                                                       ^
+error: Expected expression at line 21:30 (got Fn 'fn')
+  --> /tmp/dojo-mini-json-query-1.almd:21:30
    |
-24 |     JArr(xs) => list.sum(xs, jcount)
-   |                              ^^^^^^
-error[E004]: list.sum() expects 1 argument(s) but got 2
-  --> /tmp/dojo-mini-json-query-1.almd:25:47
-  in call to list.sum()
-  hint: Check the number of arguments
-  try:
-      // list.sum() takes 1 arg(s) — you passed 2
-      list.sum(<xs: List[Int]>)
+21 |     JArr(xs) => list.sum(xs, fn x => jcount(x))
+   |                              ^
+error: Expected LParen at line 21:35 (got FatArrow '=>')
+  --> /tmp/dojo-mini-json-query-1.almd:21:35
    |
-25 |     JObj(xs) => list.sum(xs, (x, _) => jcount(x.1))
-   |                                               ^
-error[E005]: argument 'xs' expects List[Int] but got List[(String, JVal)]
-  --> /tmp/dojo-mini-json-query-1.almd:25:47
-  in call to list.sum()
-  hint: Fix the argument type
+21 |     JArr(xs) => list.sum(xs, fn x => jcount(x))
+   |                                   ^
+error: Expected function name at line 22:33 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-1.almd:22:33
    |
-25 |     JObj(xs) => list.sum(xs, (x, _) => jcount(x.1))
-   |                                               ^
-error[E001]: type mismatch in call to list.find(): expected fn((String, JVal)) -> Bool but got fn(?0, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-1.almd:11:54
-  in call to list.find()
-  hint: Fix the expression type or change the expected type
+22 |     JObj(xs) => list.sum(xs, fn (_, v) => jcount(v))
+   |                                 ^
+error: Expected expression at line 28:35 (got Fn 'fn')
+  --> /tmp/dojo-mini-json-query-1.almd:28:35
    |
-11 |     JObj(xs) => match list.find(xs, (x, _) => x.0 == key) {
-   |                                                      ^^^
-error[E001]: type mismatch in call to list.sum(): expected List[Int] but got List[JVal]
-  --> /tmp/dojo-mini-json-query-1.almd:24:30
-  in call to list.sum()
-  hint: Fix the expression type or change the expected type
+28 |     JArr(xs) => list.flat_map(xs, fn x => jflatten_strings(x))
+   |                                   ^
+error: Expected LParen at line 28:40 (got FatArrow '=>')
+  --> /tmp/dojo-mini-json-query-1.almd:28:40
    |
-24 |     JArr(xs) => list.sum(xs, jcount)
-   |                              ^^^^^^
-error[E001]: type mismatch in call to list.sum(): expected List[Int] but got List[(String, JVal)]
-  --> /tmp/dojo-mini-json-query-1.almd:25:47
-  in call to list.sum()
-  hint: Fix the expression type or change the expected type
+28 |     JArr(xs) => list.flat_map(xs, fn x => jflatten_strings(x))
+   |                                        ^
+error: Expected function name at line 29:38 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-1.almd:29:38
    |
-25 |     JObj(xs) => list.sum(xs, (x, _) => jcount(x.1))
-   |                                               ^
+29 |     JObj(xs) => list.flat_map(xs, fn (k, v)
+   |                                      ^
 
 9 error(s) found
 Compile error for /tmp/dojo-mini-json-query-1.almd:
@@ -268,10 +206,7 @@ type JVal =
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
   match obj {
-    JObj(xs) => match list.find(xs, (x, _) => x.0 == key) {
-      some(x) => some(x.1)
-      none => none
-    }
+    JObj(xs) => list.find(xs, fn (k, v) => k == key) |> option.map(fn (k, v) => v)
     _ => none
   }
 
@@ -281,94 +216,66 @@ fn jcount(val: JVal) -> Int =
     JBool(_) => 1
     JNum(_) => 1
     JStr(_) => 1
-    JArr(xs) => list.sum(xs, jcount)
-    JObj(xs) => list.sum(xs, (x, _) => jcount(x.1))
+    JArr(xs) => list.sum(xs, fn x => jcount(x))
+    JObj(xs) => list.sum(xs, fn (_, v) => jcount(v))
   }
 
 fn jflatten_strings(val: JVal) -> List[String] =
   match val {
     JStr(s) => [s]
-    JNum(_) => []
-    JBool(_) => []
-    JNull => []
-    JArr(xs) => list.flat_map(xs, jflatten_strings
+    JArr(xs) => list.flat_map(xs, fn x => jflatten_strings(x))
+    JObj(xs) => list.flat_map(xs, fn (k, v)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-2.almd
-error: Expected ')' to close function call opened at line 34:30
-  --> /tmp/dojo-mini-json-query-2.almd:36:1
-  hint: Add ')' or check for a missing delimiter inside the function call
+error: Expected expression at line 11:31 (got Fn 'fn')
+  --> /tmp/dojo-mini-json-query-2.almd:11:31
    |
-34 |     JArr(xs) => list.flat_map(xs, jflatten_strings
-   |                              --------------- '(' opened here
-...
-36 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
-   | ^^^^
-error[E005]: argument 'f' expects fn((String, JVal)) -> Bool but got fn(?0, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-2.almd:11:54
-  in call to list.find()
-  hint: Fix the argument type
+11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |> option.map(fn (k, v) => v)
+   |                               ^
+error: Expected function name at line 11:34 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-2.almd:11:34
    |
-11 |     JObj(xs) => match list.find(xs, (x, _) => x.0 == key) {
-   |                                                      ^^^
-error[E004]: list.sum() expects 1 argument(s) but got 2
-  --> /tmp/dojo-mini-json-query-2.almd:24:30
-  in call to list.sum()
-  hint: Check the number of arguments
-  try:
-      // list.sum() takes 1 arg(s) — you passed 2
-      list.sum(<xs: List[Int]>)
+11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |> option.map(fn (k, v) => v)
+   |                                  ^
+error: Expected function name at line 11:71 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-2.almd:11:71
    |
-24 |     JArr(xs) => list.sum(xs, jcount)
-   |                              ^^^^^^
-error[E005]: argument 'xs' expects List[Int] but got List[JVal]
-  --> /tmp/dojo-mini-json-query-2.almd:24:30
-  in call to list.sum()
-  hint: Fix the argument type
+11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |> option.map(fn (k, v) => v)
+   |                                                                       ^
+error: Expected expression at line 21:30 (got Fn 'fn')
+  --> /tmp/dojo-mini-json-query-2.almd:21:30
    |
-24 |     JArr(xs) => list.sum(xs, jcount)
-   |                              ^^^^^^
-error[E004]: list.sum() expects 1 argument(s) but got 2
-  --> /tmp/dojo-mini-json-query-2.almd:25:47
-  in call to list.sum()
-  hint: Check the number of arguments
-  try:
-      // list.sum() takes 1 arg(s) — you passed 2
-      list.sum(<xs: List[Int]>)
+21 |     JArr(xs) => list.sum(xs, fn x => jcount(x))
+   |                              ^
+error: Expected LParen at line 21:35 (got FatArrow '=>')
+  --> /tmp/dojo-mini-json-query-2.almd:21:35
    |
-25 |     JObj(xs) => list.sum(xs, (x, _) => jcount(x.1))
-   |                                               ^
-error[E005]: argument 'xs' expects List[Int] but got List[(String, JVal)]
-  --> /tmp/dojo-mini-json-query-2.almd:25:47
-  in call to list.sum()
-  hint: Fix the argument type
+21 |     JArr(xs) => list.sum(xs, fn x => jcount(x))
+   |                                   ^
+error: Expected function name at line 22:33 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-2.almd:22:33
    |
-25 |     JObj(xs) => list.sum(xs, (x, _) => jcount(x.1))
-   |                                               ^
-error[E001]: type mismatch in call to list.find(): expected fn((String, JVal)) -> Bool but got fn(?0, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-2.almd:11:54
-  in call to list.find()
-  hint: Fix the expression type or change the expected type
+22 |     JObj(xs) => list.sum(xs, fn (_, v) => jcount(v))
+   |                                 ^
+error: Expected expression at line 28:35 (got Fn 'fn')
+  --> /tmp/dojo-mini-json-query-2.almd:28:35
    |
-11 |     JObj(xs) => match list.find(xs, (x, _) => x.0 == key) {
-   |                                                      ^^^
-error[E001]: type mismatch in call to list.sum(): expected List[Int] but got List[JVal]
-  --> /tmp/dojo-mini-json-query-2.almd:24:30
-  in call to list.sum()
-  hint: Fix the expression type or change the expected type
+28 |     JArr(xs) => list.flat_map(xs, fn x => jflatten_strings(x))
+   |                                   ^
+error: Expected LParen at line 28:40 (got FatArrow '=>')
+  --> /tmp/dojo-mini-json-query-2.almd:28:40
    |
-24 |     JArr(xs) => list.sum(xs, jcount)
-   |                              ^^^^^^
-error[E001]: type mismatch in call to list.sum(): expected List[Int] but got List[(String, JVal)]
-  --> /tmp/dojo-mini-json-query-2.almd:25:47
-  in call to list.sum()
-  hint: Fix the expression type or change the expected type
+28 |     JArr(xs) => list.flat_map(xs, fn x => jflatten_strings(x))
+   |                                        ^
+error: Expected function name at line 29:38 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-2.almd:29:38
    |
-25 |     JObj(xs) => list.sum(xs, (x, _) => jcount(x.1))
-   |                                               ^
+29 |     JObj(xs) => list.flat_map(xs, fn (k, v)
+   |                                      ^
 
 9 error(s) found
 Compile error for /tmp/dojo-mini-json-query-2.almd:
@@ -392,10 +299,7 @@ type JVal =
 
 fn jget(obj: JVal, key: String) -> Option[JVal] =
   match obj {
-    JObj(xs) => match list.find(xs, (x, _) => x.0 == key) {
-      some(x) => some(x.1)
-      none => none
-    }
+    JObj(xs) => list.find(xs, fn (k, v) => k == key) |> option.map(fn (k, v) => v)
     _ => none
   }
 
@@ -405,94 +309,66 @@ fn jcount(val: JVal) -> Int =
     JBool(_) => 1
     JNum(_) => 1
     JStr(_) => 1
-    JArr(xs) => list.sum(xs, jcount)
-    JObj(xs) => list.sum(xs, (x, _) => jcount(x.1))
+    JArr(xs) => list.sum(xs, fn x => jcount(x))
+    JObj(xs) => list.sum(xs, fn (_, v) => jcount(v))
   }
 
 fn jflatten_strings(val: JVal) -> List[String] =
   match val {
     JStr(s) => [s]
-    JNum(_) => []
-    JBool(_) => []
-    JNull => []
-    JArr(xs) => list.flat_map(xs, jflatten_strings
+    JArr(xs) => list.flat_map(xs, fn x => jflatten_strings(x))
+    JObj(xs) => list.flat_map(xs, fn (k, v)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-3.almd
-error: Expected ')' to close function call opened at line 34:30
-  --> /tmp/dojo-mini-json-query-3.almd:36:1
-  hint: Add ')' or check for a missing delimiter inside the function call
+error: Expected expression at line 11:31 (got Fn 'fn')
+  --> /tmp/dojo-mini-json-query-3.almd:11:31
    |
-34 |     JArr(xs) => list.flat_map(xs, jflatten_strings
-   |                              --------------- '(' opened here
-...
-36 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
-   | ^^^^
-error[E005]: argument 'f' expects fn((String, JVal)) -> Bool but got fn(?0, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-3.almd:11:54
-  in call to list.find()
-  hint: Fix the argument type
+11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |> option.map(fn (k, v) => v)
+   |                               ^
+error: Expected function name at line 11:34 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-3.almd:11:34
    |
-11 |     JObj(xs) => match list.find(xs, (x, _) => x.0 == key) {
-   |                                                      ^^^
-error[E004]: list.sum() expects 1 argument(s) but got 2
-  --> /tmp/dojo-mini-json-query-3.almd:24:30
-  in call to list.sum()
-  hint: Check the number of arguments
-  try:
-      // list.sum() takes 1 arg(s) — you passed 2
-      list.sum(<xs: List[Int]>)
+11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |> option.map(fn (k, v) => v)
+   |                                  ^
+error: Expected function name at line 11:71 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-3.almd:11:71
    |
-24 |     JArr(xs) => list.sum(xs, jcount)
-   |                              ^^^^^^
-error[E005]: argument 'xs' expects List[Int] but got List[JVal]
-  --> /tmp/dojo-mini-json-query-3.almd:24:30
-  in call to list.sum()
-  hint: Fix the argument type
+11 |     JObj(xs) => list.find(xs, fn (k, v) => k == key) |> option.map(fn (k, v) => v)
+   |                                                                       ^
+error: Expected expression at line 21:30 (got Fn 'fn')
+  --> /tmp/dojo-mini-json-query-3.almd:21:30
    |
-24 |     JArr(xs) => list.sum(xs, jcount)
-   |                              ^^^^^^
-error[E004]: list.sum() expects 1 argument(s) but got 2
-  --> /tmp/dojo-mini-json-query-3.almd:25:47
-  in call to list.sum()
-  hint: Check the number of arguments
-  try:
-      // list.sum() takes 1 arg(s) — you passed 2
-      list.sum(<xs: List[Int]>)
+21 |     JArr(xs) => list.sum(xs, fn x => jcount(x))
+   |                              ^
+error: Expected LParen at line 21:35 (got FatArrow '=>')
+  --> /tmp/dojo-mini-json-query-3.almd:21:35
    |
-25 |     JObj(xs) => list.sum(xs, (x, _) => jcount(x.1))
-   |                                               ^
-error[E005]: argument 'xs' expects List[Int] but got List[(String, JVal)]
-  --> /tmp/dojo-mini-json-query-3.almd:25:47
-  in call to list.sum()
-  hint: Fix the argument type
+21 |     JArr(xs) => list.sum(xs, fn x => jcount(x))
+   |                                   ^
+error: Expected function name at line 22:33 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-3.almd:22:33
    |
-25 |     JObj(xs) => list.sum(xs, (x, _) => jcount(x.1))
-   |                                               ^
-error[E001]: type mismatch in call to list.find(): expected fn((String, JVal)) -> Bool but got fn(?0, ?1) -> Bool
-  --> /tmp/dojo-mini-json-query-3.almd:11:54
-  in call to list.find()
-  hint: Fix the expression type or change the expected type
+22 |     JObj(xs) => list.sum(xs, fn (_, v) => jcount(v))
+   |                                 ^
+error: Expected expression at line 28:35 (got Fn 'fn')
+  --> /tmp/dojo-mini-json-query-3.almd:28:35
    |
-11 |     JObj(xs) => match list.find(xs, (x, _) => x.0 == key) {
-   |                                                      ^^^
-error[E001]: type mismatch in call to list.sum(): expected List[Int] but got List[JVal]
-  --> /tmp/dojo-mini-json-query-3.almd:24:30
-  in call to list.sum()
-  hint: Fix the expression type or change the expected type
+28 |     JArr(xs) => list.flat_map(xs, fn x => jflatten_strings(x))
+   |                                   ^
+error: Expected LParen at line 28:40 (got FatArrow '=>')
+  --> /tmp/dojo-mini-json-query-3.almd:28:40
    |
-24 |     JArr(xs) => list.sum(xs, jcount)
-   |                              ^^^^^^
-error[E001]: type mismatch in call to list.sum(): expected List[Int] but got List[(String, JVal)]
-  --> /tmp/dojo-mini-json-query-3.almd:25:47
-  in call to list.sum()
-  hint: Fix the expression type or change the expected type
+28 |     JArr(xs) => list.flat_map(xs, fn x => jflatten_strings(x))
+   |                                        ^
+error: Expected function name at line 29:38 (got LParen '(')
+  --> /tmp/dojo-mini-json-query-3.almd:29:38
    |
-25 |     JObj(xs) => list.sum(xs, (x, _) => jcount(x.1))
-   |                                               ^
+29 |     JObj(xs) => list.flat_map(xs, fn (k, v)
+   |                                      ^
 
 9 error(s) found
 Compile error for /tmp/dojo-mini-json-query-3.almd:

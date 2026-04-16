@@ -3,7 +3,7 @@
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: no
 - **retries**: 3
-- **category**: parse-error
+- **category**: unknown
 
 ## Attempts
 
@@ -25,7 +25,10 @@ fn process(input: String) -> Result[String, String] =
   result.flat_map(parse_int(input), (n) => 
     result.flat_map(validate_positive(n), (n) => 
       result.flat_map(validate_range(n, 1, 100), (n) => 
-        result.map(ok(n), (n) => "valid: " + int.to_string(n))))
+        result.map(ok(n), (n) => "valid: " + int.to_string(n))
+      )
+    )
+  )
 ```
 
 **Diagnostic:**
@@ -38,17 +41,8 @@ error: '&&' is not valid in Almide at line 9:14
   |
 9 |   if n >= lo && n <= hi then ok(n)
   |              ^
-error: Expected ')' to close function call opened at line 13:18
-  --> /tmp/dojo-result-pipeline-0.almd:18:1
-  hint: Add ')' or check for a missing delimiter inside the function call
-   |
-13 |   result.flat_map(parse_int(input), (n) =>
-   |                  --------------- '(' opened here
-...
-18 | test "parse_int valid" { assert_eq(parse_int("42"), ok(42)) }
-   | ^^^^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-result-pipeline-0.almd:
 compile failed
 FAILED: /tmp/dojo-result-pipeline-0.almd
@@ -75,26 +69,16 @@ fn process(input: String) -> Result[String, String] =
   result.flat_map(parse_int(input), (n) => 
     result.flat_map(validate_positive(n), (n) => 
       result.flat_map(validate_range(n, 1, 100), (n) => 
-        result.map(ok(n), (n) => "valid: " + int.to_string(n))))
+        result.map(ok(n), (n) => "valid: " + int.to_string(n))
+      )
+    )
+  )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-result-pipeline-1.almd
-error: Expected ')' to close function call opened at line 13:18
-  --> /tmp/dojo-result-pipeline-1.almd:18:1
-  hint: Add ')' or check for a missing delimiter inside the function call
-   |
-13 |   result.flat_map(parse_int(input), (n) =>
-   |                  --------------- '(' opened here
-...
-18 | test "parse_int valid" { assert_eq(parse_int("42"), ok(42)) }
-   | ^^^^
-
-1 error(s) found
-Compile error for /tmp/dojo-result-pipeline-1.almd:
-compile failed
 FAILED: /tmp/dojo-result-pipeline-1.almd
 
 1/1 test file(s) failed
@@ -119,26 +103,16 @@ fn process(input: String) -> Result[String, String] =
   result.flat_map(parse_int(input), (n) => 
     result.flat_map(validate_positive(n), (n) => 
       result.flat_map(validate_range(n, 1, 100), (n) => 
-        result.map(ok(n), (n) => "valid: " + int.to_string(n))))
+        result.map(ok(n), (n) => "valid: " + int.to_string(n))
+      )
+    )
+  )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-result-pipeline-2.almd
-error: Expected ')' to close function call opened at line 13:18
-  --> /tmp/dojo-result-pipeline-2.almd:18:1
-  hint: Add ')' or check for a missing delimiter inside the function call
-   |
-13 |   result.flat_map(parse_int(input), (n) =>
-   |                  --------------- '(' opened here
-...
-18 | test "parse_int valid" { assert_eq(parse_int("42"), ok(42)) }
-   | ^^^^
-
-1 error(s) found
-Compile error for /tmp/dojo-result-pipeline-2.almd:
-compile failed
 FAILED: /tmp/dojo-result-pipeline-2.almd
 
 1/1 test file(s) failed
@@ -163,26 +137,16 @@ fn process(input: String) -> Result[String, String] =
   result.flat_map(parse_int(input), (n) => 
     result.flat_map(validate_positive(n), (n) => 
       result.flat_map(validate_range(n, 1, 100), (n) => 
-        result.map(ok(n), (n) => "valid: " + int.to_string(n))))
+        result.map(ok(n), (n) => "valid: " + int.to_string(n))
+      )
+    )
+  )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-result-pipeline-3.almd
-error: Expected ')' to close function call opened at line 13:18
-  --> /tmp/dojo-result-pipeline-3.almd:18:1
-  hint: Add ')' or check for a missing delimiter inside the function call
-   |
-13 |   result.flat_map(parse_int(input), (n) =>
-   |                  --------------- '(' opened here
-...
-18 | test "parse_int valid" { assert_eq(parse_int("42"), ok(42)) }
-   | ^^^^
-
-1 error(s) found
-Compile error for /tmp/dojo-result-pipeline-3.almd:
-compile failed
 FAILED: /tmp/dojo-result-pipeline-3.almd
 
 1/1 test file(s) failed

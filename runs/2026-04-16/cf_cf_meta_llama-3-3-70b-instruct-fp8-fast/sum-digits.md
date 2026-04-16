@@ -2,7 +2,7 @@
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: yes
-- **retries**: 1
+- **retries**: 2
 - **category**: pass-retry
 
 ## Attempts
@@ -55,11 +55,62 @@ FAILED: /tmp/dojo-sum-digits-0.almd
 
 ```
 
-### Attempt 2 (PASS)
+### Attempt 2 (FAIL)
 
 ```almide
 fn sum_digits(n: Int) -> Int = 
     let abs_n = int.abs(n)
-    let chars = string.chars(int.to_string(abs_n))
+    let str = int.to_string(abs_n)
+    let chars = string.chars(str)
+    in list.fold(chars, 0, (acc, x) => acc + int.parse(x).unwrap_or(0))
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-sum-digits-1.almd
+error: `let ... in <expr>` is OCaml/Haskell syntax
+  --> /tmp/dojo-sum-digits-1.almd:5:5
+  in let ... in
+  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
+  try:
+      let x = 1
+      let y = 2
+      x + y
+  |
+5 |     in list.fold(chars, 0, (acc, x) => acc + int.parse(x).unwrap_or(0))
+  |     ^^
+error[E001]: type mismatch in fn 'sum_digits': expected Int but got Unit
+  --> /tmp/dojo-sum-digits-1.almd:4:30
+  in fn 'sum_digits'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with `let chars = ...` (a statement, returns Unit).
+      // Add `chars` as the trailing expression so the fn returns Int:
+      //
+      //   let chars = <computation>
+      //   chars                         // <-- add this line
+      //
+      // Or inline the computation as the tail expression directly.
+  |
+4 |     let chars = string.chars(str)
+  |                              ^^^
+
+2 error(s) found
+Compile error for /tmp/dojo-sum-digits-1.almd:
+compile failed
+FAILED: /tmp/dojo-sum-digits-1.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 3 (PASS)
+
+```almide
+fn sum_digits(n: Int) -> Int = 
+    let abs_n = int.abs(n)
+    let str = int.to_string(abs_n)
+    let chars = string.chars(str)
     list.fold(chars, 0, (acc, x) => acc + int.parse(x).unwrap_or(0))
 ```

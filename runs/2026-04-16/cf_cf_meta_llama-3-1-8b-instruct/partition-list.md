@@ -10,6 +10,7 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn partition(xs: List[Int], predicate: (Int) -> Bool) -> (List[Int], List[Int]) =
-  (list.filter(xs, predicate), list.filter(xs, (x) => not predicate(x)))
+fn partition(xs: List[Int], predicate: (Int) -> Bool) -> (List[Int], List[Int]) = 
+  let (matching, non_matching) = list.partition(xs, predicate)
+  (matching, non_matching)
 ```
