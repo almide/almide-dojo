@@ -15,7 +15,7 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
     (xs, ys) if xs.is_empty() && ys.is_empty() => []
     (xs, ys) if xs.is_empty() => []
     (xs, ys) if ys.is_empty() => []
-    (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+    (x :: xs, y :: ys) => (f(x, y)) :: zip_with(xs, ys, f)
   }
 ```
 
@@ -47,7 +47,7 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
     (xs, ys) if xs.is_empty() and ys.is_empty() => []
     (xs, ys) if xs.is_empty() => []
     (xs, ys) if ys.is_empty() => []
-    (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+    (x :: xs, y :: ys) => (f(x, y)) :: zip_with(xs, ys, f)
   }
 ```
 
@@ -59,7 +59,7 @@ error: Expected RParen at line 6:8 (got Colon ':')
   --> /tmp/dojo-zip-with-1.almd:6:8
   hint: Missing ')'. Check for an unclosed '(' earlier in this expression
   |
-6 |     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+6 |     (x :: xs, y :: ys) => (f(x, y)) :: zip_with(xs, ys, f)
   |        ^
 
 1 error(s) found
@@ -79,7 +79,7 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
     (xs, ys) if xs.is_empty() and ys.is_empty() => []
     (xs, ys) if xs.is_empty() => []
     (xs, ys) if ys.is_empty() => []
-    (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+    (x :: xs, y :: ys) => (f(x, y)) :: zip_with(xs, ys, f)
   }
 ```
 
@@ -91,7 +91,7 @@ error: Expected RParen at line 6:8 (got Colon ':')
   --> /tmp/dojo-zip-with-2.almd:6:8
   hint: Missing ')'. Check for an unclosed '(' earlier in this expression
   |
-6 |     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+6 |     (x :: xs, y :: ys) => (f(x, y)) :: zip_with(xs, ys, f)
   |        ^
 
 1 error(s) found
@@ -111,7 +111,7 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
     (xs, ys) if xs.is_empty() and ys.is_empty() => []
     (xs, ys) if xs.is_empty() => []
     (xs, ys) if ys.is_empty() => []
-    (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+    (x :: xs, y :: ys) => (f(x, y)) :: zip_with(xs, ys, f)
   }
 ```
 
@@ -123,7 +123,7 @@ error: Expected RParen at line 6:8 (got Colon ':')
   --> /tmp/dojo-zip-with-3.almd:6:8
   hint: Missing ')'. Check for an unclosed '(' earlier in this expression
   |
-6 |     (x :: xs, y :: ys) => f(x, y) :: zip_with(xs, ys, f)
+6 |     (x :: xs, y :: ys) => (f(x, y)) :: zip_with(xs, ys, f)
   |        ^
 
 1 error(s) found

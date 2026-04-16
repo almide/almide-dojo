@@ -12,7 +12,7 @@
 ```almide
 fn title_case(s: String) -> String {
   let words = string.split(s, " ")
-  let capitalized_words = list.map(words, string.capitalize)
+  let capitalized_words = list.map(words, fn(word) => string.capitalize(word))
   string.join(capitalized_words, " ")
 }
 ```
@@ -27,8 +27,13 @@ error: Missing '=' before function body at line 1:36
   |
 1 | fn title_case(s: String) -> String {
   |                                    ^
+error: Expected function name at line 3:45 (got LParen '(')
+  --> /tmp/dojo-title-case-0.almd:3:45
+  |
+3 |   let capitalized_words = list.map(words, fn(word) => string.capitalize(word))
+  |                                             ^
 
-1 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-title-case-0.almd:
 compile failed
 FAILED: /tmp/dojo-title-case-0.almd
@@ -42,7 +47,7 @@ FAILED: /tmp/dojo-title-case-0.almd
 ```almide
 fn title_case(s: String) -> String = {
   let words = string.split(s, " ")
-  let capitalized_words = list.map(words, string.capitalize)
+  let capitalized_words = list.map(words, (word) => string.capitalize(word))
   string.join(capitalized_words, " ")
 }
 ```
