@@ -10,6 +10,6 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn partition(xs: List[Int], predicate: (Int) -> Bool) -> (List[Int], List[Int]) =
-  list.partition(xs, predicate)
+fn partition(xs: List[Int], predicate: (Int) -> Bool) -> (List[Int], List[Int]) = 
+    list.partition(xs, predicate)
 ```

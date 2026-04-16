@@ -19,12 +19,12 @@ type Expr =
 fn eval(expr: Expr) -> Int =
   match expr {
     Num(n) => n
-    Add(a, b) => eval(a) + eval(b)
-    Mul(a, b) => eval(a) * eval(b)
-    Neg(a) => -eval(a)
+    Add(left, right) => eval(left) + eval(right)
+    Mul(left, right) => eval(left) * eval(right)
+    Neg(expr) => -eval(expr)
   }
 
-This evaluator uses pattern matching to handle each variant of the `Expr` type. For `Num`, it simply returns the integer value. For `Add` and `Mul`, it recursively evaluates the two subexpressions and then performs the addition or multiplication. For `Neg`, it recursively evaluates the subexpression and then negates the result.
+This evaluator uses pattern matching to handle each variant of the `Expr` type. For `Num`, it simply returns the integer value. For `Add` and `Mul`, it recursively evaluates the left and right expressions and then performs the addition or multiplication. For `Neg`, it recursively evaluates the expression and then negates the result.
 ```
 
 **Diagnostic:**
@@ -34,7 +34,7 @@ Compiling /tmp/dojo-expression-eval-0.almd
 error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 15:1 (got TypeName 'This')
   --> /tmp/dojo-expression-eval-0.almd:15:1
    |
-15 | This evaluator uses pattern matching to handle each variant of the `Expr` type. For `Num`, it simply returns the integer value. For `Add` and `Mul`, it recursively evaluates the two subexpressions and then performs the addition or multiplication. For `Neg`, it recursively evaluates the subexpression and then negates the result.
+15 | This evaluator uses pattern matching to handle each variant of the `Expr` type. For `Num`, it simply returns the integer value. For `Add` and `Mul`, it recursively evaluates the left and right expressions and then performs the addition or multiplication. For `Neg`, it recursively evaluates the expression and then negates the result.
    | ^
 
 1 error(s) found
@@ -58,8 +58,8 @@ type Expr =
 fn eval(expr: Expr) -> Int =
   match expr {
     Num(n) => n
-    Add(a, b) => eval(a) + eval(b)
-    Mul(a, b) => eval(a) * eval(b)
-    Neg(a) => -eval(a)
+    Add(left, right) => eval(left) + eval(right)
+    Mul(left, right) => eval(left) * eval(right)
+    Neg(expr) => -eval(expr)
   }
 ```

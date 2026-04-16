@@ -14,6 +14,9 @@ fn repeat(s: String, n: Int) -> String {
   if n == 0 {
     return ""
   }
+  if n == 1 {
+    return s
+  }
   return s + repeat(s, n - 1)
 }
 ```
@@ -45,6 +48,9 @@ fn repeat(s: String, n: Int) -> String = {
   if n == 0 {
     return ""
   }
+  if n == 1 {
+    return s
+  }
   return s + repeat(s, n - 1)
 }
 ```
@@ -59,10 +65,10 @@ error: Expected Then at line 2:13 (got LBrace '{')
   |
 2 |   if n == 0 {
   |             ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 5:3 (got Ident 's')
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 5:3 (got If 'if')
   --> /tmp/dojo-repeat-string-1.almd:5:3
   |
-5 |   s + repeat(s, n - 1)
+5 |   if n == 1 {
   |   ^
 error[E001]: type mismatch in fn 'repeat': expected String but got Unit
   --> /tmp/dojo-repeat-string-1.almd:1:42
@@ -94,6 +100,9 @@ fn repeat(s: String, n: Int) -> String = {
   if n == 0 {
     return ""
   }
+  if n == 1 {
+    return s
+  }
   return s + repeat(s, n - 1)
 }
 ```
@@ -108,10 +117,10 @@ error: Expected Then at line 2:13 (got LBrace '{')
   |
 2 |   if n == 0 {
   |             ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 5:3 (got Ident 's')
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 5:3 (got If 'if')
   --> /tmp/dojo-repeat-string-2.almd:5:3
   |
-5 |   s + repeat(s, n - 1)
+5 |   if n == 1 {
   |   ^
 error[E001]: type mismatch in fn 'repeat': expected String but got Unit
   --> /tmp/dojo-repeat-string-2.almd:1:42
@@ -143,6 +152,9 @@ fn repeat(s: String, n: Int) -> String = {
   if n == 0 {
     return ""
   }
+  if n == 1 {
+    return s
+  }
   return s + repeat(s, n - 1)
 }
 ```
@@ -157,10 +169,10 @@ error: Expected Then at line 2:13 (got LBrace '{')
   |
 2 |   if n == 0 {
   |             ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 5:3 (got Ident 's')
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 5:3 (got If 'if')
   --> /tmp/dojo-repeat-string-3.almd:5:3
   |
-5 |   s + repeat(s, n - 1)
+5 |   if n == 1 {
   |   ^
 error[E001]: type mismatch in fn 'repeat': expected String but got Unit
   --> /tmp/dojo-repeat-string-3.almd:1:42

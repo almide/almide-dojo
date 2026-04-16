@@ -10,22 +10,23 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn binary_search(xs: List[Int], target: Int) -> Option[Int] {
-    fn search(xs: List[Int], target: Int, low: Int, high: Int) -> Option[Int] {
-        if low > high {
-            return none;
-        }
-        let mid = (low + high) / 2;
-        let mid_val = list.get(xs, mid).unwrap_or(-1);
-        if mid_val == target {
-            return some(mid);
-        } else if mid_val < target {
-            return search(xs, target, mid + 1, high);
-        } else {
-            return search(xs, target, low, mid - 1);
-        }
+fn binary_search(xs: List[Int], target: Int) -> Option[Int] = {
+  fn search(low: Int, high: Int) -> Option[Int] = {
+    if low > high {
+      none
+    } else {
+      let mid = (low + high) / 2
+      let mid_val = list.get(xs, mid).unwrap_or(default, -1)
+      if mid_val == target {
+        some(mid)
+      } else if mid_val < target {
+        search(mid + 1, high)
+      } else {
+        search(low, mid - 1)
+      }
     }
-    search(xs, target, 0, list.len(xs) - 1)
+  }
+  search(0, list.len(xs) - 1)
 }
 ```
 
@@ -33,20 +34,37 @@ fn binary_search(xs: List[Int], target: Int) -> Option[Int] {
 
 ```
 Compiling /tmp/dojo-binary-search-0.almd
-error: Missing '=' before function body at line 1:61
-  --> /tmp/dojo-binary-search-0.almd:1:61
-  hint: Almide requires '=' before the body. Write: fn binary_search(...) -> Type = { ... }
+error: Expected expression at line 2:3 (got Fn 'fn')
+  --> /tmp/dojo-binary-search-0.almd:2:3
   |
-1 | fn binary_search(xs: List[Int], target: Int) -> Option[Int] {
-  |                                                             ^
-error: Missing '=' before function body at line 2:79
-  --> /tmp/dojo-binary-search-0.almd:2:79
-  hint: Almide requires '=' before the body. Write: fn search(...) -> Type = { ... }
+2 |   fn search(low: Int, high: Int) -> Option[Int] = {
+  |   ^
+error: Expected Then at line 3:19 (got LBrace '{')
+  --> /tmp/dojo-binary-search-0.almd:3:19
+  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
   |
-2 |     fn search(xs: List[Int], target: Int, low: Int, high: Int) -> Option[Int] {
-  |                                                                               ^
+3 |     if low > high {
+  |                   ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 5:7 (got Else 'else')
+  --> /tmp/dojo-binary-search-0.almd:5:7
+  |
+5 |     } else {
+  |       ^
+error[E001]: type mismatch in fn 'binary_search': expected Option[Int] but got Unit
+  --> /tmp/dojo-binary-search-0.almd:1:63
+  in fn 'binary_search'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Option[Int]:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type Option[Int]
+  |
+1 | fn binary_search(xs: List[Int], target: Int) -> Option[Int] = {
+  |                                                               ^
 
-2 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-binary-search-0.almd:
 compile failed
 FAILED: /tmp/dojo-binary-search-0.almd
@@ -59,21 +77,22 @@ FAILED: /tmp/dojo-binary-search-0.almd
 
 ```almide
 fn binary_search(xs: List[Int], target: Int) -> Option[Int] = {
-    fn search(xs: List[Int], target: Int, low: Int, high: Int) -> Option[Int] = {
-        if low > high {
-            return none;
-        }
-        let mid = (low + high) / 2;
-        let mid_val = list.get(xs, mid).unwrap_or(-1);
-        if mid_val == target {
-            return some(mid);
-        } else if mid_val < target {
-            return search(xs, target, mid + 1, high);
-        } else {
-            return search(xs, target, low, mid - 1);
-        }
+  fn search(low: Int, high: Int) -> Option[Int] = {
+    if low > high {
+      none
+    } else {
+      let mid = (low + high) / 2
+      let mid_val = list.get(xs, mid).unwrap_or(-1)
+      if mid_val == target {
+        some(mid)
+      } else if mid_val < target {
+        search(mid + 1, high)
+      } else {
+        search(low, mid - 1)
+      }
     }
-    search(xs, target, 0, list.len(xs) - 1)
+  }
+  search(0, list.len(xs) - 1)
 }
 ```
 
@@ -81,37 +100,22 @@ fn binary_search(xs: List[Int], target: Int) -> Option[Int] = {
 
 ```
 Compiling /tmp/dojo-binary-search-1.almd
-error: Expected expression at line 2:5 (got Fn 'fn')
-  --> /tmp/dojo-binary-search-1.almd:2:5
+error: Expected expression at line 2:3 (got Fn 'fn')
+  --> /tmp/dojo-binary-search-1.almd:2:3
   |
-2 |     fn search(xs: List[Int], target: Int, low: Int, high: Int) -> Option[Int] = {
-  |     ^
-error: Expected Then at line 3:23 (got LBrace '{')
-  --> /tmp/dojo-binary-search-1.almd:3:23
+2 |   fn search(low: Int, high: Int) -> Option[Int] = {
+  |   ^
+error: Expected Then at line 3:19 (got LBrace '{')
+  --> /tmp/dojo-binary-search-1.almd:3:19
   hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
   |
-3 |         if low > high {
-  |                       ^
-error: Semicolons are not used in Almide at line 6:35
-  --> /tmp/dojo-binary-search-1.almd:6:35
-  hint: Remove the ';'. Almide uses newlines to separate statements.
+3 |     if low > high {
+  |                   ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 5:7 (got Else 'else')
+  --> /tmp/dojo-binary-search-1.almd:5:7
   |
-6 |         let mid = (low + high) / 2;
-  |                                   ^
-error[E003]: undefined variable 'low'
-  --> /tmp/dojo-binary-search-1.almd:6:20
-  in variable low
-  hint: Check the variable name
-  |
-6 |         let mid = (low + high) / 2;
-  |                    ^^^
-error[E003]: undefined variable 'high'
-  --> /tmp/dojo-binary-search-1.almd:6:26
-  in variable high
-  hint: Check the variable name
-  |
-6 |         let mid = (low + high) / 2;
-  |                          ^^^^
+5 |     } else {
+  |       ^
 error[E001]: type mismatch in fn 'binary_search': expected Option[Int] but got Unit
   --> /tmp/dojo-binary-search-1.almd:1:63
   in fn 'binary_search'
@@ -126,7 +130,7 @@ error[E001]: type mismatch in fn 'binary_search': expected Option[Int] but got U
 1 | fn binary_search(xs: List[Int], target: Int) -> Option[Int] = {
   |                                                               ^
 
-6 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-binary-search-1.almd:
 compile failed
 FAILED: /tmp/dojo-binary-search-1.almd
@@ -139,22 +143,22 @@ FAILED: /tmp/dojo-binary-search-1.almd
 
 ```almide
 fn binary_search(xs: List[Int], target: Int) -> Option[Int] = {
-    fn search(xs: List[Int], target: Int, low: Int, high: Int) -> Option[Int] {
-        if low > high {
-            none
-        } else {
-            let mid = (low + high) / 2;
-            let mid_val = list.get(xs, mid).unwrap_or(-1);
-            if mid_val == target {
-                some(mid)
-            } else if mid_val < target {
-                search(xs, target, mid + 1, high)
-            } else {
-                search(xs, target, low, mid - 1)
-            }
-        }
+  fn search(low: Int, high: Int) -> Option[Int] = {
+    if low > high {
+      none
+    } else {
+      let mid = (low + high) / 2
+      let mid_val = list.get(xs, mid).unwrap_or(-1)
+      if mid_val == target {
+        some(mid)
+      } else if mid_val < target {
+        search(mid + 1, high)
+      } else {
+        search(low, mid - 1)
+      }
     }
-    search(xs, target, 0, list.len(xs) - 1)
+  }
+  search(0, list.len(xs) - 1).unwrap_or(-1)
 }
 ```
 
@@ -162,22 +166,22 @@ fn binary_search(xs: List[Int], target: Int) -> Option[Int] = {
 
 ```
 Compiling /tmp/dojo-binary-search-2.almd
-error: Expected expression at line 2:5 (got Fn 'fn')
-  --> /tmp/dojo-binary-search-2.almd:2:5
+error: Expected expression at line 2:3 (got Fn 'fn')
+  --> /tmp/dojo-binary-search-2.almd:2:3
   |
-2 |     fn search(xs: List[Int], target: Int, low: Int, high: Int) -> Option[Int] {
-  |     ^
-error: Expected Then at line 3:23 (got LBrace '{')
-  --> /tmp/dojo-binary-search-2.almd:3:23
+2 |   fn search(low: Int, high: Int) -> Option[Int] = {
+  |   ^
+error: Expected Then at line 3:19 (got LBrace '{')
+  --> /tmp/dojo-binary-search-2.almd:3:19
   hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
   |
-3 |         if low > high {
-  |                       ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 5:11 (got Else 'else')
-  --> /tmp/dojo-binary-search-2.almd:5:11
+3 |     if low > high {
+  |                   ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 5:7 (got Else 'else')
+  --> /tmp/dojo-binary-search-2.almd:5:7
   |
-5 |         } else {
-  |           ^
+5 |     } else {
+  |       ^
 error[E001]: type mismatch in fn 'binary_search': expected Option[Int] but got Unit
   --> /tmp/dojo-binary-search-2.almd:1:63
   in fn 'binary_search'
@@ -205,22 +209,22 @@ FAILED: /tmp/dojo-binary-search-2.almd
 
 ```almide
 fn binary_search(xs: List[Int], target: Int) -> Option[Int] = {
-    fn search(xs: List[Int], target: Int, low: Int, high: Int) -> Option[Int] {
-        if low > high {
-            none
-        } else {
-            let mid = (low + high) / 2;
-            let mid_val = list.get(xs, mid).unwrap_or(-1);
-            if mid_val == target {
-                some(mid)
-            } else if mid_val < target {
-                search(xs, target, mid + 1, high)
-            } else {
-                search(xs, target, low, mid - 1)
-            }
-        }
+  fn search(low: Int, high: Int) -> Option[Int] = {
+    if low > high {
+      none
+    } else {
+      let mid = (low + high) / 2
+      let mid_val = list.get(xs, mid).unwrap_or(-1)
+      if mid_val == target {
+        some(mid)
+      } else if mid_val < target {
+        search(mid + 1, high)
+      } else {
+        search(low, mid - 1)
+      }
     }
-    search(xs, target, 0, list.len(xs) - 1).unwrap_or(none)
+  }
+  search(0, list.len(xs) - 1)
 }
 ```
 
@@ -228,22 +232,22 @@ fn binary_search(xs: List[Int], target: Int) -> Option[Int] = {
 
 ```
 Compiling /tmp/dojo-binary-search-3.almd
-error: Expected expression at line 2:5 (got Fn 'fn')
-  --> /tmp/dojo-binary-search-3.almd:2:5
+error: Expected expression at line 2:3 (got Fn 'fn')
+  --> /tmp/dojo-binary-search-3.almd:2:3
   |
-2 |     fn search(xs: List[Int], target: Int, low: Int, high: Int) -> Option[Int] {
-  |     ^
-error: Expected Then at line 3:23 (got LBrace '{')
-  --> /tmp/dojo-binary-search-3.almd:3:23
+2 |   fn search(low: Int, high: Int) -> Option[Int] = {
+  |   ^
+error: Expected Then at line 3:19 (got LBrace '{')
+  --> /tmp/dojo-binary-search-3.almd:3:19
   hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
   |
-3 |         if low > high {
-  |                       ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 5:11 (got Else 'else')
-  --> /tmp/dojo-binary-search-3.almd:5:11
+3 |     if low > high {
+  |                   ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 5:7 (got Else 'else')
+  --> /tmp/dojo-binary-search-3.almd:5:7
   |
-5 |         } else {
-  |           ^
+5 |     } else {
+  |       ^
 error[E001]: type mismatch in fn 'binary_search': expected Option[Int] but got Unit
   --> /tmp/dojo-binary-search-3.almd:1:63
   in fn 'binary_search'

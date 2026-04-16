@@ -3,7 +3,7 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: unknown
+- **category**: parse-error
 
 ## Attempts
 
@@ -11,56 +11,30 @@
 
 ```almide
 fn is_palindrome(s: String) -> Bool = 
-  let (first, rest) = list.split(s, 1) 
-  if list.is_empty(rest) then true 
-  else if list.first(rest) == list.last(s) then is_palindrome(list.drop_end(rest, 1)) 
-  else false
+  string.chars(s) |> list.zip_with(string.chars(s), fn(a, b) -> a == b) |> list.all(fn(x) -> x)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-palindrome-0.almd
-error[E002]: undefined function 'list.split'
-  --> /tmp/dojo-is-palindrome-0.almd:2:37
-  in call to list.split()
-  hint: No function 'split' in module 'list'. See docs/CHEATSHEET.md for available functions
+error: Expected expression at line 2:53 (got Fn 'fn')
+  --> /tmp/dojo-is-palindrome-0.almd:2:53
   |
-2 |   let (first, rest) = list.split(s, 1)
-  |                                     ^
-error[E005]: argument 'xs' expects List[A] but got String
-  --> /tmp/dojo-is-palindrome-0.almd:4:41
-  in call to list.last()
-  hint: Fix the argument type
+2 |   string.chars(s) |> list.zip_with(string.chars(s), fn(a, b) -> a == b) |> list.all(fn(x) -> x)
+  |                                                     ^
+error: Expected function name at line 2:55 (got LParen '(')
+  --> /tmp/dojo-is-palindrome-0.almd:2:55
   |
-4 |   else if list.first(rest) == list.last(s) then is_palindrome(list.drop_end(rest, 1))
-  |                                         ^
-error[E005]: argument 's' expects String but got List[?3]
-  --> /tmp/dojo-is-palindrome-0.almd:4:83
-  in call to is_palindrome()
-  hint: Fix the argument type
+2 |   string.chars(s) |> list.zip_with(string.chars(s), fn(a, b) -> a == b) |> list.all(fn(x) -> x)
+  |                                                       ^
+error: Expected function name at line 2:87 (got LParen '(')
+  --> /tmp/dojo-is-palindrome-0.almd:2:87
   |
-1 | fn is_palindrome(s: String) -> Bool =
-  | ------------------------------- fn is_palindrome() defined here
-...
-4 |   else if list.first(rest) == list.last(s) then is_palindrome(list.drop_end(rest, 1))
-  |                                                                                   ^
-error[E001]: type mismatch in call to list.last(): expected List[A] but got String
-  --> /tmp/dojo-is-palindrome-0.almd:4:41
-  in call to list.last()
-  hint: Fix the expression type or change the expected type
-  |
-4 |   else if list.first(rest) == list.last(s) then is_palindrome(list.drop_end(rest, 1))
-  |                                         ^
-error[E001]: type mismatch in call to is_palindrome(): expected String but got List[?3]
-  --> /tmp/dojo-is-palindrome-0.almd:4:83
-  in call to is_palindrome()
-  hint: Fix the expression type or change the expected type
-  |
-4 |   else if list.first(rest) == list.last(s) then is_palindrome(list.drop_end(rest, 1))
-  |                                                                                   ^
+2 |   string.chars(s) |> list.zip_with(string.chars(s), fn(a, b) -> a == b) |> list.all(fn(x) -> x)
+  |                                                                                       ^
 
-5 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-is-palindrome-0.almd:
 compile failed
 FAILED: /tmp/dojo-is-palindrome-0.almd
@@ -73,90 +47,24 @@ FAILED: /tmp/dojo-is-palindrome-0.almd
 
 ```almide
 fn is_palindrome(s: String) -> Bool = 
-  if list.is_empty(s) then true 
-  else if list.first(s) == list.last(s) then is_palindrome(list.drop_end(s, 1)) 
-  else false
+  string.chars(s) |> list.zip_with(string.chars(s), (a, b) -> a == b) |> list.all(x -> x)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-palindrome-1.almd
-error[E005]: argument 'xs' expects List[A] but got String
-  --> /tmp/dojo-is-palindrome-1.almd:2:20
-  in call to list.is_empty()
-  hint: Fix the argument type
+error: Expected ')' to close function call opened at line 2:35
+  --> /tmp/dojo-is-palindrome-1.almd:2:60
+  hint: Add ')' or check for a missing delimiter inside the function call
   |
-2 |   if list.is_empty(s) then true
-  |                    ^
-error[E005]: argument 'xs' expects List[A] but got String
-  --> /tmp/dojo-is-palindrome-1.almd:3:22
-  in call to list.first()
-  hint: Fix the argument type
+2 |   string.chars(s) |> list.zip_with(string.chars(s), (a, b) -> a == b) |> list.all(x -> x)
+  |                                   --------------- '(' opened here
   |
-3 |   else if list.first(s) == list.last(s) then is_palindrome(list.drop_end(s, 1))
-  |                      ^
-error[E005]: argument 'xs' expects List[A] but got String
-  --> /tmp/dojo-is-palindrome-1.almd:3:38
-  in call to list.last()
-  hint: Fix the argument type
-  |
-3 |   else if list.first(s) == list.last(s) then is_palindrome(list.drop_end(s, 1))
-  |                                      ^
-error[E005]: argument 'xs' expects List[A] but got String
-  --> /tmp/dojo-is-palindrome-1.almd:3:77
-  in call to list.drop_end()
-  hint: Fix the argument type
-  |
-3 |   else if list.first(s) == list.last(s) then is_palindrome(list.drop_end(s, 1))
-  |                                                                             ^
-error[E005]: argument 's' expects String but got List[?3]
-  --> /tmp/dojo-is-palindrome-1.almd:3:77
-  in call to is_palindrome()
-  hint: Fix the argument type
-  |
-1 | fn is_palindrome(s: String) -> Bool =
-  | ------------------------------- fn is_palindrome() defined here
-...
-3 |   else if list.first(s) == list.last(s) then is_palindrome(list.drop_end(s, 1))
-  |                                                                             ^
-error[E001]: type mismatch in call to list.is_empty(): expected List[A] but got String
-  --> /tmp/dojo-is-palindrome-1.almd:2:20
-  in call to list.is_empty()
-  hint: Fix the expression type or change the expected type
-  |
-2 |   if list.is_empty(s) then true
-  |                    ^
-error[E001]: type mismatch in call to list.first(): expected List[A] but got String
-  --> /tmp/dojo-is-palindrome-1.almd:3:22
-  in call to list.first()
-  hint: Fix the expression type or change the expected type
-  |
-3 |   else if list.first(s) == list.last(s) then is_palindrome(list.drop_end(s, 1))
-  |                      ^
-error[E001]: type mismatch in call to list.last(): expected List[A] but got String
-  --> /tmp/dojo-is-palindrome-1.almd:3:38
-  in call to list.last()
-  hint: Fix the expression type or change the expected type
-  |
-3 |   else if list.first(s) == list.last(s) then is_palindrome(list.drop_end(s, 1))
-  |                                      ^
-error[E001]: type mismatch in call to list.drop_end(): expected List[A] but got String
-  --> /tmp/dojo-is-palindrome-1.almd:3:77
-  in call to list.drop_end()
-  hint: Fix the expression type or change the expected type
-  |
-3 |   else if list.first(s) == list.last(s) then is_palindrome(list.drop_end(s, 1))
-  |                                                                             ^
-error[E001]: type mismatch in call to is_palindrome(): expected String but got List[?3]
-  --> /tmp/dojo-is-palindrome-1.almd:3:77
-  in call to is_palindrome()
-  hint: Fix the expression type or change the expected type
-  |
-3 |   else if list.first(s) == list.last(s) then is_palindrome(list.drop_end(s, 1))
-  |                                                                             ^
+2 |   string.chars(s) |> list.zip_with(string.chars(s), (a, b) -> a == b) |> list.all(x -> x)
+  |                                                            ^^
 
-10 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-is-palindrome-1.almd:
 compile failed
 FAILED: /tmp/dojo-is-palindrome-1.almd
@@ -169,15 +77,26 @@ FAILED: /tmp/dojo-is-palindrome-1.almd
 
 ```almide
 fn is_palindrome(s: String) -> Bool = 
-  if string.is_empty(s) then true 
-  else if string.first(s) == string.last(s) then is_palindrome(string.drop_end(s, 1)) 
-  else false
+  string.chars(s) |> list.zip_with(string.chars(s), (a, b) -> a == b) |> list.all(x => x)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-palindrome-2.almd
+error: Expected ')' to close function call opened at line 2:35
+  --> /tmp/dojo-is-palindrome-2.almd:2:60
+  hint: Add ')' or check for a missing delimiter inside the function call
+  |
+2 |   string.chars(s) |> list.zip_with(string.chars(s), (a, b) -> a == b) |> list.all(x => x)
+  |                                   --------------- '(' opened here
+  |
+2 |   string.chars(s) |> list.zip_with(string.chars(s), (a, b) -> a == b) |> list.all(x => x)
+  |                                                            ^^
+
+1 error(s) found
+Compile error for /tmp/dojo-is-palindrome-2.almd:
+compile failed
 FAILED: /tmp/dojo-is-palindrome-2.almd
 
 1/1 test file(s) failed
@@ -188,16 +107,26 @@ FAILED: /tmp/dojo-is-palindrome-2.almd
 
 ```almide
 fn is_palindrome(s: String) -> Bool = 
-  if string.is_empty(s) then true 
-  else if string.len(s) == 1 then true 
-  else if string.first(s) == string.last(s) then is_palindrome(string.drop_end(s, 1)) 
-  else false
+  string.chars(s) |> list.zip_with(string.chars(s), (a, b) -> a == b) |> list.all(x => x)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-palindrome-3.almd
+error: Expected ')' to close function call opened at line 2:35
+  --> /tmp/dojo-is-palindrome-3.almd:2:60
+  hint: Add ')' or check for a missing delimiter inside the function call
+  |
+2 |   string.chars(s) |> list.zip_with(string.chars(s), (a, b) -> a == b) |> list.all(x => x)
+  |                                   --------------- '(' opened here
+  |
+2 |   string.chars(s) |> list.zip_with(string.chars(s), (a, b) -> a == b) |> list.all(x => x)
+  |                                                            ^^
+
+1 error(s) found
+Compile error for /tmp/dojo-is-palindrome-3.almd:
+compile failed
 FAILED: /tmp/dojo-is-palindrome-3.almd
 
 1/1 test file(s) failed

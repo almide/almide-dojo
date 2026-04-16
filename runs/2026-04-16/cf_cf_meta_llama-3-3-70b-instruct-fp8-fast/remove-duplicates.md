@@ -11,5 +11,5 @@
 
 ```almide
 fn remove_duplicates(xs: List[Int]) -> List[Int] = 
-    list.unique_by(xs, (x) => x)
+  list.unique(xs)
 ```

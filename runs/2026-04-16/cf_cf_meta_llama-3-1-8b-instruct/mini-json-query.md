@@ -3,7 +3,8 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: parse-error
+- **category**: type-error
+- **diagnostic code**: `E002`
 
 ## Attempts
 
@@ -20,7 +21,7 @@ type JVal =
 
 fn jget(obj: JVal, key: String) -> Option<JVal> {
     match obj {
-        JObj(xs) => xs.iter().find_map(|(k, v)| if k == key { Some(v.clone()) } else { None }),
+        JObj(lst) => lst.iter().find_map(|(k, v)| if k == key { Some(v.clone()) } else { None }),
         _ => None,
     }
 }
@@ -28,16 +29,16 @@ fn jget(obj: JVal, key: String) -> Option<JVal> {
 fn jcount(val: JVal) -> i32 {
     match val {
         JNull | JBool(_) | JNum(_) | JStr(_) => 1,
-        JArr(xs) => xs.iter().map(jcount).sum(),
-        JObj(xs) => xs.iter().map(|(_, v)| jcount(v.clone())).sum(),
+        JArr(lst) => lst.iter().map(jcount).sum(),
+        JObj(lst) => lst.iter().map(|(_, v)| jcount(v.clone())).sum(),
     }
 }
 
 fn jflatten_strings(val: JVal) -> Vec<String> {
     match val {
         JStr(s) => vec![s],
-        JArr(xs) => xs.iter().flat_map(jflatten_strings).collect(),
-        JObj(xs) => xs.iter().flat_map(|(_, v)| jflatten_strings(v.clone())).collect(),
+        JArr(lst) => lst.iter().flat_map(jflatten_strings).collect(),
+        JObj(lst) => lst.iter().flat_map(|(_, v)| jflatten_strings(v.clone())).collect(),
         _
 ```
 
@@ -506,188 +507,285 @@ FAILED: /tmp/dojo-mini-json-query-1.almd
 ### Attempt 3 (FAIL)
 
 ```almide
-effect fn main() -> Unit = {}
-
 fn jget(obj: JVal, key: String) -> Option[JVal] =
   match obj {
     JObj(xs) => list.find(xs, (x) => match x {
-      (k, v) => if k == key then some(v) else none
-    }),
+      (k, v) => k == key
+    }) |> option.map((x) => match x {
+      (_, v) => v
+    })
     _ => none
   }
 
 fn jcount(val: JVal) -> Int =
   match val {
     JNull => 1
-    | JBool(_) => 1
-    | JNum(_) => 1
-    | JStr(_) => 1
-    | JArr(xs) => list.sum(xs, jcount)
-    | JObj(xs) => list.sum(xs, (x) => match x {
-      (k, v) => jcount(v)
+    JBool(_) => 1
+    JNum(_) => 1
+    JStr(_) => 1
+    JArr(xs) => list.sum(xs, (x) => match x {
+      JNull => 1
+      JBool(_) => 1
+      JNum(_) => 1
+      JStr(_) => 1
+      JArr(_) => jcount(x)
+      JObj(_) => jcount(x)
+    })
+    JObj(xs) => list.sum(xs, (x) => match x {
+      (_, v) => jcount(v)
     })
   }
 
 fn jflatten_strings(val: JVal) -> List[String] =
   match val {
     JStr(s) => [s]
-    | JNum(_) => []
-    | JBool(_) => []
-    | JNull => []
-    | JArr(xs) => list.flat_map(xs, jflatten_strings)
-    | JObj(xs) => list.flat_map(xs, (x) => match x {
-      (k,
+    JNull => []
+    J
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-2.almd
-error: Expected pattern at line 14:5 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-2.almd:14:5
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+error: Expected FatArrow at line 34:6 (got Newline '')
+  --> /tmp/dojo-mini-json-query-2.almd:34:6
    |
-14 |     | JBool(_) => 1
-   |     ^
-error: Expected pattern at line 26:5 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-2.almd:26:5
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+34 |     J
+   |      ^
+error[E004]: list.sum() expects 1 argument(s) but got 2
+  --> /tmp/dojo-mini-json-query-2.almd:23:25
+  in call to list.sum()
+  hint: Check the number of arguments
+  try:
+      // list.sum() takes 1 arg(s) — you passed 2
+      list.sum(<xs: List[Int]>)
    |
-26 |     | JNum(_) => []
-   |     ^
-error[E005]: argument 'f' expects fn((String, ?2)) -> Bool but got fn((String, ?2)) -> Option[?2]
-  --> /tmp/dojo-mini-json-query-2.almd:6:47
-  in call to list.find()
-  hint: Fix the argument type
-  |
-6 |       (k, v) => if k == key then some(v) else none
-  |                                               ^^^^
+23 |       JObj(_) => jcount(x)
+   |                         ^
+error[E004]: list.sum() expects 1 argument(s) but got 2
+  --> /tmp/dojo-mini-json-query-2.almd:26:24
+  in call to list.sum()
+  hint: Check the number of arguments
+  try:
+      // list.sum() takes 1 arg(s) — you passed 2
+      list.sum(<xs: List[Int]>)
+   |
+26 |       (_, v) => jcount(v)
+   |                        ^
 error[E005]: argument 'obj' expects JVal but got JObj
-  --> /tmp/dojo-mini-json-query-2.almd:33:76
+  --> /tmp/dojo-mini-json-query-2.almd:36:76
   in call to jget()
   hint: 'JVal' is not a known type. To use it as a type parameter, declare it: fn jget[JVal](...)
    |
- 3 | fn jget(obj: JVal, key: String) -> Option[JVal] =
+ 1 | fn jget(obj: JVal, key: String) -> Option[JVal] =
    | ---------------------- fn jget() defined here
 ...
-33 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
+36 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
    |                                                                            ^^^
 error[E005]: argument 'obj' expects JVal but got JObj
-  --> /tmp/dojo-mini-json-query-2.almd:34:64
+  --> /tmp/dojo-mini-json-query-2.almd:37:64
   in call to jget()
   hint: 'JVal' is not a known type. To use it as a type parameter, declare it: fn jget[JVal](...)
    |
- 3 | fn jget(obj: JVal, key: String) -> Option[JVal] =
+ 1 | fn jget(obj: JVal, key: String) -> Option[JVal] =
    | ---------------------- fn jget() defined here
 ...
-34 | test "jget not found" { assert_eq(jget(JObj([("a", JNum(1))]), "z"), none) }
+37 | test "jget not found" { assert_eq(jget(JObj([("a", JNum(1))]), "z"), none) }
    |                                                                ^^^
 error[E005]: argument 'obj' expects JVal but got JNum
-  --> /tmp/dojo-mini-json-query-2.almd:35:47
+  --> /tmp/dojo-mini-json-query-2.almd:38:47
   in call to jget()
   hint: 'JVal' is not a known type. To use it as a type parameter, declare it: fn jget[JVal](...)
    |
- 3 | fn jget(obj: JVal, key: String) -> Option[JVal] =
+ 1 | fn jget(obj: JVal, key: String) -> Option[JVal] =
    | ---------------------- fn jget() defined here
 ...
-35 | test "jget not obj" { assert_eq(jget(JNum(1), "a"), none) }
+38 | test "jget not obj" { assert_eq(jget(JNum(1), "a"), none) }
    |                                               ^^^
 error[E005]: argument 'obj' expects JVal but got JObj
-  --> /tmp/dojo-mini-json-query-2.almd:36:50
+  --> /tmp/dojo-mini-json-query-2.almd:39:50
   in call to jget()
   hint: 'JVal' is not a known type. To use it as a type parameter, declare it: fn jget[JVal](...)
    |
- 3 | fn jget(obj: JVal, key: String) -> Option[JVal] =
+ 1 | fn jget(obj: JVal, key: String) -> Option[JVal] =
    | ---------------------- fn jget() defined here
 ...
-36 | test "jget empty obj" { assert_eq(jget(JObj([]), "a"), none) }
+39 | test "jget empty obj" { assert_eq(jget(JObj([]), "a"), none) }
    |                                                  ^^^
-error[E001]: type mismatch in call to list.find(): expected fn((String, ?2)) -> Bool but got fn((String, ?2)) -> Option[?2]
-  --> /tmp/dojo-mini-json-query-2.almd:6:47
-  in call to list.find()
-  hint: Fix the expression type or change the expected type
-  |
-6 |       (k, v) => if k == key then some(v) else none
-  |                                               ^^^^
-error[E001]: type mismatch in fn 'jget': expected Option[JVal] but got Option[(String, ?2)]
-  --> /tmp/dojo-mini-json-query-2.almd:8:10
-  in fn 'jget'
-  hint: Fix the expression type or change the expected type
-  |
-8 |     _ => none
-  |          ^^^^
+error[E005]: argument 'val' expects JVal but got JNum
+  --> /tmp/dojo-mini-json-query-2.almd:40:48
+  in call to jcount()
+  hint: 'JVal' is not a known type. To use it as a type parameter, declare it: fn jcount[JVal](...)
+   |
+11 | fn jcount(val: JVal) -> Int =
+   | ------------------------ fn jcount() defined here
+...
+40 | test "jcount leaf num" { assert_eq(jcount(JNum(1)), 1) }
+   |                                                ^
+error[E005]: argument 'val' expects JVal but got JNull
+  --> /tmp/dojo-mini-json-query-2.almd:41:44
+  in call to jcount()
+  hint: 'JVal' is not a known type. To use it as a type parameter, declare it: fn jcount[JVal](...)
+   |
+11 | fn jcount(val: JVal) -> Int =
+   | ------------------------ fn jcount() defined here
+...
+41 | test "jcount leaf null" { assert_eq(jcount(JNull), 1) }
+   |                                            ^^^^^
+error[E005]: argument 'val' expects JVal but got JStr
+  --> /tmp/dojo-mini-json-query-2.almd:42:48
+  in call to jcount()
+  hint: 'JVal' is not a known type. To use it as a type parameter, declare it: fn jcount[JVal](...)
+   |
+11 | fn jcount(val: JVal) -> Int =
+   | ------------------------ fn jcount() defined here
+...
+42 | test "jcount leaf str" { assert_eq(jcount(JStr("x")), 1) }
+   |                                                ^^^
+error[E005]: argument 'val' expects JVal but got JArr
+  --> /tmp/dojo-mini-json-query-2.almd:43:67
+  in call to jcount()
+  hint: 'JVal' is not a known type. To use it as a type parameter, declare it: fn jcount[JVal](...)
+   |
+11 | fn jcount(val: JVal) -> Int =
+   | ------------------------ fn jcount() defined here
+...
+43 | test "jcount arr" { assert_eq(jcount(JArr([JNum(1), JNum(2), JNum(3)])), 3) }
+   |                                                                   ^
+error[E005]: argument 'val' expects JVal but got JObj
+  --> /tmp/dojo-mini-json-query-2.almd:44:89
+  in call to jcount()
+  hint: 'JVal' is not a known type. To use it as a type parameter, declare it: fn jcount[JVal](...)
+   |
+11 | fn jcount(val: JVal) -> Int =
+   | ------------------------ fn jcount() defined here
+...
+44 | test "jcount nested" { assert_eq(jcount(JObj([("a", JArr([JNum(1), JNull])), ("b", JStr("x"))])), 3) }
+   |                                                                                         ^^^
+error[E005]: argument 'val' expects JVal but got JArr
+  --> /tmp/dojo-mini-json-query-2.almd:45:49
+  in call to jcount()
+  hint: 'JVal' is not a known type. To use it as a type parameter, declare it: fn jcount[JVal](...)
+   |
+11 | fn jcount(val: JVal) -> Int =
+   | ------------------------ fn jcount() defined here
+...
+45 | test "jcount empty arr" { assert_eq(jcount(JArr([])), 0) }
+   |                                                 ^
 error[E001]: type mismatch in call to jget(): expected JVal but got JObj
-  --> /tmp/dojo-mini-json-query-2.almd:33:76
+  --> /tmp/dojo-mini-json-query-2.almd:36:76
   in call to jget()
   hint: Fix the expression type or change the expected type
    |
-33 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
+36 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
    |                                                                            ^^^
 error[E001]: type mismatch in call to assert_eq(): expected Option[JVal] but got Option[JNum]
-  --> /tmp/dojo-mini-json-query-2.almd:33:92
+  --> /tmp/dojo-mini-json-query-2.almd:36:92
   in call to assert_eq()
   hint: Fix the expression type or change the expected type
    |
-33 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
+36 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
    |                                                                                            ^
 error[E001]: type mismatch in call to jget(): expected JVal but got JObj
-  --> /tmp/dojo-mini-json-query-2.almd:34:64
+  --> /tmp/dojo-mini-json-query-2.almd:37:64
   in call to jget()
   hint: Fix the expression type or change the expected type
    |
-34 | test "jget not found" { assert_eq(jget(JObj([("a", JNum(1))]), "z"), none) }
+37 | test "jget not found" { assert_eq(jget(JObj([("a", JNum(1))]), "z"), none) }
    |                                                                ^^^
 error[E001]: type mismatch in call to jget(): expected JVal but got JNum
-  --> /tmp/dojo-mini-json-query-2.almd:35:47
+  --> /tmp/dojo-mini-json-query-2.almd:38:47
   in call to jget()
   hint: Fix the expression type or change the expected type
    |
-35 | test "jget not obj" { assert_eq(jget(JNum(1), "a"), none) }
+38 | test "jget not obj" { assert_eq(jget(JNum(1), "a"), none) }
    |                                               ^^^
 error[E001]: type mismatch in call to jget(): expected JVal but got JObj
-  --> /tmp/dojo-mini-json-query-2.almd:36:50
+  --> /tmp/dojo-mini-json-query-2.almd:39:50
   in call to jget()
   hint: Fix the expression type or change the expected type
    |
-36 | test "jget empty obj" { assert_eq(jget(JObj([]), "a"), none) }
+39 | test "jget empty obj" { assert_eq(jget(JObj([]), "a"), none) }
    |                                                  ^^^
+error[E001]: type mismatch in call to jcount(): expected JVal but got JNum
+  --> /tmp/dojo-mini-json-query-2.almd:40:48
+  in call to jcount()
+  hint: Fix the expression type or change the expected type
+   |
+40 | test "jcount leaf num" { assert_eq(jcount(JNum(1)), 1) }
+   |                                                ^
+error[E001]: type mismatch in call to jcount(): expected JVal but got JNull
+  --> /tmp/dojo-mini-json-query-2.almd:41:44
+  in call to jcount()
+  hint: Fix the expression type or change the expected type
+   |
+41 | test "jcount leaf null" { assert_eq(jcount(JNull), 1) }
+   |                                            ^^^^^
+error[E001]: type mismatch in call to jcount(): expected JVal but got JStr
+  --> /tmp/dojo-mini-json-query-2.almd:42:48
+  in call to jcount()
+  hint: Fix the expression type or change the expected type
+   |
+42 | test "jcount leaf str" { assert_eq(jcount(JStr("x")), 1) }
+   |                                                ^^^
+error[E001]: type mismatch in call to jcount(): expected JVal but got JArr
+  --> /tmp/dojo-mini-json-query-2.almd:43:67
+  in call to jcount()
+  hint: Fix the expression type or change the expected type
+   |
+43 | test "jcount arr" { assert_eq(jcount(JArr([JNum(1), JNum(2), JNum(3)])), 3) }
+   |                                                                   ^
 error[E001]: type mismatch in list element: expected JNum but got JNull
-  --> /tmp/dojo-mini-json-query-2.almd:41:68
+  --> /tmp/dojo-mini-json-query-2.almd:44:68
   in list element
   hint: Fix the expression type or change the expected type
    |
-41 | test "jcount nested" { assert_eq(jcount(JObj([("a", JArr([JNum(1), JNull])), ("b", JStr("x"))])), 3) }
+44 | test "jcount nested" { assert_eq(jcount(JObj([("a", JArr([JNum(1), JNull])), ("b", JStr("x"))])), 3) }
    |                                                                    ^^^^^
 error[E001]: type mismatch in list element: expected (String, JArr) but got (String, JStr)
-  --> /tmp/dojo-mini-json-query-2.almd:41:89
+  --> /tmp/dojo-mini-json-query-2.almd:44:89
   in list element
   hint: Fix the expression type or change the expected type
    |
-41 | test "jcount nested" { assert_eq(jcount(JObj([("a", JArr([JNum(1), JNull])), ("b", JStr("x"))])), 3) }
+44 | test "jcount nested" { assert_eq(jcount(JObj([("a", JArr([JNum(1), JNull])), ("b", JStr("x"))])), 3) }
    |                                                                                         ^^^
+error[E001]: type mismatch in call to jcount(): expected JVal but got JObj
+  --> /tmp/dojo-mini-json-query-2.almd:44:89
+  in call to jcount()
+  hint: Fix the expression type or change the expected type
+   |
+44 | test "jcount nested" { assert_eq(jcount(JObj([("a", JArr([JNum(1), JNull])), ("b", JStr("x"))])), 3) }
+   |                                                                                         ^^^
+error[E001]: type mismatch in call to jcount(): expected JVal but got JArr
+  --> /tmp/dojo-mini-json-query-2.almd:45:49
+  in call to jcount()
+  hint: Fix the expression type or change the expected type
+   |
+45 | test "jcount empty arr" { assert_eq(jcount(JArr([])), 0) }
+   |                                                 ^
 error[E001]: type mismatch in list element: expected JStr but got JNum
-  --> /tmp/dojo-mini-json-query-2.almd:45:86
+  --> /tmp/dojo-mini-json-query-2.almd:48:86
   in list element
   hint: Fix the expression type or change the expected type
    |
-45 | test "jflatten_strings arr mixed" { assert_eq(jflatten_strings(JArr([JStr("a"), JNum(1), JStr("b")])), ["a", "b"]) }
+48 | test "jflatten_strings arr mixed" { assert_eq(jflatten_strings(JArr([JStr("a"), JNum(1), JStr("b")])), ["a", "b"]) }
    |                                                                                      ^
 error[E001]: type mismatch in list element: expected JStr but got JNull
-  --> /tmp/dojo-mini-json-query-2.almd:46:116
+  --> /tmp/dojo-mini-json-query-2.almd:49:116
   in list element
   hint: Fix the expression type or change the expected type
    |
-46 | test "jflatten_strings nested" { assert_eq(jflatten_strings(JObj([("x", JStr("hello")), ("y", JArr([JStr("world"), JNull]))])), ["hello", "world"]) }
+49 | test "jflatten_strings nested" { assert_eq(jflatten_strings(JObj([("x", JStr("hello")), ("y", JArr([JStr("world"), JNull]))])), ["hello", "world"]) }
    |                                                                                                                    ^^^^^
 error[E001]: type mismatch in list element: expected (String, JStr) but got (String, JArr)
-  --> /tmp/dojo-mini-json-query-2.almd:46:116
+  --> /tmp/dojo-mini-json-query-2.almd:49:116
   in list element
   hint: Fix the expression type or change the expected type
    |
-46 | test "jflatten_strings nested" { assert_eq(jflatten_strings(JObj([("x", JStr("hello")), ("y", JArr([JStr("world"), JNull]))])), ["hello", "world"]) }
+49 | test "jflatten_strings nested" { assert_eq(jflatten_strings(JObj([("x", JStr("hello")), ("y", JArr([JStr("world"), JNull]))])), ["hello", "world"]) }
    |                                                                                                                    ^^^^^
 
-19 error(s) found
+29 error(s) found
 Compile error for /tmp/dojo-mini-json-query-2.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-2.almd
@@ -699,188 +797,170 @@ FAILED: /tmp/dojo-mini-json-query-2.almd
 ### Attempt 4 (FAIL)
 
 ```almide
-effect fn main() -> Unit = {}
 
-fn jget(obj: JVal, key: String) -> Option[JVal] =
-  match obj {
-    JObj(xs) => list.find(xs, (x) => match x {
-      (k, v) => if k == key then some(v) else none
-    }),
-    _ => none
-  }
-
-fn jcount(val: JVal) -> Int =
-  match val {
-    JNull => 1
-    | JBool(_) => 1
-    | JNum(_) => 1
-    | JStr(_) => 1
-    | JArr(xs) => list.sum(xs, jcount)
-    | JObj(xs) => list.sum(xs, (x) => match x {
-      (k, v) => jcount(v)
-    })
-  }
-
-fn jflatten_strings(val: JVal) -> List[String] =
-  match val {
-    JStr(s) => [s]
-    | JNum(_) => []
-    | JBool(_) => []
-    | JNull => []
-    | JArr(xs) => list.flat_map(xs, jflatten_strings)
-    | JObj(xs) => list.flat_map(xs, (x) => match x {
-      (k,
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-3.almd
-error: Expected pattern at line 14:5 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-3.almd:14:5
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
-   |
-14 |     | JBool(_) => 1
-   |     ^
-error: Expected pattern at line 26:5 (got Pipe '|')
-  --> /tmp/dojo-mini-json-query-3.almd:26:5
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
-   |
-26 |     | JNum(_) => []
-   |     ^
-error[E005]: argument 'f' expects fn((String, ?2)) -> Bool but got fn((String, ?2)) -> Option[?2]
-  --> /tmp/dojo-mini-json-query-3.almd:6:47
-  in call to list.find()
-  hint: Fix the argument type
+error[E002]: undefined function 'jget'
+  --> /tmp/dojo-mini-json-query-3.almd:3:76
+  in call to jget()
+  hint: Check the function name
   |
-6 |       (k, v) => if k == key then some(v) else none
-  |                                               ^^^^
-error[E005]: argument 'obj' expects JVal but got JObj
-  --> /tmp/dojo-mini-json-query-3.almd:33:76
+3 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
+  |                                                                            ^^^
+error[E002]: undefined function 'jget'
+  --> /tmp/dojo-mini-json-query-3.almd:4:64
   in call to jget()
-  hint: 'JVal' is not a known type. To use it as a type parameter, declare it: fn jget[JVal](...)
-   |
- 3 | fn jget(obj: JVal, key: String) -> Option[JVal] =
-   | ---------------------- fn jget() defined here
-...
-33 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
-   |                                                                            ^^^
-error[E005]: argument 'obj' expects JVal but got JObj
-  --> /tmp/dojo-mini-json-query-3.almd:34:64
-  in call to jget()
-  hint: 'JVal' is not a known type. To use it as a type parameter, declare it: fn jget[JVal](...)
-   |
- 3 | fn jget(obj: JVal, key: String) -> Option[JVal] =
-   | ---------------------- fn jget() defined here
-...
-34 | test "jget not found" { assert_eq(jget(JObj([("a", JNum(1))]), "z"), none) }
-   |                                                                ^^^
-error[E005]: argument 'obj' expects JVal but got JNum
-  --> /tmp/dojo-mini-json-query-3.almd:35:47
-  in call to jget()
-  hint: 'JVal' is not a known type. To use it as a type parameter, declare it: fn jget[JVal](...)
-   |
- 3 | fn jget(obj: JVal, key: String) -> Option[JVal] =
-   | ---------------------- fn jget() defined here
-...
-35 | test "jget not obj" { assert_eq(jget(JNum(1), "a"), none) }
-   |                                               ^^^
-error[E005]: argument 'obj' expects JVal but got JObj
-  --> /tmp/dojo-mini-json-query-3.almd:36:50
-  in call to jget()
-  hint: 'JVal' is not a known type. To use it as a type parameter, declare it: fn jget[JVal](...)
-   |
- 3 | fn jget(obj: JVal, key: String) -> Option[JVal] =
-   | ---------------------- fn jget() defined here
-...
-36 | test "jget empty obj" { assert_eq(jget(JObj([]), "a"), none) }
-   |                                                  ^^^
-error[E001]: type mismatch in call to list.find(): expected fn((String, ?2)) -> Bool but got fn((String, ?2)) -> Option[?2]
-  --> /tmp/dojo-mini-json-query-3.almd:6:47
-  in call to list.find()
-  hint: Fix the expression type or change the expected type
+  hint: Check the function name
   |
-6 |       (k, v) => if k == key then some(v) else none
-  |                                               ^^^^
-error[E001]: type mismatch in fn 'jget': expected Option[JVal] but got Option[(String, ?2)]
-  --> /tmp/dojo-mini-json-query-3.almd:8:10
-  in fn 'jget'
-  hint: Fix the expression type or change the expected type
+4 | test "jget not found" { assert_eq(jget(JObj([("a", JNum(1))]), "z"), none) }
+  |                                                                ^^^
+error[E002]: undefined function 'jget'
+  --> /tmp/dojo-mini-json-query-3.almd:5:47
+  in call to jget()
+  hint: Check the function name
   |
-8 |     _ => none
-  |          ^^^^
-error[E001]: type mismatch in call to jget(): expected JVal but got JObj
-  --> /tmp/dojo-mini-json-query-3.almd:33:76
+5 | test "jget not obj" { assert_eq(jget(JNum(1), "a"), none) }
+  |                                               ^^^
+error[E002]: undefined function 'jget'
+  --> /tmp/dojo-mini-json-query-3.almd:6:50
   in call to jget()
-  hint: Fix the expression type or change the expected type
+  hint: Check the function name
+  |
+6 | test "jget empty obj" { assert_eq(jget(JObj([]), "a"), none) }
+  |                                                  ^^^
+error[E002]: undefined function 'jcount'
+  --> /tmp/dojo-mini-json-query-3.almd:7:48
+  in call to jcount()
+  hint: Check the function name
+  |
+7 | test "jcount leaf num" { assert_eq(jcount(JNum(1)), 1) }
+  |                                                ^
+error[E002]: undefined function 'jcount'
+  --> /tmp/dojo-mini-json-query-3.almd:8:44
+  in call to jcount()
+  hint: Check the function name
+  |
+8 | test "jcount leaf null" { assert_eq(jcount(JNull), 1) }
+  |                                            ^^^^^
+error[E002]: undefined function 'jcount'
+  --> /tmp/dojo-mini-json-query-3.almd:9:48
+  in call to jcount()
+  hint: Check the function name
+  |
+9 | test "jcount leaf str" { assert_eq(jcount(JStr("x")), 1) }
+  |                                                ^^^
+error[E002]: undefined function 'jcount'
+  --> /tmp/dojo-mini-json-query-3.almd:10:67
+  in call to jcount()
+  hint: Check the function name
    |
-33 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
-   |                                                                            ^^^
-error[E001]: type mismatch in call to assert_eq(): expected Option[JVal] but got Option[JNum]
-  --> /tmp/dojo-mini-json-query-3.almd:33:92
-  in call to assert_eq()
-  hint: Fix the expression type or change the expected type
+10 | test "jcount arr" { assert_eq(jcount(JArr([JNum(1), JNum(2), JNum(3)])), 3) }
+   |                                                                   ^
+error[E002]: undefined function 'jcount'
+  --> /tmp/dojo-mini-json-query-3.almd:11:89
+  in call to jcount()
+  hint: Check the function name
    |
-33 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
-   |                                                                                            ^
-error[E001]: type mismatch in call to jget(): expected JVal but got JObj
-  --> /tmp/dojo-mini-json-query-3.almd:34:64
-  in call to jget()
-  hint: Fix the expression type or change the expected type
+11 | test "jcount nested" { assert_eq(jcount(JObj([("a", JArr([JNum(1), JNull])), ("b", JStr("x"))])), 3) }
+   |                                                                                         ^^^
+error[E002]: undefined function 'jcount'
+  --> /tmp/dojo-mini-json-query-3.almd:12:49
+  in call to jcount()
+  hint: Check the function name
    |
-34 | test "jget not found" { assert_eq(jget(JObj([("a", JNum(1))]), "z"), none) }
-   |                                                                ^^^
-error[E001]: type mismatch in call to jget(): expected JVal but got JNum
-  --> /tmp/dojo-mini-json-query-3.almd:35:47
-  in call to jget()
-  hint: Fix the expression type or change the expected type
+12 | test "jcount empty arr" { assert_eq(jcount(JArr([])), 0) }
+   |                                                 ^
+error[E002]: undefined function 'jflatten_strings'
+  --> /tmp/dojo-mini-json-query-3.almd:13:68
+  in call to jflatten_strings()
+  hint: Did you mean `float.to_string`?
+  try:
+      // jflatten_strings(...)  →  float.to_string(...)
+      float.to_string(...)
    |
-35 | test "jget not obj" { assert_eq(jget(JNum(1), "a"), none) }
-   |                                               ^^^
-error[E001]: type mismatch in call to jget(): expected JVal but got JObj
-  --> /tmp/dojo-mini-json-query-3.almd:36:50
-  in call to jget()
-  hint: Fix the expression type or change the expected type
+13 | test "jflatten_strings leaf str" { assert_eq(jflatten_strings(JStr("hi")), ["hi"]) }
+   |                                                                    ^^^^
+error[E002]: undefined function 'jflatten_strings'
+  --> /tmp/dojo-mini-json-query-3.almd:14:68
+  in call to jflatten_strings()
+  hint: Did you mean `float.to_string`?
+  try:
+      // jflatten_strings(...)  →  float.to_string(...)
+      float.to_string(...)
    |
-36 | test "jget empty obj" { assert_eq(jget(JObj([]), "a"), none) }
-   |                                                  ^^^
+14 | test "jflatten_strings leaf num" { assert_eq(jflatten_strings(JNum(1)), []) }
+   |                                                                    ^
+error[E002]: undefined function 'jflatten_strings'
+  --> /tmp/dojo-mini-json-query-3.almd:15:95
+  in call to jflatten_strings()
+  hint: Did you mean `float.to_string`?
+  try:
+      // jflatten_strings(...)  →  float.to_string(...)
+      float.to_string(...)
+   |
+15 | test "jflatten_strings arr mixed" { assert_eq(jflatten_strings(JArr([JStr("a"), JNum(1), JStr("b")])), ["a", "b"]) }
+   |                                                                                               ^^^
+error[E002]: undefined function 'jflatten_strings'
+  --> /tmp/dojo-mini-json-query-3.almd:16:116
+  in call to jflatten_strings()
+  hint: Did you mean `float.to_string`?
+  try:
+      // jflatten_strings(...)  →  float.to_string(...)
+      float.to_string(...)
+   |
+16 | test "jflatten_strings nested" { assert_eq(jflatten_strings(JObj([("x", JStr("hello")), ("y", JArr([JStr("world"), JNull]))])), ["hello", "world"]) }
+   |                                                                                                                    ^^^^^
+error[E002]: undefined function 'jflatten_strings'
+  --> /tmp/dojo-mini-json-query-3.almd:17:65
+  in call to jflatten_strings()
+  hint: Did you mean `float.to_string`?
+  try:
+      // jflatten_strings(...)  →  float.to_string(...)
+      float.to_string(...)
+   |
+17 | test "jflatten_strings empty" { assert_eq(jflatten_strings(JArr([])), []) }
+   |                                                                 ^
 error[E001]: type mismatch in list element: expected JNum but got JNull
-  --> /tmp/dojo-mini-json-query-3.almd:41:68
+  --> /tmp/dojo-mini-json-query-3.almd:11:68
   in list element
   hint: Fix the expression type or change the expected type
    |
-41 | test "jcount nested" { assert_eq(jcount(JObj([("a", JArr([JNum(1), JNull])), ("b", JStr("x"))])), 3) }
+11 | test "jcount nested" { assert_eq(jcount(JObj([("a", JArr([JNum(1), JNull])), ("b", JStr("x"))])), 3) }
    |                                                                    ^^^^^
 error[E001]: type mismatch in list element: expected (String, JArr) but got (String, JStr)
-  --> /tmp/dojo-mini-json-query-3.almd:41:89
+  --> /tmp/dojo-mini-json-query-3.almd:11:89
   in list element
   hint: Fix the expression type or change the expected type
    |
-41 | test "jcount nested" { assert_eq(jcount(JObj([("a", JArr([JNum(1), JNull])), ("b", JStr("x"))])), 3) }
+11 | test "jcount nested" { assert_eq(jcount(JObj([("a", JArr([JNum(1), JNull])), ("b", JStr("x"))])), 3) }
    |                                                                                         ^^^
 error[E001]: type mismatch in list element: expected JStr but got JNum
-  --> /tmp/dojo-mini-json-query-3.almd:45:86
+  --> /tmp/dojo-mini-json-query-3.almd:15:86
   in list element
   hint: Fix the expression type or change the expected type
    |
-45 | test "jflatten_strings arr mixed" { assert_eq(jflatten_strings(JArr([JStr("a"), JNum(1), JStr("b")])), ["a", "b"]) }
+15 | test "jflatten_strings arr mixed" { assert_eq(jflatten_strings(JArr([JStr("a"), JNum(1), JStr("b")])), ["a", "b"]) }
    |                                                                                      ^
 error[E001]: type mismatch in list element: expected JStr but got JNull
-  --> /tmp/dojo-mini-json-query-3.almd:46:116
+  --> /tmp/dojo-mini-json-query-3.almd:16:116
   in list element
   hint: Fix the expression type or change the expected type
    |
-46 | test "jflatten_strings nested" { assert_eq(jflatten_strings(JObj([("x", JStr("hello")), ("y", JArr([JStr("world"), JNull]))])), ["hello", "world"]) }
+16 | test "jflatten_strings nested" { assert_eq(jflatten_strings(JObj([("x", JStr("hello")), ("y", JArr([JStr("world"), JNull]))])), ["hello", "world"]) }
    |                                                                                                                    ^^^^^
 error[E001]: type mismatch in list element: expected (String, JStr) but got (String, JArr)
-  --> /tmp/dojo-mini-json-query-3.almd:46:116
+  --> /tmp/dojo-mini-json-query-3.almd:16:116
   in list element
   hint: Fix the expression type or change the expected type
    |
-46 | test "jflatten_strings nested" { assert_eq(jflatten_strings(JObj([("x", JStr("hello")), ("y", JArr([JStr("world"), JNull]))])), ["hello", "world"]) }
+16 | test "jflatten_strings nested" { assert_eq(jflatten_strings(JObj([("x", JStr("hello")), ("y", JArr([JStr("world"), JNull]))])), ["hello", "world"]) }
    |                                                                                                                    ^^^^^
 
-19 error(s) found
+20 error(s) found
 Compile error for /tmp/dojo-mini-json-query-3.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-3.almd

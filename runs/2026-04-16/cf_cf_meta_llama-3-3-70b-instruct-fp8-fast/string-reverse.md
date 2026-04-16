@@ -2,7 +2,7 @@
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: yes
-- **retries**: 2
+- **retries**: 1
 - **category**: pass-retry
 
 ## Attempts
@@ -11,9 +11,9 @@
 
 ```almide
 fn reverse(s: String) -> String = 
-  string.chars(s) 
-  |> list.reverse 
-  |> list.join(_, "")
+    string.chars(s) 
+    |> list.reverse 
+    |> list.join("", "")
 ```
 
 **Diagnostic:**
@@ -21,15 +21,15 @@ fn reverse(s: String) -> String =
 ```
 Compiling /tmp/dojo-string-reverse-0.almd
 error[E004]: list.join() expects 2 argument(s) but got 3
-  --> /tmp/dojo-string-reverse-0.almd:4:19
+  --> /tmp/dojo-string-reverse-0.almd:4:22
   in call to list.join()
   hint: Check the number of arguments
   try:
       // list.join() takes 2 arg(s) — you passed 3
       list.join(<xs: List[String]>, <sep: String>)
   |
-4 |   |> list.join(_, "")
-  |                   ^^
+4 |     |> list.join("", "")
+  |                      ^^
 
 1 error(s) found
 Compile error for /tmp/dojo-string-reverse-0.almd:
@@ -40,44 +40,11 @@ FAILED: /tmp/dojo-string-reverse-0.almd
 
 ```
 
-### Attempt 2 (FAIL)
+### Attempt 2 (PASS)
 
 ```almide
 fn reverse(s: String) -> String = 
-  string.chars(s) 
-  |> list.reverse 
-  |> list.join("", _)
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-string-reverse-1.almd
-error[E004]: list.join() expects 2 argument(s) but got 3
-  --> /tmp/dojo-string-reverse-1.almd:4:20
-  in call to list.join()
-  hint: Check the number of arguments
-  try:
-      // list.join() takes 2 arg(s) — you passed 3
-      list.join(<xs: List[String]>, <sep: String>)
-  |
-4 |   |> list.join("", _)
-  |                    ^
-
-1 error(s) found
-Compile error for /tmp/dojo-string-reverse-1.almd:
-compile failed
-FAILED: /tmp/dojo-string-reverse-1.almd
-
-1/1 test file(s) failed
-
-```
-
-### Attempt 3 (PASS)
-
-```almide
-fn reverse(s: String) -> String = 
-  string.chars(s) 
-  |> list.reverse 
-  |> list.join("")
+    string.chars(s) 
+    |> list.reverse 
+    |> list.join("")
 ```

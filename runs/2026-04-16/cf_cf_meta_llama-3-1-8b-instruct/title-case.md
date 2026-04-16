@@ -11,9 +11,9 @@
 
 ```almide
 fn title_case(s: String) -> String {
-    let words = string.split(s, " ");
-    let capitalized_words = words.map(string.capitalize);
-    string.join(capitalized_words, " ")
+  let words = string.split(s, " ");
+  let capitalized_words = words.map(string.capitalize);
+  string.join(capitalized_words, " ")
 }
 ```
 
@@ -41,9 +41,9 @@ FAILED: /tmp/dojo-title-case-0.almd
 
 ```almide
 fn title_case(s: String) -> String = {
-    let words = string.split(s, " ");
-    let capitalized_words = words.map(string.capitalize);
-    string.join(capitalized_words, " ")
+  let words = string.split(s, " ");
+  let capitalized_words = words.map(string.capitalize);
+  string.join(capitalized_words, " ")
 }
 ```
 
@@ -61,9 +61,9 @@ FAILED: /tmp/dojo-title-case-1.almd
 
 ```almide
 fn title_case(s: String) -> String = {
-    let words = string.split(s, " ");
-    let capitalized_words = words.map(string.capitalize);
-    string.join(capitalized_words, " ")
+  let words = string.split(s, " ");
+  let capitalized_words = words.map(string.capitalize);
+  string.join(capitalized_words, " ")
 }
 ```
 
@@ -81,9 +81,9 @@ FAILED: /tmp/dojo-title-case-2.almd
 
 ```almide
 fn title_case(s: String) -> String = {
-    let words = string.split(s, " ");
-    let capitalized_words = words.map(string.capitalize);
-    string.join(capitalized_words, " ")
+  let words = string.split(s, " ");
+  let capitalized_words = words.map(string.capitalize);
+  string.join(capitalized_words, " ")
 }
 ```
 

@@ -19,15 +19,15 @@ fn rle_encode(s: String) -> String {
         if Some(c) == prev_char {
             count += 1;
         } else {
-            if Some(c) != None {
-                if count > 0 {
-                    result += int.to_string(count);
-                }
+            if count > 0 {
+                result += int.to_string(count);
                 result += c;
-                count = 1;
+            } else {
+                result += c;
             }
+            count = 1;
+            prev_char = Some(c);
         }
-        prev_char = Some(c);
     }
 
     if count > 0 {
@@ -91,15 +91,15 @@ fn rle_encode(s: String) -> String = {
         if Some(c) == prev_char {
             count += 1;
         } else {
-            if Some(c) != None {
-                if count > 0 {
-                    result += int.to_string(count);
-                }
+            if count > 0 {
+                result += int.to_string(count);
                 result += c;
-                count = 1;
+            } else {
+                result += c;
             }
+            count = 1;
+            prev_char = Some(c);
         }
-        prev_char = Some(c);
     }
 
     if count > 0 {
@@ -273,11 +273,13 @@ fn rle_encode(s: String) -> String = {
         } else {
             if count > 0 {
                 result += int.to_string(count);
+                result += c;
+            } else {
+                result += c;
             }
-            result += c;
             count = 1;
+            prev_char = Some(c);
         }
-        prev_char = Some(c);
     }
 
     if count > 0 {
@@ -331,19 +333,12 @@ error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, te
   |
 9 |         } else {
   |           ^
-error: '::' is not valid in Almide at line 27:24
-  --> /tmp/dojo-run-length-encoding-2.almd:27:24
+error: '::' is not valid in Almide at line 29:24
+  --> /tmp/dojo-run-length-encoding-2.almd:29:24
   hint: Almide uses '.' for module access, not '::'. Write `list.map(...)` instead of `list::map(...)`
    |
-27 |     var result = String::new();
+29 |     var result = String::new();
    |                        ^
-error: Assignments return Unit and can't appear here
-  --> /tmp/dojo-run-length-encoding-2.almd:32:12
-  in assignment-in-expr
-  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
-   |
-32 |         i += 1;
-   |            ^
 error: Assignments return Unit and can't appear here
   --> /tmp/dojo-run-length-encoding-2.almd:34:12
   in assignment-in-expr
@@ -352,16 +347,23 @@ error: Assignments return Unit and can't appear here
 34 |         i += 1;
    |            ^
 error: Assignments return Unit and can't appear here
-  --> /tmp/dojo-run-length-encoding-2.almd:35:17
+  --> /tmp/dojo-run-length-encoding-2.almd:36:12
   in assignment-in-expr
   hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
    |
-35 |         result += string.repeat(char, count);
-   |                 ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 38:5 (got Ident 'result')
-  --> /tmp/dojo-run-length-encoding-2.almd:38:5
+36 |         i += 1;
+   |            ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-2.almd:37:17
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
    |
-38 |     result
+37 |         result += string.repeat(char, count);
+   |                 ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 40:5 (got Ident 'result')
+  --> /tmp/dojo-run-length-encoding-2.almd:40:5
+   |
+40 |     result
    |     ^
 error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
   --> /tmp/dojo-run-length-encoding-2.almd:4:21
@@ -377,7 +379,7 @@ error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
 4 |     var prev_char = None;
   |                     ^^^^
 error[E001]: type mismatch in fn 'rle_decode': expected String but got Unit
-  --> /tmp/dojo-run-length-encoding-2.almd:33:20
+  --> /tmp/dojo-run-length-encoding-2.almd:35:20
   in fn 'rle_decode'
   hint: Fix the expression type or change the expected type
   try:
@@ -387,7 +389,7 @@ error[E001]: type mismatch in fn 'rle_decode': expected String but got Unit
       // Or inline:
       //   <expression>                   // must have type String
    |
-33 |         let char = s.slice(i, i + 1);
+35 |         let char = s.slice(i, i + 1);
    |                    ^
 
 11 error(s) found
@@ -413,11 +415,13 @@ fn rle_encode(s: String) -> String = {
         } else {
             if count > 0 {
                 result += int.to_string(count);
+                result += c;
+            } else {
+                result += c;
             }
-            result += c;
             count = 1;
+            prev_char = Some(c);
         }
-        prev_char = Some(c);
     }
 
     if count > 0 {
@@ -471,19 +475,12 @@ error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, te
   |
 9 |         } else {
   |           ^
-error: '::' is not valid in Almide at line 27:24
-  --> /tmp/dojo-run-length-encoding-3.almd:27:24
+error: '::' is not valid in Almide at line 29:24
+  --> /tmp/dojo-run-length-encoding-3.almd:29:24
   hint: Almide uses '.' for module access, not '::'. Write `list.map(...)` instead of `list::map(...)`
    |
-27 |     let result = String::new();
+29 |     let result = String::new();
    |                        ^
-error: Assignments return Unit and can't appear here
-  --> /tmp/dojo-run-length-encoding-3.almd:32:12
-  in assignment-in-expr
-  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
-   |
-32 |         i += 1;
-   |            ^
 error: Assignments return Unit and can't appear here
   --> /tmp/dojo-run-length-encoding-3.almd:34:12
   in assignment-in-expr
@@ -492,16 +489,23 @@ error: Assignments return Unit and can't appear here
 34 |         i += 1;
    |            ^
 error: Assignments return Unit and can't appear here
-  --> /tmp/dojo-run-length-encoding-3.almd:35:17
+  --> /tmp/dojo-run-length-encoding-3.almd:36:12
   in assignment-in-expr
   hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
    |
-35 |         result += string.repeat(char, count);
-   |                 ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 38:5 (got Ident 'result')
-  --> /tmp/dojo-run-length-encoding-3.almd:38:5
+36 |         i += 1;
+   |            ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-3.almd:37:17
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
    |
-38 |     result
+37 |         result += string.repeat(char, count);
+   |                 ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 40:5 (got Ident 'result')
+  --> /tmp/dojo-run-length-encoding-3.almd:40:5
+   |
+40 |     result
    |     ^
 error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
   --> /tmp/dojo-run-length-encoding-3.almd:4:21
@@ -517,7 +521,7 @@ error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
 4 |     let prev_char = None;
   |                     ^^^^
 error[E001]: type mismatch in fn 'rle_decode': expected String but got Unit
-  --> /tmp/dojo-run-length-encoding-3.almd:33:20
+  --> /tmp/dojo-run-length-encoding-3.almd:35:20
   in fn 'rle_decode'
   hint: Fix the expression type or change the expected type
   try:
@@ -527,7 +531,7 @@ error[E001]: type mismatch in fn 'rle_decode': expected String but got Unit
       // Or inline:
       //   <expression>                   // must have type String
    |
-33 |         let char = s.slice(i, i + 1);
+35 |         let char = s.slice(i, i + 1);
    |                    ^
 
 11 error(s) found
