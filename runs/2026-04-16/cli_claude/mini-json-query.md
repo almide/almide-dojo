@@ -19,7 +19,7 @@ type JVal =
   | JObj(List[(String, JVal)])
 
 fn jget(obj: JVal, key: String) -> Option[JVal] = match obj {
-  JObj(pairs) => option.map(list.find(pairs, (p) => p.0 == key), (p) => p.1),
+  JObj(pairs) => option.map(list.find(pairs, ((p)) => p.0 == key), ((p)) => p.1),
   _ => none,
 }
 
@@ -29,7 +29,7 @@ fn jcount(val: JVal) -> Int = match val {
   JNum(_) => 1,
   JStr(_) => 1,
   JArr(xs) => list.sum(list.map(xs, (x) => jcount(x))),
-  JObj(pairs) => list.sum(list.map(pairs, (p) => jcount(p.1))),
+  JObj(pairs) => list.sum(list.map(pairs, ((p)) => jcount(p.1))),
 }
 
 fn jflatten_strings(val: JVal) -> List[String] = match val {
@@ -38,7 +38,7 @@ fn jflatten_strings(val: JVal) -> List[String] = match val {
   JNum(_) => [],
   JStr(s) => [s],
   JArr(xs) => list.flat_map(xs, (x) => jflatten_strings(x)),
-  JObj(pairs) => list.flat_map(pairs, (p) => jflatten_strings(p.1)),
+  JObj(pairs) => list.flat_map(pairs, ((p)) => jflatten_strings(p.1)),
 }
 
 effect fn main() -> Unit = {}

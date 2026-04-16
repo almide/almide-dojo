@@ -10,5 +10,8 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn title_case(s: String) -> String = string.join(list.map(string.split(s, " "), (w) => string.capitalize(string.to_lower(w))), " ")
+fn title_case(s: String) -> String =
+  string.split(s, " ")
+  |> list.map((w) => string.capitalize(string.to_lower(w)))
+  |> list.join(" ")
 ```

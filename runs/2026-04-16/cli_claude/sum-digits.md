@@ -15,6 +15,6 @@ fn sum_digits_helper(n: Int) -> Int =
   else (n % 10) + sum_digits_helper(n / 10)
 
 fn sum_digits(n: Int) -> Int =
-  if n == 0 then 0
-  else sum_digits_helper(int.abs(n))
+  let abs_n = int.abs(n)
+  if abs_n == 0 then 0 else sum_digits_helper(abs_n)
 ```

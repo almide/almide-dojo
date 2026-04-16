@@ -10,14 +10,17 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn parse_int(s: String) -> Result[Int, String] = match int.parse(s) {
-  ok(n) => ok(n),
-  err(_) => err("not a number: " + s)
-}
+fn parse_int(s: String) -> Result[Int, String] =
+  match int.parse(s) {
+    ok(n) => ok(n),
+    err(_) => err("not a number: " + s),
+  }
 
-fn validate_positive(n: Int) -> Result[Int, String] = if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
+fn validate_positive(n: Int) -> Result[Int, String] =
+  if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
 
-fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = if n >= lo && n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] =
+  if n >= lo && n <= hi then ok(n) else err("out of range: " + int.to_string(n))
 
 fn process(input: String) -> Result[String, String] =
   result.map(
@@ -33,12 +36,12 @@ fn process(input: String) -> Result[String, String] =
 
 ```
 Compiling /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-result-pipeline-0.almd
-error: '&&' is not valid in Almide at line 8:81
-  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-result-pipeline-0.almd:8:81
+error: '&&' is not valid in Almide at line 11:14
+  --> /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-result-pipeline-0.almd:11:14
   hint: Use 'and' for logical AND. Example: if a and b then ...
-  |
-8 | fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = if n >= lo && n <= hi then ok(n) else err("out of range: " + int.to_string(n))
-  |                                                                                 ^
+   |
+11 |   if n >= lo && n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+   |              ^
 
 1 error(s) found
 Compile error for /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-result-pipeline-0.almd:
@@ -52,14 +55,17 @@ FAILED: /var/folders/q3/fnffs_1j7sl7x8x1vtkth6vm0000gr/T//dojo-result-pipeline-0
 ### Attempt 2 (PASS)
 
 ```almide
-fn parse_int(s: String) -> Result[Int, String] = match int.parse(s) {
-  ok(n) => ok(n),
-  err(_) => err("not a number: " + s)
-}
+fn parse_int(s: String) -> Result[Int, String] =
+  match int.parse(s) {
+    ok(n) => ok(n),
+    err(_) => err("not a number: " + s),
+  }
 
-fn validate_positive(n: Int) -> Result[Int, String] = if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
+fn validate_positive(n: Int) -> Result[Int, String] =
+  if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
 
-fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = if n >= lo and n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] =
+  if n >= lo and n <= hi then ok(n) else err("out of range: " + int.to_string(n))
 
 fn process(input: String) -> Result[String, String] =
   result.map(
