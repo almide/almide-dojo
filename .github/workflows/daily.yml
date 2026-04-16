@@ -40,6 +40,13 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           MODEL="${{ matrix.model }}"
+          # Clear runs/ so this job's artifact contains ONLY this model's fresh
+          # output. Without this, each matrix job uploads `runs/` including the
+          # checked-out state (which has the OTHER model's historical data), and
+          # the download-artifact merge in commit-results races — the model
+          # whose artifact is applied last wins, the other model's fresh data
+          # is silently overwritten by stale checked-out copies.
+          rm -rf runs/
           echo "Running MSR with model: $MODEL"
           almide run src/main.almd -- all "$MODEL" || true
 
