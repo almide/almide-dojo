@@ -2,7 +2,7 @@
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: yes
-- **retries**: 1
+- **retries**: 2
 - **category**: pass-retry
 
 ## Attempts
@@ -11,50 +11,42 @@
 
 ```almide
 fn is_palindrome(s: String) -> Bool =
-  let
-    chars = string.chars(s)
-    reverse_chars = list.reverse(chars)
-  in
-    chars == reverse_chars
+  let reversed = string.reverse(s)
+  in string.equals(s, reversed)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-palindrome-0.almd
-error: Expected identifier at line 2:6 (got Newline '')
-  --> /tmp/dojo-is-palindrome-0.almd:2:6
+error: `let ... in <expr>` is OCaml/Haskell syntax
+  --> /tmp/dojo-is-palindrome-0.almd:3:3
+  in let ... in
+  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
+  try:
+      let x = 1
+      let y = 2
+      x + y
   |
-2 |   let
-  |      ^
-error: Expected expression at line 5:3 (got In 'in')
-  --> /tmp/dojo-is-palindrome-0.almd:5:3
+3 |   in string.equals(s, reversed)
+  |   ^^
+error[E001]: type mismatch in fn 'is_palindrome': expected Bool but got Unit
+  --> /tmp/dojo-is-palindrome-0.almd:2:33
+  in fn 'is_palindrome'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with `let reversed = ...` (a statement, returns Unit).
+      // Add `reversed` as the trailing expression so the fn returns Bool:
+      //
+      //   let reversed = <computation>
+      //   reversed                         // <-- add this line
+      //
+      // Or inline the computation as the tail expression directly.
   |
-5 |   in
-  |   ^
-error[E003]: undefined variable 'chars'
-  --> /tmp/dojo-is-palindrome-0.almd:4:34
-  in variable chars
-  hint: Check the variable name
-  |
-4 |     reverse_chars = list.reverse(chars)
-  |                                  ^^^^^
-error[E003]: undefined variable 'chars'
-  --> /tmp/dojo-is-palindrome-0.almd:6:5
-  in variable chars
-  hint: Check the variable name
-  |
-6 |     chars == reverse_chars
-  |     ^^^^^
-error[E003]: undefined variable 'reverse_chars'
-  --> /tmp/dojo-is-palindrome-0.almd:6:14
-  in variable reverse_chars
-  hint: Check the variable name
-  |
-6 |     chars == reverse_chars
-  |              ^^^^^^^^^^^^^
+2 |   let reversed = string.reverse(s)
+  |                                 ^
 
-5 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-is-palindrome-0.almd:
 compile failed
 FAILED: /tmp/dojo-is-palindrome-0.almd
@@ -63,9 +55,41 @@ FAILED: /tmp/dojo-is-palindrome-0.almd
 
 ```
 
-### Attempt 2 (PASS)
+### Attempt 2 (FAIL)
 
 ```almide
 fn is_palindrome(s: String) -> Bool =
-  string.chars(s) == list.reverse(string.chars(s))
+  let reversed = string.reverse(s)
+  let result = string.equals(s, reversed)
+  result
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-is-palindrome-1.almd
+error[E002]: undefined function 'string.equals'
+  --> /tmp/dojo-is-palindrome-1.almd:3:33
+  in call to string.equals()
+  hint: No function 'equals' in module 'string'. See docs/CHEATSHEET.md for available functions
+  |
+3 |   let result = string.equals(s, reversed)
+  |                                 ^^^^^^^^
+
+1 error(s) found
+Compile error for /tmp/dojo-is-palindrome-1.almd:
+compile failed
+FAILED: /tmp/dojo-is-palindrome-1.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 3 (PASS)
+
+```almide
+fn is_palindrome(s: String) -> Bool =
+  let reversed = string.reverse(s)
+  let result = s == reversed
+  result
 ```

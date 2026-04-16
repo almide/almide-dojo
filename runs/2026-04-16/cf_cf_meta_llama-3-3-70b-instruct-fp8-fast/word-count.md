@@ -12,19 +12,12 @@
 ```almide
 fn word_count(s: String) -> Map[String, Int] =
   let
-    words = list.filter(string.split(s, " "), (x) => x != "")
-    freq_map = list.fold(
-      words,
-      map.new(),
-      (acc, word) =>
-        map.set(
-          acc,
-          word,
-          map.get_or(acc, word, 0) + 1
-        )
-    )
+    words = list.filter(string.split(s, " "), (x) => not string.is_empty(x))
+    empty_map = map.new()
   in
-    freq_map
+  list.fold(words, empty_map, (acc, word) =>
+    map.set(acc, word, map.get_or(acc, word, 0) + 1)
+  )
 ```
 
 **Diagnostic:**
@@ -36,25 +29,25 @@ error: Expected identifier at line 2:6 (got Newline '')
   |
 2 |   let
   |      ^
-error: Expected expression at line 14:3 (got In 'in')
-  --> /tmp/dojo-word-count-0.almd:14:3
-   |
-14 |   in
-   |   ^
+error: Expected expression at line 5:3 (got In 'in')
+  --> /tmp/dojo-word-count-0.almd:5:3
+  |
+5 |   in
+  |   ^
 error[E003]: undefined variable 'words'
-  --> /tmp/dojo-word-count-0.almd:5:7
+  --> /tmp/dojo-word-count-0.almd:6:13
   in variable words
   hint: Check the variable name
   |
-5 |       words,
-  |       ^^^^^
-error[E003]: undefined variable 'freq_map'
-  --> /tmp/dojo-word-count-0.almd:15:5
-  in variable freq_map
+6 |   list.fold(words, empty_map, (acc, word) =>
+  |             ^^^^^
+error[E003]: undefined variable 'empty_map'
+  --> /tmp/dojo-word-count-0.almd:6:20
+  in variable empty_map
   hint: Check the variable name
-   |
-15 |     freq_map
-   |     ^^^^^^^^
+  |
+6 |   list.fold(words, empty_map, (acc, word) =>
+  |                    ^^^^^^^^^
 
 4 error(s) found
 Compile error for /tmp/dojo-word-count-0.almd:
@@ -70,13 +63,8 @@ FAILED: /tmp/dojo-word-count-0.almd
 ```almide
 fn word_count(s: String) -> Map[String, Int] =
   list.fold(
-    list.filter(string.split(s, " "), (x) => x != ""),
+    list.filter(string.split(s, " "), (x) => not string.is_empty(x)),
     map.new(),
-    (acc, word) =>
-      map.set(
-        acc,
-        word,
-        map.get_or(acc, word, 0) + 1
-      )
+    (acc, word) => map.set(acc, word, map.get_or(acc, word, 0) + 1)
   )
 ```

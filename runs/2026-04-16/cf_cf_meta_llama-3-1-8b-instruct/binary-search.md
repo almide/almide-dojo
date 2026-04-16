@@ -3,7 +3,7 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: unknown
+- **category**: parse-error
 
 ## Attempts
 
@@ -14,17 +14,28 @@ fn binary_search(xs: List[Int], target: Int) -> Option[Int] =
   match xs {
     [] => none
     _ => 
-      let (lo, hi) = (0, list.len(xs) - 1)
-      let rec(i: Int) = 
-        match list.get(xs, i) {
-          some(x) => 
-            if x == target then some(i)
-            else if x < target then rec(i + 1)
-            else rec(i - 1)
-          none => none
-        }
-      rec(lo)
+      let low = 0
+      let high = list.len(xs) - 1
+      match binary_search_helper(xs, target, low, high) {
+        some(index) => some(index)
+        none => none
+      }
   }
+
+fn binary_search_helper(xs: List[Int], target: Int, low: Int, high: Int) -> Option[Int] = 
+  match (low, high) {
+    (x, y) when x > y => none
+    (x, y) when x == y => 
+      match list.get(xs, x) {
+        some(val) when val == target => some(x)
+        _ => none
+      }
+    (x, y) => 
+      let mid = (x + y) / 2
+      match list.get(xs, mid) {
+        some(val) when val == target => some(mid)
+        some(val) when val < target => binary_search_helper(xs, target, mid + 1, high)
+        some(val) when val > target => binary_search_helper(xs, target, low, mid - 1
 ```
 
 **Diagnostic:**
@@ -36,10 +47,15 @@ error: 'let' is not an expression in Almide
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-5 |       let (lo, hi) = (0, list.len(xs) - 1)
+5 |       let low = 0
   |       ^^^
+error: Expected FatArrow at line 15:12 (got Ident 'when')
+  --> /tmp/dojo-binary-search-0.almd:15:12
+   |
+15 |     (x, y) when x > y => none
+   |            ^
 
-1 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-binary-search-0.almd:
 compile failed
 FAILED: /tmp/dojo-binary-search-0.almd
@@ -55,17 +71,28 @@ fn binary_search(xs: List[Int], target: Int) -> Option[Int] =
   match xs {
     [] => none
     _ => 
-      let lo = 0
-      let hi = list.len(xs) - 1
-      let rec(i: Int) = 
-        match list.get(xs, i) {
-          some(x) => 
-            if x == target then some(i)
-            else if x < target then rec(i + 1)
-            else rec(i - 1)
-          none => none
-        }
-      rec(lo)
+      let low = 0
+      let high = list.len(xs) - 1
+      match binary_search_helper(xs, target, low, high) {
+        some(index) => some(index)
+        none => none
+      }
+  }
+
+fn binary_search_helper(xs: List[Int], target: Int, low: Int, high: Int) -> Option[Int] = 
+  match (low, high) {
+    (x, y) when x > y => none
+    (x, y) when x == y => 
+      match list.get(xs, x) {
+        some(val) when val == target => some(x)
+        _ => none
+      }
+    (x, y) => 
+      let mid = (x + y) / 2
+      match list.get(xs, mid) {
+        some(val) when val == target => some(mid)
+        some(val) when val < target => binary_search_helper(xs, target, mid + 1, high)
+        some(val) when val > target => binary_search_helper(xs, target, low, mid - 1
 ```
 
 **Diagnostic:**
@@ -77,10 +104,15 @@ error: 'let' is not an expression in Almide
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-5 |       let lo = 0
+5 |       let low = 0
   |       ^^^
+error: Expected FatArrow at line 15:12 (got Ident 'when')
+  --> /tmp/dojo-binary-search-1.almd:15:12
+   |
+15 |     (x, y) when x > y => none
+   |            ^
 
-1 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-binary-search-1.almd:
 compile failed
 FAILED: /tmp/dojo-binary-search-1.almd
@@ -96,20 +128,28 @@ fn binary_search(xs: List[Int], target: Int) -> Option[Int] =
   match xs {
     [] => none
     _ => 
-      let lo = 0
-      let hi = list.len(xs) - 1
-      let rec(i: Int) = 
-        match list.get(xs, i) {
-          some(x) => 
-            if x == target then some(i)
-            else if x < target then rec(i + 1)
-            else rec(i - 1)
-          none => none
-        }
-      match rec(lo) {
-        some(i) => some(i)
+      let low = 0
+      let high = list.len(xs) - 1
+      match binary_search_helper(xs, target, low, high) {
+        some(index) => some(index)
         none => none
       }
+  }
+
+fn binary_search_helper(xs: List[Int], target: Int, low: Int, high: Int) -> Option[Int] = 
+  match (low, high) {
+    (x, y) when x > y => none
+    (x, y) when x == y => 
+      match list.get(xs, x) {
+        some(val) when val == target => some(x)
+        _ => none
+      }
+    (x, y) => 
+      let mid = (x + y) / 2
+      match list.get(xs, mid) {
+        some(val) when val == target => some(mid)
+        some(val) when val < target => binary_search_helper(xs, target, mid + 1, high)
+        some(val) when val > target => binary_search_helper(xs, target, low, mid - 1
 ```
 
 **Diagnostic:**
@@ -121,10 +161,15 @@ error: 'let' is not an expression in Almide
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-5 |       let lo = 0
+5 |       let low = 0
   |       ^^^
+error: Expected FatArrow at line 15:12 (got Ident 'when')
+  --> /tmp/dojo-binary-search-2.almd:15:12
+   |
+15 |     (x, y) when x > y => none
+   |            ^
 
-1 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-binary-search-2.almd:
 compile failed
 FAILED: /tmp/dojo-binary-search-2.almd
@@ -140,35 +185,28 @@ fn binary_search(xs: List[Int], target: Int) -> Option[Int] =
   match xs {
     [] => none
     _ => 
-      let lo = 0
-      let hi = list.len(xs) - 1
-      let rec(i: Int) = 
-        match list.get(xs, i) {
-          some(x) => 
-            if x == target then some(i)
-            else if x < target then rec(i + 1)
-            else rec(i - 1)
-          none => none
-        }
-      match rec(lo) {
-        some(i) => some(i)
+      let low = 0
+      let high = list.len(xs) - 1
+      match binary_search_helper(xs, target, low, high) {
+        some(index) => some(index)
         none => none
       }
+  }
 
-fn binary_search(xs: List[Int], target: Int) -> Option[Int] = 
-  match xs {
-    [] => none
-    _ => 
-      let rec(lo: Int, hi: Int) = 
-        match list.get(xs, hi) {
-          some(x) => 
-            if x == target then some(hi)
-            else if x < target then rec(lo, hi - 1)
-            else rec(lo + 1, hi)
-          none => none
-        }
-      match rec(0, list.len(xs) - 1) {
-        some(i) => some(i)
+fn binary_search_helper(xs: List[Int], target: Int, low: Int, high: Int) -> Option[Int] = 
+  match (low, high) {
+    (x, y) when x > y => none
+    (x, y) when x == y => 
+      match list.get(xs, x) {
+        some(val) when val == target => some(x)
+        _ => none
+      }
+    (x, y) => 
+      let mid = (x + y) / 2
+      match list.get(xs, mid) {
+        some(val) when val == target => some(mid)
+        some(val) when val < target => binary_search_helper(xs, target, mid + 1, high)
+        some(val) when val > target => binary_search_helper(xs, target, low, mid - 1
 ```
 
 **Diagnostic:**
@@ -180,15 +218,13 @@ error: 'let' is not an expression in Almide
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-5 |       let lo = 0
+5 |       let low = 0
   |       ^^^
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-binary-search-3.almd:24:7
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+error: Expected FatArrow at line 15:12 (got Ident 'when')
+  --> /tmp/dojo-binary-search-3.almd:15:12
    |
-24 |       let rec(lo: Int, hi: Int) =
-   |       ^^^
+15 |     (x, y) when x > y => none
+   |            ^
 
 2 error(s) found
 Compile error for /tmp/dojo-binary-search-3.almd:

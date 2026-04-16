@@ -11,18 +11,28 @@
 
 ```almide
 fn to_roman(n: Int) -> String {
-  let (m, c, x, i) = (1000, 100, 10, 1);
-  let (symbols, values) = (
-    ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"],
-    [m, m - c, d, d - c, c, c - x, l, l - x, x, x - i, v, v - i, i]
-  );
-  let (result, remaining) = (String.new(), n);
-  for (symbol, value) in symbols {
-    while remaining >= value {
-      result += symbol;
-      remaining -= value;
-    }
-  }
+  let symbols = [
+    (1000, "M"),
+    (900, "CM"),
+    (500, "D"),
+    (400, "CD"),
+    (100, "C"),
+    (90, "XC"),
+    (50, "L"),
+    (40, "XL"),
+    (10, "X"),
+    (9, "IX"),
+    (5, "V"),
+    (4, "IV"),
+    (1, "I")
+  ];
+  let result = symbols.fold(String::new(), (a, pair) => {
+    let (value, symbol) = pair;
+    let count = (n / value).min(3);
+    let sub = count * value;
+    let str = String::from_iter((0..count).map(|_| symbol));
+    a + str
+  });
   result
 }
 ```
@@ -51,18 +61,28 @@ FAILED: /tmp/dojo-roman-numeral-0.almd
 
 ```almide
 fn to_roman(n: Int) -> String = {
-  let (m, c, x, i) = (1000, 100, 10, 1);
-  let (symbols, values) = (
-    ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"],
-    [m, m - c, d, d - c, c, c - x, l, l - x, x, x - i, v, v - i, i]
-  );
-  let (result, remaining) = (String.new(), n);
-  for (symbol, value) in symbols {
-    while remaining >= value {
-      result += symbol;
-      remaining -= value;
-    }
-  }
+  let symbols = [
+    (1000, "M"),
+    (900, "CM"),
+    (500, "D"),
+    (400, "CD"),
+    (100, "C"),
+    (90, "XC"),
+    (50, "L"),
+    (40, "XL"),
+    (10, "X"),
+    (9, "IX"),
+    (5, "V"),
+    (4, "IV"),
+    (1, "I")
+  ];
+  let result = symbols.fold(String::new(), (a, pair) => {
+    let (value, symbol) = pair;
+    let count = (n / value).min(3);
+    let sub = count * value;
+    let str = String::from_iter((0..count).map(|_| symbol));
+    a + str
+  });
   result
 }
 ```
@@ -71,52 +91,62 @@ fn to_roman(n: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-roman-numeral-1.almd
-error: Expected expression at line 3:28 (got Newline '')
-  --> /tmp/dojo-roman-numeral-1.almd:3:28
-  |
-3 |   let (symbols, values) = (
-  |                            ^
-error: Assignments return Unit and can't appear here
-  --> /tmp/dojo-roman-numeral-1.almd:10:15
-  in assignment-in-expr
-  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+error: '::' is not valid in Almide at line 17:35
+  --> /tmp/dojo-roman-numeral-1.almd:17:35
+  hint: Almide uses '.' for module access, not '::'. Write `list.map(...)` instead of `list::map(...)`
    |
-10 |       result += symbol;
-   |               ^
-error: Assignments return Unit and can't appear here
-  --> /tmp/dojo-roman-numeral-1.almd:11:18
-  in assignment-in-expr
-  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+17 |   let result = symbols.fold(String::new(), (a, pair) => {
+   |                                   ^
+error: '::' is not valid in Almide at line 21:21
+  --> /tmp/dojo-roman-numeral-1.almd:21:21
+  hint: Almide uses '.' for module access, not '::'. Write `list.map(...)` instead of `list::map(...)`
    |
-11 |       remaining -= value;
-   |                  ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 13:3 (got RBrace '}')
-  --> /tmp/dojo-roman-numeral-1.almd:13:3
+21 |     let str = String::from_iter((0..count).map(|_| symbol));
+   |                     ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 23:4 (got RParen ')')
+  --> /tmp/dojo-roman-numeral-1.almd:23:4
    |
-13 |   }
-   |   ^
-error[E001]: type mismatch in method call: expected String but got fn() -> ?0
-  --> /tmp/dojo-roman-numeral-1.almd:7:30
-  in method call
-  hint: Fix the expression type or change the expected type
-  |
-7 |   let (result, remaining) = (String.new(), n);
-  |                              ^^^^^^
-error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
-  --> /tmp/dojo-roman-numeral-1.almd:7:44
-  in fn 'to_roman'
-  hint: Fix the expression type or change the expected type
+23 |   });
+   |    ^
+error[E003]: undefined variable 'pair'
+  --> /tmp/dojo-roman-numeral-1.almd:18:27
+  in variable pair
+  hint: Did you mean `panic`?
   try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type String
-  |
-7 |   let (result, remaining) = (String.new(), n);
-  |                                            ^
+      // pair  →  panic
+      panic
+   |
+18 |     let (value, symbol) = pair;
+   |                           ^^^^
+error[E002]: undefined method 'min' on int
+  --> /tmp/dojo-roman-numeral-1.almd:19:22
+  in method call .min()
+  hint: Almide doesn't use method-call syntax. Write `int.max(x)` (or `x |> int.max`). Method syntax `x.min()` is not supported.
+  try:
+      // x.min()  →  int.max(x)
+      int.max(x)
+   |
+19 |     let count = (n / value).min(3);
+   |                      ^^^^^
+error[E003]: undefined variable 'a'
+  --> /tmp/dojo-roman-numeral-1.almd:22:5
+  in variable a
+  hint: Did you mean `n`?
+  try:
+      // a  →  n
+      n
+   |
+22 |     a + str
+   |     ^
+error: operator '+' requires numeric, String, or List types but got Unknown and String
+  --> /tmp/dojo-roman-numeral-1.almd:22:9
+  in operator +
+  hint: Use + with numeric types, String, or List
+   |
+22 |     a + str
+   |         ^^^
 
-6 error(s) found
+7 error(s) found
 Compile error for /tmp/dojo-roman-numeral-1.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-1.almd
@@ -129,17 +159,28 @@ FAILED: /tmp/dojo-roman-numeral-1.almd
 
 ```almide
 fn to_roman(n: Int) -> String = {
-  let (m, c, x, i) = (1000, 100, 10, 1);
-  let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"];
-  let values = [m, m - c, d, d - c, c, c - x, l, l - x, x, x - i, v, v - i, i];
-  let result = String.new();
-  let remaining = n;
-  for (symbol, value) in zip(symbols, values) {
-    while remaining >= value {
-      result += symbol;
-      remaining -= value;
-    }
-  }
+  let symbols = [
+    (1000, "M"),
+    (900, "CM"),
+    (500, "D"),
+    (400, "CD"),
+    (100, "C"),
+    (90, "XC"),
+    (50, "L"),
+    (40, "XL"),
+    (10, "X"),
+    (9, "IX"),
+    (5, "V"),
+    (4, "IV"),
+    (1, "I")
+  ];
+  let result = symbols.fold(String::new(), (acc, pair) => {
+    let (value, symbol) = pair;
+    let count = (n / value).|> int.clamp(0, 3);
+    let sub = count * value;
+    let str = symbol |> string.repeat(count);
+    acc + str
+  });
   result
 }
 ```
@@ -148,107 +189,55 @@ fn to_roman(n: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-roman-numeral-2.almd
-error: Assignments return Unit and can't appear here
-  --> /tmp/dojo-roman-numeral-2.almd:9:15
-  in assignment-in-expr
-  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
-  |
-9 |       result += symbol;
-  |               ^
-error: Assignments return Unit and can't appear here
-  --> /tmp/dojo-roman-numeral-2.almd:10:18
-  in assignment-in-expr
-  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+error: '::' is not valid in Almide at line 17:35
+  --> /tmp/dojo-roman-numeral-2.almd:17:35
+  hint: Almide uses '.' for module access, not '::'. Write `list.map(...)` instead of `list::map(...)`
    |
-10 |       remaining -= value;
-   |                  ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 12:3 (got RBrace '}')
-  --> /tmp/dojo-roman-numeral-2.almd:12:3
+17 |   let result = symbols.fold(String::new(), (acc, pair) => {
+   |                                   ^
+error: Expected name at line 19:29 (got PipeArrow '|>')
+  --> /tmp/dojo-roman-numeral-2.almd:19:29
    |
-12 |   }
-   |   ^
-error[E003]: undefined variable 'd'
-  --> /tmp/dojo-roman-numeral-2.almd:4:27
-  in variable d
-  hint: Did you mean `n`?
+19 |     let count = (n / value).|> int.clamp(0, 3);
+   |                             ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 23:4 (got RParen ')')
+  --> /tmp/dojo-roman-numeral-2.almd:23:4
+   |
+23 |   });
+   |    ^
+error[E003]: undefined variable 'pair'
+  --> /tmp/dojo-roman-numeral-2.almd:18:27
+  in variable pair
+  hint: Did you mean `panic`?
   try:
-      // d  →  n
-      n
-  |
-4 |   let values = [m, m - c, d, d - c, c, c - x, l, l - x, x, x - i, v, v - i, i];
-  |                           ^
-error[E003]: undefined variable 'd'
-  --> /tmp/dojo-roman-numeral-2.almd:4:30
-  in variable d
-  hint: Did you mean `n`?
-  try:
-      // d  →  n
-      n
-  |
-4 |   let values = [m, m - c, d, d - c, c, c - x, l, l - x, x, x - i, v, v - i, i];
-  |                              ^
-error[E003]: undefined variable 'l'
-  --> /tmp/dojo-roman-numeral-2.almd:4:47
-  in variable l
-  hint: Did you mean `n`?
-  try:
-      // l  →  n
-      n
-  |
-4 |   let values = [m, m - c, d, d - c, c, c - x, l, l - x, x, x - i, v, v - i, i];
-  |                                               ^
-error[E003]: undefined variable 'l'
-  --> /tmp/dojo-roman-numeral-2.almd:4:50
-  in variable l
-  hint: Did you mean `n`?
-  try:
-      // l  →  n
-      n
-  |
-4 |   let values = [m, m - c, d, d - c, c, c - x, l, l - x, x, x - i, v, v - i, i];
-  |                                                  ^
-error[E003]: undefined variable 'v'
-  --> /tmp/dojo-roman-numeral-2.almd:4:67
-  in variable v
-  hint: Did you mean `n`?
-  try:
-      // v  →  n
-      n
-  |
-4 |   let values = [m, m - c, d, d - c, c, c - x, l, l - x, x, x - i, v, v - i, i];
-  |                                                                   ^
-error[E003]: undefined variable 'v'
-  --> /tmp/dojo-roman-numeral-2.almd:4:70
-  in variable v
-  hint: Did you mean `n`?
-  try:
-      // v  →  n
-      n
-  |
-4 |   let values = [m, m - c, d, d - c, c, c - x, l, l - x, x, x - i, v, v - i, i];
-  |                                                                      ^
-error[E001]: type mismatch in method call: expected String but got fn() -> ?0
-  --> /tmp/dojo-roman-numeral-2.almd:5:16
-  in method call
-  hint: Fix the expression type or change the expected type
-  |
-5 |   let result = String.new();
-  |                ^^^^^^
-error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
-  --> /tmp/dojo-roman-numeral-2.almd:6:19
-  in fn 'to_roman'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type String
-  |
-6 |   let remaining = n;
-  |                   ^
+      // pair  →  panic
+      panic
+   |
+18 |     let (value, symbol) = pair;
+   |                           ^^^^
+error[E003]: undefined variable 'count'
+  --> /tmp/dojo-roman-numeral-2.almd:20:15
+  in variable count
+  hint: Check the variable name
+   |
+20 |     let sub = count * value;
+   |               ^^^^^
+error[E003]: undefined variable 'count'
+  --> /tmp/dojo-roman-numeral-2.almd:21:39
+  in variable count
+  hint: Check the variable name
+   |
+21 |     let str = symbol |> string.repeat(count);
+   |                                       ^^^^^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-roman-numeral-2.almd:22:5
+  in variable acc
+  hint: Check the variable name
+   |
+22 |     acc + str
+   |     ^^^
 
-11 error(s) found
+7 error(s) found
 Compile error for /tmp/dojo-roman-numeral-2.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-2.almd
@@ -261,17 +250,29 @@ FAILED: /tmp/dojo-roman-numeral-2.almd
 
 ```almide
 fn to_roman(n: Int) -> String = {
-  let (m, c, x, i) = (1000, 100, 10, 1);
-  let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"];
-  let values = [m, m - c, 500, 400, c, c - x, 50, 40, x, x - i, 5, 4, i];
-  let result = String.new();
-  let remaining = n;
-  for (symbol, value) in zip(symbols, values) {
-    while remaining >= value {
-      result += symbol;
-      remaining -= value;
-    }
-  }
+  let symbols = [
+    (1000, "M"),
+    (900, "CM"),
+    (500, "D"),
+    (400, "CD"),
+    (100, "C"),
+    (90, "XC"),
+    (50, "L"),
+    (40, "XL"),
+    (10, "X"),
+    (9, "IX"),
+    (5, "V"),
+    (4, "IV"),
+    (1, "I")
+  ];
+  let mut result = String::new();
+  symbols.fold(() => {}, (acc, pair) => {
+    let (value, symbol) = pair;
+    let count = (n / value).|> int.clamp(0, 3);
+    let sub = count * value;
+    let str = symbol |> string.repeat(count);
+    result = result + str
+  });
   result
 }
 ```
@@ -280,47 +281,61 @@ fn to_roman(n: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-roman-numeral-3.almd
-error: Assignments return Unit and can't appear here
-  --> /tmp/dojo-roman-numeral-3.almd:9:15
-  in assignment-in-expr
-  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
-  |
-9 |       result += symbol;
-  |               ^
-error: Assignments return Unit and can't appear here
-  --> /tmp/dojo-roman-numeral-3.almd:10:18
-  in assignment-in-expr
-  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+error: 'let mut' is not valid in Almide at line 17:7
+  --> /tmp/dojo-roman-numeral-3.almd:17:7
+  hint: Use 'var' for mutable variables. Example: var x = 0
    |
-10 |       remaining -= value;
-   |                  ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 12:3 (got RBrace '}')
-  --> /tmp/dojo-roman-numeral-3.almd:12:3
+17 |   let mut result = String::new();
+   |       ^
+error: Expected name at line 20:29 (got PipeArrow '|>')
+  --> /tmp/dojo-roman-numeral-3.almd:20:29
    |
-12 |   }
-   |   ^
-error[E001]: type mismatch in method call: expected String but got fn() -> ?0
-  --> /tmp/dojo-roman-numeral-3.almd:5:16
-  in method call
+20 |     let count = (n / value).|> int.clamp(0, 3);
+   |                             ^
+error[E003]: undefined variable 'count'
+  --> /tmp/dojo-roman-numeral-3.almd:21:15
+  in variable count
+  hint: Check the variable name
+   |
+21 |     let sub = count * value;
+   |               ^^^^^
+error[E003]: undefined variable 'count'
+  --> /tmp/dojo-roman-numeral-3.almd:22:39
+  in variable count
+  hint: Check the variable name
+   |
+22 |     let str = symbol |> string.repeat(count);
+   |                                       ^^^^^
+error[E003]: undefined variable 'result'
+  --> /tmp/dojo-roman-numeral-3.almd:23:14
+  in variable result
+  hint: Check the variable name
+   |
+23 |     result = result + str
+   |              ^^^^^^
+error[E005]: argument 'f' expects fn(fn() -> Unit, (Int, String)) -> fn() -> Unit but got fn(?0, (?2, String)) -> Unit
+  --> /tmp/dojo-roman-numeral-3.almd:18:3
+  in call to list.fold()
+  hint: Fix the argument type
+   |
+18 |   symbols.fold(() => {}, (acc, pair) => {
+   |   ^^^^^^^
+error[E003]: undefined variable 'result'
+  --> /tmp/dojo-roman-numeral-3.almd:25:3
+  in variable result
+  hint: Check the variable name
+   |
+25 |   result
+   |   ^^^^^^
+error[E001]: type mismatch in call to list.fold(): expected fn(fn() -> Unit, (Int, String)) -> fn() -> Unit but got fn(fn() -> Unit, (Int, String)) -> Unit
+  --> /tmp/dojo-roman-numeral-3.almd:18:3
+  in call to list.fold()
   hint: Fix the expression type or change the expected type
-  |
-5 |   let result = String.new();
-  |                ^^^^^^
-error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
-  --> /tmp/dojo-roman-numeral-3.almd:6:19
-  in fn 'to_roman'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type String
-  |
-6 |   let remaining = n;
-  |                   ^
+   |
+18 |   symbols.fold(() => {}, (acc, pair) => {
+   |   ^^^^^^^
 
-5 error(s) found
+8 error(s) found
 Compile error for /tmp/dojo-roman-numeral-3.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-3.almd

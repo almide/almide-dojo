@@ -18,7 +18,7 @@ fn validate_positive(n: Int) -> Result[Int, String] =
   else err("must be positive: " + int.to_string(n))
 
 fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = 
-  if lo <= n && n <= hi then ok(n) 
+  if n >= lo && n <= hi then ok(n) 
   else err("out of range: " + int.to_string(n))
 
 fn process(input: String) -> Result[String, String] = 
@@ -36,7 +36,7 @@ error: '&&' is not valid in Almide at line 9:14
   --> /tmp/dojo-result-pipeline-0.almd:9:14
   hint: Use 'and' for logical AND. Example: if a and b then ...
   |
-9 |   if lo <= n && n <= hi then ok(n)
+9 |   if n >= lo && n <= hi then ok(n)
   |              ^
 error: Expected ')' to close function call opened at line 13:18
   --> /tmp/dojo-result-pipeline-0.almd:18:1
@@ -68,7 +68,7 @@ fn validate_positive(n: Int) -> Result[Int, String] =
   else err("must be positive: " + int.to_string(n))
 
 fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = 
-  if lo <= n and n <= hi then ok(n) 
+  if n >= lo and n <= hi then ok(n) 
   else err("out of range: " + int.to_string(n))
 
 fn process(input: String) -> Result[String, String] = 
@@ -112,7 +112,7 @@ fn validate_positive(n: Int) -> Result[Int, String] =
   else err("must be positive: " + int.to_string(n))
 
 fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = 
-  if lo <= n and n <= hi then ok(n) 
+  if n >= lo and n <= hi then ok(n) 
   else err("out of range: " + int.to_string(n))
 
 fn process(input: String) -> Result[String, String] = 
@@ -156,14 +156,14 @@ fn validate_positive(n: Int) -> Result[Int, String] =
   else err("must be positive: " + int.to_string(n))
 
 fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = 
-  if lo <= n and n <= hi then ok(n) 
+  if n >= lo and n <= hi then ok(n) 
   else err("out of range: " + int.to_string(n))
 
 fn process(input: String) -> Result[String, String] = 
   result.flat_map(parse_int(input), (n) => 
     result.flat_map(validate_positive(n), (n) => 
       result.flat_map(validate_range(n, 1, 100), (n) => 
-        result.map(ok(n), (x) => "valid: " + int.to_string(x))))
+        result.map(ok(n), (n) => "valid: " + int.to_string(n))))
 ```
 
 **Diagnostic:**

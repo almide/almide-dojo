@@ -11,6 +11,17 @@
 
 ```almide
 fn count_vowels(s: String) -> Int = 
-  list.len(list.filter(string.chars(s), (c) => 
-    list.contains(["a", "e", "i", "o", "u"], c)))
+    list.len(
+        list.filter(
+            string.chars(s), 
+            (x) => match x {
+                "a" => true,
+                "e" => true,
+                "i" => true,
+                "o" => true,
+                "u" => true,
+                _ => false
+            }
+        )
+    )
 ```

@@ -3,8 +3,7 @@
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: no
 - **retries**: 3
-- **category**: type-error
-- **diagnostic code**: `E001`
+- **category**: parse-error
 
 ## Attempts
 
@@ -12,215 +11,174 @@
 
 ```almide
 fn rle_encode(s: String) -> String = 
-  let chars = string.chars(s)
-  in list.fold(chars, "", (acc, ch) => 
-    if string.len(acc) == 0 then 
-      "1" + ch
-    else 
-      let last_char = string.get(acc, string.len(acc) - 1)
-      in if last_char == some(ch) then 
-        let count_str = string.get(acc, 0)
-        in if count_str == some("1") then 
-          "2" + ch
-        else 
-          let count = int.parse(string.get(acc, 0)).unwrap_or(0)
-          in int.to_string(count + 1) + ch
-      else 
-        acc + "1" + ch
-  )
+  let
+    chars = string.chars(s)
+    encoded = list.fold(
+      chars,
+      [],
+      (acc, c) => 
+        match list.last(acc) with
+          some((count, prev_c)) when prev_c == c => 
+            (count + 1, c) :: list.drop_end(acc, 1)
+          _ => (1, c) :: acc
+    )
+    result = list.map(encoded, (count, c) => int.to_string(count) + c)
+  in
+  string.join(result, "")
 
 fn rle_decode(s: String) -> String = 
-  let bytes = string.to_bytes(s)
-  in list.fold(bytes, ("", 0), (acc, byte) => 
-    if byte >= 48 && byte <= 57 then 
-      (acc.0 + int.to_string(byte - 48), acc.1)
-    else if acc.1 > 0 then 
-      (acc.0 + string.repeat(string
+  let
+    chars = string.chars(s)
+    decoded = list.fold(
+      chars,
+      [],
+      (acc, c) => 
+        match c with
+          c when string.is_digit(c) => 
+            let
+              count = int.parse(c)
+            in
+            match count with
+              ok(n) => 
+                match list.last(acc) with
+                  some((prev_count, prev_c)) => 
+                    (prev_count, prev_c) :: acc
+                  none => (n, "") :: acc
+              err(_) => acc
+          c
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-run-length-encoding-0.almd
-error: `let ... in <expr>` is OCaml/Haskell syntax
-  --> /tmp/dojo-run-length-encoding-0.almd:3:3
-  in let ... in
-  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
-  try:
-      let x = 1
-      let y = 2
-      x + y
+error: Expected identifier at line 2:6 (got Newline '')
+  --> /tmp/dojo-run-length-encoding-0.almd:2:6
   |
-3 |   in list.fold(chars, "", (acc, ch) =>
-  |   ^^
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-run-length-encoding-0.almd:7:7
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+2 |   let
+  |      ^
+error: Expected LBrace at line 8:30 (got Ident 'with')
+  --> /tmp/dojo-run-length-encoding-0.almd:8:30
   |
-7 |       let last_char = string.get(acc, string.len(acc) - 1)
-  |       ^^^
-error: `let ... in <expr>` is OCaml/Haskell syntax
-  --> /tmp/dojo-run-length-encoding-0.almd:8:7
-  in let ... in
-  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
-  try:
-      let x = 1
-      let y = 2
-      x + y
-  |
-8 |       in if last_char == some(ch) then
-  |       ^^
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-run-length-encoding-0.almd:9:9
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
-  |
-9 |         let count_str = string.get(acc, 0)
-  |         ^^^
-error: `let ... in <expr>` is OCaml/Haskell syntax
-  --> /tmp/dojo-run-length-encoding-0.almd:10:9
-  in let ... in
-  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
-  try:
-      let x = 1
-      let y = 2
-      x + y
+8 |         match list.last(acc) with
+  |                              ^
+error: Expected expression at line 14:3 (got In 'in')
+  --> /tmp/dojo-run-length-encoding-0.almd:14:3
    |
-10 |         in if count_str == some("1") then
-   |         ^^
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-run-length-encoding-0.almd:13:11
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
-   |
-13 |           let count = int.parse(string.get(acc, 0)).unwrap_or(0)
-   |           ^^^
-error: `let ... in <expr>` is OCaml/Haskell syntax
-  --> /tmp/dojo-run-length-encoding-0.almd:14:11
-  in let ... in
-  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
-  try:
-      let x = 1
-      let y = 2
-      x + y
-   |
-14 |           in int.to_string(count + 1) + ch
-   |           ^^
-error: Expected expression at line 15:7 (got Else 'else')
-  --> /tmp/dojo-run-length-encoding-0.almd:15:7
-   |
-15 |       else
-   |       ^
-error: Expected expression at line 17:3 (got RParen ')')
-  --> /tmp/dojo-run-length-encoding-0.almd:17:3
-   |
-17 |   )
+14 |   in
    |   ^
-error: `let ... in <expr>` is OCaml/Haskell syntax
-  --> /tmp/dojo-run-length-encoding-0.almd:21:3
-  in let ... in
-  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
-  try:
-      let x = 1
-      let y = 2
-      x + y
+error: Expected identifier at line 18:6 (got Newline '')
+  --> /tmp/dojo-run-length-encoding-0.almd:18:6
    |
-21 |   in list.fold(bytes, ("", 0), (acc, byte) =>
-   |   ^^
-error: '&&' is not valid in Almide at line 22:19
-  --> /tmp/dojo-run-length-encoding-0.almd:22:19
-  hint: Use 'and' for logical AND. Example: if a and b then ...
+18 |   let
+   |      ^
+error: Expected LBrace at line 24:17 (got Ident 'with')
+  --> /tmp/dojo-run-length-encoding-0.almd:24:17
    |
-22 |     if byte >= 48 && byte <= 57 then
-   |                   ^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-run-length-encoding-0.almd:7:34
-  in variable acc
-  hint: Check the variable name
-  |
-7 |       let last_char = string.get(acc, string.len(acc) - 1)
-  |                                  ^^^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-run-length-encoding-0.almd:7:50
-  in variable acc
-  hint: Check the variable name
-  |
-7 |       let last_char = string.get(acc, string.len(acc) - 1)
-  |                                                  ^^^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-run-length-encoding-0.almd:9:36
-  in variable acc
-  hint: Check the variable name
-  |
-9 |         let count_str = string.get(acc, 0)
-  |                                    ^^^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-run-length-encoding-0.almd:13:44
-  in variable acc
+24 |         match c with
+   |                 ^
+error: Expected expression at line 25:37 (got FatArrow '=>')
+  --> /tmp/dojo-run-length-encoding-0.almd:25:37
+   |
+25 |           c when string.is_digit(c) =>
+   |                                     ^
+error: Expected identifier at line 26:16 (got Newline '')
+  --> /tmp/dojo-run-length-encoding-0.almd:26:16
+   |
+26 |             let
+   |                ^
+error: Expected expression at line 28:13 (got In 'in')
+  --> /tmp/dojo-run-length-encoding-0.almd:28:13
+   |
+28 |             in
+   |             ^
+error: Expected LBrace at line 29:25 (got Ident 'with')
+  --> /tmp/dojo-run-length-encoding-0.almd:29:25
+   |
+29 |             match count with
+   |                         ^
+error: Expected LBrace at line 31:38 (got Ident 'with')
+  --> /tmp/dojo-run-length-encoding-0.almd:31:38
+   |
+31 |                 match list.last(acc) with
+   |                                      ^
+error[E003]: undefined variable 'encoded'
+  --> /tmp/dojo-run-length-encoding-0.almd:13:23
+  in variable encoded
   hint: Check the variable name
    |
-13 |           let count = int.parse(string.get(acc, 0)).unwrap_or(0)
-   |                                            ^^^
-error[E005]: argument 's' expects String but got Option[String]
-  --> /tmp/dojo-run-length-encoding-0.almd:13:49
-  in call to int.parse()
+13 |     result = list.map(encoded, (count, c) => int.to_string(count) + c)
+   |                       ^^^^^^^
+error[E005]: argument 'f' expects fn(A) -> B but got fn(Int, ?1) -> String
+  --> /tmp/dojo-run-length-encoding-0.almd:13:69
+  in call to list.map()
   hint: Fix the argument type
    |
-13 |           let count = int.parse(string.get(acc, 0)).unwrap_or(0)
-   |                                                 ^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-run-length-encoding-0.almd:16:9
-  in variable acc
+13 |     result = list.map(encoded, (count, c) => int.to_string(count) + c)
+   |                                                                     ^
+error[E003]: undefined variable 'result'
+  --> /tmp/dojo-run-length-encoding-0.almd:15:15
+  in variable result
   hint: Check the variable name
    |
-16 |         acc + "1" + ch
-   |         ^^^
-error[E003]: undefined variable 'ch'
-  --> /tmp/dojo-run-length-encoding-0.almd:16:21
-  in variable ch
+15 |   string.join(result, "")
+   |               ^^^^^^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-run-length-encoding-0.almd:25:11
+  in variable c
   hint: Did you mean `s`?
   try:
-      // ch  →  s
+      // c  →  s
       s
    |
-16 |         acc + "1" + ch
-   |                     ^^
-error[E001]: type mismatch in call to int.parse(): expected String but got Option[String]
-  --> /tmp/dojo-run-length-encoding-0.almd:13:49
-  in call to int.parse()
-  hint: Fix the expression type or change the expected type
+25 |           c when string.is_digit(c) =>
+   |           ^
+error[E003]: undefined variable 'when'
+  --> /tmp/dojo-run-length-encoding-0.almd:25:13
+  in variable when
+  hint: Check the variable name
    |
-13 |           let count = int.parse(string.get(acc, 0)).unwrap_or(0)
-   |                                                 ^
-error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
-  --> /tmp/dojo-run-length-encoding-0.almd:16:21
-  in fn 'rle_encode'
-  hint: Fix the expression type or change the expected type
+25 |           c when string.is_digit(c) =>
+   |             ^^^^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-run-length-encoding-0.almd:25:34
+  in variable c
+  hint: Did you mean `s`?
   try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type String
+      // c  →  s
+      s
    |
-16 |         acc + "1" + ch
-   |                     ^^
-error[E001]: type mismatch in fn 'rle_decode': expected String but got Unit
-  --> /tmp/dojo-run-length-encoding-0.almd:20:31
-  in fn 'rle_decode'
-  hint: Fix the expression type or change the expected type
+25 |           c when string.is_digit(c) =>
+   |                                  ^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-run-length-encoding-0.almd:27:33
+  in variable c
+  hint: Did you mean `s`?
   try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type String
+      // c  →  s
+      s
    |
-20 |   let bytes = string.to_bytes(s)
-   |                               ^
+27 |               count = int.parse(c)
+   |                                 ^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-run-length-encoding-0.almd:36:11
+  in variable c
+  hint: Did you mean `s`?
+  try:
+      // c  →  s
+      s
+   |
+36 |           c
+   |           ^
+error[E001]: type mismatch in call to list.map(): expected fn(A) -> B but got fn(Int, ?1) -> String
+  --> /tmp/dojo-run-length-encoding-0.almd:13:69
+  in call to list.map()
+  hint: Fix the expression type or change the expected type
+   |
+13 |     result = list.map(encoded, (count, c) => int.to_string(count) + c)
+   |                                                                     ^
 
-21 error(s) found
+19 error(s) found
 Compile error for /tmp/dojo-run-length-encoding-0.almd:
 compile failed
 FAILED: /tmp/dojo-run-length-encoding-0.almd
@@ -232,128 +190,124 @@ FAILED: /tmp/dojo-run-length-encoding-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn rle_encode(s: String) -> String = 
-  let chars = string.chars(s)
-  in list.fold(chars, "", (acc, ch) => 
-    if string.len(acc) == 0 then 
-      "1" + ch
-    else 
-      let last_char = string.get(acc, string.len(acc) - 1)
-      let count_str = string.get(acc, 0)
-      if last_char == some(ch) then 
-        if count_str == some("1") then 
-          "2" + ch
-        else 
-          let count = int.parse(count_str.unwrap_or("0")).unwrap_or(0)
-          in int.to_string(count + 1) + ch
-      else 
-        acc + "1" + ch
-  )
+fn rle_encode(s: String) -> String =
+  let
+    chars = string.chars(s)
+    encoded = list.fold(
+      chars,
+      [],
+      (acc, c) =>
+        match list.last(acc) with
+          some((count, prev_c)) when prev_c == c =>
+            list.drop_end(acc, 1) + [(count + 1, c)]
+          _ => (1, c) :: acc
+    )
+    result = list.map(
+      encoded,
+      (x) => int.to_string(x.0) + x.1
+    )
+  in
+  string.join(result, "")
 
-fn rle_decode(s: String) -> String = 
-  let bytes = string.to_bytes(s)
-  in list.fold(bytes, ("", 0), (acc, byte) => 
-    if byte >= 48 and byte <= 57 then 
-      (acc.0 + int.to_string(byte - 48), acc.1)
-    else if acc.1 > 0 then 
-      (acc.0 + string.repeat(string.from_code
+fn rle_decode(s: String) -> String =
+  let
+    chars = string.chars(s)
+    decode_count = (count, chars) =>
+      match int.parse(count) with
+        ok(n) => (n, list.drop(chars, string.len(count)))
+        err(_) => (0, chars)
+    decoded = list.fold(
+      chars,
+      ([], ""),
+      (acc, c) =>
+        if string.is_digit(c) then
+          let
+            (count, rest) = decode_count(c, acc.1)
+            (prev_count, prev_c) = acc.0
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-run-length-encoding-1.almd
-error: `let ... in <expr>` is OCaml/Haskell syntax
-  --> /tmp/dojo-run-length-encoding-1.almd:3:3
-  in let ... in
-  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
-  try:
-      let x = 1
-      let y = 2
-      x + y
+error: Expected identifier at line 2:6 (got Newline '')
+  --> /tmp/dojo-run-length-encoding-1.almd:2:6
   |
-3 |   in list.fold(chars, "", (acc, ch) =>
-  |   ^^
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-run-length-encoding-1.almd:7:7
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+2 |   let
+  |      ^
+error: Expected LBrace at line 8:30 (got Ident 'with')
+  --> /tmp/dojo-run-length-encoding-1.almd:8:30
   |
-7 |       let last_char = string.get(acc, string.len(acc) - 1)
-  |       ^^^
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-run-length-encoding-1.almd:13:11
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+8 |         match list.last(acc) with
+  |                              ^
+error: Expected expression at line 11:13 (got FatArrow '=>')
+  --> /tmp/dojo-run-length-encoding-1.almd:11:13
    |
-13 |           let count = int.parse(count_str.unwrap_or("0")).unwrap_or(0)
-   |           ^^^
-error: Expected expression at line 17:3 (got RParen ')')
+11 |           _ => (1, c) :: acc
+   |             ^
+error: Expected expression at line 17:3 (got In 'in')
   --> /tmp/dojo-run-length-encoding-1.almd:17:3
    |
-17 |   )
+17 |   in
    |   ^
-error: `let ... in <expr>` is OCaml/Haskell syntax
-  --> /tmp/dojo-run-length-encoding-1.almd:21:3
-  in let ... in
-  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
-  try:
-      let x = 1
-      let y = 2
-      x + y
+error: Expected identifier at line 21:6 (got Newline '')
+  --> /tmp/dojo-run-length-encoding-1.almd:21:6
    |
-21 |   in list.fold(bytes, ("", 0), (acc, byte) =>
-   |   ^^
-error: Expected ')' to close function call opened at line 25:29
-  --> /tmp/dojo-run-length-encoding-1.almd:27:1
-  hint: Add ')' or check for a missing delimiter inside the function call
+21 |   let
+   |      ^
+error: Expected LBrace at line 24:30 (got Ident 'with')
+  --> /tmp/dojo-run-length-encoding-1.almd:24:30
    |
-25 |       (acc.0 + string.repeat(string.from_code
-   |                             --------------- '(' opened here
-...
-27 | test "rle_encode empty" { assert_eq(rle_encode(""), "") }
-   | ^^^^
+24 |       match int.parse(count) with
+   |                              ^
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-run-length-encoding-1.almd:32:11
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+   |
+32 |           let
+   |           ^^^
 error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-run-length-encoding-1.almd:7:34
-  in variable acc
-  hint: Check the variable name
-  |
-7 |       let last_char = string.get(acc, string.len(acc) - 1)
-  |                                  ^^^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-run-length-encoding-1.almd:7:50
-  in variable acc
-  hint: Check the variable name
-  |
-7 |       let last_char = string.get(acc, string.len(acc) - 1)
-  |                                                  ^^^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-run-length-encoding-1.almd:8:34
-  in variable acc
-  hint: Check the variable name
-  |
-8 |       let count_str = string.get(acc, 0)
-  |                                  ^^^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-run-length-encoding-1.almd:16:9
+  --> /tmp/dojo-run-length-encoding-1.almd:10:27
   in variable acc
   hint: Check the variable name
    |
-16 |         acc + "1" + ch
-   |         ^^^
-error[E003]: undefined variable 'ch'
-  --> /tmp/dojo-run-length-encoding-1.almd:16:21
-  in variable ch
+10 |             list.drop_end(acc, 1) + [(count + 1, c)]
+   |                           ^^^
+error[E003]: undefined variable 'count'
+  --> /tmp/dojo-run-length-encoding-1.almd:10:39
+  in variable count
+  hint: Check the variable name
+   |
+10 |             list.drop_end(acc, 1) + [(count + 1, c)]
+   |                                       ^^^^^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-run-length-encoding-1.almd:10:50
+  in variable c
   hint: Did you mean `s`?
   try:
-      // ch  →  s
+      // c  →  s
       s
    |
-16 |         acc + "1" + ch
-   |                     ^^
-error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
-  --> /tmp/dojo-run-length-encoding-1.almd:16:21
-  in fn 'rle_encode'
+10 |             list.drop_end(acc, 1) + [(count + 1, c)]
+   |                                                  ^
+error[E003]: undefined variable 'encoded'
+  --> /tmp/dojo-run-length-encoding-1.almd:14:7
+  in variable encoded
+  hint: Check the variable name
+   |
+14 |       encoded,
+   |       ^^^^^^^
+error[E003]: undefined variable 'result'
+  --> /tmp/dojo-run-length-encoding-1.almd:18:15
+  in variable result
+  hint: Check the variable name
+   |
+18 |   string.join(result, "")
+   |               ^^^^^^
+error[E001]: type mismatch in fn 'rle_decode': expected String but got Unit
+  --> /tmp/dojo-run-length-encoding-1.almd:22:26
+  in fn 'rle_decode'
   hint: Fix the expression type or change the expected type
   try:
       // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
@@ -362,23 +316,8 @@ error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
       // Or inline:
       //   <expression>                   // must have type String
    |
-16 |         acc + "1" + ch
-   |                     ^^
-error[E001]: type mismatch in fn 'rle_decode': expected String but got Unit
-  --> /tmp/dojo-run-length-encoding-1.almd:20:31
-  in fn 'rle_decode'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with `let bytes = ...` (a statement, returns Unit).
-      // Add `bytes` as the trailing expression so the fn returns String:
-      //
-      //   let bytes = <computation>
-      //   bytes                         // <-- add this line
-      //
-      // Or inline the computation as the tail expression directly.
-   |
-20 |   let bytes = string.to_bytes(s)
-   |                               ^
+22 |     chars = string.chars(s)
+   |                          ^
 
 13 error(s) found
 Compile error for /tmp/dojo-run-length-encoding-1.almd:
@@ -393,102 +332,60 @@ FAILED: /tmp/dojo-run-length-encoding-1.almd
 
 ```almide
 fn rle_encode(s: String) -> String = 
-  let chars = string.chars(s)
-  in list.fold(chars, ("", 0, none), (acc, ch) => 
-    if acc.1 == 0 then 
-      (string.from_codepoint(ch.codepoint.unwrap_or(0)), 1, some(ch))
-    else if acc.2 == some(ch) then 
-      (acc.0, acc.1 + 1, some(ch))
-    else 
-      (int.to_string(acc.1) + acc.0 + string.from_codepoint(ch.codepoint.unwrap_or(0)), 1, some(ch))
-  ).0
+  string.join(
+    list.map(
+      list.reverse(
+        list.fold(
+          string.chars(s),
+          [],
+          (acc, c) =>
+            match list.last(acc) with
+              some((count, prev_c)) when prev_c == c =>
+                list.drop_end(acc, 1) + [(count + 1, c)]
+              _ => (1, c) :: acc
+        )
+      ),
+      (x) => int.to_string(x.0) + x.1
+    ),
+    ""
+  )
 
 fn rle_decode(s: String) -> String = 
-  let bytes = string.to_bytes(s)
-  in list.fold(bytes, ("", 0), (acc, byte) => 
-    if byte >= 48 and byte <= 57 then 
-      (acc.0 + int.to_string(byte - 48), acc.1)
-    else 
-      (acc.0 + string.repeat(string.from_codepoint(byte), acc.1), 0)
-  ).0
-
-test "rle_encode empty" { assert_eq(rle_encode(""), "") }
-test
+  list.fold(
+    string.chars(s),
+    ("", []),
+    (acc, c) =>
+      if string.is_digit(c) then
+        (acc.0 + c, acc.1)
+      else
+        let
+          count = int.parse(acc.0).unwrap_or(0)
+          decoded = string.repeat(c, count)
+          rest = string.drop_end(s, string.len(s) - string.len(acc.0 + decoded + c))
+        in
+        (string.drop_end(s, string.len(rest)), acc.1 + [decoded])
+  ).1
+  |> list.fold((x
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-run-length-encoding-2.almd
-error: `let ... in <expr>` is OCaml/Haskell syntax
-  --> /tmp/dojo-run-length-encoding-2.almd:3:3
-  in let ... in
-  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
-  try:
-      let x = 1
-      let y = 2
-      x + y
+error: Expected LBrace at line 9:34 (got Ident 'with')
+  --> /tmp/dojo-run-length-encoding-2.almd:9:34
   |
-3 |   in list.fold(chars, ("", 0, none), (acc, ch) =>
-  |   ^^
-error: `let ... in <expr>` is OCaml/Haskell syntax
-  --> /tmp/dojo-run-length-encoding-2.almd:14:3
-  in let ... in
-  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
-  try:
-      let x = 1
-      let y = 2
-      x + y
+9 |             match list.last(acc) with
+  |                                  ^
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-run-length-encoding-2.almd:28:9
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
    |
-14 |   in list.fold(bytes, ("", 0), (acc, byte) =>
-   |   ^^
-error: Expected String at line 22:5 (got Newline '')
-  --> /tmp/dojo-run-length-encoding-2.almd:22:5
-   |
-22 | test
-   |     ^
-error[E012]: duplicate test 'rle_encode empty'
-  at line 24
-  in test "rle_encode empty"
-  hint: Rename one of the tests, or merge them. Each test name must be unique within a file.
-   |
-21 | test "rle_encode empty" { assert_eq(rle_encode(""), "") }
-   | ---------------------------------- first test 'rle_encode empty' here
-...
-24 | test "rle_encode empty" { assert_eq(rle_encode(""), "") }
-   | ^^^^^^^^^^^^^^^^^^^^^^^
-error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
-  --> /tmp/dojo-run-length-encoding-2.almd:2:28
-  in fn 'rle_encode'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with `let chars = ...` (a statement, returns Unit).
-      // Add `chars` as the trailing expression so the fn returns String:
-      //
-      //   let chars = <computation>
-      //   chars                         // <-- add this line
-      //
-      // Or inline the computation as the tail expression directly.
-  |
-2 |   let chars = string.chars(s)
-  |                            ^
-error[E001]: type mismatch in fn 'rle_decode': expected String but got Unit
-  --> /tmp/dojo-run-length-encoding-2.almd:13:31
-  in fn 'rle_decode'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with `let bytes = ...` (a statement, returns Unit).
-      // Add `bytes` as the trailing expression so the fn returns String:
-      //
-      //   let bytes = <computation>
-      //   bytes                         // <-- add this line
-      //
-      // Or inline the computation as the tail expression directly.
-   |
-13 |   let bytes = string.to_bytes(s)
-   |                               ^
+28 |         let
+   |         ^^^
 
-6 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-run-length-encoding-2.almd:
 compile failed
 FAILED: /tmp/dojo-run-length-encoding-2.almd
@@ -501,86 +398,64 @@ FAILED: /tmp/dojo-run-length-encoding-2.almd
 
 ```almide
 fn rle_encode(s: String) -> String = 
-  let chars = string.chars(s)
-  let result = list.fold(chars, ("", 0, none), (acc, ch) => 
-    if acc.1 == 0 then 
-      (string.from_codepoint(ch.codepoint.unwrap_or(0)), 1, some(ch))
-    else if acc.2 == some(ch) then 
-      (acc.0, acc.1 + 1, some(ch))
-    else 
-      (int.to_string(acc.1) + acc.0 + string.from_codepoint(ch.codepoint.unwrap_or(0)), 1, some(ch))
+  string.join(
+    list.map(
+      list.reverse(
+        list.fold(
+          string.chars(s),
+          [],
+          (acc, c) =>
+            match list.last(acc) {
+              some((count, prev_c)) when prev_c == c =>
+                list.drop_end(acc, 1) + [(count + 1, c)]
+              _ => (1, c) :: acc
+            }
+        )
+      ),
+      (x) => int.to_string(x.0) + x.1
+    ),
+    ""
   )
-  in result.0
 
 fn rle_decode(s: String) -> String = 
-  let bytes = string.to_bytes(s)
-  let result = list.fold(bytes, ("", 0), (acc, byte) => 
-    if byte >= 48 and byte <= 57 then 
-      (acc.0 + int.to_string(byte - 48), acc.1)
-    else 
-      (acc.0 + string.repeat(string.from_codepoint(byte), acc.1), 0)
-  )
-  in result.0
+  list.fold(
+    string.chars(s),
+    ("", []),
+    (acc, c) =>
+      if string.is_digit(c) then
+        (acc.0 + c, acc.1)
+      else
+        {
+          let count = int.parse(acc.0).unwrap_or(0)
+          let decoded = string.repeat(c, count)
+          let rest = string.drop_end(s, string.len(s) - string.len(acc.0 + decoded + c))
+          (string.drop_end(s, string.len(rest)), acc.1 + [decoded])
+        }
+  ).1
+  |> list.fold
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-run-length-encoding-3.almd
-error: `let ... in <expr>` is OCaml/Haskell syntax
-  --> /tmp/dojo-run-length-encoding-3.almd:11:3
-  in let ... in
-  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
-  try:
-      let x = 1
-      let y = 2
-      x + y
+error: Expected FatArrow at line 10:37 (got Ident 'when')
+  --> /tmp/dojo-run-length-encoding-3.almd:10:37
    |
-11 |   in result.0
-   |   ^^
-error: `let ... in <expr>` is OCaml/Haskell syntax
-  --> /tmp/dojo-run-length-encoding-3.almd:21:3
-  in let ... in
-  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
+10 |               some((count, prev_c)) when prev_c == c =>
+   |                                     ^
+error[E004]: list.fold() expects 3 argument(s) but got 1
+  --> /tmp/dojo-run-length-encoding-3.almd:33:59
+  in call to list.fold()
+  hint: Check the number of arguments
   try:
-      let x = 1
-      let y = 2
-      x + y
+      // list.fold() takes 3 arg(s) — you passed 1
+      list.fold(<xs: List[A]>, <init: B>, <f: fn(B, A) -> B>)
    |
-21 |   in result.0
-   |   ^^
-error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
-  --> /tmp/dojo-run-length-encoding-3.almd:9:97
-  in fn 'rle_encode'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with `let result = ...` (a statement, returns Unit).
-      // Add `result` as the trailing expression so the fn returns String:
-      //
-      //   let result = <computation>
-      //   result                         // <-- add this line
-      //
-      // Or inline the computation as the tail expression directly.
-  |
-9 |       (int.to_string(acc.1) + acc.0 + string.from_codepoint(ch.codepoint.unwrap_or(0)), 1, some(ch))
-  |                                                                                                 ^^
-error[E001]: type mismatch in fn 'rle_decode': expected String but got Unit
-  --> /tmp/dojo-run-length-encoding-3.almd:19:67
-  in fn 'rle_decode'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with `let result = ...` (a statement, returns Unit).
-      // Add `result` as the trailing expression so the fn returns String:
-      //
-      //   let result = <computation>
-      //   result                         // <-- add this line
-      //
-      // Or inline the computation as the tail expression directly.
-   |
-19 |       (acc.0 + string.repeat(string.from_codepoint(byte), acc.1), 0)
-   |                                                                   ^
+33 |           (string.drop_end(s, string.len(rest)), acc.1 + [decoded])
+   |                                                           ^^^^^^^
 
-4 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-run-length-encoding-3.almd:
 compile failed
 FAILED: /tmp/dojo-run-length-encoding-3.almd

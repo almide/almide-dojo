@@ -1,9 +1,9 @@
 # balanced-parens
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
-- **success**: no
-- **retries**: 3
-- **category**: unknown
+- **success**: yes
+- **retries**: 1
+- **category**: pass-retry
 
 ## Attempts
 
@@ -11,142 +11,179 @@
 
 ```almide
 fn is_balanced(s: String) -> Bool = 
-  let 
-    stack = list.new[String]
-    bracket_pairs = map.from_list([("(", ")"), ("[", "]"), ("{", "}")])
+  let
+    stack = list.new[String]()
     chars = string.chars(s)
-  in 
-    list.fold(chars, true, (acc, ch) => 
-      if acc then 
-        if map.contains(bracket_pairs, ch) then 
-          let 
-            closing_bracket = map.get_or(bracket_pairs, ch, "")
-          in 
-            if list.is_empty(stack) then false
-            else if list.last(stack) == some(closing_bracket) then 
-              list.drop_end(stack, 1) != list.new[String]
-            else 
-              false
-        else if string.contains("({[", ch) then 
-          list.len(stack) > 0 || map.get(bracket_pairs, ch) != none
+    pairs = map.from_list([("(", ")"), ("[", "]"), ("{", "}")])
+    is_opening = (x) => option.is_some(map.get(pairs, x))
+    is_closing = (x) => option.is_some(map.get_or(pairs, x, none))
+    is_match = (x, y) => option.unwrap_or_else(map.get(pairs, x), (z) => z == y)
+    reduce = list.fold(chars, stack, (acc, x) => 
+      if is_opening(x) then 
+        list.append(acc, [x])
+      else if is_closing(x) then 
+        if list.is_empty(acc) then 
+          list.new[String]()
         else 
-          true
+          let 
+            top = list.last(acc)
+            rest = list.drop_end(acc, 1)
+          in 
+            if is_match(option.unwrap_or(top, ""), x) then 
+              rest 
+            else 
+              list.new[String]()
       else 
-        false
+        acc
     )
+  in 
+    list.is_empty(reduce)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-0.almd
-error: Expected identifier at line 2:7 (got Newline '')
-  --> /tmp/dojo-balanced-parens-0.almd:2:7
+error: Expected identifier at line 2:6 (got Newline '')
+  --> /tmp/dojo-balanced-parens-0.almd:2:6
   |
 2 |   let
-  |       ^
-error: Expected expression at line 6:3 (got In 'in')
-  --> /tmp/dojo-balanced-parens-0.almd:6:3
-  |
-6 |   in
-  |   ^
+  |      ^
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-balanced-parens-0.almd:10:11
+  --> /tmp/dojo-balanced-parens-0.almd:16:11
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
    |
-10 |           let
+16 |           let
    |           ^^^
-error: Expected expression at line 12:11 (got In 'in')
-  --> /tmp/dojo-balanced-parens-0.almd:12:11
+error: Expected expression at line 19:11 (got In 'in')
+  --> /tmp/dojo-balanced-parens-0.almd:19:11
    |
-12 |           in
+19 |           in
    |           ^
-error: Expected expression at line 18:9 (got Else 'else')
-  --> /tmp/dojo-balanced-parens-0.almd:18:9
+error: Expected expression at line 24:7 (got Else 'else')
+  --> /tmp/dojo-balanced-parens-0.almd:24:7
    |
-18 |         else if string.contains("({[", ch) then
-   |         ^
-error: '||' is not valid in Almide at line 19:31
-  --> /tmp/dojo-balanced-parens-0.almd:19:31
-  hint: Use 'or' for logical OR. Example: if a or b then ...
+24 |       else
+   |       ^
+error: Expected expression at line 26:5 (got RParen ')')
+  --> /tmp/dojo-balanced-parens-0.almd:26:5
    |
-19 |           list.len(stack) > 0 || map.get(bracket_pairs, ch) != none
-   |                               ^
-error[E003]: undefined variable 'list'
-  --> /tmp/dojo-balanced-parens-0.almd:3:13
-  in variable list
+26 |     )
+   |     ^
+error[E002]: undefined function 'list.new'
+  --> /tmp/dojo-balanced-parens-0.almd:3:21
+  in call to list.new()
+  hint: Did you mean `[] (empty list literal)`?
+  |
+3 |     stack = list.new[String]()
+  |                     ^
+error[E003]: undefined variable 'pairs'
+  --> /tmp/dojo-balanced-parens-0.almd:6:48
+  in variable pairs
   hint: Check the variable name
   |
-3 |     stack = list.new[String]
-  |             ^^^^
-error[E003]: undefined variable 'bracket_pairs'
-  --> /tmp/dojo-balanced-parens-0.almd:11:42
-  in variable bracket_pairs
+6 |     is_opening = (x) => option.is_some(map.get(pairs, x))
+  |                                                ^^^^^
+error[E003]: undefined variable 'pairs'
+  --> /tmp/dojo-balanced-parens-0.almd:7:51
+  in variable pairs
+  hint: Check the variable name
+  |
+7 |     is_closing = (x) => option.is_some(map.get_or(pairs, x, none))
+  |                                                   ^^^^^
+error[E003]: undefined variable 'pairs'
+  --> /tmp/dojo-balanced-parens-0.almd:8:56
+  in variable pairs
+  hint: Check the variable name
+  |
+8 |     is_match = (x, y) => option.unwrap_or_else(map.get(pairs, x), (z) => z == y)
+  |                                                        ^^^^^
+error[E005]: argument 'f' expects fn() -> ?6 but got fn(?7) -> Bool
+  --> /tmp/dojo-balanced-parens-0.almd:8:79
+  in call to option.unwrap_or_else()
+  hint: Fix the argument type
+   |
+16 |           let
+   | --------------------------------------- fn option.unwrap_or_else() defined here
+...
+8 |     is_match = (x, y) => option.unwrap_or_else(map.get(pairs, x), (z) => z == y)
+  |                                                                               ^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-balanced-parens-0.almd:17:29
+  in variable acc
   hint: Check the variable name
    |
-11 |             closing_bracket = map.get_or(bracket_pairs, ch, "")
-   |                                          ^^^^^^^^^^^^^
-error[E003]: undefined variable 'ch'
-  --> /tmp/dojo-balanced-parens-0.almd:11:57
-  in variable ch
+17 |             top = list.last(acc)
+   |                             ^^^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-balanced-parens-0.almd:18:34
+  in variable acc
+  hint: Check the variable name
+   |
+18 |             rest = list.drop_end(acc, 1)
+   |                                  ^^^
+error[E003]: undefined variable 'top'
+  --> /tmp/dojo-balanced-parens-0.almd:20:42
+  in variable top
+  hint: Check the variable name
+   |
+20 |             if is_match(option.unwrap_or(top, ""), x) then
+   |                                          ^^^
+error[E003]: undefined variable 'x'
+  --> /tmp/dojo-balanced-parens-0.almd:20:52
+  in variable x
   hint: Did you mean `s`?
   try:
-      // ch  →  s
+      // x  →  s
       s
    |
-11 |             closing_bracket = map.get_or(bracket_pairs, ch, "")
-   |                                                         ^^
-error[E003]: undefined variable 'stack'
-  --> /tmp/dojo-balanced-parens-0.almd:13:30
-  in variable stack
+20 |             if is_match(option.unwrap_or(top, ""), x) then
+   |                                                    ^
+error[E002]: undefined function 'is_match'
+  --> /tmp/dojo-balanced-parens-0.almd:20:52
+  in call to is_match()
+  hint: Check the function name
+   |
+20 |             if is_match(option.unwrap_or(top, ""), x) then
+   |                                                    ^
+error[E003]: undefined variable 'rest'
+  --> /tmp/dojo-balanced-parens-0.almd:21:15
+  in variable rest
   hint: Check the variable name
    |
-13 |             if list.is_empty(stack) then false
-   |                              ^^^^^
-error[E003]: undefined variable 'stack'
-  --> /tmp/dojo-balanced-parens-0.almd:14:31
-  in variable stack
+21 |               rest
+   |               ^^^^
+error[E002]: undefined function 'list.new'
+  --> /tmp/dojo-balanced-parens-0.almd:23:23
+  in call to list.new()
+  hint: Did you mean `[] (empty list literal)`?
+   |
+23 |               list.new[String]()
+   |                       ^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-balanced-parens-0.almd:25:9
+  in variable acc
   hint: Check the variable name
    |
-14 |             else if list.last(stack) == some(closing_bracket) then
-   |                               ^^^^^
-error[E003]: undefined variable 'closing_bracket'
-  --> /tmp/dojo-balanced-parens-0.almd:14:46
-  in variable closing_bracket
+25 |         acc
+   |         ^^^
+error[E003]: undefined variable 'reduce'
+  --> /tmp/dojo-balanced-parens-0.almd:28:19
+  in variable reduce
   hint: Check the variable name
    |
-14 |             else if list.last(stack) == some(closing_bracket) then
-   |                                              ^^^^^^^^^^^^^^^
-error[E003]: undefined variable 'stack'
-  --> /tmp/dojo-balanced-parens-0.almd:15:29
-  in variable stack
-  hint: Check the variable name
-   |
-15 |               list.drop_end(stack, 1) != list.new[String]
-   |                             ^^^^^
-error[E003]: undefined variable 'list'
-  --> /tmp/dojo-balanced-parens-0.almd:15:42
-  in variable list
-  hint: Check the variable name
-   |
-15 |               list.drop_end(stack, 1) != list.new[String]
-   |                                          ^^^^
-error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
-  --> /tmp/dojo-balanced-parens-0.almd:17:15
-  in fn 'is_balanced'
+28 |     list.is_empty(reduce)
+   |                   ^^^^^^
+error[E001]: type mismatch in call to option.unwrap_or_else(): expected fn() -> ?6 but got fn(?7) -> Bool
+  --> /tmp/dojo-balanced-parens-0.almd:8:79
+  in call to option.unwrap_or_else()
   hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Bool:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type Bool
-   |
-17 |               false
-   |               ^^^^^
+  |
+8 |     is_match = (x, y) => option.unwrap_or_else(map.get(pairs, x), (z) => z == y)
+  |                                                                               ^
 
-15 error(s) found
+20 error(s) found
 Compile error for /tmp/dojo-balanced-parens-0.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-0.almd
@@ -155,246 +192,47 @@ FAILED: /tmp/dojo-balanced-parens-0.almd
 
 ```
 
-### Attempt 2 (FAIL)
+### Attempt 2 (PASS)
 
 ```almide
 fn is_balanced(s: String) -> Bool = 
-  list.fold(string.chars(s), (list.new[String], true), (acc, ch) => 
-    if acc.1 then 
-      if string.contains("({[", ch) then 
-        (acc.0 + [ch], true)
-      else if string.contains(")}]", ch) then 
-        if list.is_empty(acc.0) then 
-          (acc.0, false)
-        else 
-          let 
-            last = list.last(acc.0)
-          in 
-            if last == some(string.from_codepoint(40)) && ch == ")" then 
-              (list.drop_end(acc.0, 1), true)
-            else if last == some(string.from_codepoint(91)) && ch == "]" then 
-              (list.drop_end(acc.0, 1), true)
-            else if last == some(string.from_codepoint(123)) && ch == "}" then 
-              (list.drop_end(acc.0, 1), true)
+  list.is_empty(
+    list.fold(
+      string.chars(s), 
+      [], 
+      (acc, x) => 
+        if x == "(" then 
+          acc + ["("]
+        else if x == ")" then 
+          if list.is_empty(acc) then 
+            ["("]
+          else 
+            if list.last(acc) == some("(") then 
+              list.drop_end(acc, 1)
             else 
-              (acc.0, false)
-      else 
-        (acc.0, true)
-    else 
-      (acc.0, false)
-  ).1
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-balanced-parens-1.almd
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-balanced-parens-1.almd:10:11
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
-   |
-10 |           let
-   |           ^^^
-
-1 error(s) found
-Compile error for /tmp/dojo-balanced-parens-1.almd:
-compile failed
-FAILED: /tmp/dojo-balanced-parens-1.almd
-
-1/1 test file(s) failed
-
-```
-
-### Attempt 3 (FAIL)
-
-```almide
-fn is_balanced(s: String) -> Bool = 
-  list.fold(string.chars(s), (list.new[String], true), (acc, ch) => 
-    if acc.1 then 
-      if string.contains("({[", ch) then 
-        (acc.0 + [ch], true)
-      else if string.contains(")}]", ch) then 
-        if list.is_empty(acc.0) then 
-          (acc.0, false)
-        else 
-          {
-            let last = list.last(acc.0);
-            if last == some("(") && ch == ")" then 
-              (list.drop_end(acc.0, 1), true)
-            else if last == some("[") && ch == "]" then 
-              (list.drop_end(acc.0, 1), true)
-            else if last == some("{") && ch == "}" then 
-              (list.drop_end(acc.0, 1), true)
+              ["("]
+        else if x == "[" then 
+          acc + ["["]
+        else if x == "]" then 
+          if list.is_empty(acc) then 
+            ["["]
+          else 
+            if list.last(acc) == some("[") then 
+              list.drop_end(acc, 1)
             else 
-              (acc.0, false)
-          }
-      else 
-        (acc.0, true)
-    else 
-      (acc.0, false)
-  ).1
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-balanced-parens-2.almd
-error: '&&' is not valid in Almide at line 12:34
-  --> /tmp/dojo-balanced-parens-2.almd:12:34
-  hint: Use 'and' for logical AND. Example: if a and b then ...
-   |
-12 |             if last == some("(") && ch == ")" then
-   |                                  ^
-error[E003]: undefined variable 'list'
-  --> /tmp/dojo-balanced-parens-2.almd:2:31
-  in variable list
-  hint: Check the variable name
-  |
-2 |   list.fold(string.chars(s), (list.new[String], true), (acc, ch) =>
-  |                               ^^^^
-error[E001]: type mismatch in if branches: expected (Unknown, Bool) but got Unit
-  --> /tmp/dojo-balanced-parens-2.almd:11:34
-  in if branches
-  hint: Both branches of `if/then/else` must have the same type
-  try:
-      // an if-arm is a statement (e.g. `x = y` or a bare `let`) — returns Unit.
-      // if/else is an *expression*: both arms must produce (Unknown, Bool). Rebind via let instead:
-      //   let new_x = if cond then <then-value> else <else-value>
-      // Or for loop-like state, use recursion:
-      //   fn step(x: (Unknown, Bool)) -> (Unknown, Bool) = if cond then step(<update>) else x
-   |
-11 |             let last = list.last(acc.0);
-   |                                  ^^^
-
-3 error(s) found
-Compile error for /tmp/dojo-balanced-parens-2.almd:
-compile failed
-FAILED: /tmp/dojo-balanced-parens-2.almd
-
-1/1 test file(s) failed
-
-```
-
-### Attempt 4 (FAIL)
-
-```almide
-fn is_balanced(s: String) -> Bool = 
-  list.fold(string.chars(s), (list.new[String](), true), (acc, ch) => 
-    if acc.1 then 
-      if string.contains("({[", ch) then 
-        (acc.0 + [ch], true)
-      else if string.contains(")}]", ch) then 
-        if list.is_empty(acc.0) then 
-          (acc.0, false)
-        else 
-          let last = list.last(acc.0);
-          let new_acc = 
-            if last == some("(") and ch == ")" then 
-              (list.drop_end(acc.0, 1), true)
-            else if last == some("[") and ch == "]" then 
-              (list.drop_end(acc.0, 1), true)
-            else if last == some("{") and ch == "}" then 
-              (list.drop_end(acc.0, 1), true)
+              ["["]
+        else if x == "{" then 
+          acc + ["{"]
+        else if x == "}" then 
+          if list.is_empty(acc) then 
+            ["{"]
+          else 
+            if list.last(acc) == some("{") then 
+              list.drop_end(acc, 1)
             else 
-              (acc.0, false)
-          in new_acc
-      else 
-        (acc.0, true)
-    else 
-      (acc.0, false)
-  ).1
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-balanced-parens-3.almd
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-balanced-parens-3.almd:10:11
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
-   |
-10 |           let last = list.last(acc.0);
-   |           ^^^
-
-1 error(s) found
-Compile error for /tmp/dojo-balanced-parens-3.almd:
-compile failed
-FAILED: /tmp/dojo-balanced-parens-3.almd
-
-1/1 test file(s) failed
-
-```
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   Expected expression at line 19:5 (got Else 'else')
-  --> /tmp/dojo-balanced-parens-3.almd:19:5
-   |
-19 |     else
-   |     ^
-error[E003]: undefined variable 'top'
-  --> /tmp/dojo-balanced-parens-3.almd:14:56
-  in variable top
-  hint: Check the variable name
-   |
-14 |         let expected_closing = map.get_or(bracket_map, top, "")
-   |                                                        ^^^
-error[E003]: undefined variable 'ch'
-  --> /tmp/dojo-balanced-parens-3.almd:15:12
-  in variable ch
-  hint: Did you mean `s`?
-  try:
-      // ch  →  s
-      s
-   |
-15 |         if ch == expected_closing then
-   |            ^^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-balanced-parens-3.almd:16:26
-  in variable acc
-  hint: Check the variable name
-   |
-16 |           (list.drop_end(acc.0, 1), acc.1)
-   |                          ^^^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-balanced-parens-3.almd:16:37
-  in variable acc
-  hint: Check the variable name
-   |
-16 |           (list.drop_end(acc.0, 1), acc.1)
-   |                                     ^^^
-error[E003]: undefined variable 'ch'
-  --> /tmp/dojo-balanced-parens-3.almd:22:40
-  in variable ch
-  hint: Did you mean `s`?
-  try:
-      // ch  →  s
-      s
-   |
-22 |     if list.contains(opening_brackets, ch) then
-   |                                        ^^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-balanced-parens-3.almd:23:7
-  in variable acc
-  hint: Check the variable name
-   |
-23 |       acc + [ch]
-   |       ^^^
-error[E003]: undefined variable 'ch'
-  --> /tmp/dojo-balanced-parens-3.almd:23:14
-  in variable ch
-  hint: Did you mean `s`?
-  try:
-      // ch  →  s
-      s
-   |
-23 |       acc + [ch]
-   |              ^^
-
-9 error(s) found
-Compile error for /tmp/dojo-balanced-parens-3.almd:
-compile failed
-FAILED: /tmp/dojo-balanced-parens-3.almd
-
-1/1 test file(s) failed
-
+              ["{"]
+        else 
+          acc
+    )
+  )
 ```

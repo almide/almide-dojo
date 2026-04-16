@@ -12,9 +12,11 @@
 
 ```almide
 fn reverse(s: String) -> String {
-  let chars = string.chars(s)
-  let reversed = list.reverse(chars)
-  string.from_chars(reversed)
+  var result = ""
+  for c in string.chars(s) {
+    result = string.concat(result, c)
+  }
+  result
 }
 ```
 
@@ -42,9 +44,11 @@ FAILED: /tmp/dojo-string-reverse-0.almd
 
 ```almide
 fn reverse(s: String) -> String = {
-  let chars = string.chars(s)
-  let reversed = list.reverse(chars)
-  string.from_chars(reversed)
+  var result = ""
+  for c in string.chars(s) {
+    result = string.concat(result, c)
+  }
+  result
 }
 ```
 
@@ -52,16 +56,13 @@ fn reverse(s: String) -> String = {
 
 ```
 Compiling /tmp/dojo-string-reverse-1.almd
-error[E002]: undefined function 'string.from_chars'
-  --> /tmp/dojo-string-reverse-1.almd:4:21
-  in call to string.from_chars()
-  hint: Did you mean `string.from_bytes`?
-  try:
-      // string.from_chars(...)  →  string.from_bytes(...)
-      string.from_bytes(...)
+error[E002]: undefined function 'string.concat'
+  --> /tmp/dojo-string-reverse-1.almd:4:36
+  in call to string.concat()
+  hint: No function 'concat' in module 'string'. See docs/CHEATSHEET.md for available functions
   |
-4 |   string.from_chars(reversed)
-  |                     ^^^^^^^^
+4 |     result = string.concat(result, c)
+  |                                    ^
 
 1 error(s) found
 Compile error for /tmp/dojo-string-reverse-1.almd:
@@ -76,9 +77,11 @@ FAILED: /tmp/dojo-string-reverse-1.almd
 
 ```almide
 fn reverse(s: String) -> String = {
-  let chars = string.chars(s)
-  let reversed = list.reverse(chars)
-  string.from_bytes(reversed)
+  var result = ""
+  for c in string.chars(s) {
+    result = string.concat(result, c)
+  }
+  result
 }
 ```
 
@@ -86,22 +89,15 @@ fn reverse(s: String) -> String = {
 
 ```
 Compiling /tmp/dojo-string-reverse-2.almd
-error[E005]: argument 'bytes' expects List[Int] but got List[String]
-  --> /tmp/dojo-string-reverse-2.almd:4:21
-  in call to string.from_bytes()
-  hint: Fix the argument type
+error[E002]: undefined function 'string.concat'
+  --> /tmp/dojo-string-reverse-2.almd:4:36
+  in call to string.concat()
+  hint: No function 'concat' in module 'string'. See docs/CHEATSHEET.md for available functions
   |
-4 |   string.from_bytes(reversed)
-  |                     ^^^^^^^^
-error[E001]: type mismatch in call to string.from_bytes(): expected List[Int] but got List[String]
-  --> /tmp/dojo-string-reverse-2.almd:4:21
-  in call to string.from_bytes()
-  hint: Fix the expression type or change the expected type
-  |
-4 |   string.from_bytes(reversed)
-  |                     ^^^^^^^^
+4 |     result = string.concat(result, c)
+  |                                    ^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-string-reverse-2.almd:
 compile failed
 FAILED: /tmp/dojo-string-reverse-2.almd
@@ -114,9 +110,11 @@ FAILED: /tmp/dojo-string-reverse-2.almd
 
 ```almide
 fn reverse(s: String) -> String = {
-  let chars = string.chars(s)
-  let reversed = list.reverse(chars)
-  string.from_codepoints(reversed)
+  var result = ""
+  for c in string.chars(s) {
+    result = string.concat(result, c)
+  }
+  result
 }
 ```
 
@@ -124,16 +122,13 @@ fn reverse(s: String) -> String = {
 
 ```
 Compiling /tmp/dojo-string-reverse-3.almd
-error[E002]: undefined function 'string.from_codepoints'
-  --> /tmp/dojo-string-reverse-3.almd:4:26
-  in call to string.from_codepoints()
-  hint: Did you mean `string.from_codepoint`?
-  try:
-      // string.from_codepoints(...)  →  string.from_codepoint(...)
-      string.from_codepoint(...)
+error[E002]: undefined function 'string.concat'
+  --> /tmp/dojo-string-reverse-3.almd:4:36
+  in call to string.concat()
+  hint: No function 'concat' in module 'string'. See docs/CHEATSHEET.md for available functions
   |
-4 |   string.from_codepoints(reversed)
-  |                          ^^^^^^^^
+4 |     result = string.concat(result, c)
+  |                                    ^
 
 1 error(s) found
 Compile error for /tmp/dojo-string-reverse-3.almd:

@@ -2,7 +2,7 @@
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: yes
-- **retries**: 2
+- **retries**: 3
 - **category**: pass-retry
 
 ## Attempts
@@ -11,42 +11,27 @@
 
 ```almide
 fn reverse(s: String) -> String = 
-  let chars = string.chars(s)
-  in string.join(list.reverse(chars), "")
+  string.chars(s) 
+  |> list.reverse 
+  |> list.join(_, "")
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-string-reverse-0.almd
-error: `let ... in <expr>` is OCaml/Haskell syntax
-  --> /tmp/dojo-string-reverse-0.almd:3:3
-  in let ... in
-  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
+error[E004]: list.join() expects 2 argument(s) but got 3
+  --> /tmp/dojo-string-reverse-0.almd:4:19
+  in call to list.join()
+  hint: Check the number of arguments
   try:
-      let x = 1
-      let y = 2
-      x + y
+      // list.join() takes 2 arg(s) — you passed 3
+      list.join(<xs: List[String]>, <sep: String>)
   |
-3 |   in string.join(list.reverse(chars), "")
-  |   ^^
-error[E001]: type mismatch in fn 'reverse': expected String but got Unit
-  --> /tmp/dojo-string-reverse-0.almd:2:28
-  in fn 'reverse'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with `let chars = ...` (a statement, returns Unit).
-      // Add `chars` as the trailing expression so the fn returns String:
-      //
-      //   let chars = <computation>
-      //   chars                         // <-- add this line
-      //
-      // Or inline the computation as the tail expression directly.
-  |
-2 |   let chars = string.chars(s)
-  |                            ^
+4 |   |> list.join(_, "")
+  |                   ^^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-string-reverse-0.almd:
 compile failed
 FAILED: /tmp/dojo-string-reverse-0.almd
@@ -59,43 +44,27 @@ FAILED: /tmp/dojo-string-reverse-0.almd
 
 ```almide
 fn reverse(s: String) -> String = 
-  let chars = string.chars(s)
-  let reversed = list.reverse(chars)
-  in string.join(reversed, "")
+  string.chars(s) 
+  |> list.reverse 
+  |> string.join(_, "")
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-string-reverse-1.almd
-error: `let ... in <expr>` is OCaml/Haskell syntax
-  --> /tmp/dojo-string-reverse-1.almd:4:3
-  in let ... in
-  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
+error[E004]: string.join() expects 2 argument(s) but got 3
+  --> /tmp/dojo-string-reverse-1.almd:4:21
+  in call to string.join()
+  hint: Check the number of arguments
   try:
-      let x = 1
-      let y = 2
-      x + y
+      // string.join() takes 2 arg(s) — you passed 3
+      string.join(<list: List[String]>, <sep: String>)
   |
-4 |   in string.join(reversed, "")
-  |   ^^
-error[E001]: type mismatch in fn 'reverse': expected String but got Unit
-  --> /tmp/dojo-string-reverse-1.almd:3:31
-  in fn 'reverse'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with `let reversed = ...` (a statement, returns Unit).
-      // Add `reversed` as the trailing expression so the fn returns String:
-      //
-      //   let reversed = <computation>
-      //   reversed                         // <-- add this line
-      //
-      // Or inline the computation as the tail expression directly.
-  |
-3 |   let reversed = list.reverse(chars)
-  |                               ^^^^^
+4 |   |> string.join(_, "")
+  |                     ^^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-string-reverse-1.almd:
 compile failed
 FAILED: /tmp/dojo-string-reverse-1.almd
@@ -104,11 +73,45 @@ FAILED: /tmp/dojo-string-reverse-1.almd
 
 ```
 
-### Attempt 3 (PASS)
+### Attempt 3 (FAIL)
 
 ```almide
 fn reverse(s: String) -> String = 
-  let chars = string.chars(s)
-  let reversed = list.reverse(chars)
-  string.join(reversed, "")
+  string.chars(s) 
+  |> list.reverse 
+  |> string.join(_, "") 
+  |> (x) => x
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-string-reverse-2.almd
+error[E004]: string.join() expects 2 argument(s) but got 3
+  --> /tmp/dojo-string-reverse-2.almd:4:21
+  in call to string.join()
+  hint: Check the number of arguments
+  try:
+      // string.join() takes 2 arg(s) — you passed 3
+      string.join(<list: List[String]>, <sep: String>)
+  |
+4 |   |> string.join(_, "")
+  |                     ^^
+
+1 error(s) found
+Compile error for /tmp/dojo-string-reverse-2.almd:
+compile failed
+FAILED: /tmp/dojo-string-reverse-2.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 4 (PASS)
+
+```almide
+fn reverse(s: String) -> String = 
+  string.chars(s) 
+  |> list.reverse 
+  |> (xs) => string.join(xs, "")
 ```
