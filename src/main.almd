@@ -62,6 +62,7 @@ let SYSTEM_PROMPT = """
     Other: list.map, list.filter, list.filter_map, list.flat_map, list.find, list.sort, list.unique
 
   Common pitfalls (these trip up LLMs the most):
+    - DO NOT write `test "..." { ... }` blocks. The harness appends the reference test suite AFTER your code. Emitting your own tests causes duplicate-definition errors (E012). Submit only the fn definitions the task requires.
     - `if cond then a` without `else` yields Unit — every if-as-expression needs `else`
     - `match` arms must all return the SAME type; don't mix `String` and `Int` arms
     - Don't use stdlib module names as locals: `value`, `error`, `string`, `list`, `option` are modules
