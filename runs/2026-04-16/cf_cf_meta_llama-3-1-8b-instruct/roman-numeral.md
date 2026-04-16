@@ -3,8 +3,8 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: name-error
-- **diagnostic code**: `E003`
+- **category**: compile-error
+- **diagnostic code**: `E009`
 
 ## Attempts
 
@@ -27,14 +27,14 @@ fn to_roman(n: Int) -> String {
     (4, "IV"),
     (1, "I")
   ];
-  let result = list.fold(symbols, "", (acc, (value, symbol)) => {
+  let result = List::new();
+  for (value, symbol) in symbols {
     while n >= value {
-      acc = acc + symbol;
+      result = result + [symbol];
       n = n - value;
     }
-    acc
-  });
-  result
+  }
+  result.join("")
 }
 ```
 
@@ -77,14 +77,14 @@ fn to_roman(n: Int) -> String = {
     (4, "IV"),
     (1, "I")
   ];
-  let result = list.fold(symbols, "", (acc, (value, symbol)) => {
+  let result = List::new();
+  for (value, symbol) in symbols {
     while n >= value {
-      acc = acc + symbol;
+      result = result + [symbol];
       n = n - value;
     }
-    acc
-  });
-  result
+  }
+  result.join("")
 }
 ```
 
@@ -92,28 +92,34 @@ fn to_roman(n: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-roman-numeral-1.almd
-error[E003]: undefined variable 'symbol'
-  --> /tmp/dojo-roman-numeral-1.almd:19:19
-  in variable symbol
-  hint: Did you mean `symbols`?
-  try:
-      // symbol  →  symbols
-      symbols
+error: '::' is not valid in Almide at line 17:20
+  --> /tmp/dojo-roman-numeral-1.almd:17:20
+  hint: Almide uses '.' for module access, not '::'. Write `list.map(...)` instead of `list::map(...)`
    |
-19 |       acc = acc + symbol;
-   |                   ^^^^^^
-error[E009]: cannot reassign immutable binding 'acc'
-  --> /tmp/dojo-roman-numeral-1.almd:19:19
-  in acc = ...
-  hint: Use 'var acc = ...' instead of 'let acc = ...' to declare a mutable variable
-  try:
-      // let acc = ...  →  var acc = ...
-      var acc = <initial value>
+17 |   let result = List::new();
+   |                    ^
+error: operator '+' requires numeric, String, or List types but got List and List[String]
+  --> /tmp/dojo-roman-numeral-1.almd:20:26
+  in operator +
+  hint: Use + with numeric types, String, or List
    |
-19 |       acc = acc + symbol;
-   |                   ^^^^^^
+20 |       result = result + [symbol];
+   |                          ^^^^^^
+error[E009]: cannot reassign immutable binding 'result'
+  --> /tmp/dojo-roman-numeral-1.almd:20:26
+  in result = ...
+  hint: Use 'var result = ...' instead of 'let result = ...' to declare a mutable variable
+  try:
+      // let result = ...  →  var result = ...
+      var result = <initial value>
+   |
+17 |   let result = List::new();
+   |   ---------------------- 'result' declared here
+...
+20 |       result = result + [symbol];
+   |                          ^^^^^^
 error[E009]: cannot reassign immutable binding 'n'
-  --> /tmp/dojo-roman-numeral-1.almd:20:15
+  --> /tmp/dojo-roman-numeral-1.almd:21:15
   in n = ...
   hint: 'n' is a function parameter (immutable). Use a local copy: var n_ = n
   try:
@@ -121,22 +127,15 @@ error[E009]: cannot reassign immutable binding 'n'
       var n_ = n
       // ...then reassign n_ instead of n
    |
-20 |       n = n - value;
+21 |       n = n - value;
    |               ^^^^^
-error[E005]: argument 'f' expects fn(String, (Int, String)) -> String but got fn(?0, Int) -> ?0
-  --> /tmp/dojo-roman-numeral-1.almd:22:5
-  in call to list.fold()
-  hint: Fix the argument type
+error[E002]: undefined function 'result.join'
+  --> /tmp/dojo-roman-numeral-1.almd:24:15
+  in call to result.join()
+  hint: No function 'join' in module 'result'. See docs/CHEATSHEET.md for available functions
    |
-22 |     acc
-   |     ^^^
-error[E001]: type mismatch in call to list.fold(): expected fn(String, (Int, String)) -> String but got fn(String, Int) -> String
-  --> /tmp/dojo-roman-numeral-1.almd:22:5
-  in call to list.fold()
-  hint: Fix the expression type or change the expected type
-   |
-22 |     acc
-   |     ^^^
+24 |   result.join("")
+   |               ^^
 
 5 error(s) found
 Compile error for /tmp/dojo-roman-numeral-1.almd:
@@ -166,15 +165,15 @@ fn to_roman(n: Int) -> String = {
     (4, "IV"),
     (1, "I")
   ];
-  let result = list.fold(symbols, "", (acc, (value, symbol)) => {
-    var nَت = n;
-    while nَت >= value {
-      acc = acc + symbol;
-      nَت = nَت - value;
+  var result = List::new();
+  for (value, symbol) in symbols {
+    while n >= value {
+      result = result + [symbol];
+      var n_ = n - value;
+      n = n_;
     }
-    acc
-  });
-  result
+  }
+  result.join("")
 }
 ```
 
@@ -182,14 +181,44 @@ fn to_roman(n: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-roman-numeral-2.almd
-error: Expected Eq at line 18:10 (got EOF '')
-  --> /tmp/dojo-roman-numeral-2.almd:18:10
-error: Expected '}' to close block opened at line 17:65
-  --> /tmp/dojo-roman-numeral-2.almd:18:10
-  hint: Add '}' or check for a missing delimiter inside the block
-error: Expected '}' to close block opened at line 1:33
-  --> /tmp/dojo-roman-numeral-2.almd:18:10
-  hint: Add '}' or check for a missing delimiter inside the block
+error: '::' is not valid in Almide at line 17:20
+  --> /tmp/dojo-roman-numeral-2.almd:17:20
+  hint: Almide uses '.' for module access, not '::'. Write `list.map(...)` instead of `list::map(...)`
+   |
+17 |   var result = List::new();
+   |                    ^
+error: operator '+' requires numeric, String, or List types but got List and List[String]
+  --> /tmp/dojo-roman-numeral-2.almd:20:26
+  in operator +
+  hint: Use + with numeric types, String, or List
+   |
+20 |       result = result + [symbol];
+   |                          ^^^^^^
+error[E009]: cannot reassign immutable binding 'n'
+  --> /tmp/dojo-roman-numeral-2.almd:22:11
+  in n = ...
+  hint: 'n' is a function parameter (immutable). Use a local copy: var n_ = n
+  try:
+      // 'n' is a parameter — make a mutable copy:
+      var n_ = n
+      // ...then reassign n_ instead of n
+   |
+22 |       n = n_;
+   |           ^^
+error[E002]: undefined function 'result.join'
+  --> /tmp/dojo-roman-numeral-2.almd:25:15
+  in call to result.join()
+  hint: No function 'join' in module 'result'. See docs/CHEATSHEET.md for available functions
+   |
+25 |   result.join("")
+   |               ^^
+
+4 error(s) found
+Compile error for /tmp/dojo-roman-numeral-2.almd:
+compile failed
+FAILED: /tmp/dojo-roman-numeral-2.almd
+
+1/1 test file(s) failed
 
 ```
 
@@ -212,15 +241,15 @@ fn to_roman(n: Int) -> String = {
     (4, "IV"),
     (1, "I")
   ];
-  let result = list.fold(symbols, "", (acc, (value, symbol)) => {
-    let n_t = n;
-    while n_t >= value {
-      acc = acc + symbol;
-      n_t = n_t - value;
+  var result = List::new();
+  for (value, symbol) in symbols {
+    let n_ = n;
+    while n_ >= value {
+      result = result + [symbol];
+      n_ = n_ - value;
     }
-    acc
-  });
-  result
+  }
+  result.to_list().join("")
 }
 ```
 
@@ -228,55 +257,41 @@ fn to_roman(n: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-roman-numeral-3.almd
-error[E003]: undefined variable 'symbol'
-  --> /tmp/dojo-roman-numeral-3.almd:20:19
-  in variable symbol
-  hint: Did you mean `symbols`?
-  try:
-      // symbol  →  symbols
-      symbols
+error: '::' is not valid in Almide at line 17:20
+  --> /tmp/dojo-roman-numeral-3.almd:17:20
+  hint: Almide uses '.' for module access, not '::'. Write `list.map(...)` instead of `list::map(...)`
    |
-20 |       acc = acc + symbol;
-   |                   ^^^^^^
-error[E009]: cannot reassign immutable binding 'acc'
-  --> /tmp/dojo-roman-numeral-3.almd:20:19
-  in acc = ...
-  hint: Use 'var acc = ...' instead of 'let acc = ...' to declare a mutable variable
-  try:
-      // let acc = ...  →  var acc = ...
-      var acc = <initial value>
+17 |   var result = List::new();
+   |                    ^
+error: operator '+' requires numeric, String, or List types but got List and List[String]
+  --> /tmp/dojo-roman-numeral-3.almd:21:26
+  in operator +
+  hint: Use + with numeric types, String, or List
    |
-20 |       acc = acc + symbol;
-   |                   ^^^^^^
-error[E009]: cannot reassign immutable binding 'n_t'
-  --> /tmp/dojo-roman-numeral-3.almd:21:19
-  in n_t = ...
-  hint: Use 'var n_t = ...' instead of 'let n_t = ...' to declare a mutable variable
+21 |       result = result + [symbol];
+   |                          ^^^^^^
+error[E009]: cannot reassign immutable binding 'n_'
+  --> /tmp/dojo-roman-numeral-3.almd:22:17
+  in n_ = ...
+  hint: Use 'var n_ = ...' instead of 'let n_ = ...' to declare a mutable variable
   try:
-      // let n_t = ...  →  var n_t = ...
-      var n_t = <initial value>
+      // let n_ = ...  →  var n_ = ...
+      var n_ = <initial value>
    |
-18 |     let n_t = n;
-   |     ------------------- 'n_t' declared here
+19 |     let n_ = n;
+   |     ------------------ 'n_' declared here
 ...
-21 |       n_t = n_t - value;
-   |                   ^^^^^
-error[E005]: argument 'f' expects fn(String, (Int, String)) -> String but got fn(?0, Int) -> ?0
-  --> /tmp/dojo-roman-numeral-3.almd:23:5
-  in call to list.fold()
-  hint: Fix the argument type
+22 |       n_ = n_ - value;
+   |                 ^^^^^
+error[E002]: undefined function 'result.to_list'
+  --> /tmp/dojo-roman-numeral-3.almd:25:17
+  in call to result.to_list()
+  hint: No function 'to_list' in module 'result'. See docs/CHEATSHEET.md for available functions
    |
-23 |     acc
-   |     ^^^
-error[E001]: type mismatch in call to list.fold(): expected fn(String, (Int, String)) -> String but got fn(String, Int) -> String
-  --> /tmp/dojo-roman-numeral-3.almd:23:5
-  in call to list.fold()
-  hint: Fix the expression type or change the expected type
-   |
-23 |     acc
-   |     ^^^
+25 |   result.to_list().join("")
+   |                 ^
 
-5 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-roman-numeral-3.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-3.almd

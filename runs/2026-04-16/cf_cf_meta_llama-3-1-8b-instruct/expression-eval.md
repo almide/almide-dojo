@@ -16,14 +16,13 @@ type Expr =
   | Mul(Expr, Expr)
   | Neg(Expr)
 
-fn eval(expr: Expr) -> Int {
+fn eval(expr: Expr) -> Int =
   match expr {
     Num(n) => n
     Add(a, b) => eval(a) + eval(b)
     Mul(a, b) => eval(a) * eval(b)
     Neg(a) => -eval(a)
   }
-}
 
 This evaluator uses pattern matching to handle each variant of the `Expr` type. For `Num`, it simply returns the integer value. For `Add` and `Mul`, it recursively evaluates the two subexpressions and then performs the addition or multiplication. For `Neg`, it recursively evaluates the subexpression and then negates the result.
 ```
@@ -32,12 +31,11 @@ This evaluator uses pattern matching to handle each variant of the `Expr` type. 
 
 ```
 Compiling /tmp/dojo-expression-eval-0.almd
-error: Missing '=' before function body at line 7:28
-  --> /tmp/dojo-expression-eval-0.almd:7:28
-  hint: Almide requires '=' before the body. Write: fn eval(...) -> Type = { ... }
-  |
-7 | fn eval(expr: Expr) -> Int {
-  |                            ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 15:1 (got TypeName 'This')
+  --> /tmp/dojo-expression-eval-0.almd:15:1
+   |
+15 | This evaluator uses pattern matching to handle each variant of the `Expr` type. For `Num`, it simply returns the integer value. For `Add` and `Mul`, it recursively evaluates the two subexpressions and then performs the addition or multiplication. For `Neg`, it recursively evaluates the subexpression and then negates the result.
+   | ^
 
 1 error(s) found
 Compile error for /tmp/dojo-expression-eval-0.almd:
@@ -57,7 +55,7 @@ type Expr =
   | Mul(Expr, Expr)
   | Neg(Expr)
 
-fn eval(expr: Expr) -> Int = 
+fn eval(expr: Expr) -> Int =
   match expr {
     Num(n) => n
     Add(a, b) => eval(a) + eval(b)

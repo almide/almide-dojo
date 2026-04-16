@@ -23,7 +23,7 @@ fn validate_positive(n: Int) -> Result[Int, String] {
 }
 
 fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] {
-    if lo <= n && n <= hi {
+    if n >= lo && n <= hi {
         Ok(n)
     } else {
         Err(format!("out of range: {}", n))
@@ -92,7 +92,7 @@ fn validate_positive(n: Int) -> Result[Int, String] = {
 }
 
 fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = {
-    if lo < n && n < hi {
+    if n >= lo && n < hi {
         Ok(n)
     } else {
         Err(format!("out of range: {}", n))
@@ -128,12 +128,12 @@ error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, te
   |
 8 |     } else {
   |       ^
-error: '&&' is not valid in Almide at line 14:15
-  --> /tmp/dojo-result-pipeline-1.almd:14:15
+error: '&&' is not valid in Almide at line 14:16
+  --> /tmp/dojo-result-pipeline-1.almd:14:16
   hint: Use 'and' for logical AND. Example: if a and b then ...
    |
-14 |     if lo < n && n < hi {
-   |               ^
+14 |     if n >= lo && n < hi {
+   |                ^
 error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 16:7 (got Else 'else')
   --> /tmp/dojo-result-pipeline-1.almd:16:7
    |
@@ -210,30 +210,22 @@ FAILED: /tmp/dojo-result-pipeline-1.almd
 
 ```almide
 fn parse_int(s: String) -> Result[Int, String] = {
-    int.parse(s).map_err(|e| format!("not a number: {}", e))
+    int.parse(s).map_err(|_| err("not a number: " + s))
 }
 
 fn validate_positive(n: Int) -> Result[Int, String] = {
-    if n > 0 {
-        Ok(n)
-    } else {
-        Err(format!("must be positive: {}", n))
-    }
+    if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
 }
 
 fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = {
-    if lo <= n && n <= hi {
-        Ok(n)
-    } else {
-        Err(format!("out of range: {}", n))
-    }
+    if n >= lo and n < hi then ok(n) else err("out of range: " + int.to_string(n))
 }
 
 fn process(input: String) -> Result[String, String] = {
     parse_int(input)
         .flat_map(|n| validate_positive(n))
         .flat_map(|n| validate_range(n, 1, 100))
-        .map(|n| format!("valid: {}", int.to_string(n)))
+        .map(|n| "valid: " + int.to_string(n))
 }
 ```
 
@@ -245,34 +237,12 @@ error: '|x|' closure syntax is not valid in Almide at line 2:26
   --> /tmp/dojo-result-pipeline-2.almd:2:26
   hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
   |
-2 |     int.parse(s).map_err(|e| format!("not a number: {}", e))
+2 |     int.parse(s).map_err(|_| err("not a number: " + s))
   |                          ^
-error: Expected Then at line 6:14 (got LBrace '{')
-  --> /tmp/dojo-result-pipeline-2.almd:6:14
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
-  |
-6 |     if n > 0 {
-  |              ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 8:7 (got Else 'else')
-  --> /tmp/dojo-result-pipeline-2.almd:8:7
-  |
-8 |     } else {
-  |       ^
-error: '&&' is not valid in Almide at line 14:16
-  --> /tmp/dojo-result-pipeline-2.almd:14:16
-  hint: Use 'and' for logical AND. Example: if a and b then ...
+error: Expected expression at line 15:9 (got Dot '.')
+  --> /tmp/dojo-result-pipeline-2.almd:15:9
    |
-14 |     if lo <= n && n <= hi {
-   |                ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 16:7 (got Else 'else')
-  --> /tmp/dojo-result-pipeline-2.almd:16:7
-   |
-16 |     } else {
-   |       ^
-error: Expected expression at line 23:9 (got Dot '.')
-  --> /tmp/dojo-result-pipeline-2.almd:23:9
-   |
-23 |         .flat_map(|n| validate_positive(n))
+15 |         .flat_map(|n| validate_positive(n))
    |         ^
 error[E001]: type mismatch in fn 'parse_int': expected Result[Int, String] but got Unit
   --> /tmp/dojo-result-pipeline-2.almd:1:50
@@ -287,34 +257,8 @@ error[E001]: type mismatch in fn 'parse_int': expected Result[Int, String] but g
   |
 1 | fn parse_int(s: String) -> Result[Int, String] = {
   |                                                  ^
-error[E001]: type mismatch in fn 'validate_positive': expected Result[Int, String] but got Unit
-  --> /tmp/dojo-result-pipeline-2.almd:5:55
-  in fn 'validate_positive'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Result[Int, String]:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type Result[Int, String]
-  |
-5 | fn validate_positive(n: Int) -> Result[Int, String] = {
-  |                                                       ^
-error[E001]: type mismatch in fn 'validate_range': expected Result[Int, String] but got Unit
-  --> /tmp/dojo-result-pipeline-2.almd:13:70
-  in fn 'validate_range'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Result[Int, String]:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type Result[Int, String]
-   |
-13 | fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = {
-   |                                                                      ^
 error[E001]: type mismatch in fn 'process': expected Result[String, String] but got Unit
-  --> /tmp/dojo-result-pipeline-2.almd:22:15
+  --> /tmp/dojo-result-pipeline-2.almd:14:15
   in fn 'process'
   hint: Fix the expression type or change the expected type
   try:
@@ -324,10 +268,10 @@ error[E001]: type mismatch in fn 'process': expected Result[String, String] but 
       // Or inline:
       //   <expression>                   // must have type Result[String, String]
    |
-22 |     parse_int(input)
+14 |     parse_int(input)
    |               ^^^^^
 
-10 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-result-pipeline-2.almd:
 compile failed
 FAILED: /tmp/dojo-result-pipeline-2.almd
@@ -340,30 +284,22 @@ FAILED: /tmp/dojo-result-pipeline-2.almd
 
 ```almide
 fn parse_int(s: String) -> Result[Int, String] = {
-    int.parse(s).map_err(|e| format!("not a number: {}", e)).unwrap_or(err("not a number"))
+    int.parse(s).map_err(|e| err("not a number: " + e))
 }
 
 fn validate_positive(n: Int) -> Result[Int, String] = {
-    if n > 0 {
-        Ok(n)
-    } else {
-        Err(format!("must be positive: {}", n))
-    }
+    if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
 }
 
 fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = {
-    if lo <= n && n <= hi {
-        Ok(n)
-    } else {
-        Err(format!("out of range: {}", n))
-    }
+    if n >= lo and n <= hi then ok(n) else err("out of range: " + int.to_string(n))
 }
 
 fn process(input: String) -> Result[String, String] = {
     parse_int(input)
         .flat_map(|n| validate_positive(n))
         .flat_map(|n| validate_range(n, 1, 100))
-        .map(|n| format!("valid: {}", int.to_string(n)))
+        .map(|n| "valid: " + int.to_string(n))
 }
 ```
 
@@ -375,34 +311,12 @@ error: '|x|' closure syntax is not valid in Almide at line 2:26
   --> /tmp/dojo-result-pipeline-3.almd:2:26
   hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
   |
-2 |     int.parse(s).map_err(|e| format!("not a number: {}", e)).unwrap_or(err("not a number"))
+2 |     int.parse(s).map_err(|e| err("not a number: " + e))
   |                          ^
-error: Expected Then at line 6:14 (got LBrace '{')
-  --> /tmp/dojo-result-pipeline-3.almd:6:14
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
-  |
-6 |     if n > 0 {
-  |              ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 8:7 (got Else 'else')
-  --> /tmp/dojo-result-pipeline-3.almd:8:7
-  |
-8 |     } else {
-  |       ^
-error: '&&' is not valid in Almide at line 14:16
-  --> /tmp/dojo-result-pipeline-3.almd:14:16
-  hint: Use 'and' for logical AND. Example: if a and b then ...
+error: Expected expression at line 15:9 (got Dot '.')
+  --> /tmp/dojo-result-pipeline-3.almd:15:9
    |
-14 |     if lo <= n && n <= hi {
-   |                ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 16:7 (got Else 'else')
-  --> /tmp/dojo-result-pipeline-3.almd:16:7
-   |
-16 |     } else {
-   |       ^
-error: Expected expression at line 23:9 (got Dot '.')
-  --> /tmp/dojo-result-pipeline-3.almd:23:9
-   |
-23 |         .flat_map(|n| validate_positive(n))
+15 |         .flat_map(|n| validate_positive(n))
    |         ^
 error[E001]: type mismatch in fn 'parse_int': expected Result[Int, String] but got Unit
   --> /tmp/dojo-result-pipeline-3.almd:1:50
@@ -417,34 +331,8 @@ error[E001]: type mismatch in fn 'parse_int': expected Result[Int, String] but g
   |
 1 | fn parse_int(s: String) -> Result[Int, String] = {
   |                                                  ^
-error[E001]: type mismatch in fn 'validate_positive': expected Result[Int, String] but got Unit
-  --> /tmp/dojo-result-pipeline-3.almd:5:55
-  in fn 'validate_positive'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Result[Int, String]:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type Result[Int, String]
-  |
-5 | fn validate_positive(n: Int) -> Result[Int, String] = {
-  |                                                       ^
-error[E001]: type mismatch in fn 'validate_range': expected Result[Int, String] but got Unit
-  --> /tmp/dojo-result-pipeline-3.almd:13:70
-  in fn 'validate_range'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Result[Int, String]:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type Result[Int, String]
-   |
-13 | fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = {
-   |                                                                      ^
 error[E001]: type mismatch in fn 'process': expected Result[String, String] but got Unit
-  --> /tmp/dojo-result-pipeline-3.almd:22:15
+  --> /tmp/dojo-result-pipeline-3.almd:14:15
   in fn 'process'
   hint: Fix the expression type or change the expected type
   try:
@@ -454,10 +342,10 @@ error[E001]: type mismatch in fn 'process': expected Result[String, String] but 
       // Or inline:
       //   <expression>                   // must have type Result[String, String]
    |
-22 |     parse_int(input)
+14 |     parse_int(input)
    |               ^^^^^
 
-10 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-result-pipeline-3.almd:
 compile failed
 FAILED: /tmp/dojo-result-pipeline-3.almd

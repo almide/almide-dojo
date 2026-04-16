@@ -10,6 +10,8 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn reverse(s: String) -> String = 
-  list.fold(string.chars(s), "", (acc, ch) => ch + acc)
+fn reverse(s: String) -> String =
+  let chars = string.chars(s)
+  let reversed = list.reverse(chars)
+  in string.join(reversed, "")
 ```

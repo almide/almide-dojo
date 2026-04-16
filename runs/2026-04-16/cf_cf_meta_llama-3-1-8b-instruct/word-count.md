@@ -3,8 +3,8 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: name-error
-- **diagnostic code**: `E003`
+- **category**: type-error
+- **diagnostic code**: `E005`
 
 ## Attempts
 
@@ -12,12 +12,12 @@
 
 ```almide
 fn word_count(s: String) -> Map[String, Int] {
-  let words = string.split(s, " ").filter(|s| !s.is_empty()).map(|s| s.to_lower())
-  let init = map.new()
-  list.fold(words, init, (m, word) => {
-    let count = map.get_or(m, word, 0) + 1
-    map.set(m, word, count)
-  })
+    let words = string.split(s, " ").filter(|s| !s.is_empty())
+    let count = list.fold(words, map.new(), |m, word| {
+        let count = map.get_or(m, word, 0)
+        map.set(m, word, count + 1)
+    })
+    count
 }
 ```
 
@@ -45,12 +45,12 @@ FAILED: /tmp/dojo-word-count-0.almd
 
 ```almide
 fn word_count(s: String) -> Map[String, Int] = {
-  let words = string.split(s, " ").filter(|s| !s.is_empty()).map(|s| s.to_lower())
-  let init = map.new()
-  list.fold(words, init, (m, word) => {
-    let count = map.get_or(m, word, 0) + 1
-    map.set(m, word, count)
-  })
+    let words = string.split(s, " ").filter(|s| !s.is_empty())
+    let count = list.fold(words, map.new(), |m, word| {
+        let count = map.get_or(m, word, 0)
+        map.set(m, word, count + 1)
+    })
+    count
 }
 ```
 
@@ -58,21 +58,59 @@ fn word_count(s: String) -> Map[String, Int] = {
 
 ```
 Compiling /tmp/dojo-word-count-1.almd
-error: '|x|' closure syntax is not valid in Almide at line 2:43
-  --> /tmp/dojo-word-count-1.almd:2:43
+error: '|x|' closure syntax is not valid in Almide at line 2:45
+  --> /tmp/dojo-word-count-1.almd:2:45
   hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
   |
-2 |   let words = string.split(s, " ").filter(|s| !s.is_empty()).map(|s| s.to_lower())
-  |                                           ^
-error[E003]: undefined variable 'words'
-  --> /tmp/dojo-word-count-1.almd:4:13
-  in variable words
+2 |     let words = string.split(s, " ").filter(|s| !s.is_empty())
+  |                                             ^
+error: '|x|' closure syntax is not valid in Almide at line 3:45
+  --> /tmp/dojo-word-count-1.almd:3:45
+  hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
+  |
+3 |     let count = list.fold(words, map.new(), |m, word| {
+  |                                             ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 6:6 (got RParen ')')
+  --> /tmp/dojo-word-count-1.almd:6:6
+  |
+6 |     })
+  |      ^
+error[E003]: undefined variable 'm'
+  --> /tmp/dojo-word-count-1.almd:4:32
+  in variable m
+  hint: Did you mean `s`?
+  try:
+      // m  →  s
+      s
+  |
+4 |         let count = map.get_or(m, word, 0)
+  |                                ^
+error[E003]: undefined variable 'word'
+  --> /tmp/dojo-word-count-1.almd:4:35
+  in variable word
   hint: Check the variable name
   |
-4 |   list.fold(words, init, (m, word) => {
-  |             ^^^^^
+4 |         let count = map.get_or(m, word, 0)
+  |                                   ^^^^
+error[E003]: undefined variable 'm'
+  --> /tmp/dojo-word-count-1.almd:5:17
+  in variable m
+  hint: Did you mean `s`?
+  try:
+      // m  →  s
+      s
+  |
+5 |         map.set(m, word, count + 1)
+  |                 ^
+error[E003]: undefined variable 'word'
+  --> /tmp/dojo-word-count-1.almd:5:20
+  in variable word
+  hint: Check the variable name
+  |
+5 |         map.set(m, word, count + 1)
+  |                    ^^^^
 
-2 error(s) found
+7 error(s) found
 Compile error for /tmp/dojo-word-count-1.almd:
 compile failed
 FAILED: /tmp/dojo-word-count-1.almd
@@ -85,12 +123,12 @@ FAILED: /tmp/dojo-word-count-1.almd
 
 ```almide
 fn word_count(s: String) -> Map[String, Int] = {
-  let words = string.split(s, " ").filter(|x| !x.is_empty()).map(|x| x.to_lower())
-  let init = map.new()
-  list.fold(words, init, (m, word) => {
-    let count = map.get_or(m, word, 0) + 1
-    map.set(m, word, count)
-  })
+    let words = string.split(s, " ").filter((x) => !x.is_empty())
+    let count = list.fold(words, map.new(), (m, word) => {
+        let count = map.get_or(m, word, 0)
+        map.set(m, word, count + 1)
+    })
+    count
 }
 ```
 
@@ -98,19 +136,19 @@ fn word_count(s: String) -> Map[String, Int] = {
 
 ```
 Compiling /tmp/dojo-word-count-2.almd
-error: '|x|' closure syntax is not valid in Almide at line 2:43
-  --> /tmp/dojo-word-count-2.almd:2:43
-  hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
+error: '!' is not valid in Almide at line 2:52
+  --> /tmp/dojo-word-count-2.almd:2:52
+  hint: Use 'not' for boolean negation. Write: not x
   |
-2 |   let words = string.split(s, " ").filter(|x| !x.is_empty()).map(|x| x.to_lower())
-  |                                           ^
+2 |     let words = string.split(s, " ").filter((x) => !x.is_empty())
+  |                                                    ^
 error[E003]: undefined variable 'words'
-  --> /tmp/dojo-word-count-2.almd:4:13
+  --> /tmp/dojo-word-count-2.almd:3:27
   in variable words
   hint: Check the variable name
   |
-4 |   list.fold(words, init, (m, word) => {
-  |             ^^^^^
+3 |     let count = list.fold(words, map.new(), (m, word) => {
+  |                           ^^^^^
 
 2 error(s) found
 Compile error for /tmp/dojo-word-count-2.almd:
@@ -125,12 +163,12 @@ FAILED: /tmp/dojo-word-count-2.almd
 
 ```almide
 fn word_count(s: String) -> Map[String, Int] = {
-  let words = string.split(s, " ").filter((x) => !x.is_empty()).map((x) => x.to_lower())
-  let init = map.new()
-  list.fold(words, init, (m, word) => {
-    let count = map.get_or(m, word, 0) + 1
-    map.set(m, word, count)
-  })
+    let words = string.split(s, " ").filter((x) => not x.is_empty())
+    let count = list.fold(words, map.new(), (m, word) => {
+        let count = map.get_or(m, word, 0)
+        map.set(m, word, count + 1)
+    })
+    count
 }
 ```
 
@@ -138,19 +176,20 @@ fn word_count(s: String) -> Map[String, Int] = {
 
 ```
 Compiling /tmp/dojo-word-count-3.almd
-error: '!' is not valid in Almide at line 2:50
-  --> /tmp/dojo-word-count-3.almd:2:50
-  hint: Use 'not' for boolean negation. Write: not x
+error[E005]: argument 'f' expects fn(String) -> Bool but got fn(fn() -> ?1) -> Bool
+  --> /tmp/dojo-word-count-3.almd:2:33
+  in call to list.filter()
+  hint: Fix the argument type
   |
-2 |   let words = string.split(s, " ").filter((x) => !x.is_empty()).map((x) => x.to_lower())
-  |                                                  ^
-error[E003]: undefined variable 'words'
-  --> /tmp/dojo-word-count-3.almd:4:13
-  in variable words
-  hint: Check the variable name
+2 |     let words = string.split(s, " ").filter((x) => not x.is_empty())
+  |                                 ^^^
+error[E001]: type mismatch in call to list.filter(): expected fn(String) -> Bool but got fn(fn() -> ?1) -> Bool
+  --> /tmp/dojo-word-count-3.almd:2:33
+  in call to list.filter()
+  hint: Fix the expression type or change the expected type
   |
-4 |   list.fold(words, init, (m, word) => {
-  |             ^^^^^
+2 |     let words = string.split(s, " ").filter((x) => not x.is_empty())
+  |                                 ^^^
 
 2 error(s) found
 Compile error for /tmp/dojo-word-count-3.almd:

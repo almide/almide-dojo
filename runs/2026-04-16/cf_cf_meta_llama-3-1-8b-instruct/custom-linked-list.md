@@ -11,80 +11,109 @@
 
 ```almide
 type MyList =
-  | Nil
-  | Cons(Int, MyList)
+    | Nil
+    | Cons(Int, MyList);
 
-fn from_list(xs: List[Int]) -> MyList =
-  match xs {
-    List[] => Nil
-    List[head | ..] => Cons(head, from_list(List[..head]))
-  }
+fn from_list(xs: List[Int]) -> MyList {
+    match xs {
+        List::Nil => Nil,
+        List::Cons(head, tail) => Cons(head, from_list(tail)),
+    }
+}
 
-fn to_list(ml: MyList) -> List[Int] =
-  match ml {
-    Nil => List[]
-    Cons(head, tail) => head + to_list(tail)
-  }
+fn to_list(ml: MyList) -> List[Int] {
+    match ml {
+        Nil => List::Nil,
+        Cons(head, tail) => List::Cons(head, to_list(tail)),
+    }
+}
 
-fn my_len(ml: MyList) -> Int =
-  match ml {
-    Nil => 0
-    Cons(_, tail) => 1 + my_len(tail)
-  }
+fn my_len(ml: MyList) -> Int {
+    match ml {
+        Nil => 0,
+        Cons(_, tail) => 1 + my_len(tail),
+    }
+}
 
-fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
-  match ml {
-    Nil => Nil
-    Cons(head, tail) => Cons(f(head), my_map(tail, f))
-  }
+fn my_map(ml: MyList, f: fn(Int) -> Int) -> MyList {
+    match ml {
+        Nil => Nil,
+        Cons(head, tail) => Cons(f(head), my_map(tail, f)),
+    }
+}
 
-fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
-  match ml {
-    Nil => Nil
-    Cons(head, tail) =>
-      if pred(head) then Cons(head, my_filter(tail, pred)) else my_filter(tail, pred)
-  }
-
-fn my_reverse(ml: MyList) ->
+fn my_filter(ml: MyList, pred: fn(Int) -> Bool) -> MyList {
+    match ml {
+        Nil => Nil,
+        Cons(head, tail) => if pred(head) {
+            Cons(head, my_filter(tail, pred))
+        } else {
+            my_filter(tail,
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-custom-linked-list-0.almd
-error: Expected FatArrow at line 7:9 (got LBracket '[')
-  --> /tmp/dojo-custom-linked-list-0.almd:7:9
+error: Semicolons are not used in Almide at line 3:24
+  --> /tmp/dojo-custom-linked-list-0.almd:3:24
+  hint: Remove the ';'. Almide uses newlines to separate statements.
   |
-7 |     List[] => Nil
-  |         ^
-error: Expected type name at line 36:29 (got Newline '')
-  --> /tmp/dojo-custom-linked-list-0.almd:36:29
+3 |     | Cons(Int, MyList);
+  |                        ^
+error: Missing '=' before function body at line 5:39
+  --> /tmp/dojo-custom-linked-list-0.almd:5:39
+  hint: Almide requires '=' before the body. Write: fn from_list(...) -> Type = { ... }
+  |
+5 | fn from_list(xs: List[Int]) -> MyList {
+  |                                       ^
+error: Missing '=' before function body at line 12:37
+  --> /tmp/dojo-custom-linked-list-0.almd:12:37
+  hint: Almide requires '=' before the body. Write: fn to_list(...) -> Type = { ... }
    |
-36 | fn my_reverse(ml: MyList) ->
-   |                             ^
-error: operator '+' requires numeric, String, or List types but got Int and List[Int]
-  --> /tmp/dojo-custom-linked-list-0.almd:14:40
-  in operator +
-  hint: Use + with numeric types, String, or List
+12 | fn to_list(ml: MyList) -> List[Int] {
+   |                                     ^
+error: Missing '=' before function body at line 19:30
+  --> /tmp/dojo-custom-linked-list-0.almd:19:30
+  hint: Almide requires '=' before the body. Write: fn my_len(...) -> Type = { ... }
    |
-14 |     Cons(head, tail) => head + to_list(tail)
-   |                                        ^^^^
-error[E001]: type mismatch in match arm: expected List but got Int
-  --> /tmp/dojo-custom-linked-list-0.almd:14:40
-  in match arm
-  hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
+19 | fn my_len(ml: MyList) -> Int {
+   |                              ^
+error: Missing '=' before function body at line 26:52
+  --> /tmp/dojo-custom-linked-list-0.almd:26:52
+  hint: Almide requires '=' before the body. Write: fn my_map(...) -> Type = { ... }
    |
-14 |     Cons(head, tail) => head + to_list(tail)
-   |                                        ^^^^
-error[E001]: type mismatch in fn 'to_list': expected List[Int] but got List
-  --> /tmp/dojo-custom-linked-list-0.almd:14:40
-  in fn 'to_list'
-  hint: Fix the expression type or change the expected type
+26 | fn my_map(ml: MyList, f: fn(Int) -> Int) -> MyList {
+   |                                                    ^
+error: Missing '=' before function body at line 33:59
+  --> /tmp/dojo-custom-linked-list-0.almd:33:59
+  hint: Almide requires '=' before the body. Write: fn my_filter(...) -> Type = { ... }
    |
-14 |     Cons(head, tail) => head + to_list(tail)
-   |                                        ^^^^
+33 | fn my_filter(ml: MyList, pred: fn(Int) -> Bool) -> MyList {
+   |                                                           ^
+error[E002]: undefined function 'my_reverse'
+  --> /tmp/dojo-custom-linked-list-0.almd:49:67
+  in call to my_reverse()
+  hint: Check the function name
+   |
+49 | test "my_reverse" { assert_eq(to_list(my_reverse(from_list([1, 2, 3]))), [3, 2, 1]) }
+   |                                                                   ^
+error[E002]: undefined function 'my_reverse'
+  --> /tmp/dojo-custom-linked-list-0.almd:50:56
+  in call to my_reverse()
+  hint: Check the function name
+   |
+50 | test "my_reverse empty" { assert_eq(to_list(my_reverse(Nil)), []) }
+   |                                                        ^^^
+error[E002]: undefined function 'my_reverse'
+  --> /tmp/dojo-custom-linked-list-0.almd:51:68
+  in call to my_reverse()
+  hint: Check the function name
+   |
+51 | test "my_reverse single" { assert_eq(to_list(my_reverse(from_list([42]))), [42]) }
+   |                                                                    ^^
 
-5 error(s) found
+9 error(s) found
 Compile error for /tmp/dojo-custom-linked-list-0.almd:
 compile failed
 FAILED: /tmp/dojo-custom-linked-list-0.almd
@@ -97,80 +126,177 @@ FAILED: /tmp/dojo-custom-linked-list-0.almd
 
 ```almide
 type MyList =
-  | Nil
-  | Cons(Int, MyList)
+    | Nil
+    | Cons(Int, MyList);
 
-fn from_list(xs: List[Int]) -> MyList =
-  match xs {
-    List[] => Nil
-    List[head | ..] => Cons(head, from_list(List[..head]))
-  }
+fn from_list(xs: List[Int]) -> MyList = {
+    match xs {
+        List::Nil => Nil,
+        List::Cons(head, tail) => Cons(head, from_list(tail)),
+    }
+}
 
-fn to_list(ml: MyList) -> List[Int] =
-  match ml {
-    Nil => List[]
-    Cons(head, tail) => head + [to_list(tail)]
-  }
+fn to_list(ml: MyList) -> List[Int] = {
+    match ml {
+        Nil => List::Nil,
+        Cons(head, tail) => List::Cons(head, to_list(tail)),
+    }
+}
 
-fn my_len(ml: MyList) -> Int =
-  match ml {
-    Nil => 0
-    Cons(_, tail) => 1 + my_len(tail)
-  }
+fn my_len(ml: MyList) -> Int = {
+    match ml {
+        Nil => 0,
+        Cons(_, tail) => 1 + my_len(tail),
+    }
+}
 
-fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
-  match ml {
-    Nil => Nil
-    Cons(head, tail) => Cons(f(head), my_map(tail, f))
-  }
+fn my_map(ml: MyList, f: fn(Int) -> Int) -> MyList = {
+    match ml {
+        Nil => Nil,
+        Cons(head, tail) => Cons(f(head), my_map(tail, f)),
+    }
+}
 
-fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
-  match ml {
-    Nil => Nil
-    Cons(head, tail) =>
-      if pred(head) then Cons(head, my_filter(tail, pred)) else my_filter(tail, pred)
-  }
-
-fn my_reverse(ml: MyList) -> MyList =
+fn my_filter(ml: MyList, pred: fn(Int) -> Bool) -> MyList = {
+    match ml {
+        Nil => Nil,
+        Cons(head, tail) => if pred(head) {
+            Cons(head, my_filter(tail, pred))
+        } else {
+            my_filter(t
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-custom-linked-list-1.almd
-error: Expected FatArrow at line 7:9 (got LBracket '[')
-  --> /tmp/dojo-custom-linked-list-1.almd:7:9
+error: Semicolons are not used in Almide at line 3:24
+  --> /tmp/dojo-custom-linked-list-1.almd:3:24
+  hint: Remove the ';'. Almide uses newlines to separate statements.
   |
-7 |     List[] => Nil
-  |         ^
-error: Expected expression at line 38:1 (got Test 'test')
-  --> /tmp/dojo-custom-linked-list-1.almd:38:1
+3 |     | Cons(Int, MyList);
+  |                        ^
+error: Expected FatArrow at line 7:13 (got Colon ':')
+  --> /tmp/dojo-custom-linked-list-1.almd:7:13
+  hint: `head :: tail` (cons pattern) is Haskell/OCaml/Elm syntax. Almide list patterns use [] / [a, b] literals only. For head/tail recursion, use `list.first(xs)` and `list.drop(xs, 1)` on the non-empty arm.
+  |
+7 |         List::Nil => Nil,
+  |             ^
+error: '::' is not valid in Almide at line 8:13
+  --> /tmp/dojo-custom-linked-list-1.almd:8:13
+  hint: Almide uses '.' for module access, not '::'. Write `list.map(...)` instead of `list::map(...)`
+  |
+8 |         List::Cons(head, tail) => Cons(head, from_list(tail)),
+  |             ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 10:1 (got RBrace '}')
+  --> /tmp/dojo-custom-linked-list-1.almd:10:1
    |
-38 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
+10 | }
    | ^
-error: operator '+' requires numeric, String, or List types but got Int and List[List[Int]]
-  --> /tmp/dojo-custom-linked-list-1.almd:14:41
-  in operator +
-  hint: Use + with numeric types, String, or List
+error: Expected pattern at line 14:20 (got Colon ':')
+  --> /tmp/dojo-custom-linked-list-1.almd:14:20
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-14 |     Cons(head, tail) => head + [to_list(tail)]
-   |                                         ^^^^
-error[E001]: type mismatch in match arm: expected List but got Int
-  --> /tmp/dojo-custom-linked-list-1.almd:14:41
-  in match arm
-  hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
+14 |         Nil => List::Nil,
+   |                    ^
+error: Expected expression at line 15:26 (got FatArrow '=>')
+  --> /tmp/dojo-custom-linked-list-1.almd:15:26
    |
-14 |     Cons(head, tail) => head + [to_list(tail)]
-   |                                         ^^^^
-error[E001]: type mismatch in fn 'to_list': expected List[Int] but got List
-  --> /tmp/dojo-custom-linked-list-1.almd:14:41
-  in fn 'to_list'
+15 |         Cons(head, tail) => List::Cons(head, to_list(tail)),
+   |                          ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 17:1 (got RBrace '}')
+  --> /tmp/dojo-custom-linked-list-1.almd:17:1
+   |
+17 | }
+   | ^
+error: Expected Then at line 36:43 (got LBrace '{')
+  --> /tmp/dojo-custom-linked-list-1.almd:36:43
+  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+   |
+36 |         Cons(head, tail) => if pred(head) {
+   |                                           ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 38:11 (got Else 'else')
+  --> /tmp/dojo-custom-linked-list-1.almd:38:11
+   |
+38 |         } else {
+   |           ^
+error[E003]: undefined variable 'head'
+  --> /tmp/dojo-custom-linked-list-1.almd:15:14
+  in variable head
+  hint: Check the variable name
+   |
+15 |         Cons(head, tail) => List::Cons(head, to_list(tail)),
+   |              ^^^^
+error[E003]: undefined variable 'tail'
+  --> /tmp/dojo-custom-linked-list-1.almd:15:20
+  in variable tail
+  hint: Check the variable name
+   |
+15 |         Cons(head, tail) => List::Cons(head, to_list(tail)),
+   |                    ^^^^
+error[E003]: undefined variable 'head'
+  --> /tmp/dojo-custom-linked-list-1.almd:37:18
+  in variable head
+  hint: Check the variable name
+   |
+37 |             Cons(head, my_filter(tail, pred))
+   |                  ^^^^
+error[E003]: undefined variable 'tail'
+  --> /tmp/dojo-custom-linked-list-1.almd:37:34
+  in variable tail
+  hint: Check the variable name
+   |
+37 |             Cons(head, my_filter(tail, pred))
+   |                                  ^^^^
+error[E002]: undefined function 'my_reverse'
+  --> /tmp/dojo-custom-linked-list-1.almd:49:67
+  in call to my_reverse()
+  hint: Check the function name
+   |
+49 | test "my_reverse" { assert_eq(to_list(my_reverse(from_list([1, 2, 3]))), [3, 2, 1]) }
+   |                                                                   ^
+error[E002]: undefined function 'my_reverse'
+  --> /tmp/dojo-custom-linked-list-1.almd:50:56
+  in call to my_reverse()
+  hint: Check the function name
+   |
+50 | test "my_reverse empty" { assert_eq(to_list(my_reverse(Nil)), []) }
+   |                                                        ^^^
+error[E002]: undefined function 'my_reverse'
+  --> /tmp/dojo-custom-linked-list-1.almd:51:68
+  in call to my_reverse()
+  hint: Check the function name
+   |
+51 | test "my_reverse single" { assert_eq(to_list(my_reverse(from_list([42]))), [42]) }
+   |                                                                    ^^
+error[E001]: type mismatch in fn 'from_list': expected MyList but got Unit
+  --> /tmp/dojo-custom-linked-list-1.almd:8:9
+  in fn 'from_list'
   hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to MyList:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type MyList
+  |
+8 |         List::Cons(head, tail) => Cons(head, from_list(tail)),
+  |         ^^^^
+error[E001]: type mismatch in fn 'to_list': expected List[Int] but got Unit
+  --> /tmp/dojo-custom-linked-list-1.almd:15:20
+  in fn 'to_list'
+  hint: Fix the expression type or change the expected type. Or Got Unit where a List was expected. `list.push`/`pop`/`clear` mutate and return Unit — use `xs + [item]` for an immutable append. `for x in xs { ... }` is a side-effect loop (Unit); for element transforms, use `list.map(xs, (x) => ...)`.
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to List[Int]:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type List[Int]
    |
-14 |     Cons(head, tail) => head + [to_list(tail)]
-   |                                         ^^^^
+15 |         Cons(head, tail) => List::Cons(head, to_list(tail)),
+   |                    ^^^^
 
-5 error(s) found
+18 error(s) found
 Compile error for /tmp/dojo-custom-linked-list-1.almd:
 compile failed
 FAILED: /tmp/dojo-custom-linked-list-1.almd
@@ -183,80 +309,177 @@ FAILED: /tmp/dojo-custom-linked-list-1.almd
 
 ```almide
 type MyList =
-  | Nil
-  | Cons(Int, MyList)
+    | Nil
+    | Cons(Int, MyList);
 
-fn from_list(xs: List[Int]) -> MyList =
-  match xs {
-    List[] => Nil
-    List[head | ..] => Cons(head, from_list(List[..head]))
-  }
+fn from_list(xs: List[Int]) -> MyList = {
+    match xs {
+        List::Nil => Nil,
+        List::Cons(head, tail) => Cons(head, from_list(tail)),
+    }
+}
 
-fn to_list(ml: MyList) -> List[Int] =
-  match ml {
-    Nil => List[]
-    Cons(head, tail) => head + [to_list(tail)]
-  }
+fn to_list(ml: MyList) -> List[Int] = {
+    match ml {
+        Nil => List::Nil,
+        Cons(head, tail) => List::Cons(head, to_list(tail)),
+    }
+}
 
-fn my_len(ml: MyList) -> Int =
-  match ml {
-    Nil => 0
-    Cons(_, tail) => 1 + my_len(tail)
-  }
+fn my_len(ml: MyList) -> Int = {
+    match ml {
+        Nil => 0,
+        Cons(_, tail) => 1 + my_len(tail),
+    }
+}
 
-fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
-  match ml {
-    Nil => Nil
-    Cons(head, tail) => Cons(f(head), my_map(tail, f))
-  }
+fn my_map(ml: MyList, f: fn(Int) -> Int) -> MyList = {
+    match ml {
+        Nil => Nil,
+        Cons(head, tail) => Cons(f(head), my_map(tail, f)),
+    }
+}
 
-fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
-  match ml {
-    Nil => Nil
-    Cons(head, tail) =>
-      if pred(head) then Cons(head, my_filter(tail, pred)) else my_filter(tail, pred)
-  }
-
-fn my_reverse(ml: MyList) -> MyList =
+fn my_filter(ml: MyList, pred: fn(Int) -> Bool) -> MyList = {
+    match ml {
+        Nil => Nil,
+        Cons(head, tail) => if pred(head) {
+            Cons(head, my_filter(tail, pred))
+        } else {
+            my_filter(t
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-custom-linked-list-2.almd
-error: Expected FatArrow at line 7:9 (got LBracket '[')
-  --> /tmp/dojo-custom-linked-list-2.almd:7:9
+error: Semicolons are not used in Almide at line 3:24
+  --> /tmp/dojo-custom-linked-list-2.almd:3:24
+  hint: Remove the ';'. Almide uses newlines to separate statements.
   |
-7 |     List[] => Nil
-  |         ^
-error: Expected expression at line 38:1 (got Test 'test')
-  --> /tmp/dojo-custom-linked-list-2.almd:38:1
+3 |     | Cons(Int, MyList);
+  |                        ^
+error: Expected FatArrow at line 7:13 (got Colon ':')
+  --> /tmp/dojo-custom-linked-list-2.almd:7:13
+  hint: `head :: tail` (cons pattern) is Haskell/OCaml/Elm syntax. Almide list patterns use [] / [a, b] literals only. For head/tail recursion, use `list.first(xs)` and `list.drop(xs, 1)` on the non-empty arm.
+  |
+7 |         List::Nil => Nil,
+  |             ^
+error: '::' is not valid in Almide at line 8:13
+  --> /tmp/dojo-custom-linked-list-2.almd:8:13
+  hint: Almide uses '.' for module access, not '::'. Write `list.map(...)` instead of `list::map(...)`
+  |
+8 |         List::Cons(head, tail) => Cons(head, from_list(tail)),
+  |             ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 10:1 (got RBrace '}')
+  --> /tmp/dojo-custom-linked-list-2.almd:10:1
    |
-38 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
+10 | }
    | ^
-error: operator '+' requires numeric, String, or List types but got Int and List[List[Int]]
-  --> /tmp/dojo-custom-linked-list-2.almd:14:41
-  in operator +
-  hint: Use + with numeric types, String, or List
+error: Expected pattern at line 14:20 (got Colon ':')
+  --> /tmp/dojo-custom-linked-list-2.almd:14:20
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-14 |     Cons(head, tail) => head + [to_list(tail)]
-   |                                         ^^^^
-error[E001]: type mismatch in match arm: expected List but got Int
-  --> /tmp/dojo-custom-linked-list-2.almd:14:41
-  in match arm
-  hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
+14 |         Nil => List::Nil,
+   |                    ^
+error: Expected expression at line 15:26 (got FatArrow '=>')
+  --> /tmp/dojo-custom-linked-list-2.almd:15:26
    |
-14 |     Cons(head, tail) => head + [to_list(tail)]
-   |                                         ^^^^
-error[E001]: type mismatch in fn 'to_list': expected List[Int] but got List
-  --> /tmp/dojo-custom-linked-list-2.almd:14:41
-  in fn 'to_list'
+15 |         Cons(head, tail) => List::Cons(head, to_list(tail)),
+   |                          ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 17:1 (got RBrace '}')
+  --> /tmp/dojo-custom-linked-list-2.almd:17:1
+   |
+17 | }
+   | ^
+error: Expected Then at line 36:43 (got LBrace '{')
+  --> /tmp/dojo-custom-linked-list-2.almd:36:43
+  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+   |
+36 |         Cons(head, tail) => if pred(head) {
+   |                                           ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 38:11 (got Else 'else')
+  --> /tmp/dojo-custom-linked-list-2.almd:38:11
+   |
+38 |         } else {
+   |           ^
+error[E003]: undefined variable 'head'
+  --> /tmp/dojo-custom-linked-list-2.almd:15:14
+  in variable head
+  hint: Check the variable name
+   |
+15 |         Cons(head, tail) => List::Cons(head, to_list(tail)),
+   |              ^^^^
+error[E003]: undefined variable 'tail'
+  --> /tmp/dojo-custom-linked-list-2.almd:15:20
+  in variable tail
+  hint: Check the variable name
+   |
+15 |         Cons(head, tail) => List::Cons(head, to_list(tail)),
+   |                    ^^^^
+error[E003]: undefined variable 'head'
+  --> /tmp/dojo-custom-linked-list-2.almd:37:18
+  in variable head
+  hint: Check the variable name
+   |
+37 |             Cons(head, my_filter(tail, pred))
+   |                  ^^^^
+error[E003]: undefined variable 'tail'
+  --> /tmp/dojo-custom-linked-list-2.almd:37:34
+  in variable tail
+  hint: Check the variable name
+   |
+37 |             Cons(head, my_filter(tail, pred))
+   |                                  ^^^^
+error[E002]: undefined function 'my_reverse'
+  --> /tmp/dojo-custom-linked-list-2.almd:49:67
+  in call to my_reverse()
+  hint: Check the function name
+   |
+49 | test "my_reverse" { assert_eq(to_list(my_reverse(from_list([1, 2, 3]))), [3, 2, 1]) }
+   |                                                                   ^
+error[E002]: undefined function 'my_reverse'
+  --> /tmp/dojo-custom-linked-list-2.almd:50:56
+  in call to my_reverse()
+  hint: Check the function name
+   |
+50 | test "my_reverse empty" { assert_eq(to_list(my_reverse(Nil)), []) }
+   |                                                        ^^^
+error[E002]: undefined function 'my_reverse'
+  --> /tmp/dojo-custom-linked-list-2.almd:51:68
+  in call to my_reverse()
+  hint: Check the function name
+   |
+51 | test "my_reverse single" { assert_eq(to_list(my_reverse(from_list([42]))), [42]) }
+   |                                                                    ^^
+error[E001]: type mismatch in fn 'from_list': expected MyList but got Unit
+  --> /tmp/dojo-custom-linked-list-2.almd:8:9
+  in fn 'from_list'
   hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to MyList:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type MyList
+  |
+8 |         List::Cons(head, tail) => Cons(head, from_list(tail)),
+  |         ^^^^
+error[E001]: type mismatch in fn 'to_list': expected List[Int] but got Unit
+  --> /tmp/dojo-custom-linked-list-2.almd:15:20
+  in fn 'to_list'
+  hint: Fix the expression type or change the expected type. Or Got Unit where a List was expected. `list.push`/`pop`/`clear` mutate and return Unit — use `xs + [item]` for an immutable append. `for x in xs { ... }` is a side-effect loop (Unit); for element transforms, use `list.map(xs, (x) => ...)`.
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to List[Int]:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type List[Int]
    |
-14 |     Cons(head, tail) => head + [to_list(tail)]
-   |                                         ^^^^
+15 |         Cons(head, tail) => List::Cons(head, to_list(tail)),
+   |                    ^^^^
 
-5 error(s) found
+18 error(s) found
 Compile error for /tmp/dojo-custom-linked-list-2.almd:
 compile failed
 FAILED: /tmp/dojo-custom-linked-list-2.almd
@@ -269,80 +492,177 @@ FAILED: /tmp/dojo-custom-linked-list-2.almd
 
 ```almide
 type MyList =
-  | Nil
-  | Cons(Int, MyList)
+    | Nil
+    | Cons(Int, MyList);
 
-fn from_list(xs: List[Int]) -> MyList =
-  match xs {
-    List[] => Nil
-    List[head | ..] => Cons(head, from_list(List[..head]))
-  }
+fn from_list(xs: List[Int]) -> MyList = {
+    match xs {
+        List::Nil => Nil,
+        List::Cons(head, tail) => Cons(head, from_list(tail)),
+    }
+}
 
-fn to_list(ml: MyList) -> List[Int] =
-  match ml {
-    Nil => List[]
-    Cons(head, tail) => head + [to_list(tail)]
-  }
+fn to_list(ml: MyList) -> List[Int] = {
+    match ml {
+        Nil => List::Nil,
+        Cons(head, tail) => List::Cons(head, to_list(tail)),
+    }
+}
 
-fn my_len(ml: MyList) -> Int =
-  match ml {
-    Nil => 0
-    Cons(_, tail) => 1 + my_len(tail)
-  }
+fn my_len(ml: MyList) -> Int = {
+    match ml {
+        Nil => 0,
+        Cons(_, tail) => 1 + my_len(tail),
+    }
+}
 
-fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
-  match ml {
-    Nil => Nil
-    Cons(head, tail) => Cons(f(head), my_map(tail, f))
-  }
+fn my_map(ml: MyList, f: fn(Int) -> Int) -> MyList = {
+    match ml {
+        Nil => Nil,
+        Cons(head, tail) => Cons(f(head), my_map(tail, f)),
+    }
+}
 
-fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
-  match ml {
-    Nil => Nil
-    Cons(head, tail) =>
-      if pred(head) then Cons(head, my_filter(tail, pred)) else my_filter(tail, pred)
-  }
-
-fn my_reverse(ml: MyList) -> MyList =
+fn my_filter(ml: MyList, pred: fn(Int) -> Bool) -> MyList = {
+    match ml {
+        Nil => Nil,
+        Cons(head, tail) => if pred(head) {
+            Cons(head, my_filter(tail, pred))
+        } else {
+            my_filter(t
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-custom-linked-list-3.almd
-error: Expected FatArrow at line 7:9 (got LBracket '[')
-  --> /tmp/dojo-custom-linked-list-3.almd:7:9
+error: Semicolons are not used in Almide at line 3:24
+  --> /tmp/dojo-custom-linked-list-3.almd:3:24
+  hint: Remove the ';'. Almide uses newlines to separate statements.
   |
-7 |     List[] => Nil
-  |         ^
-error: Expected expression at line 38:1 (got Test 'test')
-  --> /tmp/dojo-custom-linked-list-3.almd:38:1
+3 |     | Cons(Int, MyList);
+  |                        ^
+error: Expected FatArrow at line 7:13 (got Colon ':')
+  --> /tmp/dojo-custom-linked-list-3.almd:7:13
+  hint: `head :: tail` (cons pattern) is Haskell/OCaml/Elm syntax. Almide list patterns use [] / [a, b] literals only. For head/tail recursion, use `list.first(xs)` and `list.drop(xs, 1)` on the non-empty arm.
+  |
+7 |         List::Nil => Nil,
+  |             ^
+error: '::' is not valid in Almide at line 8:13
+  --> /tmp/dojo-custom-linked-list-3.almd:8:13
+  hint: Almide uses '.' for module access, not '::'. Write `list.map(...)` instead of `list::map(...)`
+  |
+8 |         List::Cons(head, tail) => Cons(head, from_list(tail)),
+  |             ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 10:1 (got RBrace '}')
+  --> /tmp/dojo-custom-linked-list-3.almd:10:1
    |
-38 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
+10 | }
    | ^
-error: operator '+' requires numeric, String, or List types but got Int and List[List[Int]]
-  --> /tmp/dojo-custom-linked-list-3.almd:14:41
-  in operator +
-  hint: Use + with numeric types, String, or List
+error: Expected pattern at line 14:20 (got Colon ':')
+  --> /tmp/dojo-custom-linked-list-3.almd:14:20
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
-14 |     Cons(head, tail) => head + [to_list(tail)]
-   |                                         ^^^^
-error[E001]: type mismatch in match arm: expected List but got Int
-  --> /tmp/dojo-custom-linked-list-3.almd:14:41
-  in match arm
-  hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
+14 |         Nil => List::Nil,
+   |                    ^
+error: Expected expression at line 15:26 (got FatArrow '=>')
+  --> /tmp/dojo-custom-linked-list-3.almd:15:26
    |
-14 |     Cons(head, tail) => head + [to_list(tail)]
-   |                                         ^^^^
-error[E001]: type mismatch in fn 'to_list': expected List[Int] but got List
-  --> /tmp/dojo-custom-linked-list-3.almd:14:41
-  in fn 'to_list'
+15 |         Cons(head, tail) => List::Cons(head, to_list(tail)),
+   |                          ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 17:1 (got RBrace '}')
+  --> /tmp/dojo-custom-linked-list-3.almd:17:1
+   |
+17 | }
+   | ^
+error: Expected Then at line 36:43 (got LBrace '{')
+  --> /tmp/dojo-custom-linked-list-3.almd:36:43
+  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+   |
+36 |         Cons(head, tail) => if pred(head) {
+   |                                           ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 38:11 (got Else 'else')
+  --> /tmp/dojo-custom-linked-list-3.almd:38:11
+   |
+38 |         } else {
+   |           ^
+error[E003]: undefined variable 'head'
+  --> /tmp/dojo-custom-linked-list-3.almd:15:14
+  in variable head
+  hint: Check the variable name
+   |
+15 |         Cons(head, tail) => List::Cons(head, to_list(tail)),
+   |              ^^^^
+error[E003]: undefined variable 'tail'
+  --> /tmp/dojo-custom-linked-list-3.almd:15:20
+  in variable tail
+  hint: Check the variable name
+   |
+15 |         Cons(head, tail) => List::Cons(head, to_list(tail)),
+   |                    ^^^^
+error[E003]: undefined variable 'head'
+  --> /tmp/dojo-custom-linked-list-3.almd:37:18
+  in variable head
+  hint: Check the variable name
+   |
+37 |             Cons(head, my_filter(tail, pred))
+   |                  ^^^^
+error[E003]: undefined variable 'tail'
+  --> /tmp/dojo-custom-linked-list-3.almd:37:34
+  in variable tail
+  hint: Check the variable name
+   |
+37 |             Cons(head, my_filter(tail, pred))
+   |                                  ^^^^
+error[E002]: undefined function 'my_reverse'
+  --> /tmp/dojo-custom-linked-list-3.almd:49:67
+  in call to my_reverse()
+  hint: Check the function name
+   |
+49 | test "my_reverse" { assert_eq(to_list(my_reverse(from_list([1, 2, 3]))), [3, 2, 1]) }
+   |                                                                   ^
+error[E002]: undefined function 'my_reverse'
+  --> /tmp/dojo-custom-linked-list-3.almd:50:56
+  in call to my_reverse()
+  hint: Check the function name
+   |
+50 | test "my_reverse empty" { assert_eq(to_list(my_reverse(Nil)), []) }
+   |                                                        ^^^
+error[E002]: undefined function 'my_reverse'
+  --> /tmp/dojo-custom-linked-list-3.almd:51:68
+  in call to my_reverse()
+  hint: Check the function name
+   |
+51 | test "my_reverse single" { assert_eq(to_list(my_reverse(from_list([42]))), [42]) }
+   |                                                                    ^^
+error[E001]: type mismatch in fn 'from_list': expected MyList but got Unit
+  --> /tmp/dojo-custom-linked-list-3.almd:8:9
+  in fn 'from_list'
   hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to MyList:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type MyList
+  |
+8 |         List::Cons(head, tail) => Cons(head, from_list(tail)),
+  |         ^^^^
+error[E001]: type mismatch in fn 'to_list': expected List[Int] but got Unit
+  --> /tmp/dojo-custom-linked-list-3.almd:15:20
+  in fn 'to_list'
+  hint: Fix the expression type or change the expected type. Or Got Unit where a List was expected. `list.push`/`pop`/`clear` mutate and return Unit — use `xs + [item]` for an immutable append. `for x in xs { ... }` is a side-effect loop (Unit); for element transforms, use `list.map(xs, (x) => ...)`.
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to List[Int]:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type List[Int]
    |
-14 |     Cons(head, tail) => head + [to_list(tail)]
-   |                                         ^^^^
+15 |         Cons(head, tail) => List::Cons(head, to_list(tail)),
+   |                    ^^^^
 
-5 error(s) found
+18 error(s) found
 Compile error for /tmp/dojo-custom-linked-list-3.almd:
 compile failed
 FAILED: /tmp/dojo-custom-linked-list-3.almd

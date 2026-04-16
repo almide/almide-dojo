@@ -1,10 +1,9 @@
 # is-prime
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
-- **success**: no
-- **retries**: 3
-- **category**: name-error
-- **diagnostic code**: `E003`
+- **success**: yes
+- **retries**: 2
+- **category**: pass-retry
 
 ## Attempts
 
@@ -15,25 +14,22 @@ fn is_prime(n: Int) -> Bool =
   if n <= 1 then false
   else if n == 2 then true
   else if n % 2 == 0 then false
-  else list.all[Int](list.range(3, int.sqrt(n) + 1), fn(x) => n % x != 0)
+  else list.for_each(list.range(3, n), (x) => if n % x == 0 then false else true)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-prime-0.almd
-error: Expected expression at line 5:54 (got Fn 'fn')
-  --> /tmp/dojo-is-prime-0.almd:5:54
+error[E002]: undefined function 'list.for_each'
+  --> /tmp/dojo-is-prime-0.almd:5:77
+  in call to list.for_each()
+  hint: No function 'for_each' in module 'list'. See docs/CHEATSHEET.md for available functions
   |
-5 |   else list.all[Int](list.range(3, int.sqrt(n) + 1), fn(x) => n % x != 0)
-  |                                                      ^
-error: Expected function name at line 5:56 (got LParen '(')
-  --> /tmp/dojo-is-prime-0.almd:5:56
-  |
-5 |   else list.all[Int](list.range(3, int.sqrt(n) + 1), fn(x) => n % x != 0)
-  |                                                        ^
+5 |   else list.for_each(list.range(3, n), (x) => if n % x == 0 then false else true)
+  |                                                                             ^^^^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-is-prime-0.almd:
 compile failed
 FAILED: /tmp/dojo-is-prime-0.almd
@@ -49,93 +45,24 @@ fn is_prime(n: Int) -> Bool =
   if n < 1 then false
   else if n == 2 then true
   else if n % 2 == 0 then false
-  else list.all[Int](list.range(3, int.sqrt(n) + 1), (x) => n % x != 0)
+  else list.all(list.range(3, n), (x) => if n % x == 0 then false else true)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-prime-1.almd
-error[E002]: undefined function 'int.sqrt'
-  --> /tmp/dojo-is-prime-1.almd:5:45
-  in call to int.sqrt()
-  hint: Did you mean `float.sqrt(int.to_float(n))`?
-  try:
-      // Almide has float.sqrt; int.sqrt doesn't exist.
-      // Convert → sqrt → (optionally) convert back:
-      let root_f = float.sqrt(int.to_float(n))       // Float
-      let root_i = float.to_int(root_f)              // Int (truncates)
-      // — or inline: float.to_int(float.sqrt(int.to_float(n)))
-  |
-5 |   else list.all[Int](list.range(3, int.sqrt(n) + 1), (x) => n % x != 0)
-  |                                             ^
-
-1 error(s) found
-Compile error for /tmp/dojo-is-prime-1.almd:
-compile failed
 FAILED: /tmp/dojo-is-prime-1.almd
 
 1/1 test file(s) failed
 
 ```
 
-### Attempt 3 (FAIL)
-
-```almide
-fn is_prime(n: Int) -> Bool = 
-  if n < 1 then false
-  else if n == 2 then true
-  else if n % 2 == 0 then false
-  else list.all[Int](list.range(3, float.to_int(float.sqrt(int.to_float(n))) + 1), (x) => n % x != 0)
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-is-prime-2.almd
-FAILED: /tmp/dojo-is-prime-2.almd
-
-1/1 test file(s) failed
-
-```
-
-### Attempt 4 (FAIL)
+### Attempt 3 (PASS)
 
 ```almide
 fn is_prime(n: Int) -> Bool = 
   if n < 2 then false
   else if n == 2 then true
-  else if n % 2 == 0 then false
-  else list.all[Int](list.range(3, int.to_int(math.sqrt(int.to_float(n))) + 1), (x) => n % x != 0)
-```
-
-**Diagnostic:**
-
-```
-Compiling /tmp/dojo-is-prime-3.almd
-error[E003]: undefined variable 'math'
-  --> /tmp/dojo-is-prime-3.almd:5:47
-  in variable math
-  hint: Did you mean `math.e`?
-  try:
-      // math  →  math.e
-      math.e
-  |
-5 |   else list.all[Int](list.range(3, int.to_int(math.sqrt(int.to_float(n))) + 1), (x) => n % x != 0)
-  |                                               ^^^^
-error[E002]: undefined function 'int.to_int'
-  --> /tmp/dojo-is-prime-3.almd:5:47
-  in call to int.to_int()
-  hint: No function 'to_int' in module 'int'. See docs/CHEATSHEET.md for available functions
-  |
-5 |   else list.all[Int](list.range(3, int.to_int(math.sqrt(int.to_float(n))) + 1), (x) => n % x != 0)
-  |                                               ^^^^
-
-2 error(s) found
-Compile error for /tmp/dojo-is-prime-3.almd:
-compile failed
-FAILED: /tmp/dojo-is-prime-3.almd
-
-1/1 test file(s) failed
-
+  else list.all(list.range(2, n), (x) => if n % x == 0 then false else true)
 ```

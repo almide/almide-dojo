@@ -46,16 +46,15 @@ fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
   }
 
 fn my_reverse(ml: MyList) -> MyList =
-  match ml
+  match
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-custom-linked-list-0.almd
-error: Expected LBrace at line 39:1 (got Test 'test')
+error: Expected expression at line 39:1 (got Test 'test')
   --> /tmp/dojo-custom-linked-list-0.almd:39:1
-  hint: `test "..."` is a top-level form. Got here mid-declaration — either the previous fn/type/impl is missing a closing `}`, or the test block is in a context (e.g. harness-submitted code) that doesn't accept one. Remove the test block or close the prior declaration.
    |
 39 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
    | ^
