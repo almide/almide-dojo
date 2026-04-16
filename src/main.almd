@@ -39,6 +39,16 @@ let DEFAULT_MAX_RETRIES = 3
 let SYSTEM_PROMPT = """
   You are writing Almide. Output ONLY source code, no fences or prose.
 
+  ## Prefer stdlib helpers when the task shape matches (don't re-implement)
+
+    - sorted-list search     → `list.binary_search(xs, target) -> Option[Int]`
+    - run-length grouping    → `string.run_length_encode(s) -> List[(String, Int)]` (format result for output)
+    - integer parsing        → `int.parse(s) -> Result[Int, String]` (NOT `int.from_string`)
+    - integer sqrt (→ Int)   → `float.to_int(float.sqrt(int.to_float(n)))` (NOT `int.sqrt`)
+    - comparisons            → operators `a > b`, `a <= b` (NOT `int.gt(a, b)`, `int.le(a, b)`)
+    - list head/tail         → `list.first(xs)` + `list.drop(xs, 1)` (NOT `[head, ..rest]` pattern)
+    - folds                  → `list.fold(xs, init, (acc, x) => ...)` (NOT manual recursion with an accumulator unless necessary)
+
   Syntax:
     fn name(x: T) -> R = expr                 // no `return`; the last expression is the value
     if cond then a else b                     // every `if` used as an expression MUST have `else`
@@ -328,9 +338,18 @@ effect fn compile_and_test(task: Task, solution: String, attempt: Int) -> Result
   let combined = solution + "\n\n" + task.tests
   match fs.write(tmp, combined) {
     err(_) => err("failed to write temp file: " + tmp)
-    ok(_) => match process.exec("almide", ["test", tmp]) {
-      ok(_) => ok(AttemptResult { success: true, code: solution, diagnostic: "" })
-      err(diag) => ok(AttemptResult { success: false, code: solution, diagnostic: diag })
+    ok(_) => {
+      // Best-effort auto-fix before test: adds missing imports, rewrites let-in,
+      // maps int.gt → a > b etc. `solution` kept as the original LLM text for
+      // the per-task report.
+      match process.exec("almide", ["fix", tmp]) {
+        ok(_) => {}
+        err(_) => {}
+      }
+      match process.exec("almide", ["test", tmp]) {
+        ok(_) => ok(AttemptResult { success: true, code: solution, diagnostic: "" })
+        err(diag) => ok(AttemptResult { success: false, code: solution, diagnostic: diag })
+      }
     }
   }
 }
