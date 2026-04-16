@@ -11,101 +11,89 @@
 
 ```almide
 fn mat_add(a: List[List[Int]], b: List[List[Int]]) -> List[List[Int]] =
-  if list.is_empty(a) {
-    list.map(b, fn(row) => row)
-  } else if list.is_empty(b) {
-    list.map(a, fn(row) => row)
-  } else {
-    list.zip_with(a, b, fn(row_a, row_b) =>
-      list.zip_with(row_a, row_b, fn(x_a, x_b) => x_a + x_b)
-    )
-  }
+  list.map(a, fn(row_a) -> list.map(row_a, fn(x) -> list.get(b, list.index_of(a, row_a)) |> option.unwrap_or(0) + x))
+  |> list.map(list.map(fn(x) -> x))
 
 fn mat_transpose(m: List[List[Int]]) -> List[List[Int]] =
-  if list.is_empty(m) {
-    list.new[Int]()
-  } else {
+  if list.is_empty(m) then
+    []
+  else
     let ncols = list.len(list.first(m))
-    list.range(0, ncols).map(fn(i) =>
-      list.map(m, fn(row) => list.get(row, i) |> option.unwrap_or(0))
-    )
-  }
+    in list.range(0, ncols) |> list.map(fn(i) -> list.map(m, fn(row) -> list.get(row, i) |> option.unwrap_or(0)))
 
 fn mat_scale(m: List[List[Int]], s: Int) -> List[List[Int]] =
-  list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+  list.map(m, fn(row) -> list.map(row, fn(x) -> x * s))
 
 fn mat_dot_row(row_a: List[Int], col_b: List[Int]) -> Int =
-  list
+  list.fold(row_a, 0, fn(acc, x) -> acc + x * list.get(col_b, list.index_of(row_a, x)) |> option.unwrap_or(0))
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-matrix-ops-0.almd
-error: Expected Then at line 2:23 (got LBrace '{')
-  --> /tmp/dojo-matrix-ops-0.almd:2:23
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+error: Expected expression at line 2:15 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-0.almd:2:15
   |
-2 |   if list.is_empty(a) {
-  |                       ^
-error: Expected function name at line 3:19 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-0.almd:3:19
+2 |   list.map(a, fn(row_a) -> list.map(row_a, fn(x) -> list.get(b, list.index_of(a, row_a)) |> option.unwrap_or(0) + x))
+  |               ^
+error: Expected function name at line 2:17 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-0.almd:2:17
   |
-3 |     list.map(b, fn(row) => row)
-  |                   ^
-error: Expected function name at line 5:19 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-0.almd:5:19
+2 |   list.map(a, fn(row_a) -> list.map(row_a, fn(x) -> list.get(b, list.index_of(a, row_a)) |> option.unwrap_or(0) + x))
+  |                 ^
+error: Expected function name at line 2:46 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-0.almd:2:46
   |
-5 |     list.map(a, fn(row) => row)
-  |                   ^
-error: Expected function name at line 7:27 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-0.almd:7:27
+2 |   list.map(a, fn(row_a) -> list.map(row_a, fn(x) -> list.get(b, list.index_of(a, row_a)) |> option.unwrap_or(0) + x))
+  |                                              ^
+error: Expected function name at line 3:26 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-0.almd:3:26
   |
-7 |     list.zip_with(a, b, fn(row_a, row_b) =>
-  |                           ^
-error: Expected function name at line 8:37 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-0.almd:8:37
+3 |   |> list.map(list.map(fn(x) -> x))
+  |                          ^
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-matrix-ops-0.almd:9:5
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-8 |       list.zip_with(row_a, row_b, fn(x_a, x_b) => x_a + x_b)
-  |                                     ^
-error: Expected Then at line 13:23 (got LBrace '{')
-  --> /tmp/dojo-matrix-ops-0.almd:13:23
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+9 |     let ncols = list.len(list.first(m))
+  |     ^^^
+error: Expected function name at line 10:43 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-0.almd:10:43
    |
-13 |   if list.is_empty(m) {
-   |                       ^
-error: Expected function name at line 17:32 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-0.almd:17:32
+10 |     in list.range(0, ncols) |> list.map(fn(i) -> list.map(m, fn(row) -> list.get(row, i) |> option.unwrap_or(0)))
+   |                                           ^
+error: Expected function name at line 10:64 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-0.almd:10:64
    |
-17 |     list.range(0, ncols).map(fn(i) =>
-   |                                ^
-error: Expected function name at line 18:21 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-0.almd:18:21
+10 |     in list.range(0, ncols) |> list.map(fn(i) -> list.map(m, fn(row) -> list.get(row, i) |> option.unwrap_or(0)))
+   |                                                                ^
+error: Expected expression at line 13:15 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-0.almd:13:15
    |
-18 |       list.map(m, fn(row) => list.get(row, i) |> option.unwrap_or(0))
-   |                     ^
-error: Expected expression at line 23:15 (got Fn 'fn')
-  --> /tmp/dojo-matrix-ops-0.almd:23:15
-   |
-23 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+13 |   list.map(m, fn(row) -> list.map(row, fn(x) -> x * s))
    |               ^
-error: Expected function name at line 23:17 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-0.almd:23:17
+error: Expected function name at line 13:17 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-0.almd:13:17
    |
-23 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+13 |   list.map(m, fn(row) -> list.map(row, fn(x) -> x * s))
    |                 ^
-error: Expected function name at line 23:42 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-0.almd:23:42
+error: Expected function name at line 13:42 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-0.almd:13:42
    |
-23 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+13 |   list.map(m, fn(row) -> list.map(row, fn(x) -> x * s))
    |                                          ^
-error[E003]: undefined variable 'list'
-  --> /tmp/dojo-matrix-ops-0.almd:26:3
-  in variable list
-  hint: Check the variable name
+error: Expected expression at line 16:23 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-0.almd:16:23
    |
-26 |   list
-   |   ^^^^
+16 |   list.fold(row_a, 0, fn(acc, x) -> acc + x * list.get(col_b, list.index_of(row_a, x)) |> option.unwrap_or(0))
+   |                       ^
+error: Expected function name at line 16:25 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-0.almd:16:25
+   |
+16 |   list.fold(row_a, 0, fn(acc, x) -> acc + x * list.get(col_b, list.index_of(row_a, x)) |> option.unwrap_or(0))
+   |                         ^
 
 12 error(s) found
 Compile error for /tmp/dojo-matrix-ops-0.almd:
@@ -120,101 +108,85 @@ FAILED: /tmp/dojo-matrix-ops-0.almd
 
 ```almide
 fn mat_add(a: List[List[Int]], b: List[List[Int]]) -> List[List[Int]] =
-  if list.is_empty(a) {
-    list.map(b, fn(row) => row)
-  } else if list.is_empty(b) {
-    list.map(a, fn(row) => row)
-  } else {
-    list.zip_with(a, b, fn(row_a, row_b) =>
-      list.zip_with(row_a, row_b, fn(x_a, x_b) => x_a + x_b)
-    )
-  }
+  list.map(a, fn(row_a) -> list.map(row_a, fn(x) -> list.get(b, list.index_of(a, row_a)) |> option.unwrap_or(0) + x))
 
 fn mat_transpose(m: List[List[Int]]) -> List[List[Int]] =
-  if list.is_empty(m) {
-    list.new[Int]()
-  } else {
+  if list.is_empty(m) then
+    []
+  else
     let ncols = list.len(list.first(m))
-    list.range(0, ncols).map(fn(i) =>
-      list.map(m, fn(row) => list.get(row, i) |> option.unwrap_or(0))
-    )
-  }
+    in list.range(0, ncols) |> list.map(fn(i) -> list.map(m, fn(row) -> list.get(row, i) |> option.unwrap_or(0)))
 
 fn mat_scale(m: List[List[Int]], s: Int) -> List[List[Int]] =
-  list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+  list.map(m, fn(row) -> list.map(row, fn(x) -> x * s))
 
 fn mat_dot_row(row_a: List[Int], col_b: List[Int]) -> Int =
-  list.fold(row_a,
+  list.fold(row_a, 0, fn(acc, x) -> acc + x * list.get(col_b, list.index_of(row_a, x)) |> option.unwrap_or(0))
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-matrix-ops-1.almd
-error: Expected Then at line 2:23 (got LBrace '{')
-  --> /tmp/dojo-matrix-ops-1.almd:2:23
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+error: Expected expression at line 2:15 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-1.almd:2:15
   |
-2 |   if list.is_empty(a) {
-  |                       ^
-error: Expected function name at line 3:19 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-1.almd:3:19
+2 |   list.map(a, fn(row_a) -> list.map(row_a, fn(x) -> list.get(b, list.index_of(a, row_a)) |> option.unwrap_or(0) + x))
+  |               ^
+error: Expected function name at line 2:17 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-1.almd:2:17
   |
-3 |     list.map(b, fn(row) => row)
-  |                   ^
-error: Expected function name at line 5:19 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-1.almd:5:19
+2 |   list.map(a, fn(row_a) -> list.map(row_a, fn(x) -> list.get(b, list.index_of(a, row_a)) |> option.unwrap_or(0) + x))
+  |                 ^
+error: Expected function name at line 2:46 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-1.almd:2:46
   |
-5 |     list.map(a, fn(row) => row)
-  |                   ^
-error: Expected function name at line 7:27 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-1.almd:7:27
+2 |   list.map(a, fn(row_a) -> list.map(row_a, fn(x) -> list.get(b, list.index_of(a, row_a)) |> option.unwrap_or(0) + x))
+  |                                              ^
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-matrix-ops-1.almd:8:5
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-7 |     list.zip_with(a, b, fn(row_a, row_b) =>
-  |                           ^
-error: Expected function name at line 8:37 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-1.almd:8:37
+8 |     let ncols = list.len(list.first(m))
+  |     ^^^
+error: Expected function name at line 9:43 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-1.almd:9:43
   |
-8 |       list.zip_with(row_a, row_b, fn(x_a, x_b) => x_a + x_b)
-  |                                     ^
-error: Expected Then at line 13:23 (got LBrace '{')
-  --> /tmp/dojo-matrix-ops-1.almd:13:23
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+9 |     in list.range(0, ncols) |> list.map(fn(i) -> list.map(m, fn(row) -> list.get(row, i) |> option.unwrap_or(0)))
+  |                                           ^
+error: Expected function name at line 9:64 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-1.almd:9:64
+  |
+9 |     in list.range(0, ncols) |> list.map(fn(i) -> list.map(m, fn(row) -> list.get(row, i) |> option.unwrap_or(0)))
+  |                                                                ^
+error: Expected expression at line 12:15 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-1.almd:12:15
    |
-13 |   if list.is_empty(m) {
-   |                       ^
-error: Expected function name at line 17:32 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-1.almd:17:32
-   |
-17 |     list.range(0, ncols).map(fn(i) =>
-   |                                ^
-error: Expected function name at line 18:21 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-1.almd:18:21
-   |
-18 |       list.map(m, fn(row) => list.get(row, i) |> option.unwrap_or(0))
-   |                     ^
-error: Expected expression at line 23:15 (got Fn 'fn')
-  --> /tmp/dojo-matrix-ops-1.almd:23:15
-   |
-23 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+12 |   list.map(m, fn(row) -> list.map(row, fn(x) -> x * s))
    |               ^
-error: Expected function name at line 23:17 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-1.almd:23:17
+error: Expected function name at line 12:17 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-1.almd:12:17
    |
-23 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+12 |   list.map(m, fn(row) -> list.map(row, fn(x) -> x * s))
    |                 ^
-error: Expected function name at line 23:42 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-1.almd:23:42
+error: Expected function name at line 12:42 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-1.almd:12:42
    |
-23 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+12 |   list.map(m, fn(row) -> list.map(row, fn(x) -> x * s))
    |                                          ^
-error: Expected expression at line 28:1 (got Test 'test')
-  --> /tmp/dojo-matrix-ops-1.almd:28:1
+error: Expected expression at line 15:23 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-1.almd:15:23
    |
-28 | test "mat_add 2x2" { assert_eq(mat_add([[1, 2], [3, 4]], [[5, 6], [7, 8]]), [[6, 8], [10, 12]]) }
-   | ^
+15 |   list.fold(row_a, 0, fn(acc, x) -> acc + x * list.get(col_b, list.index_of(row_a, x)) |> option.unwrap_or(0))
+   |                       ^
+error: Expected function name at line 15:25 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-1.almd:15:25
+   |
+15 |   list.fold(row_a, 0, fn(acc, x) -> acc + x * list.get(col_b, list.index_of(row_a, x)) |> option.unwrap_or(0))
+   |                         ^
 
-12 error(s) found
+11 error(s) found
 Compile error for /tmp/dojo-matrix-ops-1.almd:
 compile failed
 FAILED: /tmp/dojo-matrix-ops-1.almd
@@ -227,98 +199,91 @@ FAILED: /tmp/dojo-matrix-ops-1.almd
 
 ```almide
 fn mat_add(a: List[List[Int]], b: List[List[Int]]) -> List[List[Int]] =
-  if list.is_empty(a) {
-    list.map(b, fn(row) => row)
-  } else if list.is_empty(b) {
-    list.map(a, fn(row) => row)
-  } else {
-    list.zip_with(a, b, fn(row_a, row_b) =>
-      list.zip_with(row_a, row_b, fn(x_a, x_b) => x_a + x_b)
-    )
-  }
+  list.map(a, fn(row_a) -> list.map(row_a, fn(x) -> list.get(b, list.index_of(a, row_a)) |> option.unwrap_or(0) + x))
 
 fn mat_transpose(m: List[List[Int]]) -> List[List[Int]] =
-  if list.is_empty(m) {
-    list.new[Int]()
-  } else {
+  if list.is_empty(m) then
+    []
+  else
     let ncols = list.len(list.first(m))
-    list.range(0, ncols).map(fn(i) =>
-      list.map(m, fn(row) => list.get(row, i) |> option.unwrap_or(0))
-    )
-  }
+    in list.range(0, ncols) |> list.map(fn(i) -> list.map(m, fn(row) -> list.get(row, i) |> option.unwrap_or(0)))
 
 fn mat_scale(m: List[List[Int]], s: Int) -> List[List[Int]] =
-  list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+  list.map(m, fn(row) -> list.map(row, fn(x) -> x * s))
 
 fn mat_dot_row(row_a: List[Int], col_b: List[Int]) -> Int =
-  list.fold(row_a,
+  list.fold(row_a, 0, fn(acc, x) -> acc + x * list.get(col_b, list.index_of(row_a, x)) |> option.unwrap_or(0))
+
+fn mat_transpose(m: List[List[Int]]) -> List[List[Int]] =
+  if list
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-matrix-ops-2.almd
-error: Expected Then at line 2:23 (got LBrace '{')
-  --> /tmp/dojo-matrix-ops-2.almd:2:23
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+error: Expected expression at line 2:15 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-2.almd:2:15
   |
-2 |   if list.is_empty(a) {
-  |                       ^
-error: Expected function name at line 3:19 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-2.almd:3:19
+2 |   list.map(a, fn(row_a) -> list.map(row_a, fn(x) -> list.get(b, list.index_of(a, row_a)) |> option.unwrap_or(0) + x))
+  |               ^
+error: Expected function name at line 2:17 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-2.almd:2:17
   |
-3 |     list.map(b, fn(row) => row)
-  |                   ^
-error: Expected function name at line 5:19 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-2.almd:5:19
+2 |   list.map(a, fn(row_a) -> list.map(row_a, fn(x) -> list.get(b, list.index_of(a, row_a)) |> option.unwrap_or(0) + x))
+  |                 ^
+error: Expected function name at line 2:46 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-2.almd:2:46
   |
-5 |     list.map(a, fn(row) => row)
-  |                   ^
-error: Expected function name at line 7:27 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-2.almd:7:27
+2 |   list.map(a, fn(row_a) -> list.map(row_a, fn(x) -> list.get(b, list.index_of(a, row_a)) |> option.unwrap_or(0) + x))
+  |                                              ^
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-matrix-ops-2.almd:8:5
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-7 |     list.zip_with(a, b, fn(row_a, row_b) =>
-  |                           ^
-error: Expected function name at line 8:37 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-2.almd:8:37
+8 |     let ncols = list.len(list.first(m))
+  |     ^^^
+error: Expected function name at line 9:43 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-2.almd:9:43
   |
-8 |       list.zip_with(row_a, row_b, fn(x_a, x_b) => x_a + x_b)
-  |                                     ^
-error: Expected Then at line 13:23 (got LBrace '{')
-  --> /tmp/dojo-matrix-ops-2.almd:13:23
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+9 |     in list.range(0, ncols) |> list.map(fn(i) -> list.map(m, fn(row) -> list.get(row, i) |> option.unwrap_or(0)))
+  |                                           ^
+error: Expected function name at line 9:64 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-2.almd:9:64
+  |
+9 |     in list.range(0, ncols) |> list.map(fn(i) -> list.map(m, fn(row) -> list.get(row, i) |> option.unwrap_or(0)))
+  |                                                                ^
+error: Expected expression at line 12:15 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-2.almd:12:15
    |
-13 |   if list.is_empty(m) {
-   |                       ^
-error: Expected function name at line 17:32 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-2.almd:17:32
-   |
-17 |     list.range(0, ncols).map(fn(i) =>
-   |                                ^
-error: Expected function name at line 18:21 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-2.almd:18:21
-   |
-18 |       list.map(m, fn(row) => list.get(row, i) |> option.unwrap_or(0))
-   |                     ^
-error: Expected expression at line 23:15 (got Fn 'fn')
-  --> /tmp/dojo-matrix-ops-2.almd:23:15
-   |
-23 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+12 |   list.map(m, fn(row) -> list.map(row, fn(x) -> x * s))
    |               ^
-error: Expected function name at line 23:17 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-2.almd:23:17
+error: Expected function name at line 12:17 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-2.almd:12:17
    |
-23 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+12 |   list.map(m, fn(row) -> list.map(row, fn(x) -> x * s))
    |                 ^
-error: Expected function name at line 23:42 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-2.almd:23:42
+error: Expected function name at line 12:42 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-2.almd:12:42
    |
-23 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+12 |   list.map(m, fn(row) -> list.map(row, fn(x) -> x * s))
    |                                          ^
-error: Expected expression at line 28:1 (got Test 'test')
-  --> /tmp/dojo-matrix-ops-2.almd:28:1
+error: Expected expression at line 15:23 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-2.almd:15:23
    |
-28 | test "mat_add 2x2" { assert_eq(mat_add([[1, 2], [3, 4]], [[5, 6], [7, 8]]), [[6, 8], [10, 12]]) }
+15 |   list.fold(row_a, 0, fn(acc, x) -> acc + x * list.get(col_b, list.index_of(row_a, x)) |> option.unwrap_or(0))
+   |                       ^
+error: Expected function name at line 15:25 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-2.almd:15:25
+   |
+15 |   list.fold(row_a, 0, fn(acc, x) -> acc + x * list.get(col_b, list.index_of(row_a, x)) |> option.unwrap_or(0))
+   |                         ^
+error: Expected Then at line 20:1 (got Test 'test')
+  --> /tmp/dojo-matrix-ops-2.almd:20:1
+  hint: `test "..."` is a top-level form. Got here mid-declaration — either the previous fn/type/impl is missing a closing `}`, or the test block is in a context (e.g. harness-submitted code) that doesn't accept one. Remove the test block or close the prior declaration.
+   |
+20 | test "mat_add 2x2" { assert_eq(mat_add([[1, 2], [3, 4]], [[5, 6], [7, 8]]), [[6, 8], [10, 12]]) }
    | ^
 
 12 error(s) found
@@ -334,98 +299,91 @@ FAILED: /tmp/dojo-matrix-ops-2.almd
 
 ```almide
 fn mat_add(a: List[List[Int]], b: List[List[Int]]) -> List[List[Int]] =
-  if list.is_empty(a) {
-    list.map(b, fn(row) => row)
-  } else if list.is_empty(b) {
-    list.map(a, fn(row) => row)
-  } else {
-    list.zip_with(a, b, fn(row_a, row_b) =>
-      list.zip_with(row_a, row_b, fn(x_a, x_b) => x_a + x_b)
-    )
-  }
+  list.map(a, fn(row_a) -> list.map(row_a, fn(x) -> list.get(b, list.index_of(a, row_a)) |> option.unwrap_or(0) + x))
 
 fn mat_transpose(m: List[List[Int]]) -> List[List[Int]] =
-  if list.is_empty(m) {
-    list.new[Int]()
-  } else {
+  if list.is_empty(m) then
+    []
+  else
     let ncols = list.len(list.first(m))
-    list.range(0, ncols).map(fn(i) =>
-      list.map(m, fn(row) => list.get(row, i) |> option.unwrap_or(0))
-    )
-  }
+    in list.range(0, ncols) |> list.map(fn(i) -> list.map(m, fn(row) -> list.get(row, i) |> option.unwrap_or(0)))
 
 fn mat_scale(m: List[List[Int]], s: Int) -> List[List[Int]] =
-  list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+  list.map(m, fn(row) -> list.map(row, fn(x) -> x * s))
 
 fn mat_dot_row(row_a: List[Int], col_b: List[Int]) -> Int =
-  list.fold(row_a,
+  list.fold(row_a, 0, fn(acc, x) -> acc + x * list.get(col_b, list.index_of(row_a, x)) |> option.unwrap_or(0))
+
+fn mat_transpose(m: List[List[Int]]) -> List[List[Int]] =
+  if list
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-matrix-ops-3.almd
-error: Expected Then at line 2:23 (got LBrace '{')
-  --> /tmp/dojo-matrix-ops-3.almd:2:23
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+error: Expected expression at line 2:15 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-3.almd:2:15
   |
-2 |   if list.is_empty(a) {
-  |                       ^
-error: Expected function name at line 3:19 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-3.almd:3:19
+2 |   list.map(a, fn(row_a) -> list.map(row_a, fn(x) -> list.get(b, list.index_of(a, row_a)) |> option.unwrap_or(0) + x))
+  |               ^
+error: Expected function name at line 2:17 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-3.almd:2:17
   |
-3 |     list.map(b, fn(row) => row)
-  |                   ^
-error: Expected function name at line 5:19 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-3.almd:5:19
+2 |   list.map(a, fn(row_a) -> list.map(row_a, fn(x) -> list.get(b, list.index_of(a, row_a)) |> option.unwrap_or(0) + x))
+  |                 ^
+error: Expected function name at line 2:46 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-3.almd:2:46
   |
-5 |     list.map(a, fn(row) => row)
-  |                   ^
-error: Expected function name at line 7:27 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-3.almd:7:27
+2 |   list.map(a, fn(row_a) -> list.map(row_a, fn(x) -> list.get(b, list.index_of(a, row_a)) |> option.unwrap_or(0) + x))
+  |                                              ^
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-matrix-ops-3.almd:8:5
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-7 |     list.zip_with(a, b, fn(row_a, row_b) =>
-  |                           ^
-error: Expected function name at line 8:37 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-3.almd:8:37
+8 |     let ncols = list.len(list.first(m))
+  |     ^^^
+error: Expected function name at line 9:43 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-3.almd:9:43
   |
-8 |       list.zip_with(row_a, row_b, fn(x_a, x_b) => x_a + x_b)
-  |                                     ^
-error: Expected Then at line 13:23 (got LBrace '{')
-  --> /tmp/dojo-matrix-ops-3.almd:13:23
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+9 |     in list.range(0, ncols) |> list.map(fn(i) -> list.map(m, fn(row) -> list.get(row, i) |> option.unwrap_or(0)))
+  |                                           ^
+error: Expected function name at line 9:64 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-3.almd:9:64
+  |
+9 |     in list.range(0, ncols) |> list.map(fn(i) -> list.map(m, fn(row) -> list.get(row, i) |> option.unwrap_or(0)))
+  |                                                                ^
+error: Expected expression at line 12:15 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-3.almd:12:15
    |
-13 |   if list.is_empty(m) {
-   |                       ^
-error: Expected function name at line 17:32 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-3.almd:17:32
-   |
-17 |     list.range(0, ncols).map(fn(i) =>
-   |                                ^
-error: Expected function name at line 18:21 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-3.almd:18:21
-   |
-18 |       list.map(m, fn(row) => list.get(row, i) |> option.unwrap_or(0))
-   |                     ^
-error: Expected expression at line 23:15 (got Fn 'fn')
-  --> /tmp/dojo-matrix-ops-3.almd:23:15
-   |
-23 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+12 |   list.map(m, fn(row) -> list.map(row, fn(x) -> x * s))
    |               ^
-error: Expected function name at line 23:17 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-3.almd:23:17
+error: Expected function name at line 12:17 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-3.almd:12:17
    |
-23 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+12 |   list.map(m, fn(row) -> list.map(row, fn(x) -> x * s))
    |                 ^
-error: Expected function name at line 23:42 (got LParen '(')
-  --> /tmp/dojo-matrix-ops-3.almd:23:42
+error: Expected function name at line 12:42 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-3.almd:12:42
    |
-23 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+12 |   list.map(m, fn(row) -> list.map(row, fn(x) -> x * s))
    |                                          ^
-error: Expected expression at line 28:1 (got Test 'test')
-  --> /tmp/dojo-matrix-ops-3.almd:28:1
+error: Expected expression at line 15:23 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-3.almd:15:23
    |
-28 | test "mat_add 2x2" { assert_eq(mat_add([[1, 2], [3, 4]], [[5, 6], [7, 8]]), [[6, 8], [10, 12]]) }
+15 |   list.fold(row_a, 0, fn(acc, x) -> acc + x * list.get(col_b, list.index_of(row_a, x)) |> option.unwrap_or(0))
+   |                       ^
+error: Expected function name at line 15:25 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-3.almd:15:25
+   |
+15 |   list.fold(row_a, 0, fn(acc, x) -> acc + x * list.get(col_b, list.index_of(row_a, x)) |> option.unwrap_or(0))
+   |                         ^
+error: Expected Then at line 20:1 (got Test 'test')
+  --> /tmp/dojo-matrix-ops-3.almd:20:1
+  hint: `test "..."` is a top-level form. Got here mid-declaration — either the previous fn/type/impl is missing a closing `}`, or the test block is in a context (e.g. harness-submitted code) that doesn't accept one. Remove the test block or close the prior declaration.
+   |
+20 | test "mat_add 2x2" { assert_eq(mat_add([[1, 2], [3, 4]], [[5, 6], [7, 8]]), [[6, 8], [10, 12]]) }
    | ^
 
 12 error(s) found

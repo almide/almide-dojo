@@ -4,7 +4,7 @@
 - **tasks**: 30
 - **passed**: 12 / 30
 - **1-shot passes**: 11 / 30
-- **total retries**: 56
+- **total retries**: 57
 
 ## Per-task
 
@@ -12,10 +12,10 @@
 |---|---|---|---|---|
 | `anagram-check` | FAIL | parse-error | — | 3 |
 | `balanced-parens` | FAIL | parse-error | — | 3 |
-| `binary-search` | FAIL | parse-error | — | 3 |
+| `binary-search` | FAIL | unknown | — | 3 |
 | `caesar-cipher` | FAIL | parse-error | — | 3 |
 | `clamp` | pass | pass-1shot | — | 0 |
-| `count-vowels` | pass | pass-retry | — | 2 |
+| `count-vowels` | pass | pass-retry | — | 3 |
 | `custom-linked-list` | FAIL | parse-error | — | 3 |
 | `expression-eval` | FAIL | parse-error | — | 3 |
 | `factorial` | pass | pass-1shot | — | 0 |
@@ -24,10 +24,10 @@
 | `flatten-nested` | pass | pass-1shot | — | 0 |
 | `gcd` | pass | pass-1shot | — | 0 |
 | `is-palindrome` | pass | pass-1shot | — | 0 |
-| `is-prime` | FAIL | unknown | — | 3 |
+| `is-prime` | FAIL | type-error | `E005` | 3 |
 | `list-sum` | pass | pass-1shot | — | 0 |
 | `matrix-ops` | FAIL | parse-error | — | 3 |
-| `max-of-list` | FAIL | type-error | `E002` | 3 |
+| `max-of-list` | FAIL | type-error | `E005` | 3 |
 | `mini-json-query` | FAIL | parse-error | — | 3 |
 | `partition-list` | pass | pass-1shot | — | 0 |
 | `remove-duplicates` | pass | pass-1shot | — | 0 |
@@ -36,17 +36,17 @@
 | `roman-numeral` | FAIL | parse-error | — | 3 |
 | `run-length-encoding` | FAIL | parse-error | — | 3 |
 | `string-reverse` | FAIL | type-error | `E002` | 3 |
-| `sum-digits` | FAIL | type-error | `E005` | 3 |
+| `sum-digits` | FAIL | parse-error | — | 3 |
 | `title-case` | FAIL | unknown | — | 3 |
-| `word-count` | FAIL | name-error | `E003` | 3 |
-| `zip-with` | FAIL | parse-error | — | 3 |
+| `word-count` | FAIL | type-error | `E005` | 3 |
+| `zip-with` | FAIL | name-error | `E003` | 3 |
 
 ## By category
 
 - pass-1shot: 11
 - pass-retry: 1
-- parse-error: 12
-- type-error: 3
+- parse-error: 11
+- type-error: 4
 - name-error: 1
 - unknown: 2
 
@@ -56,14 +56,15 @@
 - fail-0: 0
 - pass-1: 0
 - fail-1: 0
-- pass-2: 1
+- pass-2: 0
 - fail-2: 0
-- pass-3: 0
+- pass-3: 1
 - fail-3: 18
 
 ## Unrecoverable diagnostic codes (still failing after 3 retries)
 
-- `E001`: 3
+- `E001`: 2
 - `E002`: 2
 - `E003`: 4
-- `E005`: 1
+- `E005`: 3
+- `E012`: 1

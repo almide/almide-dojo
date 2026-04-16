@@ -23,7 +23,7 @@ fn eval(expr: Expr) -> Int =
   | Mul(a, b) => eval(a) * eval(b)
   | Neg(a) => -eval(a)
 
-This evaluator uses pattern matching to handle each variant of the `Expr` type. For `Num(n)`, it simply returns the value `n`. For `Add(a, b)`, it recursively evaluates `a` and `b` and adds their results. For `Mul(a, b)`, it recursively evaluates `a` and `b` and multiplies their results. For `Neg(a)`, it recursively evaluates `a` and negates its result.
+This evaluator uses pattern matching to handle each variant of the `Expr` type. For `Num`, it simply returns the integer value. For `Add` and `Mul`, it recursively evaluates the two subexpressions and then performs the addition or multiplication. For `Neg`, it recursively evaluates the subexpression and then negates the result.
 ```
 
 **Diagnostic:**

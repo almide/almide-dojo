@@ -3,7 +3,8 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: parse-error
+- **category**: name-error
+- **diagnostic code**: `E003`
 
 ## Attempts
 
@@ -11,26 +12,47 @@
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
-  match (xs, ys) {
-    (xs, ys) if xs.is_empty() && ys.is_empty() => []
-    (xs, ys) if xs.is_empty() => []
-    (xs, ys) if ys.is_empty() => []
-    (x :: xs, y :: ys) => (f(x, y)) :: zip_with(xs, ys, f)
-  }
+  if list.is_empty(xs) then
+    list.empty[Int]
+  else if list.is_empty(ys) then
+    list.empty[Int]
+  else
+    list.concat(
+      list.map(
+        list.zip(xs, ys),
+        (pair) => f(pair.first, pair.second)
+      ),
+      list.zip_with(list.drop(xs, 1), list.drop(ys, 1), f)
+    )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-zip-with-0.almd
-error: '&&' is not valid in Almide at line 3:31
-  --> /tmp/dojo-zip-with-0.almd:3:31
-  hint: Use 'and' for logical AND. Example: if a and b then ...
+error[E003]: undefined variable 'list'
+  --> /tmp/dojo-zip-with-0.almd:3:5
+  in variable list
+  hint: Check the variable name
   |
-3 |     (xs, ys) if xs.is_empty() && ys.is_empty() => []
-  |                               ^
+3 |     list.empty[Int]
+  |     ^^^^
+error[E003]: undefined variable 'list'
+  --> /tmp/dojo-zip-with-0.almd:5:5
+  in variable list
+  hint: Check the variable name
+  |
+5 |     list.empty[Int]
+  |     ^^^^
+error[E002]: undefined function 'list.concat'
+  --> /tmp/dojo-zip-with-0.almd:12:57
+  in call to list.concat()
+  hint: No function 'concat' in module 'list'. See docs/CHEATSHEET.md for available functions
+   |
+12 |       list.zip_with(list.drop(xs, 1), list.drop(ys, 1), f)
+   |                                                         ^
 
-1 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-zip-with-0.almd:
 compile failed
 FAILED: /tmp/dojo-zip-with-0.almd
@@ -43,26 +65,47 @@ FAILED: /tmp/dojo-zip-with-0.almd
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
-  match (xs, ys) {
-    (xs, ys) if xs.is_empty() and ys.is_empty() => []
-    (xs, ys) if xs.is_empty() => []
-    (xs, ys) if ys.is_empty() => []
-    (x :: xs, y :: ys) => (f(x, y)) :: zip_with(xs, ys, f)
-  }
+  if list.is_empty(xs) then
+    list.empty[Int]
+  else if list.is_empty(ys) then
+    list.empty[Int]
+  else
+    list.concat(
+      list.map(
+        list.zip(xs, ys),
+        (pair) => f(pair.first, pair.second)
+      ),
+      list.zip_with(list.drop(xs, 1), list.drop(ys, 1), f)
+    )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-zip-with-1.almd
-error: Expected RParen at line 6:8 (got Colon ':')
-  --> /tmp/dojo-zip-with-1.almd:6:8
-  hint: Missing ')'. Check for an unclosed '(' earlier in this expression
+error[E003]: undefined variable 'list'
+  --> /tmp/dojo-zip-with-1.almd:3:5
+  in variable list
+  hint: Check the variable name
   |
-6 |     (x :: xs, y :: ys) => (f(x, y)) :: zip_with(xs, ys, f)
-  |        ^
+3 |     list.empty[Int]
+  |     ^^^^
+error[E003]: undefined variable 'list'
+  --> /tmp/dojo-zip-with-1.almd:5:5
+  in variable list
+  hint: Check the variable name
+  |
+5 |     list.empty[Int]
+  |     ^^^^
+error[E002]: undefined function 'list.concat'
+  --> /tmp/dojo-zip-with-1.almd:12:57
+  in call to list.concat()
+  hint: No function 'concat' in module 'list'. See docs/CHEATSHEET.md for available functions
+   |
+12 |       list.zip_with(list.drop(xs, 1), list.drop(ys, 1), f)
+   |                                                         ^
 
-1 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-zip-with-1.almd:
 compile failed
 FAILED: /tmp/dojo-zip-with-1.almd
@@ -75,26 +118,47 @@ FAILED: /tmp/dojo-zip-with-1.almd
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
-  match (xs, ys) {
-    (xs, ys) if xs.is_empty() and ys.is_empty() => []
-    (xs, ys) if xs.is_empty() => []
-    (xs, ys) if ys.is_empty() => []
-    (x :: xs, y :: ys) => (f(x, y)) :: zip_with(xs, ys, f)
-  }
+  if list.is_empty(xs) then
+    list.empty[Int]
+  else if list.is_empty(ys) then
+    list.empty[Int]
+  else
+    list.concat(
+      list.map(
+        list.zip(xs, ys),
+        (pair) => f(pair.first, pair.second)
+      ),
+      list.zip_with(list.drop(xs, 1), list.drop(ys, 1), f)
+    )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-zip-with-2.almd
-error: Expected RParen at line 6:8 (got Colon ':')
-  --> /tmp/dojo-zip-with-2.almd:6:8
-  hint: Missing ')'. Check for an unclosed '(' earlier in this expression
+error[E003]: undefined variable 'list'
+  --> /tmp/dojo-zip-with-2.almd:3:5
+  in variable list
+  hint: Check the variable name
   |
-6 |     (x :: xs, y :: ys) => (f(x, y)) :: zip_with(xs, ys, f)
-  |        ^
+3 |     list.empty[Int]
+  |     ^^^^
+error[E003]: undefined variable 'list'
+  --> /tmp/dojo-zip-with-2.almd:5:5
+  in variable list
+  hint: Check the variable name
+  |
+5 |     list.empty[Int]
+  |     ^^^^
+error[E002]: undefined function 'list.concat'
+  --> /tmp/dojo-zip-with-2.almd:12:57
+  in call to list.concat()
+  hint: No function 'concat' in module 'list'. See docs/CHEATSHEET.md for available functions
+   |
+12 |       list.zip_with(list.drop(xs, 1), list.drop(ys, 1), f)
+   |                                                         ^
 
-1 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-zip-with-2.almd:
 compile failed
 FAILED: /tmp/dojo-zip-with-2.almd
@@ -107,26 +171,47 @@ FAILED: /tmp/dojo-zip-with-2.almd
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
-  match (xs, ys) {
-    (xs, ys) if xs.is_empty() and ys.is_empty() => []
-    (xs, ys) if xs.is_empty() => []
-    (xs, ys) if ys.is_empty() => []
-    (x :: xs, y :: ys) => (f(x, y)) :: zip_with(xs, ys, f)
-  }
+  if list.is_empty(xs) then
+    list.empty[Int]
+  else if list.is_empty(ys) then
+    list.empty[Int]
+  else
+    list.concat(
+      list.map(
+        list.zip(xs, ys),
+        (pair) => f(pair.first, pair.second)
+      ),
+      list.zip_with(list.drop(xs, 1), list.drop(ys, 1), f)
+    )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-zip-with-3.almd
-error: Expected RParen at line 6:8 (got Colon ':')
-  --> /tmp/dojo-zip-with-3.almd:6:8
-  hint: Missing ')'. Check for an unclosed '(' earlier in this expression
+error[E003]: undefined variable 'list'
+  --> /tmp/dojo-zip-with-3.almd:3:5
+  in variable list
+  hint: Check the variable name
   |
-6 |     (x :: xs, y :: ys) => (f(x, y)) :: zip_with(xs, ys, f)
-  |        ^
+3 |     list.empty[Int]
+  |     ^^^^
+error[E003]: undefined variable 'list'
+  --> /tmp/dojo-zip-with-3.almd:5:5
+  in variable list
+  hint: Check the variable name
+  |
+5 |     list.empty[Int]
+  |     ^^^^
+error[E002]: undefined function 'list.concat'
+  --> /tmp/dojo-zip-with-3.almd:12:57
+  in call to list.concat()
+  hint: No function 'concat' in module 'list'. See docs/CHEATSHEET.md for available functions
+   |
+12 |       list.zip_with(list.drop(xs, 1), list.drop(ys, 1), f)
+   |                                                         ^
 
-1 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-zip-with-3.almd:
 compile failed
 FAILED: /tmp/dojo-zip-with-3.almd

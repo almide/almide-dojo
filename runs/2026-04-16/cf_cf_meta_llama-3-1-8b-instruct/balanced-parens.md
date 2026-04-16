@@ -10,47 +10,64 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn is_balanced(s: String) -> Bool {
-  let opening_brackets = List[String]({"(", "[", "{"})
-  let closing_brackets = List[String]({"(", "]", "}"}).map(
-    fn (x) => string.replace(x, ")", "(").replace(x, "]", "[").replace(x, "}", "{")
-  )
-  let stack = List[String]()
-  for c in string.chars(s) {
-    if opening_brackets.contains(c) {
-      list.push(stack, c)
-    } else if closing_brackets.contains(c) {
-      if list.is_empty(stack) {
-        return false
-      }
-      let last = list.last(stack)
-      list.drop_end(stack, 1)
-      if closing_brackets.index_of(c) != opening_brackets.index_of(last) {
-        return false
-      }
-    }
-  }
-  list.is_empty(stack)
-}
+fn is_balanced(s: String) -> Bool =
+  let stack = list.new[String]()
+  in list.all(string.chars(s), fn(c) =
+    match c {
+      '(' => list.push(stack, ")")
+      '[' => list.push(stack, "]")
+      '{' => list.push(stack, "}")
+      ')' => if list.is_empty(stack) then false else list.pop(stack) == ")" && true
+      ']' => if list.is_empty(stack) then false else list.pop(stack) == "]" && true
+      '}' => if list.is_empty(stack) then false else list.pop(stack) == "}" && true
+      _ => true
+    })
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-0.almd
-error: Missing '=' before function body at line 1:35
-  --> /tmp/dojo-balanced-parens-0.almd:1:35
-  hint: Almide requires '=' before the body. Write: fn is_balanced(...) -> Type = { ... }
+error: `let ... in <expr>` is OCaml/Haskell syntax
+  --> /tmp/dojo-balanced-parens-0.almd:3:3
+  in let ... in
+  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
+  try:
+      let x = 1
+      let y = 2
+      x + y
   |
-1 | fn is_balanced(s: String) -> Bool {
-  |                                   ^
-error: Expected function name at line 4:8 (got LParen '(')
-  --> /tmp/dojo-balanced-parens-0.almd:4:8
+3 |   in list.all(string.chars(s), fn(c) =
+  |   ^^
+error: Expected function name at line 3:34 (got LParen '(')
+  --> /tmp/dojo-balanced-parens-0.almd:3:34
   |
-4 |     fn (x) => string.replace(x, ")", "(").replace(x, "]", "[").replace(x, "}", "{")
-  |        ^
+3 |   in list.all(string.chars(s), fn(c) =
+  |                                  ^
+error[E002]: undefined function 'list.new'
+  --> /tmp/dojo-balanced-parens-0.almd:2:23
+  in call to list.new()
+  hint: Did you mean `[] (empty list literal)`?
+  |
+2 |   let stack = list.new[String]()
+  |                       ^
+error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
+  --> /tmp/dojo-balanced-parens-0.almd:2:23
+  in fn 'is_balanced'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with `let stack = ...` (a statement, returns Unit).
+      // Add `stack` as the trailing expression so the fn returns Bool:
+      //
+      //   let stack = <computation>
+      //   stack                         // <-- add this line
+      //
+      // Or inline the computation as the tail expression directly.
+  |
+2 |   let stack = list.new[String]()
+  |                       ^
 
-2 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-balanced-parens-0.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-0.almd
@@ -62,94 +79,64 @@ FAILED: /tmp/dojo-balanced-parens-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn is_balanced(s: String) -> Bool = {
-  let opening_brackets = List[String]({"(", "[", "{"})
-  let closing_brackets = List[String]({"(", "]", "}"}).map(
-    fn (x) => string.replace(x, ")", "(").replace(x, "]", "[").replace(x, "}", "{")
-  )
-  let stack = List[String]()
-  for c in string.chars(s) {
-    if opening_brackets.contains(c) {
-      list.push(stack, c)
-    } else if closing_brackets.contains(c) {
-      if list.is_empty(stack) {
-        return false
-      }
-      let last = list.last(stack)
-      list.drop_end(stack, 1)
-      if closing_brackets.index_of(c) != opening_brackets.index_of(last) {
-        return false
-      }
-    }
-  }
-  list.is_empty(stack)
-}
+fn is_balanced(s: String) -> Bool =
+  let stack = list.new[String]()
+  in list.all(string.chars(s), fn(c) =
+    match c {
+      '(' => list.push(stack, ")")
+      '[' => list.push(stack, "]")
+      '{' => list.push(stack, "}")
+      ')' => if list.is_empty(stack) then false else list.pop(stack) == ")" && true
+      ']' => if list.is_empty(stack) then false else list.pop(stack) == "]" && true
+      '}' => if list.is_empty(stack) then false else list.pop(stack) == "}" && true
+      _ => true
+    }) && list.is_empty(stack)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-1.almd
-error: Expected expression at line 2:43 (got Comma ',')
-  --> /tmp/dojo-balanced-parens-1.almd:2:43
-  |
-2 |   let opening_brackets = List[String]({"(", "[", "{"})
-  |                                           ^
-error: Expected expression at line 3:43 (got Comma ',')
-  --> /tmp/dojo-balanced-parens-1.almd:3:43
-  |
-3 |   let closing_brackets = List[String]({"(", "]", "}"}).map(
-  |                                           ^
-error: Expected Then at line 8:37 (got LBrace '{')
-  --> /tmp/dojo-balanced-parens-1.almd:8:37
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
-  |
-8 |     if opening_brackets.contains(c) {
-  |                                     ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 10:7 (got Else 'else')
-  --> /tmp/dojo-balanced-parens-1.almd:10:7
-   |
-10 |     } else if closing_brackets.contains(c) {
-   |       ^
-error[E003]: undefined variable 'c'
-  --> /tmp/dojo-balanced-parens-1.almd:9:24
-  in variable c
-  hint: Did you mean `s`?
+error: `let ... in <expr>` is OCaml/Haskell syntax
+  --> /tmp/dojo-balanced-parens-1.almd:3:3
+  in let ... in
+  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyword.
   try:
-      // c  →  s
-      s
+      let x = 1
+      let y = 2
+      x + y
   |
-9 |       list.push(stack, c)
-  |                        ^
-error[E005]: argument 'xs' expects List[A] but got List
-  --> /tmp/dojo-balanced-parens-1.almd:9:24
-  in call to list.push()
-  hint: Fix the argument type
+3 |   in list.all(string.chars(s), fn(c) =
+  |   ^^
+error: Expected function name at line 3:34 (got LParen '(')
+  --> /tmp/dojo-balanced-parens-1.almd:3:34
   |
-9 |       list.push(stack, c)
-  |                        ^
-error[E001]: type mismatch in call to list.push(): expected List[A] but got List
-  --> /tmp/dojo-balanced-parens-1.almd:9:24
-  in call to list.push()
-  hint: Fix the expression type or change the expected type
+3 |   in list.all(string.chars(s), fn(c) =
+  |                                  ^
+error[E002]: undefined function 'list.new'
+  --> /tmp/dojo-balanced-parens-1.almd:2:23
+  in call to list.new()
+  hint: Did you mean `[] (empty list literal)`?
   |
-9 |       list.push(stack, c)
-  |                        ^
+2 |   let stack = list.new[String]()
+  |                       ^
 error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
-  --> /tmp/dojo-balanced-parens-1.almd:9:24
+  --> /tmp/dojo-balanced-parens-1.almd:2:23
   in fn 'is_balanced'
   hint: Fix the expression type or change the expected type
   try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Bool:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type Bool
+      // fn body ends with `let stack = ...` (a statement, returns Unit).
+      // Add `stack` as the trailing expression so the fn returns Bool:
+      //
+      //   let stack = <computation>
+      //   stack                         // <-- add this line
+      //
+      // Or inline the computation as the tail expression directly.
   |
-9 |       list.push(stack, c)
-  |                        ^
+2 |   let stack = list.new[String]()
+  |                       ^
 
-8 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-balanced-parens-1.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-1.almd
@@ -161,86 +148,49 @@ FAILED: /tmp/dojo-balanced-parens-1.almd
 ### Attempt 3 (FAIL)
 
 ```almide
-fn is_balanced(s: String) -> Bool = {
-  let opening_brackets = List[String]({"(", "[", "{"})
-  let closing_brackets = List[String]({"(", "]", "}"}).map(
-    fn (x) => string.replace(x, ")", "(").replace(x, "]", "[").replace(x, "}", "{")
-  )
-  let stack = List[String]()
-  for c in string.chars(s) {
-    if opening_brackets.contains(c) {
-      list.push(stack, c)
-    } else if closing_brackets.contains(c) {
-      if list.is_empty(stack) {
-        return false
-      }
-      let last = list.last(stack)
-      list.drop_end(stack, 1)
-      if closing_brackets.index_of(c) != opening_brackets.index_of(last) {
-        return false
-      }
-    }
-  }
-  let stack_len = list.len(stack)
-  if stack_len == 0 {
-    return true
-  } else {
-    return false
-  }
-}
+fn is_balanced(s: String) -> Bool =
+  let stack = list.new[String]()
+  list.all(string.chars(s), fn(c) =
+    match c {
+      '(' => list.push(stack, ")")
+      '[' => list.push(stack, "]")
+      '{' => list.push(stack, "}")
+      ')' => if list.is_empty(stack) then false else list.pop(stack) == ")" && true
+      ']' => if list.is_empty(stack) then false else list.pop(stack) == "]" && true
+      '}' => if list.is_empty(stack) then false else list.pop(stack) == "}" && true
+      _ => true
+    }) && list.is_empty(stack)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-2.almd
-error: Expected expression at line 2:43 (got Comma ',')
-  --> /tmp/dojo-balanced-parens-2.almd:2:43
+error: Expected expression at line 3:29 (got Fn 'fn')
+  --> /tmp/dojo-balanced-parens-2.almd:3:29
   |
-2 |   let opening_brackets = List[String]({"(", "[", "{"})
-  |                                           ^
-error: Expected expression at line 3:43 (got Comma ',')
-  --> /tmp/dojo-balanced-parens-2.almd:3:43
+3 |   list.all(string.chars(s), fn(c) =
+  |                             ^
+error: '&&' is not valid in Almide at line 8:77
+  --> /tmp/dojo-balanced-parens-2.almd:8:77
+  hint: Use 'and' for logical AND. Example: if a and b then ...
   |
-3 |   let closing_brackets = List[String]({"(", "]", "}"}).map(
-  |                                           ^
-error: Expected Then at line 8:37 (got LBrace '{')
-  --> /tmp/dojo-balanced-parens-2.almd:8:37
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
-  |
-8 |     if opening_brackets.contains(c) {
-  |                                     ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 10:7 (got Else 'else')
-  --> /tmp/dojo-balanced-parens-2.almd:10:7
+8 |       ')' => if list.is_empty(stack) then false else list.pop(stack) == ")" && true
+  |                                                                             ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 12:5 (got RBrace '}')
+  --> /tmp/dojo-balanced-parens-2.almd:12:5
    |
-10 |     } else if closing_brackets.contains(c) {
-   |       ^
-error[E003]: undefined variable 'c'
-  --> /tmp/dojo-balanced-parens-2.almd:9:24
-  in variable c
-  hint: Did you mean `s`?
-  try:
-      // c  →  s
-      s
+12 |     }) && list.is_empty(stack)
+   |     ^
+error[E002]: undefined function 'list.new'
+  --> /tmp/dojo-balanced-parens-2.almd:2:23
+  in call to list.new()
+  hint: Did you mean `[] (empty list literal)`?
   |
-9 |       list.push(stack, c)
-  |                        ^
-error[E005]: argument 'xs' expects List[A] but got List
-  --> /tmp/dojo-balanced-parens-2.almd:9:24
-  in call to list.push()
-  hint: Fix the argument type
-  |
-9 |       list.push(stack, c)
-  |                        ^
-error[E001]: type mismatch in call to list.push(): expected List[A] but got List
-  --> /tmp/dojo-balanced-parens-2.almd:9:24
-  in call to list.push()
-  hint: Fix the expression type or change the expected type
-  |
-9 |       list.push(stack, c)
-  |                        ^
+2 |   let stack = list.new[String]()
+  |                       ^
 error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
-  --> /tmp/dojo-balanced-parens-2.almd:9:24
+  --> /tmp/dojo-balanced-parens-2.almd:2:23
   in fn 'is_balanced'
   hint: Fix the expression type or change the expected type
   try:
@@ -250,10 +200,10 @@ error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
       // Or inline:
       //   <expression>                   // must have type Bool
   |
-9 |       list.push(stack, c)
-  |                        ^
+2 |   let stack = list.new[String]()
+  |                       ^
 
-8 error(s) found
+5 error(s) found
 Compile error for /tmp/dojo-balanced-parens-2.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-2.almd
@@ -265,86 +215,89 @@ FAILED: /tmp/dojo-balanced-parens-2.almd
 ### Attempt 4 (FAIL)
 
 ```almide
-fn is_balanced(s: String) -> Bool = {
-  let opening_brackets = List[String]({"(", "[", "{"})
-  let closing_brackets = List[String]({"(", "]", "}"}).map(
-    fn (x) => string.replace(x, ")", "(").replace(x, "]", "[").replace(x, "}", "{")
-  )
-  let stack = List[String]()
-  for c in string.chars(s) {
-    if opening_brackets.contains(c) {
-      list.push(stack, c)
-    } else if closing_brackets.contains(c) {
-      if list.is_empty(stack) {
-        return false
-      }
-      let last = list.last(stack)
-      list.drop_end(stack, 1)
-      if closing_brackets.index_of(c) != opening_brackets.index_of(last) {
-        return false
-      }
-    }
-  }
-  let stack_len = list.len(stack)
-  if stack_len == 0 {
-    return true
-  } else {
-    return false
-  }
-}
+fn is_balanced(s: String) -> Bool =
+  let stack = list.new[String]()
+  list.all(string.chars(s), fn(c) =
+    match c {
+      '(' => list.push(stack, ")")
+      '[' => list.push(stack, "]")
+      '{' => list.push(stack, "}")
+      ')' => if list.is_empty(stack) then false else list.pop(stack) == ")" && true
+      ']' => if list.is_empty(stack) then false else list.pop(stack) == "]" && true
+      '}' => if list.is_empty(stack) then false else list.pop(stack) == "}" && true
+      _ => true
+    }) && list.is_empty(stack)
+
+// Replace with the following corrected code
+fn is_balanced(s: String) -> Bool =
+  let stack = list.new[String]()
+  list.all(string.chars(s), fn(c) =
+    match c {
+      '(' => list.push(stack, ")")
+      '[' => list.push(stack, "]")
+      '{' => list.push(stack, "}")
+      ')' => if list.is_empty(stack) then false else list.pop(stack) == ")" && true
+      ']' => if list.is_empty(stack) then false else list.pop(stack) == "]" && true
+      '
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-3.almd
-error: Expected expression at line 2:43 (got Comma ',')
-  --> /tmp/dojo-balanced-parens-3.almd:2:43
+error: Expected expression at line 3:29 (got Fn 'fn')
+  --> /tmp/dojo-balanced-parens-3.almd:3:29
   |
-2 |   let opening_brackets = List[String]({"(", "[", "{"})
-  |                                           ^
-error: Expected expression at line 3:43 (got Comma ',')
-  --> /tmp/dojo-balanced-parens-3.almd:3:43
+3 |   list.all(string.chars(s), fn(c) =
+  |                             ^
+error: '&&' is not valid in Almide at line 8:77
+  --> /tmp/dojo-balanced-parens-3.almd:8:77
+  hint: Use 'and' for logical AND. Example: if a and b then ...
   |
-3 |   let closing_brackets = List[String]({"(", "]", "}"}).map(
-  |                                           ^
-error: Expected Then at line 8:37 (got LBrace '{')
-  --> /tmp/dojo-balanced-parens-3.almd:8:37
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
-  |
-8 |     if opening_brackets.contains(c) {
-  |                                     ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 10:7 (got Else 'else')
-  --> /tmp/dojo-balanced-parens-3.almd:10:7
+8 |       ')' => if list.is_empty(stack) then false else list.pop(stack) == ")" && true
+  |                                                                             ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 12:5 (got RBrace '}')
+  --> /tmp/dojo-balanced-parens-3.almd:12:5
    |
-10 |     } else if closing_brackets.contains(c) {
-   |       ^
-error[E003]: undefined variable 'c'
-  --> /tmp/dojo-balanced-parens-3.almd:9:24
-  in variable c
-  hint: Did you mean `s`?
-  try:
-      // c  →  s
-      s
+12 |     }) && list.is_empty(stack)
+   |     ^
+error: Expected expression at line 17:29 (got Fn 'fn')
+  --> /tmp/dojo-balanced-parens-3.almd:17:29
+   |
+17 |   list.all(string.chars(s), fn(c) =
+   |                             ^
+error: '&&' is not valid in Almide at line 22:77
+  --> /tmp/dojo-balanced-parens-3.almd:22:77
+  hint: Use 'and' for logical AND. Example: if a and b then ...
+   |
+22 |       ')' => if list.is_empty(stack) then false else list.pop(stack) == ")" && true
+   |                                                                             ^
+error[E012]: duplicate function 'is_balanced'
+  at line 15
+  in fn is_balanced
+  hint: Rename one of the definitions, or remove the earlier one. Almide requires each function name to be unique within a module.
+   |
+ 1 | fn is_balanced(s: String) -> Bool =
+   | -------------------------------------- first definition of 'is_balanced' here
+...
+15 | fn is_balanced(s: String) -> Bool =
+   | ^^^^^^^^^^^^^^
+error[E002]: undefined function 'list.new'
+  --> /tmp/dojo-balanced-parens-3.almd:2:23
+  in call to list.new()
+  hint: Did you mean `[] (empty list literal)`?
   |
-9 |       list.push(stack, c)
-  |                        ^
-error[E005]: argument 'xs' expects List[A] but got List
-  --> /tmp/dojo-balanced-parens-3.almd:9:24
-  in call to list.push()
-  hint: Fix the argument type
-  |
-9 |       list.push(stack, c)
-  |                        ^
-error[E001]: type mismatch in call to list.push(): expected List[A] but got List
-  --> /tmp/dojo-balanced-parens-3.almd:9:24
-  in call to list.push()
-  hint: Fix the expression type or change the expected type
-  |
-9 |       list.push(stack, c)
-  |                        ^
+2 |   let stack = list.new[String]()
+  |                       ^
+error[E002]: undefined function 'list.new'
+  --> /tmp/dojo-balanced-parens-3.almd:16:23
+  in call to list.new()
+  hint: Did you mean `[] (empty list literal)`?
+   |
+16 |   let stack = list.new[String]()
+   |                       ^
 error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
-  --> /tmp/dojo-balanced-parens-3.almd:9:24
+  --> /tmp/dojo-balanced-parens-3.almd:2:23
   in fn 'is_balanced'
   hint: Fix the expression type or change the expected type
   try:
@@ -354,10 +307,23 @@ error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
       // Or inline:
       //   <expression>                   // must have type Bool
   |
-9 |       list.push(stack, c)
-  |                        ^
+2 |   let stack = list.new[String]()
+  |                       ^
+error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
+  --> /tmp/dojo-balanced-parens-3.almd:16:23
+  in fn 'is_balanced'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Bool:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type Bool
+   |
+16 |   let stack = list.new[String]()
+   |                       ^
 
-8 error(s) found
+10 error(s) found
 Compile error for /tmp/dojo-balanced-parens-3.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-3.almd
