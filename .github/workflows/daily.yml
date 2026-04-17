@@ -26,9 +26,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Almide v0.14.6
+      - name: Install Almide v0.14.8
         run: |
-          cargo install --git https://github.com/almide/almide --tag v0.14.6 --bin almide --locked --force
+          cargo install --git https://github.com/almide/almide --tag v0.14.8 --bin almide --locked --force
           almide --version  # expect `almide 0.14.6` (v0.14.7 has almai dispatch regression — see almide issue)
 
       - name: Run all tasks
