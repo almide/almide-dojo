@@ -2,9 +2,9 @@
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **tasks**: 30
-- **passed**: 14 / 30
-- **1-shot passes**: 12 / 30
-- **total retries**: 51
+- **passed**: 13 / 30
+- **1-shot passes**: 11 / 30
+- **total retries**: 53
 
 ## Per-task
 
@@ -14,14 +14,14 @@
 | `balanced-parens` | FAIL | parse-error | — | 3 |
 | `binary-search` | FAIL | parse-error | — | 3 |
 | `caesar-cipher` | FAIL | parse-error | — | 3 |
-| `clamp` | pass | pass-retry | — | 2 |
+| `clamp` | pass | pass-1shot | — | 0 |
 | `count-vowels` | pass | pass-1shot | — | 0 |
-| `custom-linked-list` | pass | pass-1shot | — | 0 |
+| `custom-linked-list` | FAIL | parse-error | — | 3 |
 | `expression-eval` | pass | pass-retry | — | 1 |
 | `factorial` | pass | pass-1shot | — | 0 |
 | `fibonacci` | pass | pass-1shot | — | 0 |
 | `fizzbuzz` | pass | pass-1shot | — | 0 |
-| `flatten-nested` | pass | pass-1shot | — | 0 |
+| `flatten-nested` | pass | pass-retry | — | 1 |
 | `gcd` | pass | pass-1shot | — | 0 |
 | `is-palindrome` | pass | pass-1shot | — | 0 |
 | `is-prime` | FAIL | type-error | `E005` | 3 |
@@ -31,39 +31,38 @@
 | `mini-json-query` | FAIL | parse-error | — | 3 |
 | `partition-list` | pass | pass-1shot | — | 0 |
 | `remove-duplicates` | pass | pass-1shot | — | 0 |
-| `repeat-string` | pass | pass-1shot | — | 0 |
+| `repeat-string` | FAIL | parse-error | — | 3 |
 | `result-pipeline` | FAIL | parse-error | — | 3 |
 | `roman-numeral` | FAIL | parse-error | — | 3 |
-| `run-length-encoding` | FAIL | parse-error | — | 3 |
+| `run-length-encoding` | pass | pass-1shot | — | 0 |
 | `string-reverse` | FAIL | type-error | `E005` | 3 |
-| `sum-digits` | FAIL | name-error | `E003` | 3 |
+| `sum-digits` | FAIL | unknown | — | 3 |
 | `title-case` | FAIL | unknown | — | 3 |
 | `word-count` | FAIL | type-error | `E005` | 3 |
-| `zip-with` | FAIL | parse-error | — | 3 |
+| `zip-with` | FAIL | type-error | `E001` | 3 |
 
 ## By category
 
-- pass-1shot: 12
+- pass-1shot: 11
 - pass-retry: 2
 - parse-error: 11
-- type-error: 3
-- name-error: 1
-- unknown: 1
+- type-error: 4
+- unknown: 2
 
 ## Retry distribution
 
-- pass-0: 12
+- pass-0: 11
 - fail-0: 0
-- pass-1: 1
+- pass-1: 2
 - fail-1: 0
-- pass-2: 1
+- pass-2: 0
 - fail-2: 0
 - pass-3: 0
-- fail-3: 16
+- fail-3: 17
 
 ## Unrecoverable diagnostic codes (still failing after 3 retries)
 
-- `E001`: 4
-- `E002`: 2
-- `E003`: 3
-- `E005`: 4
+- `E001`: 6
+- `E002`: 1
+- `E003`: 2
+- `E005`: 3

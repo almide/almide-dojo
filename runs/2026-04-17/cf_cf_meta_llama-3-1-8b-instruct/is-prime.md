@@ -132,7 +132,7 @@ fn is_prime(n: Int) -> Bool =
   if n < 1 then false
   else if n == 2 then true
   else if n % 2 == 0 then false
-  else list.all[Int](list.range(3, math.sqrt(n) + 1), (x) => n % x != 0)
+  else list.all[Int](list.range(3, int.clamp(math.floor(math.sqrt(n)).toInt(), 3, n)), (x) => n % x != 0)
 ```
 
 **Diagnostic:**
@@ -140,35 +140,28 @@ fn is_prime(n: Int) -> Bool =
 ```
 Compiling /tmp/dojo-is-prime-3.almd
 error[E005]: argument 'x' expects Float but got Int
-  --> /tmp/dojo-is-prime-3.almd:6:44
+  --> /tmp/dojo-is-prime-3.almd:6:65
   in call to math.sqrt()
   hint: Fix the argument type. Or use `to_float(x)` to convert Int to Float
   |
-6 | else list.all[Int](list.range(3, math.sqrt(n) + 1), (x) => n % x != 0)
-  |                                            ^
-error[E005]: argument 'end' expects Int but got Float
-  --> /tmp/dojo-is-prime-3.almd:6:49
-  in call to list.range()
-  hint: Fix the argument type. Or use `to_int(x)` to convert Float to Int (truncates)
+6 | else list.all[Int](list.range(3, int.clamp(math.floor(math.sqrt(n)).toInt(), 3, n)), (x) => n % x != 0)
+  |                                                                 ^
+error[E002]: undefined function 'math.floor'
+  --> /tmp/dojo-is-prime-3.almd:6:65
+  in call to math.floor()
+  hint: No function 'floor' in module 'math'. See docs/CHEATSHEET.md for available functions
   |
-6 | else list.all[Int](list.range(3, math.sqrt(n) + 1), (x) => n % x != 0)
-  |                                                 ^
+6 | else list.all[Int](list.range(3, int.clamp(math.floor(math.sqrt(n)).toInt(), 3, n)), (x) => n % x != 0)
+  |                                                                 ^
 error[E001]: type mismatch in call to math.sqrt(): expected Float but got Int
-  --> /tmp/dojo-is-prime-3.almd:6:44
+  --> /tmp/dojo-is-prime-3.almd:6:65
   in call to math.sqrt()
   hint: Fix the expression type or change the expected type. Or use `to_float(x)` to convert Int to Float
   |
-6 | else list.all[Int](list.range(3, math.sqrt(n) + 1), (x) => n % x != 0)
-  |                                            ^
-error[E001]: type mismatch in call to list.range(): expected Int but got Float
-  --> /tmp/dojo-is-prime-3.almd:6:49
-  in call to list.range()
-  hint: Fix the expression type or change the expected type. Or use `to_int(x)` to convert Float to Int (truncates)
-  |
-6 | else list.all[Int](list.range(3, math.sqrt(n) + 1), (x) => n % x != 0)
-  |                                                 ^
+6 | else list.all[Int](list.range(3, int.clamp(math.floor(math.sqrt(n)).toInt(), 3, n)), (x) => n % x != 0)
+  |                                                                 ^
 
-4 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-is-prime-3.almd:
 compile failed
 FAILED: /tmp/dojo-is-prime-3.almd

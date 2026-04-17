@@ -10,5 +10,6 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn repeat(s: String, n: Int) -> String = string.repeat(s, n)
+fn repeat(s: String, n: Int) -> String = 
+  string.repeat(s, n)
 ```

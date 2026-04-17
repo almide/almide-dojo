@@ -13,28 +13,26 @@
 fn encrypt(text: String, shift: Int) -> String = 
   string.join(
     list.map(
-      string.chars(text),
+      string.chars(text), 
       (c) => 
         if string.is_lower(c) then
-          let codepoint = option.unwrap_or(string.codepoint(c), 0)
-          let new_codepoint = (codepoint - 97 + shift) % 26 + 97
-          string.from_codepoint(new_codepoint)
+          let code = option.unwrap_or(string.codepoint(c), 0) in
+          string.from_codepoint(((code - 97 + shift) % 26) + 97)
         else c
-    ),
+    ), 
     ""
   )
 
 fn decrypt(text: String, shift: Int) -> String = 
   string.join(
     list.map(
-      string.chars(text),
+      string.chars(text), 
       (c) => 
         if string.is_lower(c) then
-          let codepoint = option.unwrap_or(string.codepoint(c), 0)
-          let new_codepoint = (codepoint - 97 - shift + 26) % 26 + 97
-          string.from_codepoint(new_codepoint)
+          let code = option.unwrap_or(string.codepoint(c), 0) in
+          string.from_codepoint(((code - 97 - shift + 26) % 26) + 97)
         else c
-    ),
+    ), 
     ""
   )
 ```
@@ -48,14 +46,14 @@ error: 'let' is not an expression in Almide
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-7 |           let codepoint = option.unwrap_or(string.codepoint(c), 0)
+7 |           let code = option.unwrap_or(string.codepoint(c), 0) in
   |           ^^^
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-caesar-cipher-0.almd:21:11
+  --> /tmp/dojo-caesar-cipher-0.almd:20:11
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
    |
-21 |           let codepoint = option.unwrap_or(string.codepoint(c), 0)
+20 |           let code = option.unwrap_or(string.codepoint(c), 0) in
    |           ^^^
 
 2 error(s) found
@@ -73,32 +71,24 @@ FAILED: /tmp/dojo-caesar-cipher-0.almd
 fn encrypt(text: String, shift: Int) -> String = 
   string.join(
     list.map(
-      string.chars(text),
+      string.chars(text), 
       (c) => 
         if string.is_lower(c) then
-          {
-            let codepoint = option.unwrap_or(string.codepoint(c), 0)
-            let new_codepoint = (codepoint - 97 + shift) % 26 + 97
-            string.from_codepoint(new_codepoint)
-          }
+          string.from_codepoint(((option.unwrap_or(string.codepoint(c), 0) - 97 + shift) % 26) + 97)
         else c
-    ),
+    ), 
     ""
   )
 
 fn decrypt(text: String, shift: Int) -> String = 
   string.join(
     list.map(
-      string.chars(text),
+      string.chars(text), 
       (c) => 
         if string.is_lower(c) then
-          {
-            let codepoint = option.unwrap_or(string.codepoint(c), 0)
-            let new_codepoint = (codepoint - 97 - shift + 26) % 26 + 97
-            string.from_codepoint(new_codepoint)
-          }
+          string.from_codepoint(((option.unwrap_or(string.codepoint(c), 0) - 97 - shift + 26) % 26) + 97)
         else c
-    ),
+    ), 
     ""
   )
 ```

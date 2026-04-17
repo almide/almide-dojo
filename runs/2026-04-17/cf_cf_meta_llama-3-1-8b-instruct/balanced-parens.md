@@ -19,8 +19,10 @@ fn is_balanced(s: String) -> Bool {
       if list.is_empty(opening_brackets) {
         return false
       }
-      let last = list.last(opening_brackets)
-      if (c == ")" && last != "(") || (c == "]" && last != "[") || (c == "}" && last != "{") {
+      let last_opening = list.last(opening_brackets)
+      if (c == ")" && last_opening != "(") ||
+         (c == "]" && last_opening != "[") ||
+         (c == "}" && last_opening != "{") {
         return false
       }
       list.drop_end(opening_brackets, 1)
@@ -62,8 +64,10 @@ fn is_balanced(s: String) -> Bool = {
       if list.is_empty(opening_brackets) {
         return false
       }
-      let last = list.last(opening_brackets)
-      if (c == ")" && last != "(") || (c == "]" && last != "[") || (c == "}" && last != "{") {
+      let last_opening = list.last(opening_brackets)
+      if (c == ")" && last_opening != "(") ||
+         (c == "]" && last_opening != "[") ||
+         (c == "}" && last_opening != "{") {
         return false
       }
       list.drop_end(opening_brackets, 1)
@@ -140,9 +144,10 @@ fn is_balanced(s: String) -> Bool = {
       if list.is_empty(opening_brackets) {
         return false
       }
-      let last = list.last(opening_brackets)
-      let closing_bracket = if c == ")" then "(" else if c == "]" then "[" else "{" end
-      if last != closing_bracket {
+      let last_opening = list.last(opening_brackets)
+      if (c == ")" && last_opening != "(") ||
+         (c == "]" && last_opening != "[") ||
+         (c == "}" && last_opening != "{") {
         return false
       }
       list.drop_end(opening_brackets, 1)
@@ -219,9 +224,10 @@ fn is_balanced(s: String) -> Bool = {
       if list.is_empty(opening_brackets) {
         return false
       }
-      let last = list.last(opening_brackets)
-      let closing_bracket = if c == ")" then "(" else if c == "]" then "[" else "{" end
-      if last != closing_bracket {
+      let last_opening = list.last(opening_brackets)
+      if (c == ")" && last_opening != "(") ||
+         (c == "]" && last_opening != "[") ||
+         (c == "}" && last_opening != "{") {
         return false
       }
       list.drop_end(opening_brackets, 1)

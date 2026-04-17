@@ -14,7 +14,7 @@ fn word_count(s: String) -> Map[String, Int] =
   let
     words = string.split(s, " ")
     non_empty_words = list.filter(words, (x) => x != "")
-    frequency_map = list.fold(
+    count_map = list.fold(
       non_empty_words,
       map.new(),
       (acc, word) =>
@@ -25,7 +25,7 @@ fn word_count(s: String) -> Map[String, Int] =
         )
     )
   in
-    frequency_map
+  count_map
 ```
 
 **Diagnostic:**
@@ -56,13 +56,13 @@ error[E003]: undefined variable 'non_empty_words'
   |
 6 |       non_empty_words,
   |       ^^^^^^^^^^^^^^^
-error[E003]: undefined variable 'frequency_map'
-  --> /tmp/dojo-word-count-0.almd:16:5
-  in variable frequency_map
+error[E003]: undefined variable 'count_map'
+  --> /tmp/dojo-word-count-0.almd:16:3
+  in variable count_map
   hint: Check the variable name
    |
-16 |     frequency_map
-   |     ^^^^^^^^^^^^^
+16 |   count_map
+   |   ^^^^^^^^^
 
 5 error(s) found
 Compile error for /tmp/dojo-word-count-0.almd:

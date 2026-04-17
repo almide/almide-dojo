@@ -18,48 +18,44 @@ type JVal =
   | JArr(List[JVal])
   | JObj(List[(String, JVal)])
 
-fn jget(obj: JVal, key: String) -> Option[JVal] =
+fn jget(obj: JVal, key: String) -> Option[JVal] = 
   match obj {
-    JObj(xs) =>
-      list.find(xs, (x) => string.equals(x.0, key)).map((x) => x.1)
+    JObj(pairs) => list.find(pairs, (x) => x.0 == key) |> option.map((x) => x.1)
     _ => none
   }
 
-fn jcount(val: JVal) -> Int =
+fn jcount(val: JVal) -> Int = 
   match val {
     JNull => 1
     JBool(_) => 1
     JNum(_) => 1
     JStr(_) => 1
     JArr(xs) => list.sum(list.map(xs, jcount))
-    JObj(xs) => list.sum(list.map(xs, (x) => jcount(x.1)))
+    JObj(pairs) => list.sum(list.map(pairs, (x) => jcount(x.1)))
   }
 
-fn jflatten_strings(val: JVal) -> List[String] =
+fn jflatten_strings(val: JVal) -> List[String] = 
   match val {
     JStr(s) => [s]
     JArr(xs) => list.flat_map(xs, jflatten_strings)
-    JObj(xs) => list.flat_map(list.map(xs, (x) =>
+    JObj(pairs) => list.flat_map(pairs
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-0.almd
-error: Expected expression at line 32:1 (got Test 'test')
-  --> /tmp/dojo-mini-json-query-0.almd:32:1
+error: Expected ')' to close function call opened at line 29:33
+  --> /tmp/dojo-mini-json-query-0.almd:31:1
+  hint: Add ')' or check for a missing delimiter inside the function call
    |
-32 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
-   | ^
-error[E002]: undefined function 'string.equals'
-  --> /tmp/dojo-mini-json-query-0.almd:12:47
-  in call to string.equals()
-  hint: No function 'equals' in module 'string'. See docs/CHEATSHEET.md for available functions
-   |
-12 |       list.find(xs, (x) => string.equals(x.0, key)).map((x) => x.1)
-   |                                               ^^^
+29 |     JObj(pairs) => list.flat_map(pairs
+   |                                 --------------- '(' opened here
+...
+31 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
+   | ^^^^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-mini-json-query-0.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-0.almd
@@ -79,52 +75,44 @@ type JVal =
   | JArr(List[JVal])
   | JObj(List[(String, JVal)])
 
-fn jget(obj: JVal, key: String) -> Option[JVal] =
+fn jget(obj: JVal, key: String) -> Option[JVal] = 
   match obj {
-    JObj(xs) =>
-      list.find(xs, (x) => string.equals(x.0, key)).map((x) => x.1)
+    JObj(pairs) => list.find(pairs, (x) => x.0 == key) |> option.map((x) => x.1)
     _ => none
   }
 
-fn jcount(val: JVal) -> Int =
+fn jcount(val: JVal) -> Int = 
   match val {
     JNull => 1
     JBool(_) => 1
     JNum(_) => 1
     JStr(_) => 1
     JArr(xs) => list.sum(list.map(xs, jcount))
-    JObj(xs) => list.sum(list.map(xs, (x) => jcount(x.1)))
+    JObj(pairs) => list.sum(list.map(pairs, (x) => jcount(x.1)))
   }
 
-fn jflatten_strings(val: JVal) -> List[String] =
+fn jflatten_strings(val: JVal) -> List[String] = 
   match val {
     JStr(s) => [s]
     JArr(xs) => list.flat_map(xs, jflatten_strings)
-    JObj(xs) => list.flat_map(list.map(xs, (x) => jflatten_strings(x
+    JObj(pairs) => list.flat_map(pairs, (x
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-1.almd
-error: Expected ')' to close function call opened at line 30:67
-  --> /tmp/dojo-mini-json-query-1.almd:32:1
-  hint: Add ')' or check for a missing delimiter inside the function call
+error: Expected ')' to close parenthesized expression opened at line 29:41
+  --> /tmp/dojo-mini-json-query-1.almd:29:43
+  hint: Add ')' or check for a missing delimiter inside the parenthesized expression
    |
-30 |     JObj(xs) => list.flat_map(list.map(xs, (x) => jflatten_strings(x
-   |                                                                   --------------- '(' opened here
-...
-32 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
-   | ^^^^
-error[E002]: undefined function 'string.equals'
-  --> /tmp/dojo-mini-json-query-1.almd:12:47
-  in call to string.equals()
-  hint: No function 'equals' in module 'string'. See docs/CHEATSHEET.md for available functions
+29 |     JObj(pairs) => list.flat_map(pairs, (x
+   |                                         --------------- '(' opened here
    |
-12 |       list.find(xs, (x) => string.equals(x.0, key)).map((x) => x.1)
-   |                                               ^^^
+29 |     JObj(pairs) => list.flat_map(pairs, (x
+   |                                           ^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-mini-json-query-1.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-1.almd
@@ -144,48 +132,44 @@ type JVal =
   | JArr(List[JVal])
   | JObj(List[(String, JVal)])
 
-fn jget(obj: JVal, key: String) -> Option[JVal] =
+fn jget(obj: JVal, key: String) -> Option[JVal] = 
   match obj {
-    JObj(xs) =>
-      list.find(xs, (x) => string.equals(x.0, key)).map((x) => x.1)
+    JObj(pairs) => list.find(pairs, (x) => x.0 == key) |> option.map((x) => x.1)
     _ => none
   }
 
-fn jcount(val: JVal) -> Int =
+fn jcount(val: JVal) -> Int = 
   match val {
     JNull => 1
     JBool(_) => 1
     JNum(_) => 1
     JStr(_) => 1
     JArr(xs) => list.sum(list.map(xs, jcount))
-    JObj(xs) => list.sum(list.map(xs, (x) => jcount(x.1)))
+    JObj(pairs) => list.sum(list.map(pairs, (x) => jcount(x.1)))
   }
 
-fn jflatten_strings(val: JVal) -> List[String] =
+fn jflatten_strings(val: JVal) -> List[String] = 
   match val {
     JStr(s) => [s]
     JArr(xs) => list.flat_map(xs, jflatten_strings)
-    JObj(xs) => list.flat_map(list.map(xs, (x) =>
+    JObj(pairs) => list.flat_map(pairs, (x
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-2.almd
-error: Expected expression at line 32:1 (got Test 'test')
-  --> /tmp/dojo-mini-json-query-2.almd:32:1
+error: Expected ')' to close parenthesized expression opened at line 29:41
+  --> /tmp/dojo-mini-json-query-2.almd:29:43
+  hint: Add ')' or check for a missing delimiter inside the parenthesized expression
    |
-32 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
-   | ^
-error[E002]: undefined function 'string.equals'
-  --> /tmp/dojo-mini-json-query-2.almd:12:47
-  in call to string.equals()
-  hint: No function 'equals' in module 'string'. See docs/CHEATSHEET.md for available functions
+29 |     JObj(pairs) => list.flat_map(pairs, (x
+   |                                         --------------- '(' opened here
    |
-12 |       list.find(xs, (x) => string.equals(x.0, key)).map((x) => x.1)
-   |                                               ^^^
+29 |     JObj(pairs) => list.flat_map(pairs, (x
+   |                                           ^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-mini-json-query-2.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-2.almd
@@ -205,52 +189,44 @@ type JVal =
   | JArr(List[JVal])
   | JObj(List[(String, JVal)])
 
-fn jget(obj: JVal, key: String) -> Option[JVal] =
+fn jget(obj: JVal, key: String) -> Option[JVal] = 
   match obj {
-    JObj(xs) =>
-      list.find(xs, (x) => string.equals(x.0, key)).map((x) => x.1)
+    JObj(pairs) => list.find(pairs, (x) => x.0 == key) |> option.map((x) => x.1)
     _ => none
   }
 
-fn jcount(val: JVal) -> Int =
+fn jcount(val: JVal) -> Int = 
   match val {
     JNull => 1
     JBool(_) => 1
     JNum(_) => 1
     JStr(_) => 1
     JArr(xs) => list.sum(list.map(xs, jcount))
-    JObj(xs) => list.sum(list.map(xs, (x) => jcount(x.1)))
+    JObj(pairs) => list.sum(list.map(pairs, (x) => jcount(x.1)))
   }
 
-fn jflatten_strings(val: JVal) -> List[String] =
+fn jflatten_strings(val: JVal) -> List[String] = 
   match val {
     JStr(s) => [s]
     JArr(xs) => list.flat_map(xs, jflatten_strings)
-    JObj(xs) => list.flat_map(list.map(xs, (x) => jflatten_strings(x
+    JObj(pairs) => list.flat_map(pairs, (x
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-mini-json-query-3.almd
-error: Expected ')' to close function call opened at line 30:67
-  --> /tmp/dojo-mini-json-query-3.almd:32:1
-  hint: Add ')' or check for a missing delimiter inside the function call
+error: Expected ')' to close parenthesized expression opened at line 29:41
+  --> /tmp/dojo-mini-json-query-3.almd:29:43
+  hint: Add ')' or check for a missing delimiter inside the parenthesized expression
    |
-30 |     JObj(xs) => list.flat_map(list.map(xs, (x) => jflatten_strings(x
-   |                                                                   --------------- '(' opened here
-...
-32 | test "jget found" { assert_eq(jget(JObj([("a", JNum(1)), ("b", JNum(2))]), "b"), some(JNum(2))) }
-   | ^^^^
-error[E002]: undefined function 'string.equals'
-  --> /tmp/dojo-mini-json-query-3.almd:12:47
-  in call to string.equals()
-  hint: No function 'equals' in module 'string'. See docs/CHEATSHEET.md for available functions
+29 |     JObj(pairs) => list.flat_map(pairs, (x
+   |                                         --------------- '(' opened here
    |
-12 |       list.find(xs, (x) => string.equals(x.0, key)).map((x) => x.1)
-   |                                               ^^^
+29 |     JObj(pairs) => list.flat_map(pairs, (x
+   |                                           ^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-mini-json-query-3.almd:
 compile failed
 FAILED: /tmp/dojo-mini-json-query-3.almd

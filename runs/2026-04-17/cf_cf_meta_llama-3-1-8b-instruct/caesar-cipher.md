@@ -12,30 +12,30 @@
 ```almide
 fn encrypt(text: String, shift: Int) -> String {
     let chars = string.chars(text);
-    let result = chars.map(|c| {
+    let shifted_chars = chars.map(|c| {
         let codepoint = string.codepoint(c);
         if codepoint >= 97 && codepoint <= 122 {
-            let new_codepoint = (codepoint - 97 + shift) % 26 + 97;
-            string.from_codepoint(new_codepoint)
+            let shifted_codepoint = (codepoint - 97 + shift) % 26 + 97;
+            string.from_codepoint(shifted_codepoint)
         } else {
             c
         }
     });
-    string.join(result, "")
+    string.join(shifted_chars, "")
 }
 
 fn decrypt(text: String, shift: Int) -> String {
     let chars = string.chars(text);
-    let result = chars.map(|c| {
+    let shifted_chars = chars.map(|c| {
         let codepoint = string.codepoint(c);
         if codepoint >= 97 && codepoint <= 122 {
-            let new_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
-            string.from_codepoint(new_codepoint)
+            let shifted_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
+            string.from_codepoint(shifted_codepoint)
         } else {
             c
         }
     });
-    string.join(result, "")
+    string.join(shifted_chars, "")
 }
 ```
 
@@ -70,30 +70,30 @@ FAILED: /tmp/dojo-caesar-cipher-0.almd
 ```almide
 fn encrypt(text: String, shift: Int) -> String = {
     let chars = string.chars(text);
-    let result = chars.map(|c| {
+    let shifted_chars = chars.map(|c| {
         let codepoint = string.codepoint(c);
         if codepoint >= 97 && codepoint < 122 {
-            let new_codepoint = (codepoint - 97 + shift) % 26 + 97;
-            string.from_codepoint(new_codepoint)
+            let shifted_codepoint = (codepoint - 97 + shift) % 26 + 97;
+            string.from_codepoint(shifted_codepoint)
         } else {
             c
         }
     });
-    string.join(result, "")
+    string.join(shifted_chars, "")
 }
 
 fn decrypt(text: String, shift: Int) -> String = {
     let chars = string.chars(text);
-    let result = chars.map(|c| {
+    let shifted_chars = chars.map(|c| {
         let codepoint = string.codepoint(c);
         if codepoint >= 97 && codepoint < 122 {
-            let new_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
-            string.from_codepoint(new_codepoint)
+            let shifted_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
+            string.from_codepoint(shifted_codepoint)
         } else {
             c
         }
     });
-    string.join(result, "")
+    string.join(shifted_chars, "")
 }
 ```
 
@@ -101,12 +101,12 @@ fn decrypt(text: String, shift: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-caesar-cipher-1.almd
-error: '|x|' closure syntax is not valid in Almide at line 3:28
-  --> /tmp/dojo-caesar-cipher-1.almd:3:28
+error: '|x|' closure syntax is not valid in Almide at line 3:35
+  --> /tmp/dojo-caesar-cipher-1.almd:3:35
   hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
   |
-3 |     let result = chars.map(|c| {
-  |                            ^
+3 |     let shifted_chars = chars.map(|c| {
+  |                                   ^
 error: '&&' is not valid in Almide at line 5:28
   --> /tmp/dojo-caesar-cipher-1.almd:5:28
   hint: Use 'and' for logical AND. Example: if a and b then ...
@@ -118,12 +118,12 @@ error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, te
   |
 8 |         } else {
   |           ^
-error: '|x|' closure syntax is not valid in Almide at line 17:28
-  --> /tmp/dojo-caesar-cipher-1.almd:17:28
+error: '|x|' closure syntax is not valid in Almide at line 17:35
+  --> /tmp/dojo-caesar-cipher-1.almd:17:35
   hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
    |
-17 |     let result = chars.map(|c| {
-   |                            ^
+17 |     let shifted_chars = chars.map(|c| {
+   |                                   ^
 error: '&&' is not valid in Almide at line 19:28
   --> /tmp/dojo-caesar-cipher-1.almd:19:28
   hint: Use 'and' for logical AND. Example: if a and b then ...
@@ -143,40 +143,40 @@ error[E003]: undefined variable 'c'
 4 |         let codepoint = string.codepoint(c);
   |                                          ^
 error: operator '-' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-1.almd:6:46
+  --> /tmp/dojo-caesar-cipher-1.almd:6:50
   in operator -
   hint: Use numeric types (Int or Float)
   |
-6 |             let new_codepoint = (codepoint - 97 + shift) % 26 + 97;
-  |                                              ^^
+6 |             let shifted_codepoint = (codepoint - 97 + shift) % 26 + 97;
+  |                                                  ^^
 error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-1.almd:6:51
+  --> /tmp/dojo-caesar-cipher-1.almd:6:55
   in operator +
   hint: Use + with numeric types, String, or List
   |
-6 |             let new_codepoint = (codepoint - 97 + shift) % 26 + 97;
-  |                                                   ^^^^^
+6 |             let shifted_codepoint = (codepoint - 97 + shift) % 26 + 97;
+  |                                                       ^^^^^
 error: operator '%' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-1.almd:6:60
+  --> /tmp/dojo-caesar-cipher-1.almd:6:64
   in operator %
   hint: Use numeric types (Int or Float)
   |
-6 |             let new_codepoint = (codepoint - 97 + shift) % 26 + 97;
-  |                                                            ^^
+6 |             let shifted_codepoint = (codepoint - 97 + shift) % 26 + 97;
+  |                                                                ^^
 error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-1.almd:6:65
+  --> /tmp/dojo-caesar-cipher-1.almd:6:69
   in operator +
   hint: Use + with numeric types, String, or List
   |
-6 |             let new_codepoint = (codepoint - 97 + shift) % 26 + 97;
-  |                                                                 ^^
+6 |             let shifted_codepoint = (codepoint - 97 + shift) % 26 + 97;
+  |                                                                     ^^
 error[E005]: argument 'n' expects Int but got Option[Int]
   --> /tmp/dojo-caesar-cipher-1.almd:7:35
   in call to string.from_codepoint()
   hint: Fix the argument type
   |
-7 |             string.from_codepoint(new_codepoint)
-  |                                   ^^^^^^^^^^^^^
+7 |             string.from_codepoint(shifted_codepoint)
+  |                                   ^^^^^^^^^^^^^^^^^
 error[E003]: undefined variable 'c'
   --> /tmp/dojo-caesar-cipher-1.almd:18:42
   in variable c
@@ -185,61 +185,61 @@ error[E003]: undefined variable 'c'
 18 |         let codepoint = string.codepoint(c);
    |                                          ^
 error: operator '-' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-1.almd:20:46
+  --> /tmp/dojo-caesar-cipher-1.almd:20:50
   in operator -
   hint: Use numeric types (Int or Float)
    |
-20 |             let new_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
-   |                                              ^^
+20 |             let shifted_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
+   |                                                  ^^
 error: operator '-' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-1.almd:20:51
+  --> /tmp/dojo-caesar-cipher-1.almd:20:55
   in operator -
   hint: Use numeric types (Int or Float)
    |
-20 |             let new_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
-   |                                                   ^^^^^
+20 |             let shifted_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
+   |                                                       ^^^^^
 error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-1.almd:20:59
+  --> /tmp/dojo-caesar-cipher-1.almd:20:63
   in operator +
   hint: Use + with numeric types, String, or List
    |
-20 |             let new_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
-   |                                                           ^^
+20 |             let shifted_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
+   |                                                               ^^
 error: operator '%' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-1.almd:20:65
+  --> /tmp/dojo-caesar-cipher-1.almd:20:69
   in operator %
   hint: Use numeric types (Int or Float)
    |
-20 |             let new_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
-   |                                                                 ^^
+20 |             let shifted_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
+   |                                                                     ^^
 error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-1.almd:20:70
+  --> /tmp/dojo-caesar-cipher-1.almd:20:74
   in operator +
   hint: Use + with numeric types, String, or List
    |
-20 |             let new_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
-   |                                                                      ^^
+20 |             let shifted_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
+   |                                                                          ^^
 error[E005]: argument 'n' expects Int but got Option[Int]
   --> /tmp/dojo-caesar-cipher-1.almd:21:35
   in call to string.from_codepoint()
   hint: Fix the argument type
    |
-21 |             string.from_codepoint(new_codepoint)
-   |                                   ^^^^^^^^^^^^^
+21 |             string.from_codepoint(shifted_codepoint)
+   |                                   ^^^^^^^^^^^^^^^^^
 error[E001]: type mismatch in call to string.from_codepoint(): expected Int but got Option[Int]
   --> /tmp/dojo-caesar-cipher-1.almd:7:35
   in call to string.from_codepoint()
   hint: Fix the expression type or change the expected type
   |
-7 |             string.from_codepoint(new_codepoint)
-  |                                   ^^^^^^^^^^^^^
+7 |             string.from_codepoint(shifted_codepoint)
+  |                                   ^^^^^^^^^^^^^^^^^
 error[E001]: type mismatch in call to string.from_codepoint(): expected Int but got Option[Int]
   --> /tmp/dojo-caesar-cipher-1.almd:21:35
   in call to string.from_codepoint()
   hint: Fix the expression type or change the expected type
    |
-21 |             string.from_codepoint(new_codepoint)
-   |                                   ^^^^^^^^^^^^^
+21 |             string.from_codepoint(shifted_codepoint)
+   |                                   ^^^^^^^^^^^^^^^^^
 
 21 error(s) found
 Compile error for /tmp/dojo-caesar-cipher-1.almd:
@@ -255,30 +255,30 @@ FAILED: /tmp/dojo-caesar-cipher-1.almd
 ```almide
 fn encrypt(text: String, shift: Int) -> String = {
     let chars = string.chars(text);
-    let result = chars.map((x) => {
+    let shifted_chars = chars.map((x) => {
         let codepoint = string.codepoint(x);
         if codepoint >= 97 && codepoint <= 122 {
-            let new_codepoint = (codepoint - 97 + shift) % 26 + 97;
-            string.from_codepoint(new_codepoint)
+            let shifted_codepoint = (codepoint - 97 + shift) % 26 + 97;
+            string.from_codepoint(shifted_codepoint)
         } else {
             x
         }
     });
-    string.join(result, "")
+    string.join(shifted_chars, "")
 }
 
 fn decrypt(text: String, shift: Int) -> String = {
     let chars = string.chars(text);
-    let result = chars.map((x) => {
+    let shifted_chars = chars.map((x) => {
         let codepoint = string.codepoint(x);
         if codepoint >= 97 && codepoint <= 122 {
-            let new_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
-            string.from_codepoint(new_codepoint)
+            let shifted_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
+            string.from_codepoint(shifted_codepoint)
         } else {
             x
         }
     });
-    string.join(result, "")
+    string.join(shifted_chars, "")
 }
 ```
 
@@ -292,12 +292,12 @@ error: '&&' is not valid in Almide at line 5:28
   |
 5 |         if codepoint >= 97 && codepoint <= 122 {
   |                            ^
-error: Expected ')' to close function call opened at line 3:27
+error: Expected ')' to close function call opened at line 3:34
   --> /tmp/dojo-caesar-cipher-2.almd:8:11
   hint: Add ')' or check for a missing delimiter inside the function call
   |
-3 |     let result = chars.map((x) => {
-  |                           --------------- '(' opened here
+3 |     let shifted_chars = chars.map((x) => {
+  |                                  --------------- '(' opened here
 ...
 8 |         } else {
   |           ^^^^
@@ -312,12 +312,12 @@ error: '&&' is not valid in Almide at line 19:28
    |
 19 |         if codepoint >= 97 && codepoint <= 122 {
    |                            ^
-error: Expected ')' to close function call opened at line 17:27
+error: Expected ')' to close function call opened at line 17:34
   --> /tmp/dojo-caesar-cipher-2.almd:22:11
   hint: Add ')' or check for a missing delimiter inside the function call
    |
-17 |     let result = chars.map((x) => {
-   |                           --------------- '(' opened here
+17 |     let shifted_chars = chars.map((x) => {
+   |                                  --------------- '(' opened here
 ...
 22 |         } else {
    |           ^^^^
@@ -355,30 +355,30 @@ FAILED: /tmp/dojo-caesar-cipher-2.almd
 ```almide
 fn encrypt(text: String, shift: Int) -> String = {
     let chars = string.chars(text);
-    let result = chars.map((x) => {
+    let shifted_chars = chars.map((x) => {
         let codepoint = string.codepoint(x);
         if codepoint >= 97 and codepoint < 122 {
-            let new_codepoint = (codepoint - 97 + shift) % 26 + 97;
-            string.from_codepoint(new_codepoint)
+            let shifted_codepoint = (codepoint - 97 + shift) % 26 + 97;
+            string.from_codepoint(shifted_codepoint)
         } else {
             x
         }
     });
-    string.join(result, "")
+    string.join(shifted_chars, "")
 }
 
 fn decrypt(text: String, shift: Int) -> String = {
     let chars = string.chars(text);
-    let result = chars.map((x) => {
+    let shifted_chars = chars.map((x) => {
         let codepoint = string.codepoint(x);
         if codepoint >= 97 and codepoint < 122 {
-            let new_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
-            string.from_codepoint(new_codepoint)
+            let shifted_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
+            string.from_codepoint(shifted_codepoint)
         } else {
             x
         }
     });
-    string.join(result, "")
+    string.join(shifted_chars, "")
 }
 ```
 
@@ -392,12 +392,12 @@ error: Expected Then at line 5:48 (got LBrace '{')
   |
 5 |         if codepoint >= 97 and codepoint < 122 {
   |                                                ^
-error: Expected ')' to close function call opened at line 3:27
+error: Expected ')' to close function call opened at line 3:34
   --> /tmp/dojo-caesar-cipher-3.almd:8:11
   hint: Add ')' or check for a missing delimiter inside the function call
   |
-3 |     let result = chars.map((x) => {
-  |                           --------------- '(' opened here
+3 |     let shifted_chars = chars.map((x) => {
+  |                                  --------------- '(' opened here
 ...
 8 |         } else {
   |           ^^^^
@@ -412,12 +412,12 @@ error: Expected Then at line 19:48 (got LBrace '{')
    |
 19 |         if codepoint >= 97 and codepoint < 122 {
    |                                                ^
-error: Expected ')' to close function call opened at line 17:27
+error: Expected ')' to close function call opened at line 17:34
   --> /tmp/dojo-caesar-cipher-3.almd:22:11
   hint: Add ')' or check for a missing delimiter inside the function call
    |
-17 |     let result = chars.map((x) => {
-   |                           --------------- '(' opened here
+17 |     let shifted_chars = chars.map((x) => {
+   |                                  --------------- '(' opened here
 ...
 22 |         } else {
    |           ^^^^

@@ -159,7 +159,8 @@ fn to_roman(n: Int) -> String = {
     .filter_map(|(value, symbol)| if n >= value then Some((n - value, symbol)) else None)
     .fold(String::new(), |acc, (value, symbol)| acc + symbol)
   ;
-  let result = result.replace("CM", "DCCCC").replace("CD", "CCCC").replace("XC", "LXXXX").replace("XL", "LXXXX").replace("IX", "VIIII").replace("IV", "IIII");
+  let result = result
+  ;
   result
 }
 ```
@@ -173,13 +174,13 @@ error: Expected expression at line 18:5 (got Dot '.')
    |
 18 |     .filter_map(|(value, symbol)| if n >= value then Some((n - value, symbol)) else None)
    |     ^
-error[E002]: undefined function 'result.replace'
-  --> /tmp/dojo-roman-numeral-3.almd:21:37
-  in call to result.replace()
-  hint: No function 'replace' in module 'result'. See docs/CHEATSHEET.md for available functions
+error[E001]: type mismatch in fn 'to_roman': expected String but got List[(Int, String)]
+  --> /tmp/dojo-roman-numeral-3.almd:23:3
+  in fn 'to_roman'
+  hint: Fix the expression type or change the expected type
    |
-21 |   let result = result.replace("CM", "DCCCC").replace("CD", "CCCC").replace("XC", "LXXXX").replace("XL", "LXXXX").replace("IX", "VIIII").replace("IV", "IIII");
-   |                                     ^^^^^^^
+23 |   result
+   |   ^^^^^^
 
 2 error(s) found
 Compile error for /tmp/dojo-roman-numeral-3.almd:

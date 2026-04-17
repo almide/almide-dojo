@@ -10,7 +10,7 @@
 ### Attempt 1 (PASS)
 
 ```almide
-type Expr = 
+type Expr =
   | Num(Int)
   | Add(Expr, Expr)
   | Mul(Expr, Expr)

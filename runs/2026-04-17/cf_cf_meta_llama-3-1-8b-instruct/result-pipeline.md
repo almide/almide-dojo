@@ -340,7 +340,7 @@ FAILED: /tmp/dojo-result-pipeline-2.almd
 
 ```almide
 fn parse_int(s: String) -> Result[Int, String] = {
-    int.parse(s).map_err(|e| format!("not a number: {}", e)).unwrap_or(err("not a number"))
+    int.parse(s).map_err(|e| format!("not a number: {}", e)).unwrap_or(err(""))
 }
 
 fn validate_positive(n: Int) -> Result[Int, String] = {
@@ -375,7 +375,7 @@ error: '|x|' closure syntax is not valid in Almide at line 2:26
   --> /tmp/dojo-result-pipeline-3.almd:2:26
   hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
   |
-2 |     int.parse(s).map_err(|e| format!("not a number: {}", e)).unwrap_or(err("not a number"))
+2 |     int.parse(s).map_err(|e| format!("not a number: {}", e)).unwrap_or(err(""))
   |                          ^
 error: Expected Then at line 6:14 (got LBrace '{')
   --> /tmp/dojo-result-pipeline-3.almd:6:14

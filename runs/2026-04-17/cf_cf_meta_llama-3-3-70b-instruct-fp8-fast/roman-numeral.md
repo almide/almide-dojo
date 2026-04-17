@@ -3,8 +3,7 @@
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: no
 - **retries**: 3
-- **category**: type-error
-- **diagnostic code**: `E002`
+- **category**: parse-error
 
 ## Attempts
 
@@ -12,116 +11,73 @@
 
 ```almide
 fn to_roman(n: Int) -> String = 
-  let symbols = list.of([(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")])
-  in
-  let rec to_roman_recursive(n: Int, symbols: List[(Int, String)], result: String) -> String = 
-    if list.is_empty(symbols) then result
-    else 
-      let (value, symbol) = list.first(symbols) |> option.unwrap_or((0, ""))
-      in
-      if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-      else to_roman_recursive(n, list.drop(symbols, 1), result)
-  in
-  to_roman_recursive(n, symbols, "")
+  let values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
+  let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
+  let result = list.fold(
+    list.zip(values, symbols), 
+    "", 
+    (acc, (x, y)) => 
+      let count = int.div(n, x)
+      let n = int.mod(n, x)
+      acc + string.repeat(y, count)
+  )
+  result
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-roman-numeral-0.almd
-error: `let rec` is OCaml/SML syntax; Almide functions are recursive by default
-  --> /tmp/dojo-roman-numeral-0.almd:4:7
-  in let rec
-  hint: Define recursive functions at top level: `fn name(args) -> ReturnType = body`. Almide has no `let rec` — call the fn directly, including from its own body.
-  try:
-      fn fact(n: Int) -> Int =
-          if n == 0 then 1 else n * fact(n - 1)
-  |
-4 |   let rec to_roman_recursive(n: Int, symbols: List[(Int, String)], result: String) -> String =
-  |       ^^^
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-roman-numeral-0.almd:7:7
+  --> /tmp/dojo-roman-numeral-0.almd:8:7
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-7 |       let (value, symbol) = list.first(symbols) |> option.unwrap_or((0, ""))
+8 |       let count = int.div(n, x)
   |       ^^^
-error: Expected expression at line 11:3 (got In 'in')
+error: Expected name at line 9:19 (got Mod 'mod')
+  --> /tmp/dojo-roman-numeral-0.almd:9:19
+  |
+9 |       let n = int.mod(n, x)
+  |                   ^
+error: Expected expression at line 11:3 (got RParen ')')
   --> /tmp/dojo-roman-numeral-0.almd:11:3
    |
-11 |   in
+11 |   )
    |   ^
-error[E002]: undefined function 'list.of'
-  --> /tmp/dojo-roman-numeral-0.almd:2:171
-  in call to list.of()
-  hint: Did you mean `list.pop`?
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-roman-numeral-0.almd:10:7
+  in variable acc
+  hint: Check the variable name
+   |
+10 |       acc + string.repeat(y, count)
+   |       ^^^
+error[E003]: undefined variable 'y'
+  --> /tmp/dojo-roman-numeral-0.almd:10:27
+  in variable y
+  hint: Did you mean `n`?
   try:
-      // list.of(...)  →  list.pop(...)
-      list.pop(...)
-  |
-2 |   let symbols = list.of([(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")])
-  |                                                                                                                                                                           ^^^
-error[E003]: undefined variable 'value'
-  --> /tmp/dojo-roman-numeral-0.almd:9:15
-  in variable value
+      // y  →  n
+      n
+   |
+10 |       acc + string.repeat(y, count)
+   |                           ^
+error[E003]: undefined variable 'count'
+  --> /tmp/dojo-roman-numeral-0.almd:10:30
+  in variable count
   hint: Check the variable name
-  |
-9 |       if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-  |               ^^^^^
-error[E003]: undefined variable 'value'
-  --> /tmp/dojo-roman-numeral-0.almd:9:49
-  in variable value
-  hint: Check the variable name
-  |
-9 |       if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-  |                                                 ^^^^^
+   |
+10 |       acc + string.repeat(y, count)
+   |                              ^^^^^
 error[E003]: undefined variable 'result'
-  --> /tmp/dojo-roman-numeral-0.almd:9:65
-  in variable result
-  hint: Check the variable name
-  |
-9 |       if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-  |                                                                 ^^^^^^
-error[E003]: undefined variable 'symbol'
-  --> /tmp/dojo-roman-numeral-0.almd:9:74
-  in variable symbol
-  hint: Did you mean `symbols`?
-  try:
-      // symbol  →  symbols
-      symbols
-  |
-9 |       if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-  |                                                                          ^^^^^^
-error[E002]: undefined function 'to_roman_recursive'
-  --> /tmp/dojo-roman-numeral-0.almd:9:74
-  in call to to_roman_recursive()
-  hint: Check the function name
-  |
-9 |       if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-  |                                                                          ^^^^^^
-error[E003]: undefined variable 'result'
-  --> /tmp/dojo-roman-numeral-0.almd:10:57
+  --> /tmp/dojo-roman-numeral-0.almd:12:3
   in variable result
   hint: Check the variable name
    |
-10 |       else to_roman_recursive(n, list.drop(symbols, 1), result)
-   |                                                         ^^^^^^
-error[E002]: undefined function 'to_roman_recursive'
-  --> /tmp/dojo-roman-numeral-0.almd:10:57
-  in call to to_roman_recursive()
-  hint: Check the function name
-   |
-10 |       else to_roman_recursive(n, list.drop(symbols, 1), result)
-   |                                                         ^^^^^^
-error[E002]: undefined function 'to_roman_recursive'
-  --> /tmp/dojo-roman-numeral-0.almd:12:34
-  in call to to_roman_recursive()
-  hint: Check the function name
-   |
-12 |   to_roman_recursive(n, symbols, "")
-   |                                  ^^
+12 |   result
+   |   ^^^^^^
 
-12 error(s) found
+7 error(s) found
 Compile error for /tmp/dojo-roman-numeral-0.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-0.almd
@@ -134,17 +90,16 @@ FAILED: /tmp/dojo-roman-numeral-0.almd
 
 ```almide
 fn to_roman(n: Int) -> String = 
-  let symbols = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")]
-  in
-  fn to_roman_recursive(n: Int, symbols: List[(Int, String)], result: String) -> String = 
-    if list.is_empty(symbols) then result
-    else 
-      let (value, symbol) = list.first(symbols) 
-      in
-      if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-      else to_roman_recursive(n, list.drop(symbols, 1), result)
-  in
-  to_roman_recursive(n, symbols, "")
+  let values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
+  let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
+  list.fold(
+    list.zip(values, symbols), 
+    "", 
+    (acc, pair) => 
+      let count = int.div(n, pair.0)
+      let remaining = int.mod(n, pair.0)
+      acc + string.repeat(pair.1, count)
+  )
 ```
 
 **Diagnostic:**
@@ -152,29 +107,61 @@ fn to_roman(n: Int) -> String =
 ```
 Compiling /tmp/dojo-roman-numeral-1.almd
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-roman-numeral-1.almd:7:7
+  --> /tmp/dojo-roman-numeral-1.almd:8:7
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-7 |       let (value, symbol) = list.first(symbols)
+8 |       let count = int.div(n, pair.0)
   |       ^^^
+error: Expected name at line 9:27 (got Mod 'mod')
+  --> /tmp/dojo-roman-numeral-1.almd:9:27
+  |
+9 |       let remaining = int.mod(n, pair.0)
+  |                           ^
+error: Expected expression at line 11:3 (got RParen ')')
+  --> /tmp/dojo-roman-numeral-1.almd:11:3
+   |
+11 |   )
+   |   ^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-roman-numeral-1.almd:10:7
+  in variable acc
+  hint: Check the variable name
+   |
+10 |       acc + string.repeat(pair.1, count)
+   |       ^^^
+error[E003]: undefined variable 'pair'
+  --> /tmp/dojo-roman-numeral-1.almd:10:27
+  in variable pair
+  hint: Did you mean `panic`?
+  try:
+      // pair  →  panic
+      panic
+   |
+10 |       acc + string.repeat(pair.1, count)
+   |                           ^^^^
+error[E003]: undefined variable 'count'
+  --> /tmp/dojo-roman-numeral-1.almd:10:35
+  in variable count
+  hint: Check the variable name
+   |
+10 |       acc + string.repeat(pair.1, count)
+   |                                   ^^^^^
 error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
-  --> /tmp/dojo-roman-numeral-1.almd:2:163
+  --> /tmp/dojo-roman-numeral-1.almd:10:35
   in fn 'to_roman'
   hint: Fix the expression type or change the expected type
   try:
-      // fn body ends with `let symbols = ...` (a statement, returns Unit).
-      // Add `symbols` as the trailing expression so the fn returns String:
-      //
-      //   let symbols = <computation>
-      //   symbols                         // <-- add this line
-      //
-      // Or inline the computation as the tail expression directly.
-  |
-2 |   let symbols = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")]
-  |                                                                                                                                                                   ^^^
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
+   |
+10 |       acc + string.repeat(pair.1, count)
+   |                                   ^^^^^
 
-2 error(s) found
+7 error(s) found
 Compile error for /tmp/dojo-roman-numeral-1.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-1.almd
@@ -187,100 +174,90 @@ FAILED: /tmp/dojo-roman-numeral-1.almd
 
 ```almide
 fn to_roman(n: Int) -> String = 
-  {
-    let symbols = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")]
-    let to_roman_recursive = (n: Int, symbols: List[(Int, String)], result: String) -> String = 
-      if list.is_empty(symbols) then result
-      else 
-        let (value, symbol) = list.first(symbols) |> option.unwrap_or((0, ""))
-        in
-        if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-        else to_roman_recursive(n, list.drop(symbols, 1), result)
-    to_roman_recursive(n, symbols, "")
-  }
+  let values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
+  let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
+  list.fold(
+    list.zip(values, symbols), 
+    "", 
+    (acc, (value, symbol)) => 
+      let count = int.div(n, value)
+      let remaining = int.rem(n, value)
+      acc + string.repeat(symbol, count)
+  )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-roman-numeral-2.almd
-error: Expected ')' to close parenthesized expression opened at line 4:30
-  --> /tmp/dojo-roman-numeral-2.almd:4:32
-  hint: Add ')' or check for a missing delimiter inside the parenthesized expression
-  |
-4 |     let to_roman_recursive = (n: Int, symbols: List[(Int, String)], result: String) -> String =
-  |                              --------------- '(' opened here
-  |
-4 |     let to_roman_recursive = (n: Int, symbols: List[(Int, String)], result: String) -> String =
-  |                                ^
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-roman-numeral-2.almd:7:9
+  --> /tmp/dojo-roman-numeral-2.almd:8:7
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-7 |         let (value, symbol) = list.first(symbols) |> option.unwrap_or((0, ""))
-  |         ^^^
+8 |       let count = int.div(n, value)
+  |       ^^^
+error: Expected expression at line 11:3 (got RParen ')')
+  --> /tmp/dojo-roman-numeral-2.almd:11:3
+   |
+11 |   )
+   |   ^
 error[E003]: undefined variable 'value'
-  --> /tmp/dojo-roman-numeral-2.almd:9:17
+  --> /tmp/dojo-roman-numeral-2.almd:9:34
   in variable value
-  hint: Check the variable name
+  hint: Did you mean `values`?
+  try:
+      // value  →  values
+      values
   |
-9 |         if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-  |                 ^^^^^
-error[E003]: undefined variable 'value'
-  --> /tmp/dojo-roman-numeral-2.almd:9:51
-  in variable value
-  hint: Check the variable name
+9 |       let remaining = int.rem(n, value)
+  |                                  ^^^^^
+error[E002]: undefined function 'int.rem'
+  --> /tmp/dojo-roman-numeral-2.almd:9:34
+  in call to int.rem()
+  hint: No function 'rem' in module 'int'. See docs/CHEATSHEET.md for available functions
   |
-9 |         if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-  |                                                   ^^^^^
-error[E003]: undefined variable 'result'
-  --> /tmp/dojo-roman-numeral-2.almd:9:67
-  in variable result
+9 |       let remaining = int.rem(n, value)
+  |                                  ^^^^^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-roman-numeral-2.almd:10:7
+  in variable acc
   hint: Check the variable name
-  |
-9 |         if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-  |                                                                   ^^^^^^
+   |
+10 |       acc + string.repeat(symbol, count)
+   |       ^^^
 error[E003]: undefined variable 'symbol'
-  --> /tmp/dojo-roman-numeral-2.almd:9:76
+  --> /tmp/dojo-roman-numeral-2.almd:10:27
   in variable symbol
   hint: Did you mean `symbols`?
   try:
       // symbol  →  symbols
       symbols
-  |
-9 |         if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-  |                                                                            ^^^^^^
-error[E002]: undefined function 'to_roman_recursive'
-  --> /tmp/dojo-roman-numeral-2.almd:9:76
-  in call to to_roman_recursive()
-  hint: Check the function name
-  |
-9 |         if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-  |                                                                            ^^^^^^
-error[E003]: undefined variable 'result'
-  --> /tmp/dojo-roman-numeral-2.almd:10:59
-  in variable result
+   |
+10 |       acc + string.repeat(symbol, count)
+   |                           ^^^^^^
+error[E003]: undefined variable 'count'
+  --> /tmp/dojo-roman-numeral-2.almd:10:35
+  in variable count
   hint: Check the variable name
    |
-10 |         else to_roman_recursive(n, list.drop(symbols, 1), result)
-   |                                                           ^^^^^^
-error[E002]: undefined function 'to_roman_recursive'
-  --> /tmp/dojo-roman-numeral-2.almd:10:59
-  in call to to_roman_recursive()
-  hint: Check the function name
+10 |       acc + string.repeat(symbol, count)
+   |                                   ^^^^^
+error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
+  --> /tmp/dojo-roman-numeral-2.almd:10:35
+  in fn 'to_roman'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
    |
-10 |         else to_roman_recursive(n, list.drop(symbols, 1), result)
-   |                                                           ^^^^^^
-error[E002]: undefined function 'to_roman_recursive'
-  --> /tmp/dojo-roman-numeral-2.almd:11:36
-  in call to to_roman_recursive()
-  hint: Check the function name
-   |
-11 |     to_roman_recursive(n, symbols, "")
-   |                                    ^^
+10 |       acc + string.repeat(symbol, count)
+   |                                   ^^^^^
 
-10 error(s) found
+8 error(s) found
 Compile error for /tmp/dojo-roman-numeral-2.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-2.almd
@@ -293,108 +270,99 @@ FAILED: /tmp/dojo-roman-numeral-2.almd
 
 ```almide
 fn to_roman(n: Int) -> String = 
-  {
-    let symbols = list.from_list([(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")])
-    let rec to_roman_recursive = (n: Int, symbols: List[(Int, String)], result: String) -> String = 
-      if list.is_empty(symbols) then result
-      else 
-        let (value, symbol) = list.first(symbols) |> option.unwrap_or((0, ""))
-        in
-        if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-        else to_roman_recursive(n, list.drop(symbols, 1), result)
-    to_roman_recursive(n, symbols, "")
-  }
+  let values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
+  let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
+  let result = list.fold(
+    list.zip(values, symbols), 
+    "", 
+    (acc, (value, symbol)) => 
+      let count = int.div(n, value)
+      let remaining = int.div(n, value) * value
+      let n = n - remaining
+      acc + string.repeat(symbol, count)
+  )
+  result
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-roman-numeral-3.almd
-error: `let rec` is OCaml/SML syntax; Almide functions are recursive by default
-  --> /tmp/dojo-roman-numeral-3.almd:4:9
-  in let rec
-  hint: Define recursive functions at top level: `fn name(args) -> ReturnType = body`. Almide has no `let rec` — call the fn directly, including from its own body.
-  try:
-      fn fact(n: Int) -> Int =
-          if n == 0 then 1 else n * fact(n - 1)
-  |
-4 |     let rec to_roman_recursive = (n: Int, symbols: List[(Int, String)], result: String) -> String =
-  |         ^^^
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-roman-numeral-3.almd:7:9
+  --> /tmp/dojo-roman-numeral-3.almd:8:7
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-7 |         let (value, symbol) = list.first(symbols) |> option.unwrap_or((0, ""))
-  |         ^^^
-error[E002]: undefined function 'list.from_list'
-  --> /tmp/dojo-roman-numeral-3.almd:3:180
-  in call to list.from_list()
-  hint: No function 'from_list' in module 'list'. See docs/CHEATSHEET.md for available functions
-  |
-3 |     let symbols = list.from_list([(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")])
-  |                                                                                                                                                                                    ^^^
+8 |       let count = int.div(n, value)
+  |       ^^^
+error: Expected expression at line 12:3 (got RParen ')')
+  --> /tmp/dojo-roman-numeral-3.almd:12:3
+   |
+12 |   )
+   |   ^
 error[E003]: undefined variable 'value'
-  --> /tmp/dojo-roman-numeral-3.almd:9:17
+  --> /tmp/dojo-roman-numeral-3.almd:9:34
   in variable value
-  hint: Check the variable name
+  hint: Did you mean `values`?
+  try:
+      // value  →  values
+      values
   |
-9 |         if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-  |                 ^^^^^
+9 |       let remaining = int.div(n, value) * value
+  |                                  ^^^^^
+error[E002]: undefined function 'int.div'
+  --> /tmp/dojo-roman-numeral-3.almd:9:34
+  in call to int.div()
+  hint: Did you mean `int.min`?
+  try:
+      // int.div(...)  →  int.min(...)
+      int.min(...)
+  |
+9 |       let remaining = int.div(n, value) * value
+  |                                  ^^^^^
 error[E003]: undefined variable 'value'
-  --> /tmp/dojo-roman-numeral-3.almd:9:51
+  --> /tmp/dojo-roman-numeral-3.almd:9:43
   in variable value
-  hint: Check the variable name
+  hint: Did you mean `values`?
+  try:
+      // value  →  values
+      values
   |
-9 |         if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-  |                                                   ^^^^^
-error[E003]: undefined variable 'result'
-  --> /tmp/dojo-roman-numeral-3.almd:9:67
-  in variable result
+9 |       let remaining = int.div(n, value) * value
+  |                                           ^^^^^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-roman-numeral-3.almd:11:7
+  in variable acc
   hint: Check the variable name
-  |
-9 |         if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-  |                                                                   ^^^^^^
+   |
+11 |       acc + string.repeat(symbol, count)
+   |       ^^^
 error[E003]: undefined variable 'symbol'
-  --> /tmp/dojo-roman-numeral-3.almd:9:76
+  --> /tmp/dojo-roman-numeral-3.almd:11:27
   in variable symbol
   hint: Did you mean `symbols`?
   try:
       // symbol  →  symbols
       symbols
-  |
-9 |         if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-  |                                                                            ^^^^^^
-error[E002]: undefined function 'to_roman_recursive'
-  --> /tmp/dojo-roman-numeral-3.almd:9:76
-  in call to to_roman_recursive()
-  hint: Check the function name
-  |
-9 |         if n >= value then to_roman_recursive(n - value, symbols, result + symbol)
-  |                                                                            ^^^^^^
+   |
+11 |       acc + string.repeat(symbol, count)
+   |                           ^^^^^^
+error[E003]: undefined variable 'count'
+  --> /tmp/dojo-roman-numeral-3.almd:11:35
+  in variable count
+  hint: Check the variable name
+   |
+11 |       acc + string.repeat(symbol, count)
+   |                                   ^^^^^
 error[E003]: undefined variable 'result'
-  --> /tmp/dojo-roman-numeral-3.almd:10:59
+  --> /tmp/dojo-roman-numeral-3.almd:13:3
   in variable result
   hint: Check the variable name
    |
-10 |         else to_roman_recursive(n, list.drop(symbols, 1), result)
-   |                                                           ^^^^^^
-error[E002]: undefined function 'to_roman_recursive'
-  --> /tmp/dojo-roman-numeral-3.almd:10:59
-  in call to to_roman_recursive()
-  hint: Check the function name
-   |
-10 |         else to_roman_recursive(n, list.drop(symbols, 1), result)
-   |                                                           ^^^^^^
-error[E002]: undefined function 'to_roman_recursive'
-  --> /tmp/dojo-roman-numeral-3.almd:11:36
-  in call to to_roman_recursive()
-  hint: Check the function name
-   |
-11 |     to_roman_recursive(n, symbols, "")
-   |                                    ^^
+13 |   result
+   |   ^^^^^^
 
-11 error(s) found
+9 error(s) found
 Compile error for /tmp/dojo-roman-numeral-3.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-3.almd

@@ -12,11 +12,9 @@
 
 ```almide
 fn reverse(s: String) -> String {
-  var result = ""
-  for c in string.chars(s) {
-    result = string.insert(result, 0, string.to_string(c))
-  }
-  result
+  let chars = string.chars(s)
+  let reversed = list.reverse(chars)
+  string.from_chars(reversed)
 }
 ```
 
@@ -44,11 +42,9 @@ FAILED: /tmp/dojo-string-reverse-0.almd
 
 ```almide
 fn reverse(s: String) -> String = {
-  var result = ""
-  for c in string.chars(s) {
-    result = string.insert(result, 0, string.to_string(c))
-  }
-  result
+  let chars = string.chars(s)
+  let reversed = list.reverse(chars)
+  string.from_chars(reversed)
 }
 ```
 
@@ -56,22 +52,18 @@ fn reverse(s: String) -> String = {
 
 ```
 Compiling /tmp/dojo-string-reverse-1.almd
-error[E002]: undefined function 'string.to_string'
-  --> /tmp/dojo-string-reverse-1.almd:4:56
-  in call to string.to_string()
-  hint: No function 'to_string' in module 'string'. See docs/CHEATSHEET.md for available functions
+error[E002]: undefined function 'string.from_chars'
+  --> /tmp/dojo-string-reverse-1.almd:4:21
+  in call to string.from_chars()
+  hint: Did you mean `string.from_bytes`?
+  try:
+      // string.from_chars(...)  →  string.from_bytes(...)
+      string.from_bytes(...)
   |
-4 |     result = string.insert(result, 0, string.to_string(c))
-  |                                                        ^
-error[E002]: undefined function 'string.insert'
-  --> /tmp/dojo-string-reverse-1.almd:4:56
-  in call to string.insert()
-  hint: No function 'insert' in module 'string'. See docs/CHEATSHEET.md for available functions
-  |
-4 |     result = string.insert(result, 0, string.to_string(c))
-  |                                                        ^
+4 |   string.from_chars(reversed)
+  |                     ^^^^^^^^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-string-reverse-1.almd:
 compile failed
 FAILED: /tmp/dojo-string-reverse-1.almd
@@ -84,11 +76,9 @@ FAILED: /tmp/dojo-string-reverse-1.almd
 
 ```almide
 fn reverse(s: String) -> String = {
-  var result = ""
-  for c in string.chars(s) {
-    result = string.insert(result, 0, string.from_codepoint(c))
-  }
-  result
+  let chars = string.chars(s)
+  let reversed = list.reverse(chars)
+  string.from_bytes(string.to_bytes(string.from_chars(reversed)))
 }
 ```
 
@@ -96,29 +86,18 @@ fn reverse(s: String) -> String = {
 
 ```
 Compiling /tmp/dojo-string-reverse-2.almd
-error[E005]: argument 'n' expects Int but got String
-  --> /tmp/dojo-string-reverse-2.almd:4:61
-  in call to string.from_codepoint()
-  hint: Fix the argument type. Or use `int.parse(s)` to convert String to Int (returns Result[Int, String])
+error[E002]: undefined function 'string.from_chars'
+  --> /tmp/dojo-string-reverse-2.almd:4:55
+  in call to string.from_chars()
+  hint: Did you mean `string.from_bytes`?
+  try:
+      // string.from_chars(...)  →  string.from_bytes(...)
+      string.from_bytes(...)
   |
-4 |     result = string.insert(result, 0, string.from_codepoint(c))
-  |                                                             ^
-error[E002]: undefined function 'string.insert'
-  --> /tmp/dojo-string-reverse-2.almd:4:61
-  in call to string.insert()
-  hint: No function 'insert' in module 'string'. See docs/CHEATSHEET.md for available functions
-  |
-4 |     result = string.insert(result, 0, string.from_codepoint(c))
-  |                                                             ^
-error[E001]: type mismatch in call to string.from_codepoint(): expected Int but got String
-  --> /tmp/dojo-string-reverse-2.almd:4:61
-  in call to string.from_codepoint()
-  hint: Fix the expression type or change the expected type. Or use `int.parse(s)` to convert String to Int (returns Result[Int, String])
-  |
-4 |     result = string.insert(result, 0, string.from_codepoint(c))
-  |                                                             ^
+4 |   string.from_bytes(string.to_bytes(string.from_chars(reversed)))
+  |                                                       ^^^^^^^^
 
-3 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-string-reverse-2.almd:
 compile failed
 FAILED: /tmp/dojo-string-reverse-2.almd
@@ -131,11 +110,9 @@ FAILED: /tmp/dojo-string-reverse-2.almd
 
 ```almide
 fn reverse(s: String) -> String = {
-  var result = ""
-  for c in string.chars(s) {
-    result = result + string.from_codepoint(c)
-  }
-  result
+  let chars = string.chars(s)
+  let reversed = list.reverse(chars)
+  string.from_bytes(string.to_bytes(reversed))
 }
 ```
 
@@ -143,20 +120,20 @@ fn reverse(s: String) -> String = {
 
 ```
 Compiling /tmp/dojo-string-reverse-3.almd
-error[E005]: argument 'n' expects Int but got String
-  --> /tmp/dojo-string-reverse-3.almd:4:45
-  in call to string.from_codepoint()
-  hint: Fix the argument type. Or use `int.parse(s)` to convert String to Int (returns Result[Int, String])
+error[E005]: argument 's' expects String but got List[String]
+  --> /tmp/dojo-string-reverse-3.almd:4:37
+  in call to string.to_bytes()
+  hint: Fix the argument type
   |
-4 |     result = result + string.from_codepoint(c)
-  |                                             ^
-error[E001]: type mismatch in call to string.from_codepoint(): expected Int but got String
-  --> /tmp/dojo-string-reverse-3.almd:4:45
-  in call to string.from_codepoint()
-  hint: Fix the expression type or change the expected type. Or use `int.parse(s)` to convert String to Int (returns Result[Int, String])
+4 |   string.from_bytes(string.to_bytes(reversed))
+  |                                     ^^^^^^^^
+error[E001]: type mismatch in call to string.to_bytes(): expected String but got List[String]
+  --> /tmp/dojo-string-reverse-3.almd:4:37
+  in call to string.to_bytes()
+  hint: Fix the expression type or change the expected type
   |
-4 |     result = result + string.from_codepoint(c)
-  |                                             ^
+4 |   string.from_bytes(string.to_bytes(reversed))
+  |                                     ^^^^^^^^
 
 2 error(s) found
 Compile error for /tmp/dojo-string-reverse-3.almd:
