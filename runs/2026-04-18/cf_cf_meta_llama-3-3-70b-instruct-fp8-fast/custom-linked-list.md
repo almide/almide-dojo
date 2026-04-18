@@ -1,0 +1,272 @@
+# custom-linked-list
+
+- **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **success**: no
+- **retries**: 3
+- **category**: parse-error
+
+## Attempts
+
+### Attempt 1 (FAIL)
+
+```almide
+type MyList =
+  | Nil
+  | Cons(Int, MyList)
+
+fn from_list(xs: List[Int]) -> MyList =
+  list.fold(xs, Nil, (acc, x) => Cons(x, acc))
+
+fn to_list(ml: MyList) -> List[Int] =
+  match ml {
+    Nil => []
+    Cons(head, tail) => head :: to_list(tail)
+  }
+
+fn my_len(ml: MyList) -> Int =
+  match ml {
+    Nil => 0
+    Cons(_, tail) => 1 + my_len(tail)
+  }
+
+fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
+  match ml {
+    Nil => Nil
+    Cons(head, tail) => Cons(f(head), my_map(tail, f))
+  }
+
+fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
+  match ml {
+    Nil => Nil
+    Cons(head, tail) =>
+      if pred(head) then
+        Cons(head, my_filter(tail, pred))
+      else
+        my_filter(tail, pred)
+  }
+
+fn my_reverse(ml: MyList) -> MyList =
+  match ml {
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-custom-linked-list-0.almd
+error: Expected pattern at line 11:30 (got Colon ':')
+  --> /tmp/dojo-custom-linked-list-0.almd:11:30
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+   |
+11 |     Cons(head, tail) => head :: to_list(tail)
+   |                              ^
+error: Expected pattern at line 39:1 (got Test 'test')
+  --> /tmp/dojo-custom-linked-list-0.almd:39:1
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+   |
+39 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
+   | ^
+
+2 error(s) found
+Compile error for /tmp/dojo-custom-linked-list-0.almd:
+compile failed
+FAILED: /tmp/dojo-custom-linked-list-0.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 2 (FAIL)
+
+```almide
+type MyList =
+  | Nil
+  | Cons(Int, MyList)
+
+fn from_list(xs: List[Int]) -> MyList =
+  list.fold(xs, Nil, (acc, x) => Cons(x, acc))
+
+fn to_list(ml: MyList) -> List[Int] =
+  match ml {
+    Nil => []
+    Cons(head, tail) => list.cons(head, to_list(tail))
+  }
+
+fn my_len(ml: MyList) -> Int =
+  match ml {
+    Nil => 0
+    Cons(_, tail) => 1 + my_len(tail)
+  }
+
+fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
+  match ml {
+    Nil => Nil
+    Cons(head, tail) => Cons(f(head), my_map(tail, f))
+  }
+
+fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
+  match ml {
+    Nil => Nil
+    Cons(head, tail) =>
+      if pred(head) then
+        Cons(head, my_filter(tail, pred))
+      else
+        my_filter(tail, pred)
+  }
+
+fn my_reverse(ml: MyList) -> MyList =
+  match ml {
+    Nil
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-custom-linked-list-1.almd
+error: Expected FatArrow at line 38:8 (got Newline '')
+  --> /tmp/dojo-custom-linked-list-1.almd:38:8
+   |
+38 |     Nil
+   |        ^
+error[E002]: undefined function 'list.cons'
+  --> /tmp/dojo-custom-linked-list-1.almd:11:49
+  in call to list.cons()
+  hint: Did you mean `list.count`?
+  try:
+      // list.cons(...)  →  list.count(...)
+      list.count(...)
+   |
+11 |     Cons(head, tail) => list.cons(head, to_list(tail))
+   |                                                 ^^^^
+
+2 error(s) found
+Compile error for /tmp/dojo-custom-linked-list-1.almd:
+compile failed
+FAILED: /tmp/dojo-custom-linked-list-1.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 3 (FAIL)
+
+```almide
+type MyList =
+  | Nil
+  | Cons(Int, MyList)
+
+fn from_list(xs: List[Int]) -> MyList =
+  list.fold(xs, Nil, (acc, x) => Cons(x, acc))
+
+fn to_list(ml: MyList) -> List[Int] =
+  match ml {
+    Nil => []
+    Cons(head, tail) => [head] + to_list(tail)
+  }
+
+fn my_len(ml: MyList) -> Int =
+  match ml {
+    Nil => 0
+    Cons(_, tail) => 1 + my_len(tail)
+  }
+
+fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
+  match ml {
+    Nil => Nil
+    Cons(head, tail) => Cons(f(head), my_map(tail, f))
+  }
+
+fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
+  match ml {
+    Nil => Nil
+    Cons(head, tail) =>
+      if pred(head) then
+        Cons(head, my_filter(tail, pred))
+      else
+        my_filter(tail, pred)
+  }
+
+fn my_reverse(ml: MyList) -> MyList =
+  match ml {
+    Nil
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-custom-linked-list-2.almd
+error: Expected FatArrow at line 38:8 (got Newline '')
+  --> /tmp/dojo-custom-linked-list-2.almd:38:8
+   |
+38 |     Nil
+   |        ^
+
+1 error(s) found
+Compile error for /tmp/dojo-custom-linked-list-2.almd:
+compile failed
+FAILED: /tmp/dojo-custom-linked-list-2.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 4 (FAIL)
+
+```almide
+type MyList =
+  | Nil
+  | Cons(Int, MyList)
+
+fn from_list(xs: List[Int]) -> MyList =
+  list.fold(xs, Nil, (acc, x) => Cons(x, acc))
+
+fn to_list(ml: MyList) -> List[Int] =
+  match ml {
+    Nil => []
+    Cons(head, tail) => [head] + to_list(tail)
+  }
+
+fn my_len(ml: MyList) -> Int =
+  match ml {
+    Nil => 0
+    Cons(_, tail) => 1 + my_len(tail)
+  }
+
+fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
+  match ml {
+    Nil => Nil
+    Cons(head, tail) => Cons(f(head), my_map(tail, f))
+  }
+
+fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
+  match ml {
+    Nil => Nil
+    Cons(head, tail) =>
+      if pred(head) then
+        Cons(head, my_filter(tail, pred))
+      else
+        my_filter(tail, pred)
+  }
+
+fn my_reverse(ml: MyList) -> MyList =
+  match ml {
+    Nil
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-custom-linked-list-3.almd
+error: Expected FatArrow at line 38:8 (got Newline '')
+  --> /tmp/dojo-custom-linked-list-3.almd:38:8
+   |
+38 |     Nil
+   |        ^
+
+1 error(s) found
+Compile error for /tmp/dojo-custom-linked-list-3.almd:
+compile failed
+FAILED: /tmp/dojo-custom-linked-list-3.almd
+
+1/1 test file(s) failed
+
+```
