@@ -1,0 +1,231 @@
+# run-length-encoding
+
+- **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **success**: no
+- **retries**: 3
+- **category**: import-error
+- **diagnostic code**: `E004`
+
+## Attempts
+
+### Attempt 1 (FAIL)
+
+```almide
+fn rle_encode(s: String) -> String = 
+  let encoded = string.run_length_encode(s)
+  in list.map(encoded, (x) => int.to_string(x.1) + x.0)
+  |> list.join(_, "")
+
+fn rle_decode(s: String) -> String = 
+  if string.is_empty(s) then ""
+  else
+    let chars = string.chars(s)
+    let groups = list.chunk(chars, 2)
+    in list.map(groups, (g) => 
+      let count = int.parse(g.0) |> result.unwrap_or(0)
+      in string.repeat(g.1, count)
+    )
+    |> list.join(_, "")
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-run-length-encoding-0.almd
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-run-length-encoding-0.almd:9:5
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+  |
+9 |     let chars = string.chars(s)
+  |     ^^^
+error[E004]: list.join() expects 2 argument(s) but got 3
+  --> /tmp/dojo-run-length-encoding-0.almd:4:19
+  in call to list.join()
+  hint: Check the number of arguments
+  try:
+      // list.join() takes 2 arg(s) — you passed 3
+      list.join(<xs: List[String]>, <sep: String>)
+  |
+4 |   |> list.join(_, "")
+  |                   ^^
+
+2 error(s) found
+Compile error for /tmp/dojo-run-length-encoding-0.almd:
+compile failed
+FAILED: /tmp/dojo-run-length-encoding-0.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 2 (FAIL)
+
+```almide
+fn rle_encode(s: String) -> String = 
+  string.run_length_encode(s) 
+  |> list.map((x) => int.to_string(x.1) + x.0) 
+  |> list.join(_, "")
+
+fn rle_decode(s: String) -> String = 
+  if string.is_empty(s) then 
+    ""
+  else 
+    string.chars(s) 
+    |> list.chunk(2) 
+    |> list.map((g) => 
+      int.parse(g.0) 
+      |> result.unwrap_or(0) 
+      |> (count) => string.repeat(g.1, count)
+    ) 
+    |> list.join(_, "")
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-run-length-encoding-1.almd
+error[E004]: list.join() expects 2 argument(s) but got 3
+  --> /tmp/dojo-run-length-encoding-1.almd:4:19
+  in call to list.join()
+  hint: Check the number of arguments
+  try:
+      // list.join() takes 2 arg(s) — you passed 3
+      list.join(<xs: List[String]>, <sep: String>)
+  |
+4 |   |> list.join(_, "")
+  |                   ^^
+error[E004]: list.join() expects 2 argument(s) but got 3
+  --> /tmp/dojo-run-length-encoding-1.almd:17:21
+  in call to list.join()
+  hint: Check the number of arguments
+  try:
+      // list.join() takes 2 arg(s) — you passed 3
+      list.join(<xs: List[String]>, <sep: String>)
+   |
+17 |     |> list.join(_, "")
+   |                     ^^
+
+2 error(s) found
+Compile error for /tmp/dojo-run-length-encoding-1.almd:
+compile failed
+FAILED: /tmp/dojo-run-length-encoding-1.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 3 (FAIL)
+
+```almide
+fn rle_encode(s: String) -> String = 
+  string.run_length_encode(s) 
+  |> list.map((x) => int.to_string(x.1) + x.0) 
+  |> string.join(_, "")
+
+fn rle_decode(s: String) -> String = 
+  if string.is_empty(s) then 
+    ""
+  else 
+    string.chars(s) 
+    |> list.chunk(2) 
+    |> list.map((g) => 
+      int.parse(g.0) 
+      |> result.unwrap_or(0) 
+      |> (count) => string.repeat(g.1, count)
+    ) 
+    |> string.join(_, "")
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-run-length-encoding-2.almd
+error[E004]: string.join() expects 2 argument(s) but got 3
+  --> /tmp/dojo-run-length-encoding-2.almd:4:21
+  in call to string.join()
+  hint: Check the number of arguments
+  try:
+      // string.join() takes 2 arg(s) — you passed 3
+      string.join(<list: List[String]>, <sep: String>)
+  |
+4 |   |> string.join(_, "")
+  |                     ^^
+error[E004]: string.join() expects 2 argument(s) but got 3
+  --> /tmp/dojo-run-length-encoding-2.almd:17:23
+  in call to string.join()
+  hint: Check the number of arguments
+  try:
+      // string.join() takes 2 arg(s) — you passed 3
+      string.join(<list: List[String]>, <sep: String>)
+   |
+17 |     |> string.join(_, "")
+   |                       ^^
+
+2 error(s) found
+Compile error for /tmp/dojo-run-length-encoding-2.almd:
+compile failed
+FAILED: /tmp/dojo-run-length-encoding-2.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 4 (FAIL)
+
+```almide
+fn rle_encode(s: String) -> String = 
+  string.run_length_encode(s) 
+  |> list.map((x) => int.to_string(x.1) + x.0) 
+  |> list.map(string.to_upper)
+  |> string.join(_, "")
+
+fn rle_decode(s: String) -> String = 
+  if string.is_empty(s) then 
+    ""
+  else 
+    list.zip(list.range(0, string.len(s)), string.chars(s)) 
+    |> list.filter_map((x) => 
+      if x.0 % 2 == 0 then 
+        int.parse(x.1) 
+        |> result.to_option 
+        |> option.map((count) => string.repeat(string.get(s, x.0 + 1) |> option.unwrap_or(""), count))
+      else 
+        none
+    ) 
+    |> string.join(_, "")
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-run-length-encoding-3.almd
+error[E004]: string.join() expects 2 argument(s) but got 3
+  --> /tmp/dojo-run-length-encoding-3.almd:5:21
+  in call to string.join()
+  hint: Check the number of arguments
+  try:
+      // string.join() takes 2 arg(s) — you passed 3
+      string.join(<list: List[String]>, <sep: String>)
+  |
+5 |   |> string.join(_, "")
+  |                     ^^
+error[E004]: string.join() expects 2 argument(s) but got 3
+  --> /tmp/dojo-run-length-encoding-3.almd:20:23
+  in call to string.join()
+  hint: Check the number of arguments
+  try:
+      // string.join() takes 2 arg(s) — you passed 3
+      string.join(<list: List[String]>, <sep: String>)
+   |
+20 |     |> string.join(_, "")
+   |                       ^^
+
+2 error(s) found
+Compile error for /tmp/dojo-run-length-encoding-3.almd:
+compile failed
+FAILED: /tmp/dojo-run-length-encoding-3.almd
+
+1/1 test file(s) failed
+
+```
