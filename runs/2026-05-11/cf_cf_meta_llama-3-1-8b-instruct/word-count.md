@@ -1,0 +1,201 @@
+# word-count
+
+- **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
+- **success**: no
+- **retries**: 3
+- **category**: type-error
+- **diagnostic code**: `E005`
+
+## Attempts
+
+### Attempt 1 (FAIL)
+
+```almide
+fn word_count(s: String) -> Map[String, Int] {
+    let words = string.split(s, " ").filter(|x| !x.is_empty())
+    let freq = list.fold(words, map.new(), |m, x| {
+        map.set(m, x, map.get_or(m, x, 0) + 1)
+    })
+    freq
+}
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-word-count-0.almd
+error: Missing '=' before function body at line 1:46
+  --> /tmp/dojo-word-count-0.almd:1:46
+  hint: Almide requires '=' before the body. Write: fn word_count(...) -> Type = { ... }
+  |
+1 | fn word_count(s: String) -> Map[String, Int] {
+  |                                              ^
+
+1 error(s) found
+Compile error for /tmp/dojo-word-count-0.almd:
+compile failed
+FAILED: /tmp/dojo-word-count-0.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 2 (FAIL)
+
+```almide
+fn word_count(s: String) -> Map[String, Int] = {
+    let words = string.split(s, " ").filter(|x| !x.is_empty())
+    let freq = list.fold(words, map.new(), |m, x| {
+        map.set(m, x, map.get_or(m, x, 0) + 1)
+    })
+    freq
+}
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-word-count-1.almd
+error: '|x|' closure syntax is not valid in Almide at line 2:45
+  --> /tmp/dojo-word-count-1.almd:2:45
+  hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
+  |
+2 |     let words = string.split(s, " ").filter(|x| !x.is_empty())
+  |                                             ^
+error: '|x|' closure syntax is not valid in Almide at line 3:44
+  --> /tmp/dojo-word-count-1.almd:3:44
+  hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
+  |
+3 |     let freq = list.fold(words, map.new(), |m, x| {
+  |                                            ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 5:6 (got RParen ')')
+  --> /tmp/dojo-word-count-1.almd:5:6
+  |
+5 |     })
+  |      ^
+error[E003]: undefined variable 'm'
+  --> /tmp/dojo-word-count-1.almd:4:17
+  in variable m
+  hint: Did you mean `s`?
+  try:
+      // m  →  s
+      s
+  |
+4 |         map.set(m, x, map.get_or(m, x, 0) + 1)
+  |                 ^
+error[E003]: undefined variable 'x'
+  --> /tmp/dojo-word-count-1.almd:4:20
+  in variable x
+  hint: Did you mean `s`?
+  try:
+      // x  →  s
+      s
+  |
+4 |         map.set(m, x, map.get_or(m, x, 0) + 1)
+  |                    ^
+error[E003]: undefined variable 'm'
+  --> /tmp/dojo-word-count-1.almd:4:34
+  in variable m
+  hint: Did you mean `s`?
+  try:
+      // m  →  s
+      s
+  |
+4 |         map.set(m, x, map.get_or(m, x, 0) + 1)
+  |                                  ^
+error[E003]: undefined variable 'x'
+  --> /tmp/dojo-word-count-1.almd:4:37
+  in variable x
+  hint: Did you mean `s`?
+  try:
+      // x  →  s
+      s
+  |
+4 |         map.set(m, x, map.get_or(m, x, 0) + 1)
+  |                                     ^
+
+7 error(s) found
+Compile error for /tmp/dojo-word-count-1.almd:
+compile failed
+FAILED: /tmp/dojo-word-count-1.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 3 (FAIL)
+
+```almide
+fn word_count(s: String) -> Map[String, Int] = {
+    let words = string.split(s, " ").filter((x) => !x.is_empty())
+    let freq = list.fold(words, map.new(), (m, x) => {
+        map.set(m, x, map.get_or(m, x, 0) + 1)
+    })
+    freq
+}
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-word-count-2.almd
+error: '!' is not valid in Almide at line 2:52
+  --> /tmp/dojo-word-count-2.almd:2:52
+  hint: Use 'not' for boolean negation. Write: not x
+  |
+2 |     let words = string.split(s, " ").filter((x) => !x.is_empty())
+  |                                                    ^
+error[E003]: undefined variable 'words'
+  --> /tmp/dojo-word-count-2.almd:3:26
+  in variable words
+  hint: Check the variable name
+  |
+3 |     let freq = list.fold(words, map.new(), (m, x) => {
+  |                          ^^^^^
+
+2 error(s) found
+Compile error for /tmp/dojo-word-count-2.almd:
+compile failed
+FAILED: /tmp/dojo-word-count-2.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 4 (FAIL)
+
+```almide
+fn word_count(s: String) -> Map[String, Int] = {
+    let words = string.split(s, " ").filter((x) => not x.is_empty())
+    let freq = list.fold(words, map.new(), (m, x) => map.set(m, x, map.get_or(m, x, 0) + 1))
+    freq
+}
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-word-count-3.almd
+error[E005]: argument 'f' expects fn(String) -> Bool but got fn(fn() -> ?1) -> Bool
+  --> /tmp/dojo-word-count-3.almd:2:33
+  in call to list.filter()
+  hint: Fix the argument type
+  |
+2 |     let words = string.split(s, " ").filter((x) => not x.is_empty())
+  |                                 ^^^
+error[E001]: type mismatch in call to list.filter(): expected fn(String) -> Bool but got fn(fn() -> ?1) -> Bool
+  --> /tmp/dojo-word-count-3.almd:2:33
+  in call to list.filter()
+  hint: Fix the expression type or change the expected type
+  |
+2 |     let words = string.split(s, " ").filter((x) => not x.is_empty())
+  |                                 ^^^
+
+2 error(s) found
+Compile error for /tmp/dojo-word-count-3.almd:
+compile failed
+FAILED: /tmp/dojo-word-count-3.almd
+
+1/1 test file(s) failed
+
+```
