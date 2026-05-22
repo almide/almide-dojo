@@ -1,0 +1,161 @@
+# result-pipeline
+
+- **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **success**: no
+- **retries**: 3
+- **category**: parse-error
+
+## Attempts
+
+### Attempt 1 (FAIL)
+
+```almide
+fn parse_int(s: String) -> Result[Int, String] = int.parse(s)
+
+fn validate_positive(n: Int) -> Result[Int, String] =
+  if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
+
+fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] =
+  if lo <= n && n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+
+fn process(input: String) -> Result[String, String] =
+  result.flat_map(parse_int(input), (n) =>
+    result.flat_map(validate_positive(n), (n) =>
+      result.flat_map(validate_range(n, 1, 100), (n) =>
+        result.map(ok(n), (n) => "valid: " + int.to_string(n))))
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-result-pipeline-0.almd
+error: '&&' is not valid in Almide at line 7:14
+  --> /tmp/dojo-result-pipeline-0.almd:7:14
+  hint: Use 'and' for logical AND. Example: if a and b then ...
+  |
+7 |   if lo <= n && n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+  |              ^
+error: Expected ')' to close function call opened at line 10:18
+  --> /tmp/dojo-result-pipeline-0.almd:15:1
+  hint: Add ')' or check for a missing delimiter inside the function call
+   |
+10 |   result.flat_map(parse_int(input), (n) =>
+   |                  --------------- '(' opened here
+...
+15 | test "parse_int valid" { assert_eq(parse_int("42"), ok(42)) }
+   | ^^^^
+
+2 error(s) found
+Compile error for /tmp/dojo-result-pipeline-0.almd:
+compile failed
+FAILED: /tmp/dojo-result-pipeline-0.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 2 (FAIL)
+
+```almide
+fn parse_int(s: String) -> Result[Int, String] = int.parse(s)
+
+fn validate_positive(n: Int) -> Result[Int, String] =
+  if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
+
+fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] =
+  if lo <= n and n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+
+fn process(input: String) -> Result[String, String] =
+  result.flat_map(parse_int(input), (n) =>
+    result.flat_map(validate_positive(n), (n) =>
+      result.flat_map(validate_range(n, 1, 100), (n) =>
+        result.map(ok(n), (n) => "valid: " + int.to_string(n)))))
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-result-pipeline-1.almd
+FAILED: /tmp/dojo-result-pipeline-1.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 3 (FAIL)
+
+```almide
+fn parse_int(s: String) -> Result[Int, String] = int.parse(s)
+
+fn validate_positive(n: Int) -> Result[Int, String] =
+  if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
+
+fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] =
+  if lo <= n and n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+
+fn process(input: String) -> Result[String, String] =
+  result.flat_map(parse_int(input), (n) =>
+    result.flat_map(validate_positive(n), (n) =>
+      result.flat_map(validate_range(n, 1, 100), (n) =>
+        result.map(ok(n), (n) => "valid: " + int.to_string(n)))))
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-result-pipeline-2.almd
+FAILED: /tmp/dojo-result-pipeline-2.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 4 (FAIL)
+
+```almide
+fn parse_int(s: String) -> Result[Int, String] = int.parse(s)
+
+fn validate_positive(n: Int) -> Result[Int, String] =
+  if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
+
+fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] =
+  if lo <= n and n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+
+fn process(input: String) -> Result[String, String] =
+  result.flat_map(parse_int(input), (n) =>
+    result.flat_map(validate_positive(n), (n) =>
+      result.flat_map(validate_range(n, 1, 100), (n) =>
+        result.map(ok(n), (n) => "valid: " + int.to_string(n)))))
+
+
+fn process(input: String) -> Result[String, String] =
+  result.flat_map(
+    result.flat_map(
+      result.flat_map(parse_int(input), validate_positive),
+      (n) => validate_range(n, 1, 100)
+    ),
+    (n) => result.map(ok(n), (n) => "valid: " + int.to_string(n))
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-result-pipeline-3.almd
+error: Expected ')' to close function call opened at line 17:18
+  --> /tmp/dojo-result-pipeline-3.almd:24:1
+  hint: Add ')' or check for a missing delimiter inside the function call
+   |
+17 |   result.flat_map(
+   |                  --------------- '(' opened here
+...
+24 | test "parse_int valid" { assert_eq(parse_int("42"), ok(42)) }
+   | ^^^^
+
+1 error(s) found
+Compile error for /tmp/dojo-result-pipeline-3.almd:
+compile failed
+FAILED: /tmp/dojo-result-pipeline-3.almd
+
+1/1 test file(s) failed
+
+```
