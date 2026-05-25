@@ -1,0 +1,62 @@
+# max-of-list
+
+- **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **success**: yes
+- **retries**: 1
+- **category**: pass-retry
+
+## Attempts
+
+### Attempt 1 (FAIL)
+
+```almide
+fn max_of_list(xs: List[Int]) -> Option[Int] = 
+  if list.is_empty(xs) then none 
+  else some(list.reduce(xs, list.first(xs).unwrap(), (max, x) => if max > x then max else x))
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-max-of-list-0.almd
+error[E002]: undefined method 'unwrap' on option
+  --> /tmp/dojo-max-of-list-0.almd:3:40
+  in method call .unwrap()
+  hint: Almide doesn't use method-call syntax. Write `option.<fn>(x)` (or `x |> option.<fn>`) — there is no method `unwrap` on `option`. Run `almide explain E002` for examples.
+  |
+3 |   else some(list.reduce(xs, list.first(xs).unwrap(), (max, x) => if max > x then max else x))
+  |                                        ^^
+error[E004]: list.reduce() expects 2 argument(s) but got 3
+  --> /tmp/dojo-max-of-list-0.almd:3:91
+  in call to list.reduce()
+  hint: Check the number of arguments
+  try:
+      // list.reduce() takes 2 arg(s) — you passed 3
+      list.reduce(<xs: List[A]>, <f: fn(A, A) -> A>)
+  |
+3 |   else some(list.reduce(xs, list.first(xs).unwrap(), (max, x) => if max > x then max else x))
+  |                                                                                           ^
+error[E001]: type mismatch in fn 'max_of_list': expected Option[Int] but got Option[Option[Int]]
+  --> /tmp/dojo-max-of-list-0.almd:3:91
+  in fn 'max_of_list'
+  hint: Fix the expression type or change the expected type
+  |
+3 |   else some(list.reduce(xs, list.first(xs).unwrap(), (max, x) => if max > x then max else x))
+  |                                                                                           ^
+
+3 error(s) found
+Compile error for /tmp/dojo-max-of-list-0.almd:
+compile failed
+FAILED: /tmp/dojo-max-of-list-0.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 2 (PASS)
+
+```almide
+fn max_of_list(xs: List[Int]) -> Option[Int] = 
+  if list.is_empty(xs) then none 
+  else list.reduce(xs, (a, b) => if a > b then a else b)
+```
