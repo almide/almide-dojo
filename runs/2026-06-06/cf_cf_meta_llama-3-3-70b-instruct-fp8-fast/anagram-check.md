@@ -1,0 +1,88 @@
+# anagram-check
+
+- **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **success**: yes
+- **retries**: 1
+- **category**: pass-retry
+
+## Attempts
+
+### Attempt 1 (FAIL)
+
+```almide
+fn is_anagram(a: String, b: String) -> Bool = 
+    let 
+        lower_a = string.to_lower(a)
+        lower_b = string.to_lower(b)
+        chars_a = string.chars(lower_a) 
+                    |> list.filter((x) => not (string.is_whitespace(x)))
+        chars_b = string.chars(lower_b) 
+                    |> list.filter((x) => not (string.is_whitespace(x)))
+    in 
+        list.sort(chars_a) == list.sort(chars_b)
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-anagram-check-0.almd
+error: Expected identifier at line 2:9 (got Newline '')
+  --> /tmp/dojo-anagram-check-0.almd:2:9
+  |
+2 |     let
+  |         ^
+error: Expected expression at line 9:5 (got In 'in')
+  --> /tmp/dojo-anagram-check-0.almd:9:5
+  |
+9 |     in
+  |     ^
+error[E003]: undefined variable 'lower_a'
+  --> /tmp/dojo-anagram-check-0.almd:5:32
+  in variable lower_a
+  hint: Check the variable name
+  |
+5 |         chars_a = string.chars(lower_a)
+  |                                ^^^^^^^
+error[E003]: undefined variable 'lower_b'
+  --> /tmp/dojo-anagram-check-0.almd:7:32
+  in variable lower_b
+  hint: Check the variable name
+  |
+7 |         chars_b = string.chars(lower_b)
+  |                                ^^^^^^^
+error[E003]: undefined variable 'chars_a'
+  --> /tmp/dojo-anagram-check-0.almd:10:19
+  in variable chars_a
+  hint: Check the variable name
+   |
+10 |         list.sort(chars_a) == list.sort(chars_b)
+   |                   ^^^^^^^
+error[E003]: undefined variable 'chars_b'
+  --> /tmp/dojo-anagram-check-0.almd:10:41
+  in variable chars_b
+  hint: Check the variable name
+   |
+10 |         list.sort(chars_a) == list.sort(chars_b)
+   |                                         ^^^^^^^
+
+6 error(s) found
+Compile error for /tmp/dojo-anagram-check-0.almd:
+compile failed
+FAILED: /tmp/dojo-anagram-check-0.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 2 (PASS)
+
+```almide
+fn is_anagram(a: String, b: String) -> Bool = 
+    let lower_a = string.to_lower(a)
+    in let lower_b = string.to_lower(b)
+    in let chars_a = string.chars(lower_a) 
+                    |> list.filter((x) => not (string.is_whitespace(x)))
+    in let chars_b = string.chars(lower_b) 
+                    |> list.filter((x) => not (string.is_whitespace(x)))
+    in list.sort(chars_a) == list.sort(chars_b)
+```
