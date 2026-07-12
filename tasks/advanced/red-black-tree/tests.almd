@@ -1,0 +1,21 @@
+test "inorder sorted" { assert_eq(inorder(insert(insert(insert(Leaf, 5), 3), 8)), [3, 5, 8]) }
+test "empty tree height" { assert_eq(height(Leaf), 0) }
+test "single node height" { assert_eq(height(insert(Leaf, 42)), 1) }
+test "duplicates keep one node" {
+  let t = list.fold([2, 1, 2, 3, 1], Leaf, (acc, v) => insert(acc, v))
+  assert_eq(inorder(t), [1, 2, 3])
+}
+test "mixed insert order" {
+  let t = list.fold([10, 4, 17, 1, 6, 12, 20, 4], Leaf, (acc, v) => insert(acc, v))
+  assert_eq(inorder(t), [1, 4, 6, 10, 12, 17, 20])
+}
+test "ascending 1..=31 stays balanced" {
+  let t = list.fold(1..=31, Leaf, (acc, v) => insert(acc, v))
+  assert_eq(inorder(t), 1..=31)
+  assert(height(t) < 11)
+}
+test "descending 31..1 stays balanced" {
+  let t = list.fold(1..=31, Leaf, (acc, v) => insert(acc, 32 - v))
+  assert_eq(inorder(t), 1..=31)
+  assert(height(t) < 11)
+}

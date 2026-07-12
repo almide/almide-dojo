@@ -62,7 +62,7 @@ almide run src/main.almd -- fizzbuzz
 almide run src/main.almd -- all
 ```
 
-## Task bank (30 tasks)
+## Task bank (31 tasks)
 
 **Basic** (15 tasks, < 20 LOC) — single function, core language features:
 `fizzbuzz`, `factorial`, `fibonacci`, `gcd`, `is-prime`, `is-palindrome`, `string-reverse`, `sum-digits`, `count-vowels`, `clamp`, `max-of-list`, `list-sum`, `title-case`, `repeat-string`, `remove-duplicates`
@@ -70,12 +70,12 @@ almide run src/main.almd -- all
 **Intermediate** (10 tasks, 20–80 LOC) — multiple functions, stdlib composition:
 `caesar-cipher`, `roman-numeral`, `run-length-encoding`, `word-count`, `balanced-parens`, `anagram-check`, `binary-search`, `flatten-nested`, `partition-list`, `zip-with`
 
-**Advanced** (5 tasks, > 80 LOC) — custom ADTs, pattern matching, error handling:
-`expression-eval`, `custom-linked-list`, `result-pipeline`, `mini-json-query`, `matrix-ops`
+**Advanced** (6 tasks, > 80 LOC) — custom ADTs, pattern matching, error handling:
+`expression-eval`, `custom-linked-list`, `result-pipeline`, `mini-json-query`, `matrix-ops`, `red-black-tree`
 
 ## Current phase
 
-**Phase 3** — 30-task bank with three difficulty tiers, harness searches across `basic/`, `intermediate/`, `advanced/` directories. Next: add GitHub Actions daily workflow, build the dashboards.
+**Phase 3** — 31-task bank with three difficulty tiers, harness searches across `basic/`, `intermediate/`, `advanced/` directories. Next: add GitHub Actions daily workflow, build the dashboards.
 
 See [`docs/roadmap/active/almide-dojo.md`](https://github.com/almide/almide/blob/main/docs/roadmap/active/almide-dojo.md) in the main Almide repo for the full roadmap.
 
