@@ -9,13 +9,13 @@ test "mixed insert order" {
   let t = list.fold([10, 4, 17, 1, 6, 12, 20, 4], Leaf, (acc, v) => insert(acc, v))
   assert_eq(inorder(t), [1, 4, 6, 10, 12, 17, 20])
 }
-test "ascending 1..=31 stays balanced" {
-  let t = list.fold(1..=31, Leaf, (acc, v) => insert(acc, v))
-  assert_eq(inorder(t), 1..=31)
+test "ascending 1...31 stays balanced" {
+  let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, v))
+  assert_eq(inorder(t), 1...31)
   assert(height(t) < 11)
 }
 test "descending 31..1 stays balanced" {
-  let t = list.fold(1..=31, Leaf, (acc, v) => insert(acc, 32 - v))
-  assert_eq(inorder(t), 1..=31)
+  let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, 32 - v))
+  assert_eq(inorder(t), 1...31)
   assert(height(t) < 11)
 }

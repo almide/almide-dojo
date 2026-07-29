@@ -19,7 +19,7 @@ Behavior:
 - `insert` adds `v` keeping the red-black invariants; inserting an existing value returns an equivalent tree (one node per value)
 - `inorder` returns all stored values in ascending order
 - `height` counts nodes on the longest root-to-leaf path: `height(Leaf)` is `0`, a single node is `1`
-- The tree must stay balanced: inserting `1..=31` in ascending or descending order must end with `height(t) <= 10`
+- The tree must stay balanced: inserting `1...31` in ascending or descending order must end with `height(t) <= 10`
 
 Notes:
 
