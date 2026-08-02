@@ -436,7 +436,7 @@ fn model_slug(model: String) -> String =
     |> string.replace(".", "-")
 
 effect fn write_metrics(result: RunResult) -> Result[String, String] = {
-  let date = datetime.format(env.unix_timestamp(), "YYYY-MM-DD")
+  let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
   let slug = model_slug(result.model)
   let dir = "runs/" + date + "/" + slug
   match fs.mkdir_p(dir) {
@@ -565,7 +565,7 @@ effect fn run_all(model: String) -> Unit = {
           process.exit(1)
         }
         ok(results) => {
-          let date = datetime.format(env.unix_timestamp(), "YYYY-MM-DD")
+          let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
           run_all_finish(date, model, results)
         }
       }

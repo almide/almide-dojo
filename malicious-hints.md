@@ -17,6 +17,36 @@ Append newest entries at the top. Each entry should include:
 
 ## Entries
 
+### MH-005: `import compute` told to CREATE compute.almd (FIXED)
+
+- **Date**: 2026-08-02
+- **Code**: module resolution (no code)
+- **Task**: budget-units
+- **Model**: Claude (cli:claude)
+- **Hint**: `Create compute.almd in the same directory, or add to [dependencies] in almide.toml`
+- **What went wrong**: `compute` is an auto-available checker surface — there is nothing to create. The model burned attempt 1 on the import line; the fix is to DELETE it. `import duration` had the same hint, and `import fan` died with a raw parse error (`Expected identifier (got Fan 'fan')`).
+- **Status**: Fixed in almide `3078f557`. All three paths now say `'X' is auto-available — Remove the \`import X\` line`.
+
+### MH-004: generic E005 on unwrap of an already-propagated value (FIXED)
+
+- **Date**: 2026-08-02
+- **Code**: E005
+- **Task**: budget-units
+- **Model**: Claude (cli:claude)
+- **Hint**: `Fix the argument type`
+- **What went wrong**: In an effect fn, `let r = fan.bounded(b) { work() }` is auto-`?`-propagated, so `r` is already the plain payload. The model piped it into `option.unwrap_or(-1)` then `result.unwrap_or(r, -1)` across two attempts — the generic hint never said the value was already unwrapped, nor that the fallback belongs on the producing call.
+- **Status**: Fixed in almide `3078f557`. Unwrap-family E005 with a non-container argument now says `nothing to unwrap — the value is already Int … apply \`?? <default>\` to the producing call instead`.
+
+### MH-003: thunk-form fan spelling parsed as "Missing ')'" (FIXED)
+
+- **Date**: 2026-08-02
+- **Code**: parse error (no code)
+- **Task**: budget-units, race-strategies
+- **Model**: Claude (cli:claude)
+- **Hint**: `Missing ')'` at the comma of `fan.bounded(budget, () => work())`
+- **What went wrong**: The model repeatedly wrote the pre-Wave-1 thunk form; the parse hint pointed at a paren problem, so it fiddled with parens instead of switching to the block form. Both failing tasks in MSR round 1 failed on exactly this.
+- **Status**: Fixed in almide `18d39b79`. The comma in a `fan.bounded`/`fan.race` head now gets a dedicated migration hint (`drop the \`() =>\` wrapper; the braces are the region` / `arms are expressions separated by \`;\``). race-strategies passed on the rerun.
+
 ### MH-001: `import value` suggested for local variable (FIXED)
 
 - **Date**: 2026-04-12
