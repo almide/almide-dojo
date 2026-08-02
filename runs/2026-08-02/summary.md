@@ -1,10 +1,10 @@
 # 2026-08-02 — async task bank, first MSR round (claim-5 material)
 
 First measurement of the fan v2 / deterministic-time task bank (6 tasks added
-in 09fb90d) against the `worktree-stage1-charge-probe` compiler build, provider
+in 09fb90d, +race-cheapest for the T7-1 mapper form) against the `worktree-stage1-charge-probe` compiler build, provider
 `cli:claude` (Claude Code CLI, no API key). Retry cap 3.
 
-## Result: 6/6 pass (MSR-with-retry 100%, first-attempt 2/6)
+## Result: 7/7 pass (MSR-with-retry 100%, first-attempt 2/6)
 
 | Task | Tier | Pass | Retries | Notes |
 |---|---|---|---|---|
@@ -14,6 +14,7 @@ in 09fb90d) against the `worktree-stage1-charge-probe` compiler build, provider
 | any-candidates | intermediate | ✓ | 1 | |
 | race-strategies | intermediate | ✓ | 2 | passed after MH-003 fix |
 | budget-units | basic | ✓ | 3 | passed after MH-003/004/005 + 2 compiler-bug fixes |
+| race-cheapest | intermediate | ✓ | 1 | NEW mapper form `fan.race(xs, f)` (T7-1) — first measurement; retry 1 was `import fan`, answered by the new auto-available diagnostic |
 
 ## The dogfood loop paid for itself — findings fed back into the compiler
 

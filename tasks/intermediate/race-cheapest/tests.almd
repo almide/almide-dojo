@@ -1,0 +1,12 @@
+test "cheapest element's probe wins" {
+  let r = cheapest_probe([900, 300, 600])
+  assert_eq(r, ok(313950))
+}
+test "single element wins by default" {
+  let r = cheapest_probe([10])
+  assert_eq(r, ok(315))
+}
+test "empty list falls back" {
+  let r = cheapest_probe([])
+  assert_eq(r, ok(-1))
+}
