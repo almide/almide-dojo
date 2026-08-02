@@ -1,0 +1,12 @@
+test "bounded total small" {
+  let r = safe_total([1, 2, 3])
+  assert_eq(r, ok(6))
+}
+test "bounded total empty" {
+  let r = safe_total([])
+  assert_eq(r, ok(0))
+}
+test "bounded total negatives" {
+  let r = safe_total([5, -2, -3])
+  assert_eq(r, ok(0))
+}

@@ -1,0 +1,4 @@
+difficulty = "basic"
+expected_loc = 12
+timeout_sec = 30
+tags = ["fan", "time", "units", "algebra"]

@@ -1,0 +1,12 @@
+test "race small n" {
+  let r = best_effort(10)
+  assert_eq(r, ok(45))
+}
+test "race zero" {
+  let r = best_effort(0)
+  assert_eq(r, ok(0))
+}
+test "race larger n still wins via heuristic" {
+  let r = best_effort(5000)
+  assert_eq(r, ok(12497500))
+}

@@ -1,0 +1,16 @@
+test "settle healthy" {
+  let r = health(200, 50)
+  assert_eq(r, ok("healthy"))
+}
+test "settle net degraded" {
+  let r = health(500, 50)
+  assert_eq(r, ok("net degraded"))
+}
+test "settle disk degraded" {
+  let r = health(200, 5)
+  assert_eq(r, ok("disk degraded"))
+}
+test "settle down" {
+  let r = health(404, 0)
+  assert_eq(r, ok("down"))
+}

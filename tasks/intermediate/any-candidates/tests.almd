@@ -1,0 +1,16 @@
+test "any first valid wins" {
+  let r = first_valid_port([80, 8080, 3000])
+  assert_eq(r, ok(8080))
+}
+test "any none valid" {
+  let r = first_valid_port([1, 2, 3])
+  assert_eq(r, ok(-1))
+}
+test "any empty list" {
+  let r = first_valid_port([])
+  assert_eq(r, ok(-1))
+}
+test "any first element already valid" {
+  let r = first_valid_port([9999, 80])
+  assert_eq(r, ok(9999))
+}
