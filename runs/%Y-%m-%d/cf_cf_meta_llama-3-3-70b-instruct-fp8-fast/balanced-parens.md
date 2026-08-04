@@ -3,7 +3,7 @@
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: no
 - **retries**: 3
-- **category**: unknown
+- **category**: parse-error
 
 ## Attempts
 
@@ -11,97 +11,125 @@
 
 ```almide
 fn is_balanced(s: String) -> Bool = 
-  let stack = list.new[String]()
-  let pairs = map.from_list([("(", ")"), ("[", "]"), ("{", "}")])
-  in list.fold(string.chars(s), true, (acc, ch) => 
-    if map.contains(pairs, ch) then
-      let closing = map.get_or(pairs, ch, "")
-      in list.push(stack, closing) |> (x) => acc
-    else if string.codepoint(ch) |> option.unwrap_or(0) |> (x) => [41, 93, 125] |> list.contains(_, x) then
-      if list.is_empty(stack) then false
-      else 
-        let last = list.last(stack) |> option.unwrap_or("")
-        if last == ch then 
-          list.drop_end(stack, 1) |> (x) => acc
-        else false
-    else acc)
+  let 
+    stack = list.new[String]()
+    bracket_map = map.from_list([("(", ")"), ("[", "]"), ("{", "}")])
+    bracket_set = set.from_list(["(", "[", "{"])
+    closing_bracket_set = set.from_list([")", "]", "}"])
+    chars = string.chars(s)
+  in 
+    list.fold(chars, true, (acc, c) => 
+      if set.contains(bracket_set, c) then 
+        list.push(stack, c) |> list.len(_) > 0
+      else if set.contains(closing_bracket_set, c) then 
+        if list.is_empty(stack) then false
+        else 
+          let 
+            top = list.last(stack) |> option.unwrap_or("")
+            expected = map.get(bracket_map, top) |> option.unwrap_or("")
+          in 
+            if c == expected then 
+              list.drop_end(stack, 1) |> list.len(_) >= 0
+            else false
+      else acc
+    )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-0.almd
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-balanced-parens-0.almd:6:7
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+error: Expected identifier at line 2:7 (got Newline '')
+  --> /tmp/dojo-balanced-parens-0.almd:2:7
   |
-6 |       let closing = map.get_or(pairs, ch, "")
-  |       ^^^
-error: Expected expression at line 8:5 (got Else 'else')
-  --> /tmp/dojo-balanced-parens-0.almd:8:5
+2 |   let
+  |       ^
+error: Expected expression at line 8:3 (got In 'in')
+  --> /tmp/dojo-balanced-parens-0.almd:8:3
   |
-8 |     else if string.codepoint(ch) |> option.unwrap_or(0) |> (x) => [41, 93, 125] |> list.contains(_, x) then
-  |     ^
+8 |   in
+  |   ^
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-balanced-parens-0.almd:11:9
+  --> /tmp/dojo-balanced-parens-0.almd:15:11
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
    |
-11 |         let last = list.last(stack) |> option.unwrap_or("")
-   |         ^^^
-error: Expected expression at line 15:5 (got Else 'else')
-  --> /tmp/dojo-balanced-parens-0.almd:15:5
+15 |           let
+   |           ^^^
+error: Expected expression at line 18:11 (got In 'in')
+  --> /tmp/dojo-balanced-parens-0.almd:18:11
    |
-15 |     else acc)
-   |     ^
+18 |           in
+   |           ^
+error: Expected expression at line 22:7 (got Else 'else')
+  --> /tmp/dojo-balanced-parens-0.almd:22:7
+   |
+22 |       else acc
+   |       ^
 error[E002]: undefined function 'list.new'
-  --> /tmp/dojo-balanced-parens-0.almd:2:23
+  --> /tmp/dojo-balanced-parens-0.almd:3:21
   in call to list.new()
   hint: Did you mean `[] (empty list literal)`?
   |
-2 |   let stack = list.new[String]()
-  |                       ^
-error[E003]: undefined variable 'closing'
-  --> /tmp/dojo-balanced-parens-0.almd:7:24
-  in variable closing
-  hint: Check the variable name
-  |
-7 |       list.push(stack, closing) |> (x) => acc
-  |                        ^^^^^^^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-balanced-parens-0.almd:7:43
-  in variable acc
-  hint: Check the variable name
-  |
-7 |       list.push(stack, closing) |> (x) => acc
-  |                                           ^^^
-error[E003]: undefined variable 'last'
-  --> /tmp/dojo-balanced-parens-0.almd:12:12
-  in variable last
+3 |     stack = list.new[String]()
+  |                     ^
+error[E003]: undefined variable 'stack'
+  --> /tmp/dojo-balanced-parens-0.almd:16:29
+  in variable stack
   hint: Check the variable name
    |
-12 |         if last == ch then
-   |            ^^^^
-error[E003]: undefined variable 'ch'
-  --> /tmp/dojo-balanced-parens-0.almd:12:20
-  in variable ch
+16 |             top = list.last(stack) |> option.unwrap_or("")
+   |                             ^^^^^
+error[E003]: undefined variable 'bracket_map'
+  --> /tmp/dojo-balanced-parens-0.almd:17:32
+  in variable bracket_map
+  hint: Check the variable name
+   |
+17 |             expected = map.get(bracket_map, top) |> option.unwrap_or("")
+   |                                ^^^^^^^^^^^
+error[E003]: undefined variable 'top'
+  --> /tmp/dojo-balanced-parens-0.almd:17:45
+  in variable top
+  hint: Check the variable name
+   |
+17 |             expected = map.get(bracket_map, top) |> option.unwrap_or("")
+   |                                             ^^^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-balanced-parens-0.almd:19:16
+  in variable c
   hint: Did you mean `s`?
   try:
-      // ch  →  s
+      // c  →  s
       s
    |
-12 |         if last == ch then
-   |                    ^^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-balanced-parens-0.almd:13:45
-  in variable acc
+19 |             if c == expected then
+   |                ^
+error[E003]: undefined variable 'expected'
+  --> /tmp/dojo-balanced-parens-0.almd:19:21
+  in variable expected
   hint: Check the variable name
    |
-13 |           list.drop_end(stack, 1) |> (x) => acc
-   |                                             ^^^
+19 |             if c == expected then
+   |                     ^^^^^^^^
+error[E003]: undefined variable 'stack'
+  --> /tmp/dojo-balanced-parens-0.almd:20:29
+  in variable stack
+  hint: Check the variable name
+   |
+20 |               list.drop_end(stack, 1) |> list.len(_) >= 0
+   |                             ^^^^^
+error[E004]: list.len() expects 1 argument(s) but got 2
+  --> /tmp/dojo-balanced-parens-0.almd:20:51
+  in call to list.len()
+  hint: Check the number of arguments
+  try:
+      // list.len() takes 1 arg(s) — you passed 2
+      list.len(<xs: List[A]>)
+   |
+20 |               list.drop_end(stack, 1) |> list.len(_) >= 0
+   |                                                   ^
 error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
-  --> /tmp/dojo-balanced-parens-0.almd:14:14
+  --> /tmp/dojo-balanced-parens-0.almd:21:18
   in fn 'is_balanced'
   hint: Fix the expression type or change the expected type
   try:
@@ -111,10 +139,10 @@ error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
       // Or inline:
       //   <expression>                   // must have type Bool
    |
-14 |         else false
-   |              ^^^^^
+21 |             else false
+   |                  ^^^^^
 
-11 error(s) found
+14 error(s) found
 Compile error for /tmp/dojo-balanced-parens-0.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-0.almd
@@ -127,33 +155,72 @@ FAILED: /tmp/dojo-balanced-parens-0.almd
 
 ```almide
 fn is_balanced(s: String) -> Bool = 
-  list.fold(string.chars(s), [], (stack, ch) => 
-    if [40, 91, 123] |> list.contains(_, string.codepoint(ch) |> option.unwrap_or(0)) then
-      stack + [ch]
-    else if [41, 93, 125] |> list.contains(_, string.codepoint(ch) |> option.unwrap_or(0)) then
-      if list.is_empty(stack) then []
+  let stack = [] 
+  and bracket_map = map.from_list([("(", ")"), ("[", "]"), ("{", "}")])
+  and bracket_set = set.from_list(["(", "[", "{"])
+  and closing_bracket_set = set.from_list([")", "]", "}"])
+  and chars = string.chars(s)
+  in list.fold(chars, (true, stack), (acc, c) => 
+    if set.contains(bracket_set, c) then 
+      (acc.0, acc.1 + [c])
+    else if set.contains(closing_bracket_set, c) then 
+      if list.is_empty(acc.1) then (false, acc.1)
       else 
-        let last = list.last(stack) |> option.unwrap_or("")
-        in if (last == "(" && ch == ")") || (last == "[" && ch == "]") || (last == "{" && ch == "}") then
-          list.drop_end(stack, 1)
-        else []
-    else stack)
-  |> (stack) => list.is_empty(stack)
+        let top = list.last(acc.1) |> option.unwrap_or("")
+        and expected = map.get(bracket_map, top) |> option.unwrap_or("")
+        in if c == expected then (acc.0, list.drop_end(acc.1, 1))
+           else (false, acc.1)
+    else (acc.0, acc.1)
+  ).0
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-1.almd
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-balanced-parens-1.almd:3:19
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+  |
+3 |   and bracket_map = map.from_list([("(", ")"), ("[", "]"), ("{", "}")])
+  |                   ^
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-balanced-parens-1.almd:8:9
+  --> /tmp/dojo-balanced-parens-1.almd:13:9
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+   |
+13 |         let top = list.last(acc.1) |> option.unwrap_or("")
+   |         ^^^
+error[E003]: undefined variable 'bracket_map'
+  --> /tmp/dojo-balanced-parens-1.almd:3:7
+  in variable bracket_map
+  hint: Check the variable name
   |
-8 |         let last = list.last(stack) |> option.unwrap_or("")
-  |         ^^^
+3 |   and bracket_map = map.from_list([("(", ")"), ("[", "]"), ("{", "}")])
+  |       ^^^^^^^^^^^
+error: operator 'and' requires Bool but got List[?0]
+  --> /tmp/dojo-balanced-parens-1.almd:3:7
+  in operator and
+  hint: Use Bool values with logical operators
+  |
+3 |   and bracket_map = map.from_list([("(", ")"), ("[", "]"), ("{", "}")])
+  |       ^^^^^^^^^^^
+error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
+  --> /tmp/dojo-balanced-parens-1.almd:3:7
+  in fn 'is_balanced'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Bool:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type Bool
+  |
+3 |   and bracket_map = map.from_list([("(", ")"), ("[", "]"), ("{", "}")])
+  |       ^^^^^^^^^^^
 
-1 error(s) found
+5 error(s) found
 Compile error for /tmp/dojo-balanced-parens-1.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-1.almd
@@ -166,72 +233,94 @@ FAILED: /tmp/dojo-balanced-parens-1.almd
 
 ```almide
 fn is_balanced(s: String) -> Bool = 
-  list.fold(string.chars(s), [], (stack, ch) => 
-    if [40, 91, 123] |> list.contains(_, string.codepoint(ch) |> option.unwrap_or(0)) then
-      stack + [ch]
-    else if [41, 93, 125] |> list.contains(_, string.codepoint(ch) |> option.unwrap_or(0)) then
-      if list.is_empty(stack) then []
+  let stack = []
+  let bracket_map = map.from_list([("(", ")"), ("[", "]"), ("{", "}")])
+  let bracket_set = set.from_list(["(", "[", "{"])
+  let closing_bracket_set = set.from_list([")", "]", "}"])
+  let chars = string.chars(s)
+  in list.fold(chars, (true, stack), (acc, c) => 
+    if set.contains(bracket_set, c) then 
+      (acc.0, acc.1 + [c])
+    else if set.contains(closing_bracket_set, c) then 
+      if list.is_empty(acc.1) then (false, acc.1)
       else 
-        {
-          let last = list.last(stack) |> option.unwrap_or("");
-          if (last == "(" && ch == ")") || (last == "[" && ch == "]") || (last == "{" && ch == "}") then
-            list.drop_end(stack, 1)
-          else []
-        }
-    else stack)
-  |> (stack) => list.is_empty(stack)
+        let top = list.last(acc.1) |> option.unwrap_or("")
+        let expected = map.get(bracket_map, top) |> option.unwrap_or("")
+        in if c == expected then (acc.0, list.drop_end(acc.1, 1))
+           else (false, acc.1)
+    else (acc.0, acc.1)
+  ).0
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-2.almd
-error: '&&' is not valid in Almide at line 10:27
-  --> /tmp/dojo-balanced-parens-2.almd:10:27
-  hint: Use 'and' for logical AND. Example: if a and b then ...
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-balanced-parens-2.almd:13:9
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
    |
-10 |           if (last == "(" && ch == ")") || (last == "[" && ch == "]") || (last == "{" && ch == "}") then
-   |                           ^
-error: Expected expression at line 12:11 (got Else 'else')
-  --> /tmp/dojo-balanced-parens-2.almd:12:11
+13 |         let top = list.last(acc.1) |> option.unwrap_or("")
+   |         ^^^
+error: Expected expression at line 17:5 (got Else 'else')
+  --> /tmp/dojo-balanced-parens-2.almd:17:5
    |
-12 |           else []
-   |           ^
-error[E004]: list.contains() expects 2 argument(s) but got 3
-  --> /tmp/dojo-balanced-parens-2.almd:3:83
-  in call to list.contains()
-  hint: Check the number of arguments
-  try:
-      // list.contains() takes 2 arg(s) — you passed 3
-      list.contains(<xs: List[A]>, <x: A>)
-  |
-3 |     if [40, 91, 123] |> list.contains(_, string.codepoint(ch) |> option.unwrap_or(0)) then
-  |                                                                                   ^
-error[E004]: list.contains() expects 2 argument(s) but got 3
-  --> /tmp/dojo-balanced-parens-2.almd:5:88
-  in call to list.contains()
-  hint: Check the number of arguments
-  try:
-      // list.contains() takes 2 arg(s) — you passed 3
-      list.contains(<xs: List[A]>, <x: A>)
-  |
-5 |     else if [41, 93, 125] |> list.contains(_, string.codepoint(ch) |> option.unwrap_or(0)) then
-  |                                                                                        ^
-error[E001]: type mismatch in if branches: expected List[String] but got Unit
-  --> /tmp/dojo-balanced-parens-2.almd:11:34
-  in if branches
-  hint: Both branches of `if/then/else` must have the same type. Or Got Unit where a List was expected. `list.push`/`pop`/`clear` mutate and return Unit — use `xs + [item]` for an immutable append. `for x in xs { ... }` is a side-effect loop (Unit); for element transforms, use `list.map(xs, (x) => ...)`.
-  try:
-      // an if-arm is a statement (e.g. `x = y` or a bare `let`) — returns Unit.
-      // if/else is an *expression*: both arms must produce List[String]. Rebind via let instead:
-      //   let new_x = if cond then <then-value> else <else-value>
-      // Or for loop-like state, use recursion:
-      //   fn step(x: List[String]) -> List[String] = if cond then step(<update>) else x
+17 |     else (acc.0, acc.1)
+   |     ^
+error[E003]: undefined variable 'top'
+  --> /tmp/dojo-balanced-parens-2.almd:14:45
+  in variable top
+  hint: Check the variable name
    |
-11 |             list.drop_end(stack, 1)
-   |                                  ^
+14 |         let expected = map.get(bracket_map, top) |> option.unwrap_or("")
+   |                                             ^^^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-balanced-parens-2.almd:15:12
+  in variable c
+  hint: Did you mean `s`?
+  try:
+      // c  →  s
+      s
+   |
+15 |         if c == expected then (acc.0, list.drop_end(acc.1, 1))
+   |            ^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-balanced-parens-2.almd:15:32
+  in variable acc
+  hint: Check the variable name
+   |
+15 |         if c == expected then (acc.0, list.drop_end(acc.1, 1))
+   |                                ^^^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-balanced-parens-2.almd:15:53
+  in variable acc
+  hint: Check the variable name
+   |
+15 |         if c == expected then (acc.0, list.drop_end(acc.1, 1))
+   |                                                     ^^^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-balanced-parens-2.almd:16:25
+  in variable acc
+  hint: Check the variable name
+   |
+16 |            else (false, acc.1)
+   |                         ^^^
+error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
+  --> /tmp/dojo-balanced-parens-2.almd:16:25
+  in fn 'is_balanced'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Bool:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type Bool
+   |
+16 |            else (false, acc.1)
+   |                         ^^^
 
-5 error(s) found
+8 error(s) found
 Compile error for /tmp/dojo-balanced-parens-2.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-2.almd
@@ -244,28 +333,97 @@ FAILED: /tmp/dojo-balanced-parens-2.almd
 
 ```almide
 fn is_balanced(s: String) -> Bool = 
-  list.fold(string.chars(s), [], (stack, ch) => 
-    if list.contains([40, 91, 123], string.codepoint(ch) |> option.unwrap_or(0)) then
-      stack + [ch]
-    else if list.contains([41, 93, 125], string.codepoint(ch) |> option.unwrap_or(0)) then
-      if list.is_empty(stack) then []
+  let stack = []
+  let bracket_map = map.from_list([("(", ")"), ("[", "]"), ("{", "}")])
+  let bracket_set = set.from_list(["(", "[", "{"])
+  let closing_bracket_set = set.from_list([")", "]", "}"])
+  let chars = string.chars(s)
+  in list.fold(chars, (true, stack), (acc, c) => 
+    if set.contains(bracket_set, c) then 
+      (acc.0, acc.1 + [c])
+    else if set.contains(closing_bracket_set, c) then 
+      if list.is_empty(acc.1) then (false, acc.1)
       else 
-        {
-          let last = list.last(stack) |> option.unwrap_or("");
-          let match_brackets = (last == "(" and ch == ")") or (last == "[" and ch == "]") or (last == "{" and ch == "}");
-          if match_brackets then
-            list.drop_end(stack, 1)
-          else
-            []
-        }
-    else stack)
-  |> (stack) => list.is_empty(stack)
+        let top = list.last(acc.1) |> option.unwrap_or("")
+        in 
+          let expected = map.get(bracket_map, top) |> option.unwrap_or("")
+          in if c == expected then (acc.0, list.drop_end(acc.1, 1))
+             else (false, acc.1)
+    else (acc.0, acc.1)
+  ).0
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-3.almd
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-balanced-parens-3.almd:13:9
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+   |
+13 |         let top = list.last(acc.1) |> option.unwrap_or("")
+   |         ^^^
+error: Expected expression at line 18:5 (got Else 'else')
+  --> /tmp/dojo-balanced-parens-3.almd:18:5
+   |
+18 |     else (acc.0, acc.1)
+   |     ^
+error[E003]: undefined variable 'top'
+  --> /tmp/dojo-balanced-parens-3.almd:15:47
+  in variable top
+  hint: Check the variable name
+   |
+15 |           let expected = map.get(bracket_map, top) |> option.unwrap_or("")
+   |                                               ^^^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-balanced-parens-3.almd:16:14
+  in variable c
+  hint: Did you mean `s`?
+  try:
+      // c  →  s
+      s
+   |
+16 |           if c == expected then (acc.0, list.drop_end(acc.1, 1))
+   |              ^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-balanced-parens-3.almd:16:34
+  in variable acc
+  hint: Check the variable name
+   |
+16 |           if c == expected then (acc.0, list.drop_end(acc.1, 1))
+   |                                  ^^^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-balanced-parens-3.almd:16:55
+  in variable acc
+  hint: Check the variable name
+   |
+16 |           if c == expected then (acc.0, list.drop_end(acc.1, 1))
+   |                                                       ^^^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-balanced-parens-3.almd:17:27
+  in variable acc
+  hint: Check the variable name
+   |
+17 |              else (false, acc.1)
+   |                           ^^^
+error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
+  --> /tmp/dojo-balanced-parens-3.almd:17:27
+  in fn 'is_balanced'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Bool:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type Bool
+   |
+17 |              else (false, acc.1)
+   |                           ^^^
+
+8 error(s) found
+Compile error for /tmp/dojo-balanced-parens-3.almd:
+compile failed
 FAILED: /tmp/dojo-balanced-parens-3.almd
 
 1/1 test file(s) failed

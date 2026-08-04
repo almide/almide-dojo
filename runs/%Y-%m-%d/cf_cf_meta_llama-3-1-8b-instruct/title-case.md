@@ -3,52 +3,24 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: parse-error
+- **category**: unknown
 
 ## Attempts
 
 ### Attempt 1 (FAIL)
 
 ```almide
-fn title_case(s: String) -> String = 
-    let words = string.split(s, " ")
-    string.join(
-        words.map(
-            (word) => string.capitalize(string.to_lower(word))
-        )
-    , " ")
+fn title_case(s: String) -> String = {
+  let words = string.split(s, " ")
+  let capitalized_words = list.map(words, (word) => string.capitalize(word))
+  string.join(capitalized_words, " ")
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-title-case-0.almd
-error: Expected ')' to close function call opened at line 3:16
-  --> /tmp/dojo-title-case-0.almd:7:5
-  hint: Add ')' or check for a missing delimiter inside the function call
-  |
-3 |     string.join(
-  |                --------------- '(' opened here
-...
-7 |     , " ")
-  |     ^
-error[E001]: type mismatch in fn 'title_case': expected String but got Unit
-  --> /tmp/dojo-title-case-0.almd:2:33
-  in fn 'title_case'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type String
-  |
-2 |     let words = string.split(s, " ")
-  |                                 ^^^
-
-2 error(s) found
-Compile error for /tmp/dojo-title-case-0.almd:
-compile failed
 FAILED: /tmp/dojo-title-case-0.almd
 
 1/1 test file(s) failed
@@ -58,41 +30,31 @@ FAILED: /tmp/dojo-title-case-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn title_case(s: String) -> String = 
-    let words = string.split(s, " ")
-    string.join(
-        words.map(
-            (word) => string.capitalize(string.to_lower(word))
-        )
-    , " ")
+fn title_case(s: String) -> String = {
+  let words = string.split(s, " ")
+  let capitalized_words = list.map(words, (word) => string.to_lower(word) + string.capitalize(string.first(word)))
+  string.join(capitalized_words, " ")
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-title-case-1.almd
-error: Expected ')' to close function call opened at line 3:16
-  --> /tmp/dojo-title-case-1.almd:7:5
-  hint: Add ')' or check for a missing delimiter inside the function call
+error[E005]: argument 's' expects String but got Option[String]
+  --> /tmp/dojo-title-case-1.almd:3:108
+  in call to string.capitalize()
+  hint: Fix the argument type
   |
-3 |     string.join(
-  |                --------------- '(' opened here
-...
-7 |     , " ")
-  |     ^
-error[E001]: type mismatch in fn 'title_case': expected String but got Unit
-  --> /tmp/dojo-title-case-1.almd:2:33
-  in fn 'title_case'
+3 |   let capitalized_words = list.map(words, (word) => string.to_lower(word) + string.capitalize(string.first(word)))
+  |                                                                                                            ^^^^
+error[E001]: type mismatch in call to string.capitalize(): expected String but got Option[String]
+  --> /tmp/dojo-title-case-1.almd:3:108
+  in call to string.capitalize()
   hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type String
   |
-2 |     let words = string.split(s, " ")
-  |                                 ^^^
+3 |   let capitalized_words = list.map(words, (word) => string.to_lower(word) + string.capitalize(string.first(word)))
+  |                                                                                                            ^^^^
 
 2 error(s) found
 Compile error for /tmp/dojo-title-case-1.almd:
@@ -106,29 +68,33 @@ FAILED: /tmp/dojo-title-case-1.almd
 ### Attempt 3 (FAIL)
 
 ```almide
-fn title_case(s: String) -> String = 
-    string.join(
-        string.split(s, " ").map(
-            (word) => string.capitalize(string.to_lower(word))
-        )
-    , " ")
+fn title_case(s: String) -> String = {
+  let words = string.split(s, " ")
+  let capitalized_words = list.map(words, (word) => string.to_lower(word) + string.capitalize(string.first(word)))
+  string.join(capitalized_words, " ")
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-title-case-2.almd
-error: Expected ')' to close function call opened at line 2:16
-  --> /tmp/dojo-title-case-2.almd:6:5
-  hint: Add ')' or check for a missing delimiter inside the function call
+error[E005]: argument 's' expects String but got Option[String]
+  --> /tmp/dojo-title-case-2.almd:3:108
+  in call to string.capitalize()
+  hint: Fix the argument type
   |
-2 |     string.join(
-  |                --------------- '(' opened here
-...
-6 |     , " ")
-  |     ^
+3 |   let capitalized_words = list.map(words, (word) => string.to_lower(word) + string.capitalize(string.first(word)))
+  |                                                                                                            ^^^^
+error[E001]: type mismatch in call to string.capitalize(): expected String but got Option[String]
+  --> /tmp/dojo-title-case-2.almd:3:108
+  in call to string.capitalize()
+  hint: Fix the expression type or change the expected type
+  |
+3 |   let capitalized_words = list.map(words, (word) => string.to_lower(word) + string.capitalize(string.first(word)))
+  |                                                                                                            ^^^^
 
-1 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-title-case-2.almd:
 compile failed
 FAILED: /tmp/dojo-title-case-2.almd
@@ -140,31 +106,20 @@ FAILED: /tmp/dojo-title-case-2.almd
 ### Attempt 4 (FAIL)
 
 ```almide
-fn title_case(s: String) -> String = 
-    string.join(
-        string.split(s, " ").map(
-            (word) => string.capitalize(string.to_lower(word))
-        )
-    , " ")
+fn title_case(s: String) -> String = {
+  let words = string.split(s, " ")
+  let capitalized_words = list.map(words, (word) => string.to_lower(word) + match string.first(word) {
+    some(c) => string.capitalize(c),
+    none => ""
+  })
+  string.join(capitalized_words, " ")
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-title-case-3.almd
-error: Expected ')' to close function call opened at line 2:16
-  --> /tmp/dojo-title-case-3.almd:6:5
-  hint: Add ')' or check for a missing delimiter inside the function call
-  |
-2 |     string.join(
-  |                --------------- '(' opened here
-...
-6 |     , " ")
-  |     ^
-
-1 error(s) found
-Compile error for /tmp/dojo-title-case-3.almd:
-compile failed
 FAILED: /tmp/dojo-title-case-3.almd
 
 1/1 test file(s) failed

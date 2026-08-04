@@ -10,62 +10,53 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn insert(t: Tree, v: Int) -> Tree = 
+type Color = | Red | Black
+
+type Tree =
+  | Leaf
+  | Node(Color, Tree, Int, Tree)
+
+fn insert(t: Tree, v: Int) -> Tree =
   match t {
     Leaf => Node(Black, Leaf, v, Leaf)
-    Node(c, l, k, r) =>
-      if v < k then
-        let tl = insert l v
-        match (tl, l) {
-          (Leaf, _) => Node(c, tl, k, r)
-          (_, _) => Node(c, tl, k, r)
-        }
-      else if v > k then
-        let tr = insert r v
-        match (r, tr) {
-          (Leaf, _) => Node(c, l, k, tr)
-          (_, _) => Node(c, l, k, tr)
-        }
-      else
-        Node(c, l, k, r)
-  }
-  | balance(Node(Red, l, k, r)) =>
-    Node(Black, l, k, r)
-  | t => t
+    Node(c, l, x, r) =>
+      if x == v then t
+      else if x < v then balance(Node(Red, l, x, insert(r, v)))
+      else balance(Node(Red, insert(l, v), x, r))
 
-fn inorder(t: Tree) -> List[Int] = 
-  match t {
-    Leaf => List()
-    Node(c, l, k, r) => 
-      inorder l ++ [k] ++ inorder r
   }
 
-fn height(t: Tree) -> Int = 
+fn inorder(t: Tree) -> List[Int] =
   match t {
+    Leaf => []
+    Node(c, l, x, r) => inorder(l) + [x] + inorder(r)
+  }
+
+fn height(t: Tree) -> Int =
+  match t {
+    Leaf => 0
+    Node(c, l, _, r) => 1 + max(height(l), height(r))
+  }
+
+fn balance(t: Tree) -> Tree =
+  match t {
+    Node(Red, Node(Red, l1, x1, l2), x, Node(Red, r1, x2, r2)) =>
+      Node(Black, Node(Red, l1
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-red-black-tree-0.almd
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-red-black-tree-0.almd:6:9
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
-  |
-6 |         let tl = insert l v
-  |         ^^^
-error: Expected FatArrow at line 28:17 (got PlusPlus '++')
-  --> /tmp/dojo-red-black-tree-0.almd:28:17
-   |
-28 |       inorder l ++ [k] ++ inorder r
-   |                 ^
-error: Expected pattern at line 34:1 (got Test 'test')
+error: Expected ')' to close constructor call opened at line 32:23
   --> /tmp/dojo-red-black-tree-0.almd:34:1
-  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+  hint: Add ')' or check for a missing delimiter inside the constructor call
    |
+32 |       Node(Black, Node(Red, l1
+   |                       --------------- '(' opened here
+...
 34 | test "inorder sorted" { assert_eq(inorder(insert(insert(insert(Leaf, 5), 3), 8)), [3, 5, 8]) }
-   | ^
+   | ^^^^
 error: Expected ')' to close function call opened at line 46:20
   --> /tmp/dojo-red-black-tree-0.almd:46:22
   hint: Add ')' or check for a missing delimiter inside the function call
@@ -102,6 +93,13 @@ error: Expected ')' to close function call opened at line 52:12
    |
 52 |   assert_eq(inorder(t), 1...31)
    |                          ^^^
+error[E002]: undefined function 'max'
+  --> /tmp/dojo-red-black-tree-0.almd:26:51
+  in call to max()
+  hint: Check the function name
+   |
+26 |     Node(c, l, _, r) => 1 + max(height(l), height(r))
+   |                                                   ^
 error[E003]: undefined variable 't'
   --> /tmp/dojo-red-black-tree-0.almd:48:17
   in variable t
@@ -117,7 +115,7 @@ error[E003]: undefined variable 't'
 53 |   assert(height(t) < 11)
    |                 ^
 
-9 error(s) found
+8 error(s) found
 Compile error for /tmp/dojo-red-black-tree-0.almd:
 compile failed
 FAILED: /tmp/dojo-red-black-tree-0.almd
@@ -129,112 +127,152 @@ FAILED: /tmp/dojo-red-black-tree-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn insert(t: Tree, v: Int) -> Tree = 
+type Color = | Red | Black
+
+type Tree =
+  | Leaf
+  | Node(Color, Tree, Int, Tree)
+
+fn balance(t: Tree) -> Tree =
+  match t {
+    Node(Red, Node(Red, l1, x1, l2), x, Node(Red, r1, x2, r2)) =>
+      Node(Black, Node(Red, l1, x1, Node(Black, l2, x, r1)), x2, r2)
+    Node(Red, l, x, Node(Red, r1, x2, r2)) =>
+      Node(Black, Node(Red, l, x, r1), x2, Node(Black, r2, x, Leaf))
+    Node(Red, l, x, r) =>
+      Node(Black, l, x, r)
+    Node(c, l, x, r) => t
+  }
+
+fn insert(t: Tree, v: Int) -> Tree =
   match t {
     Leaf => Node(Black, Leaf, v, Leaf)
-    Node(c, l, k, r) =>
-      if v < k then
-        let tl = insert l v
-        match (tl, l) {
-          (Leaf, _) => Node(c, tl, k, r)
-          (Node(_, _, _, _), _) => Node(c, tl, k, r)
-        }
-      else if v > k then
-        let tr = insert r v
-        match (r, tr) {
-          (Leaf, _) => Node(c, l, k, tr)
-          (Node(_, _, _, _), _) => Node(c, l, k, tr)
-        }
-      else
-        Node(c, l, k, r)
-  }
-  | balance(Node(Red, l, k, r)) =>
-    Node(Black, l, k, r)
-  | t => t
-
-fn inorder(t: Tree) -> List[Int] = 
-  match t {
-    Leaf => List()
-    Node(c, l, k, r) => 
-      inorder l + [k] + inorder r
-  }
-
-fn height(t
+    Node(c, l, x, r) =>
+      if x == v then t
+      else if x < v then balance(Node(R
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-red-black-tree-1.almd
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-red-black-tree-1.almd:6:9
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+error: Expected ')' to close constructor call opened at line 23:38
+  --> /tmp/dojo-red-black-tree-1.almd:25:1
+  hint: Add ')' or check for a missing delimiter inside the constructor call
+   |
+23 |       else if x < v then balance(Node(R
+   |                                      --------------- '(' opened here
+...
+25 | test "inorder sorted" { assert_eq(inorder(insert(insert(insert(Leaf, 5), 3), 8)), [3, 5, 8]) }
+   | ^^^^
+error: Expected ')' to close function call opened at line 37:20
+  --> /tmp/dojo-red-black-tree-1.almd:37:22
+  hint: Add ')' or check for a missing delimiter inside the function call
+   |
+37 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, v))
+   |                    --------------- '(' opened here
+   |
+37 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, v))
+   |                      ^^^
+error: Expected ')' to close function call opened at line 38:12
+  --> /tmp/dojo-red-black-tree-1.almd:38:26
+  hint: Add ')' or check for a missing delimiter inside the function call
+   |
+38 |   assert_eq(inorder(t), 1...31)
+   |            --------------- '(' opened here
+   |
+38 |   assert_eq(inorder(t), 1...31)
+   |                          ^^^
+error: Expected ')' to close function call opened at line 42:20
+  --> /tmp/dojo-red-black-tree-1.almd:42:22
+  hint: Add ')' or check for a missing delimiter inside the function call
+   |
+42 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, 32 - v))
+   |                    --------------- '(' opened here
+   |
+42 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, 32 - v))
+   |                      ^^^
+error: Expected ')' to close function call opened at line 43:12
+  --> /tmp/dojo-red-black-tree-1.almd:43:26
+  hint: Add ')' or check for a missing delimiter inside the function call
+   |
+43 |   assert_eq(inorder(t), 1...31)
+   |            --------------- '(' opened here
+   |
+43 |   assert_eq(inorder(t), 1...31)
+   |                          ^^^
+error[E010]: non-exhaustive match: missing Leaf
+  --> /tmp/dojo-red-black-tree-1.almd:8:9
+  in match
+  hint: Add arms for Leaf, or use '_'
   |
-6 |         let tl = insert l v
-  |         ^^^
-error: Expected FatArrow at line 28:17 (got Plus '+')
-  --> /tmp/dojo-red-black-tree-1.almd:28:17
+8 |   match t {
+  |         ^
+error[E002]: undefined function 'inorder'
+  --> /tmp/dojo-red-black-tree-1.almd:25:78
+  in call to inorder()
+  hint: Check the function name
    |
-28 |       inorder l + [k] + inorder r
-   |                 ^
-error: Expected Colon at line 31:12 (got Newline '')
-  --> /tmp/dojo-red-black-tree-1.almd:31:12
+25 | test "inorder sorted" { assert_eq(inorder(insert(insert(insert(Leaf, 5), 3), 8)), [3, 5, 8]) }
+   |                                                                              ^
+error[E002]: undefined function 'height'
+  --> /tmp/dojo-red-black-tree-1.almd:26:45
+  in call to height()
+  hint: Check the function name
    |
-31 | fn height(t
-   |            ^
-error: Expected ')' to close function call opened at line 45:20
-  --> /tmp/dojo-red-black-tree-1.almd:45:22
-  hint: Add ')' or check for a missing delimiter inside the function call
+26 | test "empty tree height" { assert_eq(height(Leaf), 0) }
+   |                                             ^^^^
+error[E002]: undefined function 'height'
+  --> /tmp/dojo-red-black-tree-1.almd:27:59
+  in call to height()
+  hint: Check the function name
    |
-45 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, v))
-   |                    --------------- '(' opened here
+27 | test "single node height" { assert_eq(height(insert(Leaf, 42)), 1) }
+   |                                                           ^^
+error[E002]: undefined function 'inorder'
+  --> /tmp/dojo-red-black-tree-1.almd:30:21
+  in call to inorder()
+  hint: Check the function name
    |
-45 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, v))
-   |                      ^^^
-error: Expected ')' to close function call opened at line 46:12
-  --> /tmp/dojo-red-black-tree-1.almd:46:26
-  hint: Add ')' or check for a missing delimiter inside the function call
+30 |   assert_eq(inorder(t), [1, 2, 3])
+   |                     ^
+error[E002]: undefined function 'inorder'
+  --> /tmp/dojo-red-black-tree-1.almd:34:21
+  in call to inorder()
+  hint: Check the function name
    |
-46 |   assert_eq(inorder(t), 1...31)
-   |            --------------- '(' opened here
-   |
-46 |   assert_eq(inorder(t), 1...31)
-   |                          ^^^
-error: Expected ')' to close function call opened at line 50:20
-  --> /tmp/dojo-red-black-tree-1.almd:50:22
-  hint: Add ')' or check for a missing delimiter inside the function call
-   |
-50 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, 32 - v))
-   |                    --------------- '(' opened here
-   |
-50 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, 32 - v))
-   |                      ^^^
-error: Expected ')' to close function call opened at line 51:12
-  --> /tmp/dojo-red-black-tree-1.almd:51:26
-  hint: Add ')' or check for a missing delimiter inside the function call
-   |
-51 |   assert_eq(inorder(t), 1...31)
-   |            --------------- '(' opened here
-   |
-51 |   assert_eq(inorder(t), 1...31)
-   |                          ^^^
+34 |   assert_eq(inorder(t), [1, 4, 6, 10, 12, 17, 20])
+   |                     ^
 error[E003]: undefined variable 't'
-  --> /tmp/dojo-red-black-tree-1.almd:47:17
+  --> /tmp/dojo-red-black-tree-1.almd:39:17
   in variable t
   hint: Check the variable name
    |
-47 |   assert(height(t) < 11)
+39 |   assert(height(t) < 11)
+   |                 ^
+error[E002]: undefined function 'height'
+  --> /tmp/dojo-red-black-tree-1.almd:39:17
+  in call to height()
+  hint: Check the function name
+   |
+39 |   assert(height(t) < 11)
    |                 ^
 error[E003]: undefined variable 't'
-  --> /tmp/dojo-red-black-tree-1.almd:52:17
+  --> /tmp/dojo-red-black-tree-1.almd:44:17
   in variable t
   hint: Check the variable name
    |
-52 |   assert(height(t) < 11)
+44 |   assert(height(t) < 11)
+   |                 ^
+error[E002]: undefined function 'height'
+  --> /tmp/dojo-red-black-tree-1.almd:44:17
+  in call to height()
+  hint: Check the function name
+   |
+44 |   assert(height(t) < 11)
    |                 ^
 
-9 error(s) found
+15 error(s) found
 Compile error for /tmp/dojo-red-black-tree-1.almd:
 compile failed
 FAILED: /tmp/dojo-red-black-tree-1.almd
@@ -246,149 +284,183 @@ FAILED: /tmp/dojo-red-black-tree-1.almd
 ### Attempt 3 (FAIL)
 
 ```almide
-fn insert(t: Tree, v: Int) -> Tree = 
+type Color = | Red | Black
+
+type Tree =
+  | Leaf
+  | Node(Color, Tree, Int, Tree)
+
+fn balance(t: Tree) -> Tree =
   match t {
-    Leaf => Node(Black, Leaf, v, Leaf)
-    Node(c, l, k, r) =>
-      if v < k then
-        let tl = insert l v
-        match (tl, l) {
-          (Leaf, _) => Node(c, tl, k, r)
-          (Node(_, _, _, _), _) => Node(c, tl, k, r)
-        }
-      else if v > k then
-        let tr = insert r v
-        match (r, tr) {
-          (Leaf, _) => Node(c, l, k, tr)
-          (Node(_, _, _, _), _) => Node(c, l, k, tr)
-        }
-      else
-        Node(c, l, k, r)
+    Node(Red, Node(Red, l1, x1, l2), x, Node(Red, r1, x2, r2)) =>
+      Node(Black, Node(Red, l1, x1, Node(Black, l2, x, r1)), x2, r2)
+    Node(Red, l, x, Node(Red, r1, x2, r2)) =>
+      Node(Black, Node(Red, l, x, r1), x2, Node(Black, r2, x, Leaf))
+    Node(Red, l, x, r) =>
+      Node(Black, l, x, r)
+    Node(c, l, x, r) => t
   }
-  | balance(Node(Red, l, k, r)) =>
-    let l_height = height l
-    let r_height = height r
-    if l_height >= r_height then
-      let left = balance l
-      Node(Black, left, k, r)
-    else
-      let right = balance r
-      Node(Black, l, k, right)
-  |
+
+fn inorder(t: Tree) -> List[Int] =
+  match t {
+    Leaf => list.empty()
+    Node(_, l, x, r) => list.concat(list.concat(inorder(l), [x]), inorder(r))
+  }
+
+fn height(t: Tree) -> Int =
+  match t
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-red-black-tree-2.almd
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-red-black-tree-2.almd:6:9
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+error: Expected LBrace at line 27:1 (got Test 'test')
+  --> /tmp/dojo-red-black-tree-2.almd:27:1
+  hint: `test "..."` is a top-level form. Got here mid-declaration — either the previous fn/type/impl is missing a closing `}`, or the test block is in a context (e.g. harness-submitted code) that doesn't accept one. Remove the test block or close the prior declaration.
+   |
+27 | test "inorder sorted" { assert_eq(inorder(insert(insert(insert(Leaf, 5), 3), 8)), [3, 5, 8]) }
+   | ^
+error: Expected ')' to close function call opened at line 39:20
+  --> /tmp/dojo-red-black-tree-2.almd:39:22
+  hint: Add ')' or check for a missing delimiter inside the function call
+   |
+39 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, v))
+   |                    --------------- '(' opened here
+   |
+39 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, v))
+   |                      ^^^
+error: Expected ')' to close function call opened at line 40:12
+  --> /tmp/dojo-red-black-tree-2.almd:40:26
+  hint: Add ')' or check for a missing delimiter inside the function call
+   |
+40 |   assert_eq(inorder(t), 1...31)
+   |            --------------- '(' opened here
+   |
+40 |   assert_eq(inorder(t), 1...31)
+   |                          ^^^
+error: Expected ')' to close function call opened at line 44:20
+  --> /tmp/dojo-red-black-tree-2.almd:44:22
+  hint: Add ')' or check for a missing delimiter inside the function call
+   |
+44 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, 32 - v))
+   |                    --------------- '(' opened here
+   |
+44 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, 32 - v))
+   |                      ^^^
+error: Expected ')' to close function call opened at line 45:12
+  --> /tmp/dojo-red-black-tree-2.almd:45:26
+  hint: Add ')' or check for a missing delimiter inside the function call
+   |
+45 |   assert_eq(inorder(t), 1...31)
+   |            --------------- '(' opened here
+   |
+45 |   assert_eq(inorder(t), 1...31)
+   |                          ^^^
+error[E010]: non-exhaustive match: missing Leaf
+  --> /tmp/dojo-red-black-tree-2.almd:8:9
+  in match
+  hint: Add arms for Leaf, or use '_'
   |
-6 |         let tl = insert l v
-  |         ^^^
-error: Expected ')' to close function call opened at line 43:20
-  --> /tmp/dojo-red-black-tree-2.almd:43:22
-  hint: Add ')' or check for a missing delimiter inside the function call
+8 |   match t {
+  |         ^
+error[E002]: undefined function 'list.empty'
+  --> /tmp/dojo-red-black-tree-2.almd:20:23
+  in call to list.empty()
+  hint: Did you mean `[] (empty list literal)`?
    |
-43 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, v))
-   |                    --------------- '(' opened here
+20 |     Leaf => list.empty()
+   |                       ^
+error[E002]: undefined function 'list.concat'
+  --> /tmp/dojo-red-black-tree-2.almd:21:62
+  in call to list.concat()
+  hint: No function 'concat' in module 'list'. See docs/CHEATSHEET.md for available functions
    |
-43 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, v))
-   |                      ^^^
-error: Expected ')' to close function call opened at line 44:12
-  --> /tmp/dojo-red-black-tree-2.almd:44:26
-  hint: Add ')' or check for a missing delimiter inside the function call
+21 |     Node(_, l, x, r) => list.concat(list.concat(inorder(l), [x]), inorder(r))
+   |                                                              ^
+error[E002]: undefined function 'list.concat'
+  --> /tmp/dojo-red-black-tree-2.almd:21:75
+  in call to list.concat()
+  hint: No function 'concat' in module 'list'. See docs/CHEATSHEET.md for available functions
    |
-44 |   assert_eq(inorder(t), 1...31)
-   |            --------------- '(' opened here
+21 |     Node(_, l, x, r) => list.concat(list.concat(inorder(l), [x]), inorder(r))
+   |                                                                           ^
+error[E002]: undefined function 'insert'
+  --> /tmp/dojo-red-black-tree-2.almd:27:70
+  in call to insert()
+  hint: Did you mean `assert`?
+  try:
+      // insert(...)  →  assert(...)
+      assert(...)
    |
-44 |   assert_eq(inorder(t), 1...31)
-   |                          ^^^
-error: Expected ')' to close function call opened at line 48:20
-  --> /tmp/dojo-red-black-tree-2.almd:48:22
-  hint: Add ')' or check for a missing delimiter inside the function call
+27 | test "inorder sorted" { assert_eq(inorder(insert(insert(insert(Leaf, 5), 3), 8)), [3, 5, 8]) }
+   |                                                                      ^
+error[E002]: undefined function 'insert'
+  --> /tmp/dojo-red-black-tree-2.almd:27:74
+  in call to insert()
+  hint: Did you mean `assert`?
+  try:
+      // insert(...)  →  assert(...)
+      assert(...)
    |
-48 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, 32 - v))
-   |                    --------------- '(' opened here
+27 | test "inorder sorted" { assert_eq(inorder(insert(insert(insert(Leaf, 5), 3), 8)), [3, 5, 8]) }
+   |                                                                          ^
+error[E002]: undefined function 'insert'
+  --> /tmp/dojo-red-black-tree-2.almd:27:78
+  in call to insert()
+  hint: Did you mean `assert`?
+  try:
+      // insert(...)  →  assert(...)
+      assert(...)
    |
-48 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, 32 - v))
-   |                      ^^^
-error: Expected ')' to close function call opened at line 49:12
-  --> /tmp/dojo-red-black-tree-2.almd:49:26
-  hint: Add ')' or check for a missing delimiter inside the function call
-   |
-49 |   assert_eq(inorder(t), 1...31)
-   |            --------------- '(' opened here
-   |
-49 |   assert_eq(inorder(t), 1...31)
-   |                          ^^^
-error[E002]: undefined function 'inorder'
-  --> /tmp/dojo-red-black-tree-2.almd:31:78
-  in call to inorder()
-  hint: Check the function name
-   |
-31 | test "inorder sorted" { assert_eq(inorder(insert(insert(insert(Leaf, 5), 3), 8)), [3, 5, 8]) }
+27 | test "inorder sorted" { assert_eq(inorder(insert(insert(insert(Leaf, 5), 3), 8)), [3, 5, 8]) }
    |                                                                              ^
-error[E002]: undefined function 'height'
-  --> /tmp/dojo-red-black-tree-2.almd:32:45
-  in call to height()
-  hint: Check the function name
+error[E002]: undefined function 'insert'
+  --> /tmp/dojo-red-black-tree-2.almd:29:59
+  in call to insert()
+  hint: Did you mean `assert`?
+  try:
+      // insert(...)  →  assert(...)
+      assert(...)
    |
-32 | test "empty tree height" { assert_eq(height(Leaf), 0) }
-   |                                             ^^^^
-error[E002]: undefined function 'height'
-  --> /tmp/dojo-red-black-tree-2.almd:33:59
-  in call to height()
-  hint: Check the function name
-   |
-33 | test "single node height" { assert_eq(height(insert(Leaf, 42)), 1) }
+29 | test "single node height" { assert_eq(height(insert(Leaf, 42)), 1) }
    |                                                           ^^
-error[E002]: undefined function 'inorder'
-  --> /tmp/dojo-red-black-tree-2.almd:36:21
-  in call to inorder()
-  hint: Check the function name
+error[E002]: undefined function 'insert'
+  --> /tmp/dojo-red-black-tree-2.almd:31:68
+  in call to insert()
+  hint: Did you mean `assert`?
+  try:
+      // insert(...)  →  assert(...)
+      assert(...)
    |
-36 |   assert_eq(inorder(t), [1, 2, 3])
-   |                     ^
-error[E002]: undefined function 'inorder'
-  --> /tmp/dojo-red-black-tree-2.almd:40:21
-  in call to inorder()
-  hint: Check the function name
+31 |   let t = list.fold([2, 1, 2, 3, 1], Leaf, (acc, v) => insert(acc, v))
+   |                                                                    ^
+error[E002]: undefined function 'insert'
+  --> /tmp/dojo-red-black-tree-2.almd:35:81
+  in call to insert()
+  hint: Did you mean `assert`?
+  try:
+      // insert(...)  →  assert(...)
+      assert(...)
    |
-40 |   assert_eq(inorder(t), [1, 4, 6, 10, 12, 17, 20])
-   |                     ^
+35 |   let t = list.fold([10, 4, 17, 1, 6, 12, 20, 4], Leaf, (acc, v) => insert(acc, v))
+   |                                                                                 ^
 error[E003]: undefined variable 't'
-  --> /tmp/dojo-red-black-tree-2.almd:45:17
+  --> /tmp/dojo-red-black-tree-2.almd:41:17
   in variable t
   hint: Check the variable name
    |
-45 |   assert(height(t) < 11)
-   |                 ^
-error[E002]: undefined function 'height'
-  --> /tmp/dojo-red-black-tree-2.almd:45:17
-  in call to height()
-  hint: Check the function name
-   |
-45 |   assert(height(t) < 11)
+41 |   assert(height(t) < 11)
    |                 ^
 error[E003]: undefined variable 't'
-  --> /tmp/dojo-red-black-tree-2.almd:50:17
+  --> /tmp/dojo-red-black-tree-2.almd:46:17
   in variable t
   hint: Check the variable name
    |
-50 |   assert(height(t) < 11)
-   |                 ^
-error[E002]: undefined function 'height'
-  --> /tmp/dojo-red-black-tree-2.almd:50:17
-  in call to height()
-  hint: Check the function name
-   |
-50 |   assert(height(t) < 11)
+46 |   assert(height(t) < 11)
    |                 ^
 
-14 error(s) found
+17 error(s) found
 Compile error for /tmp/dojo-red-black-tree-2.almd:
 compile failed
 FAILED: /tmp/dojo-red-black-tree-2.almd
@@ -406,111 +478,141 @@ type Tree =
   | Leaf
   | Node(Color, Tree, Int, Tree)
 
-fn inorder(t: Tree) -> List[Int] = 
+fn balance(t: Tree) -> Tree =
   match t {
-    Leaf => []
-    Node(_, l, k, r) => list.concat(inorder(l), k :: inorder(r))
+    Node(Red, Node(Red, l1, x1, l2), x, Node(Red, r1, x2, r2)) =>
+      Node(Black, Node(Red, l1, x1, Node(Black, l2, x, r1)), x2, r2)
+    Node(Red, l, x, Node(Red, r1, x2, r2)) =>
+      Node(Black, Node(Red, l, x, r1), x2, Node(Black, r2, x, Leaf))
+    Node(Red, l, x, r) =>
+      Node(Black, l, x, r)
+    Node(c, l, x, r) => t
   }
 
-fn height(t: Tree) -> Int = 
+fn insert(t: Tree, v: Int) -> Tree =
   match t {
-    Leaf => 0
-    Node(_, l, _, r) => 1 + max(height(l), height(r))
-  }
-
-fn insert(t: Tree, v: Int) -> Tree = 
-  match t {
-    Leaf => Node(Black, Leaf, v, Leaf)
-    Node(c, l, k, r) =>
-      if v < k then
-        let tl = insert l v
-        match (tl, l) {
-          (Leaf, _) => Node(c, tl, k, r)
-          (Node(_, _, _, _), _) => Node(c, tl, k, r)
-        }
-      else if v > k then
-        let tr = insert r v
-        match (r, tr) {
-          (Leaf, _) => Node(c, l, k, tr)
-          (Node(_, _, _,
+    Leaf => Node(Red, Leaf, v, Leaf)
+    Node(c, l, x, r) =>
+      if v < x then balance(Node(Red, insert(l, v), x,
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-red-black-tree-3.almd
-error: '::' is not valid in Almide at line 10:51
-  --> /tmp/dojo-red-black-tree-3.almd:10:51
-  hint: Almide uses '.' for module access, not '::'. Write `list.map(...)` instead of `list::map(...)`
+error: Expected expression at line 24:1 (got Test 'test')
+  --> /tmp/dojo-red-black-tree-3.almd:24:1
    |
-10 |     Node(_, l, k, r) => list.concat(inorder(l), k :: inorder(r))
-   |                                                   ^
-error: 'let' is not an expression in Almide
-  --> /tmp/dojo-red-black-tree-3.almd:24:9
-  in let-in
-  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
-   |
-24 |         let tl = insert l v
-   |         ^^^
-error: Expected ')' to close function call opened at line 47:20
-  --> /tmp/dojo-red-black-tree-3.almd:47:22
+24 | test "inorder sorted" { assert_eq(inorder(insert(insert(insert(Leaf, 5), 3), 8)), [3, 5, 8]) }
+   | ^
+error: Expected ')' to close function call opened at line 36:20
+  --> /tmp/dojo-red-black-tree-3.almd:36:22
   hint: Add ')' or check for a missing delimiter inside the function call
    |
-47 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, v))
+36 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, v))
    |                    --------------- '(' opened here
    |
-47 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, v))
+36 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, v))
    |                      ^^^
-error: Expected ')' to close function call opened at line 48:12
-  --> /tmp/dojo-red-black-tree-3.almd:48:26
+error: Expected ')' to close function call opened at line 37:12
+  --> /tmp/dojo-red-black-tree-3.almd:37:26
   hint: Add ')' or check for a missing delimiter inside the function call
    |
-48 |   assert_eq(inorder(t), 1...31)
+37 |   assert_eq(inorder(t), 1...31)
    |            --------------- '(' opened here
    |
-48 |   assert_eq(inorder(t), 1...31)
+37 |   assert_eq(inorder(t), 1...31)
    |                          ^^^
-error: Expected ')' to close function call opened at line 52:20
-  --> /tmp/dojo-red-black-tree-3.almd:52:22
+error: Expected ')' to close function call opened at line 41:20
+  --> /tmp/dojo-red-black-tree-3.almd:41:22
   hint: Add ')' or check for a missing delimiter inside the function call
    |
-52 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, 32 - v))
+41 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, 32 - v))
    |                    --------------- '(' opened here
    |
-52 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, 32 - v))
+41 |   let t = list.fold(1...31, Leaf, (acc, v) => insert(acc, 32 - v))
    |                      ^^^
-error: Expected ')' to close function call opened at line 53:12
-  --> /tmp/dojo-red-black-tree-3.almd:53:26
+error: Expected ')' to close function call opened at line 42:12
+  --> /tmp/dojo-red-black-tree-3.almd:42:26
   hint: Add ')' or check for a missing delimiter inside the function call
    |
-53 |   assert_eq(inorder(t), 1...31)
+42 |   assert_eq(inorder(t), 1...31)
    |            --------------- '(' opened here
    |
-53 |   assert_eq(inorder(t), 1...31)
+42 |   assert_eq(inorder(t), 1...31)
    |                          ^^^
-error[E002]: undefined function 'max'
-  --> /tmp/dojo-red-black-tree-3.almd:16:51
-  in call to max()
+error[E010]: non-exhaustive match: missing Leaf
+  --> /tmp/dojo-red-black-tree-3.almd:8:9
+  in match
+  hint: Add arms for Leaf, or use '_'
+  |
+8 |   match t {
+  |         ^
+error[E002]: undefined function 'inorder'
+  --> /tmp/dojo-red-black-tree-3.almd:24:78
+  in call to inorder()
   hint: Check the function name
    |
-16 |     Node(_, l, _, r) => 1 + max(height(l), height(r))
-   |                                                   ^
+24 | test "inorder sorted" { assert_eq(inorder(insert(insert(insert(Leaf, 5), 3), 8)), [3, 5, 8]) }
+   |                                                                              ^
+error[E002]: undefined function 'height'
+  --> /tmp/dojo-red-black-tree-3.almd:25:45
+  in call to height()
+  hint: Check the function name
+   |
+25 | test "empty tree height" { assert_eq(height(Leaf), 0) }
+   |                                             ^^^^
+error[E002]: undefined function 'height'
+  --> /tmp/dojo-red-black-tree-3.almd:26:59
+  in call to height()
+  hint: Check the function name
+   |
+26 | test "single node height" { assert_eq(height(insert(Leaf, 42)), 1) }
+   |                                                           ^^
+error[E002]: undefined function 'inorder'
+  --> /tmp/dojo-red-black-tree-3.almd:29:21
+  in call to inorder()
+  hint: Check the function name
+   |
+29 |   assert_eq(inorder(t), [1, 2, 3])
+   |                     ^
+error[E002]: undefined function 'inorder'
+  --> /tmp/dojo-red-black-tree-3.almd:33:21
+  in call to inorder()
+  hint: Check the function name
+   |
+33 |   assert_eq(inorder(t), [1, 4, 6, 10, 12, 17, 20])
+   |                     ^
 error[E003]: undefined variable 't'
-  --> /tmp/dojo-red-black-tree-3.almd:49:17
+  --> /tmp/dojo-red-black-tree-3.almd:38:17
   in variable t
   hint: Check the variable name
    |
-49 |   assert(height(t) < 11)
+38 |   assert(height(t) < 11)
+   |                 ^
+error[E002]: undefined function 'height'
+  --> /tmp/dojo-red-black-tree-3.almd:38:17
+  in call to height()
+  hint: Check the function name
+   |
+38 |   assert(height(t) < 11)
    |                 ^
 error[E003]: undefined variable 't'
-  --> /tmp/dojo-red-black-tree-3.almd:54:17
+  --> /tmp/dojo-red-black-tree-3.almd:43:17
   in variable t
   hint: Check the variable name
    |
-54 |   assert(height(t) < 11)
+43 |   assert(height(t) < 11)
+   |                 ^
+error[E002]: undefined function 'height'
+  --> /tmp/dojo-red-black-tree-3.almd:43:17
+  in call to height()
+  hint: Check the function name
+   |
+43 |   assert(height(t) < 11)
    |                 ^
 
-9 error(s) found
+15 error(s) found
 Compile error for /tmp/dojo-red-black-tree-3.almd:
 compile failed
 FAILED: /tmp/dojo-red-black-tree-3.almd

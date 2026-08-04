@@ -10,7 +10,8 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn repeat(s: String, n: Int) -> String = 
-  if n == 0 then "" 
+fn repeat(s: String, n: Int) -> String = {
+  if n <= 0 then ""
   else s + repeat(s, n - 1)
+}
 ```

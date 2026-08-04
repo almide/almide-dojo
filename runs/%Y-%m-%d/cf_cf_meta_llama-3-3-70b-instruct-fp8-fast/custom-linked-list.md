@@ -20,7 +20,7 @@ fn from_list(xs: List[Int]) -> MyList =
 fn to_list(ml: MyList) -> List[Int] =
   match ml {
     Nil => []
-    Cons(head, tail) => [head] + to_list(tail)
+    Cons(head, tail) => head :: to_list(tail)
   }
 
 fn my_len(ml: MyList) -> Int =
@@ -46,20 +46,27 @@ fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
   }
 
 fn my_reverse(ml: MyList) -> MyList =
-  match
+  match ml {
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-custom-linked-list-0.almd
-error: Expected expression at line 39:1 (got Test 'test')
+error: Expected pattern at line 11:30 (got Colon ':')
+  --> /tmp/dojo-custom-linked-list-0.almd:11:30
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+   |
+11 |     Cons(head, tail) => head :: to_list(tail)
+   |                              ^
+error: Expected pattern at line 39:1 (got Test 'test')
   --> /tmp/dojo-custom-linked-list-0.almd:39:1
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
    |
 39 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
    | ^
 
-1 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-custom-linked-list-0.almd:
 compile failed
 FAILED: /tmp/dojo-custom-linked-list-0.almd
@@ -81,7 +88,7 @@ fn from_list(xs: List[Int]) -> MyList =
 fn to_list(ml: MyList) -> List[Int] =
   match ml {
     Nil => []
-    Cons(head, tail) => [head] + to_list(tail)
+    Cons(head, tail) => list.cons(head, to_list(tail))
   }
 
 fn my_len(ml: MyList) -> Int =
@@ -120,8 +127,18 @@ error: Expected FatArrow at line 38:8 (got Newline '')
    |
 38 |     Nil
    |        ^
+error[E002]: undefined function 'list.cons'
+  --> /tmp/dojo-custom-linked-list-1.almd:11:49
+  in call to list.cons()
+  hint: Did you mean `list.count`?
+  try:
+      // list.cons(...)  →  list.count(...)
+      list.count(...)
+   |
+11 |     Cons(head, tail) => list.cons(head, to_list(tail))
+   |                                                 ^^^^
 
-1 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-custom-linked-list-1.almd:
 compile failed
 FAILED: /tmp/dojo-custom-linked-list-1.almd

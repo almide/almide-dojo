@@ -3,8 +3,7 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: type-error
-- **diagnostic code**: `E005`
+- **category**: parse-error
 
 ## Attempts
 
@@ -12,27 +11,35 @@
 
 ```almide
 fn encrypt(text: String, shift: Int) -> String {
-  string.map(text, (c) => {
-    if string.is_lower(c) {
-      let cp = string.codepoint(c);
-      let shifted_cp = ((cp - 97 + shift) % 26) + 97;
-      string.from_codepoint(shifted_cp)
-    } else {
-      c
+  let chars = string.chars(text);
+  let encrypted_chars = chars.map(
+    (c) => {
+      let codepoint = string.codepoint(c);
+      if (codepoint >= 97 && codepoint <= 122) {
+        let shifted_codepoint = (codepoint - 97 + shift) % 26 + 97;
+        string.from_codepoint(shifted_codepoint)
+      } else {
+        c
+      }
     }
-  })
+  );
+  string.join(encrypted_chars, "")
 }
 
 fn decrypt(text: String, shift: Int) -> String {
-  string.map(text, (c) => {
-    if string.is_lower(c) {
-      let cp = string.codepoint(c);
-      let shifted_cp = ((cp - 97 - shift + 26) % 26) + 97;
-      string.from_codepoint(shifted_cp)
-    } else {
-      c
+  let chars = string.chars(text);
+  let decrypted_chars = chars.map(
+    (c) => {
+      let codepoint = string.codepoint(c);
+      if (codepoint >= 97 && codepoint <= 122) {
+        let shifted_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
+        string.from_codepoint(shifted_codepoint)
+      } else {
+        c
+      }
     }
-  })
+  );
+  string.join(decrypted_chars, "")
 }
 ```
 
@@ -46,11 +53,11 @@ error: Missing '=' before function body at line 1:48
   |
 1 | fn encrypt(text: String, shift: Int) -> String {
   |                                                ^
-error: Missing '=' before function body at line 13:48
-  --> /tmp/dojo-caesar-cipher-0.almd:13:48
+error: Missing '=' before function body at line 17:48
+  --> /tmp/dojo-caesar-cipher-0.almd:17:48
   hint: Almide requires '=' before the body. Write: fn decrypt(...) -> Type = { ... }
    |
-13 | fn decrypt(text: String, shift: Int) -> String {
+17 | fn decrypt(text: String, shift: Int) -> String {
    |                                                ^
 
 2 error(s) found
@@ -65,63 +72,99 @@ FAILED: /tmp/dojo-caesar-cipher-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn encrypt(text: String, shift: Int) -> String = string.map(text, (c) => {
-  if string.is_lower(c) {
-    let cp = string.codepoint(c);
-    let shifted_cp = ((cp - 97 + shift) % 26) + 97;
-    string.from_codepoint(shifted_cp)
-  } else {
-    c
-  }
-})
+fn encrypt(text: String, shift: Int) -> String = {
+  let chars = string.chars(text);
+  let encrypted_chars = chars.map(
+    (c) => {
+      let codepoint = string.codepoint(c);
+      if (codepoint >= 97 && codepoint <= 122) {
+        let shifted_codepoint = (codepoint - 97 + shift) % 26 + 97;
+        string.from_codepoint(shifted_codepoint)
+      } else {
+        c
+      }
+    }
+  );
+  string.join(encrypted_chars, "")
+}
 
-fn decrypt(text: String, shift: Int) -> String = string.map(text, (c) => {
-  if string.is_lower(c) {
-    let cp = string.codepoint(c);
-    let shifted_cp = ((cp - 97 - shift + 26) % 26) + 97;
-    string.from_codepoint(shifted_cp)
-  } else {
-    c
-  }
-})
+fn decrypt(text: String, shift: Int) -> String = {
+  let chars = string.chars(text);
+  let decrypted_chars = chars.map(
+    (c) => {
+      let codepoint = string.codepoint(c);
+      if (codepoint >= 97 && codepoint <= 122) {
+        let shifted_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
+        string.from_codepoint(shifted_codepoint)
+      } else {
+        c
+      }
+    }
+  );
+  string.join(decrypted_chars, "")
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-caesar-cipher-1.almd
-error: Expected Then at line 2:25 (got LBrace '{')
-  --> /tmp/dojo-caesar-cipher-1.almd:2:25
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+error: '&&' is not valid in Almide at line 6:27
+  --> /tmp/dojo-caesar-cipher-1.almd:6:27
+  hint: Use 'and' for logical AND. Example: if a and b then ...
   |
-2 |   if string.is_lower(c) {
-  |                         ^
-error: Expected ')' to close function call opened at line 1:60
-  --> /tmp/dojo-caesar-cipher-1.almd:6:5
+6 |       if (codepoint >= 97 && codepoint <= 122) {
+  |                           ^
+error: Expected ')' to close function call opened at line 3:34
+  --> /tmp/dojo-caesar-cipher-1.almd:9:9
   hint: Add ')' or check for a missing delimiter inside the function call
   |
-1 | fn encrypt(text: String, shift: Int) -> String = string.map(text, (c) => {
-  |                                                            --------------- '(' opened here
+3 |   let encrypted_chars = chars.map(
+  |                                  --------------- '(' opened here
 ...
-6 |   } else {
-  |     ^^^^
-error: Expected Then at line 12:25 (got LBrace '{')
-  --> /tmp/dojo-caesar-cipher-1.almd:12:25
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+9 |       } else {
+  |         ^^^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 12:5 (got RBrace '}')
+  --> /tmp/dojo-caesar-cipher-1.almd:12:5
    |
-12 |   if string.is_lower(c) {
-   |                         ^
-error: Expected ')' to close function call opened at line 11:60
-  --> /tmp/dojo-caesar-cipher-1.almd:16:5
+12 |     }
+   |     ^
+error: '&&' is not valid in Almide at line 22:27
+  --> /tmp/dojo-caesar-cipher-1.almd:22:27
+  hint: Use 'and' for logical AND. Example: if a and b then ...
+   |
+22 |       if (codepoint >= 97 && codepoint <= 122) {
+   |                           ^
+error: Expected ')' to close function call opened at line 19:34
+  --> /tmp/dojo-caesar-cipher-1.almd:25:9
   hint: Add ')' or check for a missing delimiter inside the function call
    |
-11 | fn decrypt(text: String, shift: Int) -> String = string.map(text, (c) => {
-   |                                                            --------------- '(' opened here
+19 |   let decrypted_chars = chars.map(
+   |                                  --------------- '(' opened here
 ...
-16 |   } else {
-   |     ^^^^
+25 |       } else {
+   |         ^^^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 28:5 (got RBrace '}')
+  --> /tmp/dojo-caesar-cipher-1.almd:28:5
+   |
+28 |     }
+   |     ^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-caesar-cipher-1.almd:10:9
+  in variable c
+  hint: Check the variable name
+   |
+10 |         c
+   |         ^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-caesar-cipher-1.almd:26:9
+  in variable c
+  hint: Check the variable name
+   |
+26 |         c
+   |         ^
 
-4 error(s) found
+8 error(s) found
 Compile error for /tmp/dojo-caesar-cipher-1.almd:
 compile failed
 FAILED: /tmp/dojo-caesar-cipher-1.almd
@@ -133,126 +176,99 @@ FAILED: /tmp/dojo-caesar-cipher-1.almd
 ### Attempt 3 (FAIL)
 
 ```almide
-fn encrypt(text: String, shift: Int) -> String = string.map(text, (c) => {
-  if string.is_lower(c) then string.from_codepoint(((string.codepoint(c) - 97 + shift) % 26) + 97) else c
-})
+fn encrypt(text: String, shift: Int) -> String = {
+  let chars = string.chars(text);
+  let encrypted_chars = chars.map(
+    (c) => {
+      let codepoint = string.codepoint(c);
+      if (codepoint >= 97 and codepoint <= 122) {
+        let shifted_codepoint = (codepoint - 97 + shift) % 26 + 97;
+        string.from_codepoint(shifted_codepoint)
+      } else {
+        c
+      }
+    }
+  );
+  string.join(encrypted_chars, "")
+}
 
-fn decrypt(text: String, shift: Int) -> String = string.map(text, (c) => {
-  if string.is_lower(c) then string.from_codepoint(((string.codepoint(c) - 97 - shift + 26) % 26) + 97) else c
-})
+fn decrypt(text: String, shift: Int) -> String = {
+  let chars = string.chars(text);
+  let decrypted_chars = chars.map(
+    (c) => {
+      let codepoint = string.codepoint(c);
+      if (codepoint >= 97 and codepoint <= 122) {
+        let shifted_codepoint = (codepoint - 97 - shift + 26) % 26 + 97;
+        string.from_codepoint(shifted_codepoint)
+      } else {
+        c
+      }
+    }
+  );
+  string.join(decrypted_chars, "")
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-caesar-cipher-2.almd
-error: operator '-' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-2.almd:2:76
-  in operator -
-  hint: Use numeric types (Int or Float)
+error: Expected Then at line 6:49 (got LBrace '{')
+  --> /tmp/dojo-caesar-cipher-2.almd:6:49
+  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
   |
-2 |   if string.is_lower(c) then string.from_codepoint(((string.codepoint(c) - 97 + shift) % 26) + 97) else c
-  |                                                                            ^^
-error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-2.almd:2:81
-  in operator +
-  hint: Use + with numeric types, String, or List
+6 |       if (codepoint >= 97 and codepoint <= 122) {
+  |                                                 ^
+error: Expected ')' to close function call opened at line 3:34
+  --> /tmp/dojo-caesar-cipher-2.almd:9:9
+  hint: Add ')' or check for a missing delimiter inside the function call
   |
-2 |   if string.is_lower(c) then string.from_codepoint(((string.codepoint(c) - 97 + shift) % 26) + 97) else c
-  |                                                                                 ^^^^^
-error: operator '%' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-2.almd:2:90
-  in operator %
-  hint: Use numeric types (Int or Float)
-  |
-2 |   if string.is_lower(c) then string.from_codepoint(((string.codepoint(c) - 97 + shift) % 26) + 97) else c
-  |                                                                                          ^^
-error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-2.almd:2:96
-  in operator +
-  hint: Use + with numeric types, String, or List
-  |
-2 |   if string.is_lower(c) then string.from_codepoint(((string.codepoint(c) - 97 + shift) % 26) + 97) else c
-  |                                                                                                ^^
-error[E005]: argument 'n' expects Int but got Option[Int]
-  --> /tmp/dojo-caesar-cipher-2.almd:2:96
-  in call to string.from_codepoint()
-  hint: Fix the argument type
-  |
-2 |   if string.is_lower(c) then string.from_codepoint(((string.codepoint(c) - 97 + shift) % 26) + 97) else c
-  |                                                                                                ^^
-error[E002]: undefined function 'string.map'
-  --> /tmp/dojo-caesar-cipher-2.almd:2:105
-  in call to string.map()
-  hint: No function 'map' in module 'string'. See docs/CHEATSHEET.md for available functions
-  |
-2 |   if string.is_lower(c) then string.from_codepoint(((string.codepoint(c) - 97 + shift) % 26) + 97) else c
-  |                                                                                                         ^
-error: operator '-' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-2.almd:6:76
-  in operator -
-  hint: Use numeric types (Int or Float)
-  |
-6 |   if string.is_lower(c) then string.from_codepoint(((string.codepoint(c) - 97 - shift + 26) % 26) + 97) else c
-  |                                                                            ^^
-error: operator '-' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-2.almd:6:81
-  in operator -
-  hint: Use numeric types (Int or Float)
-  |
-6 |   if string.is_lower(c) then string.from_codepoint(((string.codepoint(c) - 97 - shift + 26) % 26) + 97) else c
-  |                                                                                 ^^^^^
-error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-2.almd:6:89
-  in operator +
-  hint: Use + with numeric types, String, or List
-  |
-6 |   if string.is_lower(c) then string.from_codepoint(((string.codepoint(c) - 97 - shift + 26) % 26) + 97) else c
-  |                                                                                         ^^
-error: operator '%' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-2.almd:6:95
-  in operator %
-  hint: Use numeric types (Int or Float)
-  |
-6 |   if string.is_lower(c) then string.from_codepoint(((string.codepoint(c) - 97 - shift + 26) % 26) + 97) else c
-  |                                                                                               ^^
-error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-2.almd:6:101
-  in operator +
-  hint: Use + with numeric types, String, or List
-  |
-6 |   if string.is_lower(c) then string.from_codepoint(((string.codepoint(c) - 97 - shift + 26) % 26) + 97) else c
-  |                                                                                                     ^^
-error[E005]: argument 'n' expects Int but got Option[Int]
-  --> /tmp/dojo-caesar-cipher-2.almd:6:101
-  in call to string.from_codepoint()
-  hint: Fix the argument type
-  |
-6 |   if string.is_lower(c) then string.from_codepoint(((string.codepoint(c) - 97 - shift + 26) % 26) + 97) else c
-  |                                                                                                     ^^
-error[E002]: undefined function 'string.map'
-  --> /tmp/dojo-caesar-cipher-2.almd:6:110
-  in call to string.map()
-  hint: No function 'map' in module 'string'. See docs/CHEATSHEET.md for available functions
-  |
-6 |   if string.is_lower(c) then string.from_codepoint(((string.codepoint(c) - 97 - shift + 26) % 26) + 97) else c
-  |                                                                                                              ^
-error[E001]: type mismatch in call to string.from_codepoint(): expected Int but got Option[Int]
-  --> /tmp/dojo-caesar-cipher-2.almd:2:96
-  in call to string.from_codepoint()
-  hint: Fix the expression type or change the expected type
-  |
-2 |   if string.is_lower(c) then string.from_codepoint(((string.codepoint(c) - 97 + shift) % 26) + 97) else c
-  |                                                                                                ^^
-error[E001]: type mismatch in call to string.from_codepoint(): expected Int but got Option[Int]
-  --> /tmp/dojo-caesar-cipher-2.almd:6:101
-  in call to string.from_codepoint()
-  hint: Fix the expression type or change the expected type
-  |
-6 |   if string.is_lower(c) then string.from_codepoint(((string.codepoint(c) - 97 - shift + 26) % 26) + 97) else c
-  |                                                                                                     ^^
+3 |   let encrypted_chars = chars.map(
+  |                                  --------------- '(' opened here
+...
+9 |       } else {
+  |         ^^^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 12:5 (got RBrace '}')
+  --> /tmp/dojo-caesar-cipher-2.almd:12:5
+   |
+12 |     }
+   |     ^
+error: Expected Then at line 22:49 (got LBrace '{')
+  --> /tmp/dojo-caesar-cipher-2.almd:22:49
+  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+   |
+22 |       if (codepoint >= 97 and codepoint <= 122) {
+   |                                                 ^
+error: Expected ')' to close function call opened at line 19:34
+  --> /tmp/dojo-caesar-cipher-2.almd:25:9
+  hint: Add ')' or check for a missing delimiter inside the function call
+   |
+19 |   let decrypted_chars = chars.map(
+   |                                  --------------- '(' opened here
+...
+25 |       } else {
+   |         ^^^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 28:5 (got RBrace '}')
+  --> /tmp/dojo-caesar-cipher-2.almd:28:5
+   |
+28 |     }
+   |     ^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-caesar-cipher-2.almd:10:9
+  in variable c
+  hint: Check the variable name
+   |
+10 |         c
+   |         ^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-caesar-cipher-2.almd:26:9
+  in variable c
+  hint: Check the variable name
+   |
+26 |         c
+   |         ^
 
-15 error(s) found
+8 error(s) found
 Compile error for /tmp/dojo-caesar-cipher-2.almd:
 compile failed
 FAILED: /tmp/dojo-caesar-cipher-2.almd
@@ -264,128 +280,99 @@ FAILED: /tmp/dojo-caesar-cipher-2.almd
 ### Attempt 4 (FAIL)
 
 ```almide
-fn encrypt(text: String, shift: Int) -> String = string.map(text, (c) => {
-  let code = string.codepoint(c);
-  if string.is_lower(c) then string.from_codepoint(((code - 97 + shift) % 26) + 97) else c
-})
+fn encrypt(text: String, shift: Int) -> String = {
+  let chars = string.chars(text);
+  let encrypted_chars = chars.map(
+    (c) => {
+      let codepoint = string.codepoint(c);
+      if (codepoint >= 97 and codepoint <= 122) {
+        let shifted_codepoint = (codepoint - 97 + shift) % 26 + 97;
+        string.from_codepoint(shifted_codepoint)
+      } else {
+        c
+      }
+    }
+  );
+  string.join(encrypted_chars, "")
+}
 
-fn decrypt(text: String, shift: Int) -> String = string.map(text, (c) => {
-  let code = string.codepoint(c);
-  if string.is_lower(c) then string.from_codepoint(((code - 97 - shift + 26) % 26) + 97) else c
-})
+fn decrypt(text: String, shift: Int) -> String = {
+  let chars = string.chars(text);
+  let decrypted_chars = chars.map(
+    (c) => {
+      let codepoint = string.codepoint(c);
+      if (codepoint >= 97 and codepoint <= 122) {
+        let shifted_codepoint = ((codepoint - 97 - shift + 26) % 26 + 97);
+        string.from_codepoint(shifted_codepoint)
+      } else {
+        c
+      }
+    }
+  );
+  string.join(decrypted_chars, "")
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-caesar-cipher-3.almd
-error: operator '-' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-3.almd:3:61
-  in operator -
-  hint: Use numeric types (Int or Float)
+error: Expected Then at line 6:49 (got LBrace '{')
+  --> /tmp/dojo-caesar-cipher-3.almd:6:49
+  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
   |
-3 |   if string.is_lower(c) then string.from_codepoint(((code - 97 + shift) % 26) + 97) else c
-  |                                                             ^^
-error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-3.almd:3:66
-  in operator +
-  hint: Use + with numeric types, String, or List
+6 |       if (codepoint >= 97 and codepoint <= 122) {
+  |                                                 ^
+error: Expected ')' to close function call opened at line 3:34
+  --> /tmp/dojo-caesar-cipher-3.almd:9:9
+  hint: Add ')' or check for a missing delimiter inside the function call
   |
-3 |   if string.is_lower(c) then string.from_codepoint(((code - 97 + shift) % 26) + 97) else c
-  |                                                                  ^^^^^
-error: operator '%' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-3.almd:3:75
-  in operator %
-  hint: Use numeric types (Int or Float)
-  |
-3 |   if string.is_lower(c) then string.from_codepoint(((code - 97 + shift) % 26) + 97) else c
-  |                                                                           ^^
-error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-3.almd:3:81
-  in operator +
-  hint: Use + with numeric types, String, or List
-  |
-3 |   if string.is_lower(c) then string.from_codepoint(((code - 97 + shift) % 26) + 97) else c
-  |                                                                                 ^^
-error[E005]: argument 'n' expects Int but got Option[Int]
-  --> /tmp/dojo-caesar-cipher-3.almd:3:81
-  in call to string.from_codepoint()
-  hint: Fix the argument type
-  |
-3 |   if string.is_lower(c) then string.from_codepoint(((code - 97 + shift) % 26) + 97) else c
-  |                                                                                 ^^
-error[E002]: undefined function 'string.map'
-  --> /tmp/dojo-caesar-cipher-3.almd:3:90
-  in call to string.map()
-  hint: No function 'map' in module 'string'. See docs/CHEATSHEET.md for available functions
-  |
-3 |   if string.is_lower(c) then string.from_codepoint(((code - 97 + shift) % 26) + 97) else c
-  |                                                                                          ^
-error: operator '-' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-3.almd:8:61
-  in operator -
-  hint: Use numeric types (Int or Float)
-  |
-8 |   if string.is_lower(c) then string.from_codepoint(((code - 97 - shift + 26) % 26) + 97) else c
-  |                                                             ^^
-error: operator '-' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-3.almd:8:66
-  in operator -
-  hint: Use numeric types (Int or Float)
-  |
-8 |   if string.is_lower(c) then string.from_codepoint(((code - 97 - shift + 26) % 26) + 97) else c
-  |                                                                  ^^^^^
-error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-3.almd:8:74
-  in operator +
-  hint: Use + with numeric types, String, or List
-  |
-8 |   if string.is_lower(c) then string.from_codepoint(((code - 97 - shift + 26) % 26) + 97) else c
-  |                                                                          ^^
-error: operator '%' requires numeric types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-3.almd:8:80
-  in operator %
-  hint: Use numeric types (Int or Float)
-  |
-8 |   if string.is_lower(c) then string.from_codepoint(((code - 97 - shift + 26) % 26) + 97) else c
-  |                                                                                ^^
-error: operator '+' requires numeric, String, or List types but got Option[Int] and Int
-  --> /tmp/dojo-caesar-cipher-3.almd:8:86
-  in operator +
-  hint: Use + with numeric types, String, or List
-  |
-8 |   if string.is_lower(c) then string.from_codepoint(((code - 97 - shift + 26) % 26) + 97) else c
-  |                                                                                      ^^
-error[E005]: argument 'n' expects Int but got Option[Int]
-  --> /tmp/dojo-caesar-cipher-3.almd:8:86
-  in call to string.from_codepoint()
-  hint: Fix the argument type
-  |
-8 |   if string.is_lower(c) then string.from_codepoint(((code - 97 - shift + 26) % 26) + 97) else c
-  |                                                                                      ^^
-error[E002]: undefined function 'string.map'
-  --> /tmp/dojo-caesar-cipher-3.almd:8:95
-  in call to string.map()
-  hint: No function 'map' in module 'string'. See docs/CHEATSHEET.md for available functions
-  |
-8 |   if string.is_lower(c) then string.from_codepoint(((code - 97 - shift + 26) % 26) + 97) else c
-  |                                                                                               ^
-error[E001]: type mismatch in call to string.from_codepoint(): expected Int but got Option[Int]
-  --> /tmp/dojo-caesar-cipher-3.almd:3:81
-  in call to string.from_codepoint()
-  hint: Fix the expression type or change the expected type
-  |
-3 |   if string.is_lower(c) then string.from_codepoint(((code - 97 + shift) % 26) + 97) else c
-  |                                                                                 ^^
-error[E001]: type mismatch in call to string.from_codepoint(): expected Int but got Option[Int]
-  --> /tmp/dojo-caesar-cipher-3.almd:8:86
-  in call to string.from_codepoint()
-  hint: Fix the expression type or change the expected type
-  |
-8 |   if string.is_lower(c) then string.from_codepoint(((code - 97 - shift + 26) % 26) + 97) else c
-  |                                                                                      ^^
+3 |   let encrypted_chars = chars.map(
+  |                                  --------------- '(' opened here
+...
+9 |       } else {
+  |         ^^^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 12:5 (got RBrace '}')
+  --> /tmp/dojo-caesar-cipher-3.almd:12:5
+   |
+12 |     }
+   |     ^
+error: Expected Then at line 22:49 (got LBrace '{')
+  --> /tmp/dojo-caesar-cipher-3.almd:22:49
+  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+   |
+22 |       if (codepoint >= 97 and codepoint <= 122) {
+   |                                                 ^
+error: Expected ')' to close function call opened at line 19:34
+  --> /tmp/dojo-caesar-cipher-3.almd:25:9
+  hint: Add ')' or check for a missing delimiter inside the function call
+   |
+19 |   let decrypted_chars = chars.map(
+   |                                  --------------- '(' opened here
+...
+25 |       } else {
+   |         ^^^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 28:5 (got RBrace '}')
+  --> /tmp/dojo-caesar-cipher-3.almd:28:5
+   |
+28 |     }
+   |     ^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-caesar-cipher-3.almd:10:9
+  in variable c
+  hint: Check the variable name
+   |
+10 |         c
+   |         ^
+error[E003]: undefined variable 'c'
+  --> /tmp/dojo-caesar-cipher-3.almd:26:9
+  in variable c
+  hint: Check the variable name
+   |
+26 |         c
+   |         ^
 
-15 error(s) found
+8 error(s) found
 Compile error for /tmp/dojo-caesar-cipher-3.almd:
 compile failed
 FAILED: /tmp/dojo-caesar-cipher-3.almd

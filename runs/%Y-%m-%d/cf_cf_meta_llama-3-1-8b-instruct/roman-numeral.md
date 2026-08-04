@@ -11,16 +11,17 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn to_roman(n: Int) -> String = {
-  let symbols = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")];
-  let result = list.fold(symbols, "", (res, (val, sym)) => {
-    while n >= val {
-      n = n - val;
-      res = res + sym;
+fn to_roman(n: Int) -> String {
+    let values = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"),
+                  (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")];
+    let mut result = String::new();
+    for (value, symbol) in values {
+        while n >= value {
+            result += symbol;
+            n -= value;
+        }
     }
-    res
-  });
-  result
+    result
 }
 ```
 
@@ -28,50 +29,14 @@ fn to_roman(n: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-roman-numeral-0.almd
-error[E009]: cannot reassign immutable binding 'n'
-  --> /tmp/dojo-roman-numeral-0.almd:5:15
-  in n = ...
-  hint: 'n' is a function parameter (immutable). Use a local copy: var n_ = n
-  try:
-      // 'n' is a parameter — make a mutable copy:
-      var n_ = n
-      // ...then reassign n_ instead of n
+error: Missing '=' before function body at line 1:31
+  --> /tmp/dojo-roman-numeral-0.almd:1:31
+  hint: Almide requires '=' before the body. Write: fn to_roman(...) -> Type = { ... }
   |
-5 |       n = n - val;
-  |               ^^^
-error[E003]: undefined variable 'sym'
-  --> /tmp/dojo-roman-numeral-0.almd:6:19
-  in variable sym
-  hint: Check the variable name
-  |
-6 |       res = res + sym;
-  |                   ^^^
-error[E009]: cannot reassign immutable binding 'res'
-  --> /tmp/dojo-roman-numeral-0.almd:6:19
-  in res = ...
-  hint: Use 'var res = ...' instead of 'let res = ...' to declare a mutable variable
-  try:
-      // let res = ...  →  var res = ...
-      var res = <initial value>
-  |
-6 |       res = res + sym;
-  |                   ^^^
-error[E005]: argument 'f' expects fn(String, (Int, String)) -> String but got fn(?0, Int) -> ?0
-  --> /tmp/dojo-roman-numeral-0.almd:8:5
-  in call to list.fold()
-  hint: Fix the argument type
-  |
-8 |     res
-  |     ^^^
-error[E001]: type mismatch in call to list.fold(): expected fn(String, (Int, String)) -> String but got fn(String, Int) -> String
-  --> /tmp/dojo-roman-numeral-0.almd:8:5
-  in call to list.fold()
-  hint: Fix the expression type or change the expected type
-  |
-8 |     res
-  |     ^^^
+1 | fn to_roman(n: Int) -> String {
+  |                               ^
 
-5 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-roman-numeral-0.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-0.almd
@@ -84,16 +49,16 @@ FAILED: /tmp/dojo-roman-numeral-0.almd
 
 ```almide
 fn to_roman(n: Int) -> String = {
-  let symbols = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")];
-  let result = list.fold(symbols, "", (res, (val, sym)) => {
-    var n_ = n;
-    while n_ >= val {
-      n_ = n_ - val;
-      res = res + sym;
+    let values = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"),
+                  (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")];
+    let mut result = String::new();
+    for (value, symbol) in values {
+        while n >= value {
+            result += symbol;
+            n -= value;
+        }
     }
-    res
-  });
-  result
+    result
 }
 ```
 
@@ -101,39 +66,46 @@ fn to_roman(n: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-roman-numeral-1.almd
-error[E003]: undefined variable 'sym'
-  --> /tmp/dojo-roman-numeral-1.almd:7:19
-  in variable sym
-  hint: Check the variable name
+error: 'let mut' is not valid in Almide at line 4:9
+  --> /tmp/dojo-roman-numeral-1.almd:4:9
+  hint: Use 'var' for mutable variables. Example: var x = 0
   |
-7 |       res = res + sym;
-  |                   ^^^
-error[E009]: cannot reassign immutable binding 'res'
-  --> /tmp/dojo-roman-numeral-1.almd:7:19
-  in res = ...
-  hint: Use 'var res = ...' instead of 'let res = ...' to declare a mutable variable
-  try:
-      // let res = ...  →  var res = ...
-      var res = <initial value>
+4 |     let mut result = String::new();
+  |         ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-roman-numeral-1.almd:7:21
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
   |
-7 |       res = res + sym;
-  |                   ^^^
-error[E005]: argument 'f' expects fn(String, (Int, String)) -> String but got fn(?0, Int) -> ?0
-  --> /tmp/dojo-roman-numeral-1.almd:9:5
-  in call to list.fold()
-  hint: Fix the argument type
+7 |             result += symbol;
+  |                     ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-roman-numeral-1.almd:8:16
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
   |
-9 |     res
-  |     ^^^
-error[E001]: type mismatch in call to list.fold(): expected fn(String, (Int, String)) -> String but got fn(String, Int) -> String
-  --> /tmp/dojo-roman-numeral-1.almd:9:5
-  in call to list.fold()
+8 |             n -= value;
+  |                ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 10:5 (got RBrace '}')
+  --> /tmp/dojo-roman-numeral-1.almd:10:5
+   |
+10 |     }
+   |     ^
+error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
+  --> /tmp/dojo-roman-numeral-1.almd:3:89
+  in fn 'to_roman'
   hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
   |
-9 |     res
-  |     ^^^
+3 |                   (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")];
+  |                                                                                         ^^^
 
-4 error(s) found
+5 error(s) found
 Compile error for /tmp/dojo-roman-numeral-1.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-1.almd
@@ -146,16 +118,16 @@ FAILED: /tmp/dojo-roman-numeral-1.almd
 
 ```almide
 fn to_roman(n: Int) -> String = {
-  let symbols = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")];
-  let result = list.fold(symbols, "", (res, (val, sym)) => {
-    var n_ = n;
-    while n_ >= val {
-      n_ = n_ - val;
-      res = res + sym;
+    let values = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"),
+                  (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")];
+    var result = "";
+    for (value, symbol) in values {
+        while n >= value {
+            result += symbol;
+            n -= value;
+        }
     }
-    res
-  });
-  result
+    result
 }
 ```
 
@@ -163,37 +135,38 @@ fn to_roman(n: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-roman-numeral-2.almd
-error[E003]: undefined variable 'sym'
-  --> /tmp/dojo-roman-numeral-2.almd:7:19
-  in variable sym
-  hint: Check the variable name
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-roman-numeral-2.almd:7:21
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
   |
-7 |       res = res + sym;
-  |                   ^^^
-error[E009]: cannot reassign immutable binding 'res'
-  --> /tmp/dojo-roman-numeral-2.almd:7:19
-  in res = ...
-  hint: Use 'var res = ...' instead of 'let res = ...' to declare a mutable variable
-  try:
-      // let res = ...  →  var res = ...
-      var res = <initial value>
+7 |             result += symbol;
+  |                     ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-roman-numeral-2.almd:8:16
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
   |
-7 |       res = res + sym;
-  |                   ^^^
-error[E005]: argument 'f' expects fn(String, (Int, String)) -> String but got fn(?0, Int) -> ?0
-  --> /tmp/dojo-roman-numeral-2.almd:9:5
-  in call to list.fold()
-  hint: Fix the argument type
-  |
-9 |     res
-  |     ^^^
-error[E001]: type mismatch in call to list.fold(): expected fn(String, (Int, String)) -> String but got fn(String, Int) -> String
-  --> /tmp/dojo-roman-numeral-2.almd:9:5
-  in call to list.fold()
+8 |             n -= value;
+  |                ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 10:5 (got RBrace '}')
+  --> /tmp/dojo-roman-numeral-2.almd:10:5
+   |
+10 |     }
+   |     ^
+error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
+  --> /tmp/dojo-roman-numeral-2.almd:4:18
+  in fn 'to_roman'
   hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
   |
-9 |     res
-  |     ^^^
+4 |     var result = "";
+  |                  ^^
 
 4 error(s) found
 Compile error for /tmp/dojo-roman-numeral-2.almd:
@@ -208,17 +181,16 @@ FAILED: /tmp/dojo-roman-numeral-2.almd
 
 ```almide
 fn to_roman(n: Int) -> String = {
-  let symbols = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")];
-  var result = "";
-  list.fold(symbols, (result, (val, sym)) => {
-    var n_ = n;
-    while n_ >= val {
-      n_ = n_ - val;
-      result = result + sym;
+    let values = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"),
+                  (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")];
+    let mut result = "";
+    for (value, symbol) in values {
+        while n >= value {
+            result = result + symbol;
+            n = n - value;
+        }
     }
     result
-  });
-  result
 }
 ```
 
@@ -226,32 +198,39 @@ fn to_roman(n: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-roman-numeral-3.almd
-error[E003]: undefined variable 'sym'
-  --> /tmp/dojo-roman-numeral-3.almd:8:25
-  in variable sym
+error: 'let mut' is not valid in Almide at line 4:9
+  --> /tmp/dojo-roman-numeral-3.almd:4:9
+  hint: Use 'var' for mutable variables. Example: var x = 0
+  |
+4 |     let mut result = "";
+  |         ^
+error[E003]: undefined variable 'result'
+  --> /tmp/dojo-roman-numeral-3.almd:7:22
+  in variable result
   hint: Check the variable name
   |
-8 |       result = result + sym;
-  |                         ^^^
-error[E011]: mutable variable 'result' is mutated inside a closure in a pure function — use effect fn instead
-  --> /tmp/dojo-roman-numeral-3.almd:8:25
-  in result = ...
-  hint: Move the mutation out of the closure, or mark the enclosing function as `effect fn`
-  |
-8 |       result = result + sym;
-  |                         ^^^
-error[E004]: list.fold() expects 3 argument(s) but got 2
-  --> /tmp/dojo-roman-numeral-3.almd:10:5
-  in call to list.fold()
-  hint: Check the number of arguments
+7 |             result = result + symbol;
+  |                      ^^^^^^
+error[E009]: cannot reassign immutable binding 'n'
+  --> /tmp/dojo-roman-numeral-3.almd:8:21
+  in n = ...
+  hint: 'n' is a function parameter (immutable). Use a local copy: var n_ = n
   try:
-      // list.fold() takes 3 arg(s) — you passed 2
-      list.fold(<xs: List[A]>, <init: B>, <f: fn(B, A) -> B>)
+      // 'n' is a parameter — make a mutable copy:
+      var n_ = n
+      // ...then reassign n_ instead of n
+  |
+8 |             n = n - value;
+  |                     ^^^^^
+error[E003]: undefined variable 'result'
+  --> /tmp/dojo-roman-numeral-3.almd:11:5
+  in variable result
+  hint: Check the variable name
    |
-10 |     result
+11 |     result
    |     ^^^^^^
 
-3 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-roman-numeral-3.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-3.almd

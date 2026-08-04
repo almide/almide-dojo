@@ -1,34 +1,33 @@
 # deadline-guard
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
-- **success**: yes
-- **retries**: 2
-- **category**: pass-retry
+- **success**: no
+- **retries**: 3
+- **category**: parse-error
 
 ## Attempts
 
 ### Attempt 1 (FAIL)
 
 ```almide
-effect fn within_deadline(n: Int) -> Int =
+effect fn within_deadline(n: Int) -> Int = {
   fan.timeout(duration.s(2)) {
-    let square_plus_one = square_plus_one(n)
-    square_plus_one
+    fn compute_square_plus_one(n: Int) -> Int = {
+      n * n + 1
+    };
+    compute_square_plus_one(n)
   } ?? 0
-
-fn square_plus_one(n: Int) -> Int =
-  n * n + 1
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-deadline-guard-0.almd
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 2:30 (got LBrace '{')
-  --> /tmp/dojo-deadline-guard-0.almd:2:30
+error: Expected expression at line 3:5 (got Fn 'fn')
+  --> /tmp/dojo-deadline-guard-0.almd:3:5
   |
-2 |   fan.timeout(duration.s(2)) {
-  |                              ^
+3 |     fn compute_square_plus_one(n: Int) -> Int = {
+  |     ^
 error[E003]: undefined variable 'duration'
   --> /tmp/dojo-deadline-guard-0.almd:2:15
   in variable duration
@@ -43,8 +42,15 @@ error: fan.timeout() expects 2 arguments but got 1
   |
 2 |   fan.timeout(duration.s(2)) {
   |               ^^^^^^^^
+error[E002]: undefined function 'compute_square_plus_one'
+  --> /tmp/dojo-deadline-guard-0.almd:6:29
+  in call to compute_square_plus_one()
+  hint: Check the function name
+  |
+6 |     compute_square_plus_one(n)
+  |                             ^
 
-3 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-deadline-guard-0.almd:
 compile failed
 FAILED: /tmp/dojo-deadline-guard-0.almd
@@ -56,56 +62,128 @@ FAILED: /tmp/dojo-deadline-guard-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-effect fn within_deadline(n: Int) -> Int =
-  fan.timeout(2000, () => {
-    let square_plus_one = square_plus_one(n)
-    square_plus_one
+effect fn within_deadline(n: Int) -> Int = {
+  fan.timeout(2000000000, () => {
+    fn compute_square_plus_one(n: Int) -> Int = {
+      n * n + 1
+    };
+    compute_square_plus_one(n)
   }) ?? 0
-
-fn square_plus_one(n: Int) -> Int =
-  n * n + 1
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-deadline-guard-1.almd
+error: Expected expression at line 3:5 (got Fn 'fn')
+  --> /tmp/dojo-deadline-guard-1.almd:3:5
+  |
+3 |     fn compute_square_plus_one(n: Int) -> Int = {
+  |     ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 7:4 (got RParen ')')
+  --> /tmp/dojo-deadline-guard-1.almd:7:4
+  |
+7 |   }) ?? 0
+  |    ^
+error[E002]: undefined function 'compute_square_plus_one'
+  --> /tmp/dojo-deadline-guard-1.almd:6:29
+  in call to compute_square_plus_one()
+  hint: Check the function name
+  |
+6 |     compute_square_plus_one(n)
+  |                             ^
+
+3 error(s) found
 Compile error for /tmp/dojo-deadline-guard-1.almd:
-codegen produced invalid Rust — this is an Almide bug.
-Please file a minimal repro at https://github.com/almide/almide/issues
-
---- rustc output (edited to hide generated paths) ---
-error[E0308]: mismatched types
-   --> <generated.rs>:334:9
-    |
-334 |         square_plus_one
-    |         ^^^^^^^^^^^^^^^ expected `Result<_, String>`, found `i64`
-    |
-    = note: expected enum `Result<_, String>`
-               found type `i64`
-help: try wrapping the expression in `Ok`
-    |
-334 |         Ok(square_plus_one)
-    |         +++               +
-
-
-error: could not compile `almide-generated` (bin "almide-generated" test) due to 1 previous error; 2 warnings emitted
-
+compile failed
 FAILED: /tmp/dojo-deadline-guard-1.almd
 
 1/1 test file(s) failed
 
 ```
 
-### Attempt 3 (PASS)
+### Attempt 3 (FAIL)
 
 ```almide
-effect fn within_deadline(n: Int) -> Int =
-  fan.timeout(2000, () => {
-    let result = square_plus_one(n)
-    Ok(result)
+effect fn within_deadline(n: Int) -> Int = {
+  fan.timeout(duration.s(2), () => {
+    let square_plus_one = fn compute_square_plus_one(n: Int) -> Int = {
+      n * n + 1
+    };
+    compute_square_plus_one(n)
   }) ?? 0
+```
 
-fn square_plus_one(n: Int) -> Int =
-  n * n + 1
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-deadline-guard-2.almd
+error: Expected expression at line 3:27 (got Fn 'fn')
+  --> /tmp/dojo-deadline-guard-2.almd:3:27
+  |
+3 |     let square_plus_one = fn compute_square_plus_one(n: Int) -> Int = {
+  |                           ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 7:4 (got RParen ')')
+  --> /tmp/dojo-deadline-guard-2.almd:7:4
+  |
+7 |   }) ?? 0
+  |    ^
+error[E002]: undefined function 'compute_square_plus_one'
+  --> /tmp/dojo-deadline-guard-2.almd:6:29
+  in call to compute_square_plus_one()
+  hint: Check the function name
+  |
+6 |     compute_square_plus_one(n)
+  |                             ^
+
+3 error(s) found
+Compile error for /tmp/dojo-deadline-guard-2.almd:
+compile failed
+FAILED: /tmp/dojo-deadline-guard-2.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 4 (FAIL)
+
+```almide
+effect fn within_deadline(n: Int) -> Int = {
+  fan.timeout(duration.s(2), () => {
+    fn compute_square_plus_one(n: Int) -> Int = {
+      n * n + 1
+    };
+    compute_square_plus_one(n)
+  }) ?? 0
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-deadline-guard-3.almd
+error: Expected expression at line 3:5 (got Fn 'fn')
+  --> /tmp/dojo-deadline-guard-3.almd:3:5
+  |
+3 |     fn compute_square_plus_one(n: Int) -> Int = {
+  |     ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 7:4 (got RParen ')')
+  --> /tmp/dojo-deadline-guard-3.almd:7:4
+  |
+7 |   }) ?? 0
+  |    ^
+error[E002]: undefined function 'compute_square_plus_one'
+  --> /tmp/dojo-deadline-guard-3.almd:6:29
+  in call to compute_square_plus_one()
+  hint: Check the function name
+  |
+6 |     compute_square_plus_one(n)
+  |                             ^
+
+3 error(s) found
+Compile error for /tmp/dojo-deadline-guard-3.almd:
+compile failed
+FAILED: /tmp/dojo-deadline-guard-3.almd
+
+1/1 test file(s) failed
+
 ```

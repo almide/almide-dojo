@@ -10,9 +10,10 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn word_count(s: String) -> Map[String, Int] =
-  let words = string.split(s, " ") |> list.filter((x) => not(string.is_empty(x)))
-  in list.fold(words, map.new(), (acc, word) =>
-    map.set(acc, word, map.get_or(acc, word, 0) + 1)
-  )
+fn word_count(s: String) -> Map[String, Int] = 
+    list.fold(
+        list.filter(string.split(s, " "), (x) => x != ""),
+        map.new(),
+        (acc, x) => map.set(acc, x, map.get_or(acc, x, 0) + 1)
+    )
 ```

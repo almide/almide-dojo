@@ -17,7 +17,10 @@ fn check_disk(free: Int) -> Result[Int, String] =
   if free > 10 then ok(free) else err("disk full")
 
 effect fn health(code: Int, free: Int) -> String = 
-  let (net, disk) = fan.settle { check_net(code); check_disk(free) }
+  let (net, disk) = fan.settle {
+    check_net(code)
+    check_disk(free)
+  }
   match (net, disk) {
     (ok(_), ok(_)) => "healthy"
     (err(_), ok(_)) => "net degraded"
@@ -35,7 +38,7 @@ error[E003]: undefined variable 'fan'
   in variable fan
   hint: Check the variable name
   |
-8 |   let (net, disk) = fan.settle { check_net(code); check_disk(free) }
+8 |   let (net, disk) = fan.settle {
   |                     ^^^
 
 1 error(s) found
@@ -57,7 +60,10 @@ fn check_disk(free: Int) -> Result[Int, String] =
   if free > 10 then ok(free) else err("disk full")
 
 effect fn health(code: Int, free: Int) -> String = 
-  let (net, disk) = fan.settle { check_net(code); check_disk(free) }
+  let (net, disk) = fan.settle {
+    check_net(code)
+    check_disk(free)
+  }
   match (net, disk) {
     (ok(_), ok(_)) => "healthy"
     (err(_), ok(_)) => "net degraded"
@@ -75,7 +81,7 @@ error[E003]: undefined variable 'fan'
   in variable fan
   hint: Check the variable name
   |
-8 |   let (net, disk) = fan.settle { check_net(code); check_disk(free) }
+8 |   let (net, disk) = fan.settle {
   |                     ^^^
 
 1 error(s) found
@@ -97,7 +103,10 @@ fn check_disk(free: Int) -> Result[Int, String] =
   if free > 10 then ok(free) else err("disk full")
 
 effect fn health(code: Int, free: Int) -> String = 
-  let (net, disk) = fs.fan.settle { check_net(code); check_disk(free) }
+  let (net, disk) = fs.fan.settle {
+    check_net(code)
+    check_disk(free)
+  }
   match (net, disk) {
     (ok(_), ok(_)) => "healthy"
     (err(_), ok(_)) => "net degraded"
@@ -113,22 +122,20 @@ Compiling /tmp/dojo-settle-health-2.almd
 error: Expected name at line 8:24 (got Fan 'fan')
   --> /tmp/dojo-settle-health-2.almd:8:24
   |
-8 |   let (net, disk) = fs.fan.settle { check_net(code); check_disk(free) }
+8 |   let (net, disk) = fs.fan.settle {
   |                        ^
-error[E003]: undefined variable 'net'
-  --> /tmp/dojo-settle-health-2.almd:9:10
-  in variable net
-  hint: Check the variable name
-  |
-9 |   match (net, disk) {
-  |          ^^^
-error[E003]: undefined variable 'disk'
-  --> /tmp/dojo-settle-health-2.almd:9:15
-  in variable disk
-  hint: Check the variable name
-  |
-9 |   match (net, disk) {
-  |               ^^^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 11:3 (got RBrace '}')
+  --> /tmp/dojo-settle-health-2.almd:11:3
+   |
+11 |   }
+   |   ^
+error[E001]: type mismatch in fn 'health': expected String but got Int
+  --> /tmp/dojo-settle-health-2.almd:10:16
+  in fn 'health'
+  hint: Fix the expression type or change the expected type. Or use `int.to_string(x)` to convert Int to String
+   |
+10 |     check_disk(free)
+   |                ^^^^
 
 3 error(s) found
 Compile error for /tmp/dojo-settle-health-2.almd:
@@ -150,12 +157,11 @@ fn check_disk(free: Int) -> Result[Int, String] =
 
 effect fn health(code: Int, free: Int) -> String = 
   let (net, disk) = fs.fan.settle {
-    let net = check_net(code)
-    let disk = check_disk(free)
-    (net, disk)
+    check_net(code)
+    check_disk(free)
   }
   match (net, disk) {
-    (ok(_), ok(_)) => "healthy"
+    (ok(n), ok(d)) => int.to_string("healthy")
     (err(_), ok(_)) => "net degraded"
     (ok(_), err(_)) => "disk degraded"
     (err(_), err(_)) => "down"
@@ -171,18 +177,18 @@ error: Expected name at line 8:24 (got Fan 'fan')
   |
 8 |   let (net, disk) = fs.fan.settle {
   |                        ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 12:3 (got RBrace '}')
-  --> /tmp/dojo-settle-health-3.almd:12:3
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 11:3 (got RBrace '}')
+  --> /tmp/dojo-settle-health-3.almd:11:3
    |
-12 |   }
+11 |   }
    |   ^
-error[E001]: type mismatch in fn 'health': expected String but got (Int, Int)
-  --> /tmp/dojo-settle-health-3.almd:11:11
+error[E001]: type mismatch in fn 'health': expected String but got Int
+  --> /tmp/dojo-settle-health-3.almd:10:16
   in fn 'health'
-  hint: Fix the expression type or change the expected type
+  hint: Fix the expression type or change the expected type. Or use `int.to_string(x)` to convert Int to String
    |
-11 |     (net, disk)
-   |           ^^^^
+10 |     check_disk(free)
+   |                ^^^^
 
 3 error(s) found
 Compile error for /tmp/dojo-settle-health-3.almd:

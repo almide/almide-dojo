@@ -13,39 +13,46 @@
 fn max_of_list(xs: List[Int]) -> Option[Int] = 
   if list.is_empty(xs) 
   then none 
-  else some(list.reduce(xs, list.first(xs) |> option.unwrap, (max, x) => if x > max then x else max))
+  else some(list.reduce(xs, xs |> list.first |> option.unwrap_or(0), (max, x) => if max > x then max else x))
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-max-of-list-0.almd
-error[E002]: undefined function 'option.unwrap'
-  --> /tmp/dojo-max-of-list-0.almd:4:40
-  in call to option.unwrap()
-  hint: No function 'unwrap' in module 'option'. See docs/CHEATSHEET.md for available functions
-  |
-4 |   else some(list.reduce(xs, list.first(xs) |> option.unwrap, (max, x) => if x > max then x else max))
-  |                                        ^^
 error[E004]: list.reduce() expects 2 argument(s) but got 3
-  --> /tmp/dojo-max-of-list-0.almd:4:97
+  --> /tmp/dojo-max-of-list-0.almd:4:107
   in call to list.reduce()
   hint: Check the number of arguments
   try:
       // list.reduce() takes 2 arg(s) — you passed 3
       list.reduce(<xs: List[A]>, <f: fn(A, A) -> A>)
   |
-4 |   else some(list.reduce(xs, list.first(xs) |> option.unwrap, (max, x) => if x > max then x else max))
-  |                                                                                                 ^^^
+4 |   else some(list.reduce(xs, xs |> list.first |> option.unwrap_or(0), (max, x) => if max > x then max else x))
+  |                                                                                                           ^
+error[E005]: argument 'f' expects fn(Int, Int) -> Int but got Int
+  --> /tmp/dojo-max-of-list-0.almd:4:107
+  in call to list.reduce()
+  hint: Fix the argument type
+  |
+4 |   else some(list.reduce(xs, xs |> list.first |> option.unwrap_or(0), (max, x) => if max > x then max else x))
+  |                                                                                                           ^
+error[E001]: type mismatch in call to list.reduce(): expected fn(Int, Int) -> Int but got Int
+  --> /tmp/dojo-max-of-list-0.almd:4:107
+  in call to list.reduce()
+  hint: Fix the expression type or change the expected type
+  |
+4 |   else some(list.reduce(xs, xs |> list.first |> option.unwrap_or(0), (max, x) => if max > x then max else x))
+  |                                                                                                           ^
 error[E001]: type mismatch in fn 'max_of_list': expected Option[Int] but got Option[Option[Int]]
-  --> /tmp/dojo-max-of-list-0.almd:4:97
+  --> /tmp/dojo-max-of-list-0.almd:4:107
   in fn 'max_of_list'
   hint: Fix the expression type or change the expected type
   |
-4 |   else some(list.reduce(xs, list.first(xs) |> option.unwrap, (max, x) => if x > max then x else max))
-  |                                                                                                 ^^^
+4 |   else some(list.reduce(xs, xs |> list.first |> option.unwrap_or(0), (max, x) => if max > x then max else x))
+  |                                                                                                           ^
 
-3 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-max-of-list-0.almd:
 compile failed
 FAILED: /tmp/dojo-max-of-list-0.almd

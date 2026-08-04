@@ -10,9 +10,9 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn count_vowels(s: String) -> Int = 
-    let chars = string.chars(s)
-    let vowels = list.filter(chars, (x) => 
-        list.contains(["a", "e", "i", "o", "u"], x))
-    in list.len(vowels)
+fn count_vowels(s: String) -> Int =
+  let chars = string.chars(s)
+  let vowels = list.filter(chars, (c) => 
+    list.contains(["a", "e", "i", "o", "u"], c))
+  in list.len(vowels)
 ```
