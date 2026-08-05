@@ -10,68 +10,76 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn from_list(xs: List[Int]) -> MyList = 
+fn from_list(xs: List[Int]) -> MyList =
   match xs {
     Nil => Nil
     Cons(x, xs) => Cons(x, from_list(xs))
   }
 
-fn to_list(ml: MyList) -> List[Int] = 
+fn to_list(ml: MyList) -> List[Int] =
   match ml {
     Nil => Nil
     Cons(x, ml) => Cons(x, to_list(ml))
   }
 
-fn my_len(ml: MyList) -> Int = 
+fn my_len(ml: MyList) -> Int =
   match ml {
     Nil => 0
-    Cons(_, tail) => 1 + my_len(tail)
+    Cons(_, ml) => 1 + my_len(ml)
   }
 
-fn my_map(ml: MyList, f: (Int) -> Int) -> MyList = 
+fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
   match ml {
     Nil => Nil
-    Cons(x, tail) => Cons(f(x), my_map(tail, f))
+    Cons(x, ml) => Cons(f(x), my_map(ml, f))
   }
 
-fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList = 
+fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
   match ml {
     Nil => Nil
-    Cons(x, tail) => if pred(x) then Cons(x, my_filter(tail, pred)) else my_filter(tail, pred)
+    Cons(x, ml) =>
+      if pred(x) then Cons(x, my_filter(ml, pred))
+      else my_filter(ml, pred)
   }
 
-fn my_reverse(ml: MyList) -> MyList = 
-  fn reverse(tail: MyList, acc: MyList) -> My
+fn my_reverse(ml: MyList) -> MyList =
+  match ml {
+    Nil => Nil
+    Cons(x, ml) => my_reverse(ml) + [Cons(x
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-custom-linked-list-0.almd
-error: Expected expression at line 32:3 (got Fn 'fn')
-  --> /tmp/dojo-custom-linked-list-0.almd:32:3
+error: Expected ')' to close constructor call opened at line 36:42
+  --> /tmp/dojo-custom-linked-list-0.almd:38:1
+  hint: Add ')' or check for a missing delimiter inside the constructor call
    |
-32 |   fn reverse(tail: MyList, acc: MyList) -> My
-   |   ^
+36 |     Cons(x, ml) => my_reverse(ml) + [Cons(x
+   |                                          --------------- '(' opened here
+...
+38 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
+   | ^^^^
 error[E005]: argument 'ml' expects MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-0.almd:36:40
+  --> /tmp/dojo-custom-linked-list-0.almd:40:40
   in call to my_len()
   hint: 'MyList' is not a known type. To use it as a type parameter, declare it: fn my_len[MyList](...)
    |
 13 | fn my_len(ml: MyList) -> Int =
    | ------------------------ fn my_len() defined here
 ...
-36 | test "my_len empty" { assert_eq(my_len(Nil), 0) }
+40 | test "my_len empty" { assert_eq(my_len(Nil), 0) }
    |                                        ^^^
 error[E005]: argument 'ml' expects MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-0.almd:39:65
+  --> /tmp/dojo-custom-linked-list-0.almd:43:65
   in call to my_map()
   hint: 'MyList' is not a known type. To use it as a type parameter, declare it: fn my_map[MyList](...)
    |
 19 | fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
    | ------------------------ fn my_map() defined here
 ...
-39 | test "my_map on nil" { assert_eq(to_list(my_map(Nil, (x) => x + 1)), []) }
+43 | test "my_map on nil" { assert_eq(to_list(my_map(Nil, (x) => x + 1)), []) }
    |                                                                 ^
 error[E001]: type mismatch in match arm: expected Nil but got Cons
   --> /tmp/dojo-custom-linked-list-0.almd:4:38
@@ -102,53 +110,53 @@ error[E001]: type mismatch in fn 'to_list': expected List[Int] but got Nil
 10 |     Cons(x, ml) => Cons(x, to_list(ml))
    |                                    ^^
 error[E001]: type mismatch in match arm: expected Nil but got Cons
-  --> /tmp/dojo-custom-linked-list-0.almd:22:46
+  --> /tmp/dojo-custom-linked-list-0.almd:22:42
   in match arm
   hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
    |
-22 |     Cons(x, tail) => Cons(f(x), my_map(tail, f))
-   |                                              ^
+22 |     Cons(x, ml) => Cons(f(x), my_map(ml, f))
+   |                                          ^
 error[E001]: type mismatch in fn 'my_map': expected MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-0.almd:22:46
+  --> /tmp/dojo-custom-linked-list-0.almd:22:42
   in fn 'my_map'
   hint: Fix the expression type or change the expected type
    |
-22 |     Cons(x, tail) => Cons(f(x), my_map(tail, f))
-   |                                              ^
+22 |     Cons(x, ml) => Cons(f(x), my_map(ml, f))
+   |                                          ^
 error[E001]: type mismatch in if branches: expected Cons but got MyList
-  --> /tmp/dojo-custom-linked-list-0.almd:28:90
+  --> /tmp/dojo-custom-linked-list-0.almd:30:26
   in if branches
   hint: Both branches of `if/then/else` must have the same type
    |
-28 |     Cons(x, tail) => if pred(x) then Cons(x, my_filter(tail, pred)) else my_filter(tail, pred)
-   |                                                                                          ^^^^
+30 |       else my_filter(ml, pred)
+   |                          ^^^^
 error[E001]: type mismatch in match arm: expected Nil but got Cons
-  --> /tmp/dojo-custom-linked-list-0.almd:28:90
+  --> /tmp/dojo-custom-linked-list-0.almd:30:26
   in match arm
   hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
    |
-28 |     Cons(x, tail) => if pred(x) then Cons(x, my_filter(tail, pred)) else my_filter(tail, pred)
-   |                                                                                          ^^^^
+30 |       else my_filter(ml, pred)
+   |                          ^^^^
 error[E001]: type mismatch in fn 'my_filter': expected MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-0.almd:28:90
+  --> /tmp/dojo-custom-linked-list-0.almd:30:26
   in fn 'my_filter'
   hint: Fix the expression type or change the expected type
    |
-28 |     Cons(x, tail) => if pred(x) then Cons(x, my_filter(tail, pred)) else my_filter(tail, pred)
-   |                                                                                          ^^^^
+30 |       else my_filter(ml, pred)
+   |                          ^^^^
 error[E001]: type mismatch in call to my_len(): expected MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-0.almd:36:40
+  --> /tmp/dojo-custom-linked-list-0.almd:40:40
   in call to my_len()
   hint: Fix the expression type or change the expected type
    |
-36 | test "my_len empty" { assert_eq(my_len(Nil), 0) }
+40 | test "my_len empty" { assert_eq(my_len(Nil), 0) }
    |                                        ^^^
 error[E001]: type mismatch in call to my_map(): expected MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-0.almd:39:65
+  --> /tmp/dojo-custom-linked-list-0.almd:43:65
   in call to my_map()
   hint: Fix the expression type or change the expected type
    |
-39 | test "my_map on nil" { assert_eq(to_list(my_map(Nil, (x) => x + 1)), []) }
+43 | test "my_map on nil" { assert_eq(to_list(my_map(Nil, (x) => x + 1)), []) }
    |                                                                 ^
 
 14 error(s) found
@@ -163,68 +171,76 @@ FAILED: /tmp/dojo-custom-linked-list-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn from_list(xs: List[Int]) -> MyList = 
+fn from_list(xs: List[Int]) -> MyList =
   match xs {
     Nil => Nil
     Cons(x, xs) => Cons(x, from_list(xs))
   }
 
-fn to_list(ml: MyList) -> List[Int] = 
+fn to_list(ml: MyList) -> List[Int] =
   match ml {
     Nil => Nil
     Cons(x, ml) => Cons(x, to_list(ml))
   }
 
-fn my_len(ml: MyList) -> Int = 
+fn my_len(ml: MyList) -> Int =
   match ml {
     Nil => 0
-    Cons(_, tail) => 1 + my_len(tail)
+    Cons(_, ml) => 1 + my_len(ml)
   }
 
-fn my_map(ml: MyList, f: (Int) -> Int) -> MyList = 
+fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
   match ml {
     Nil => Nil
-    Cons(x, tail) => Cons(f(x), my_map(tail, f))
+    Cons(x, ml) => Cons(f(x), my_map(ml, f))
   }
 
-fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList = 
+fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
   match ml {
     Nil => Nil
-    Cons(x, tail) => if pred(x) then Cons(x, my_filter(tail, pred)) else my_filter(tail, pred)
+    Cons(x, ml) =>
+      if pred(x) then Cons(x, my_filter(ml, pred))
+      else my_filter(ml, pred)
   }
 
-fn my_reverse(ml: MyList) -> MyList = 
-  fn reverse(tail: MyList, acc: MyList) -> My
+fn my_reverse(ml: MyList) -> MyList =
+  match ml {
+    Nil => Nil
+    Cons(x, tail) => my_reverse(tail) + [Cons
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-custom-linked-list-1.almd
-error: Expected expression at line 32:3 (got Fn 'fn')
-  --> /tmp/dojo-custom-linked-list-1.almd:32:3
+error: Expected ']' to close list literal opened at line 36:41
+  --> /tmp/dojo-custom-linked-list-1.almd:38:1
+  hint: Add ']' or check for a missing delimiter inside the list literal
    |
-32 |   fn reverse(tail: MyList, acc: MyList) -> My
-   |   ^
+36 |     Cons(x, tail) => my_reverse(tail) + [Cons
+   |                                         --------------- '[' opened here
+...
+38 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
+   | ^^^^
 error[E005]: argument 'ml' expects MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-1.almd:36:40
+  --> /tmp/dojo-custom-linked-list-1.almd:40:40
   in call to my_len()
   hint: 'MyList' is not a known type. To use it as a type parameter, declare it: fn my_len[MyList](...)
    |
 13 | fn my_len(ml: MyList) -> Int =
    | ------------------------ fn my_len() defined here
 ...
-36 | test "my_len empty" { assert_eq(my_len(Nil), 0) }
+40 | test "my_len empty" { assert_eq(my_len(Nil), 0) }
    |                                        ^^^
 error[E005]: argument 'ml' expects MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-1.almd:39:65
+  --> /tmp/dojo-custom-linked-list-1.almd:43:65
   in call to my_map()
   hint: 'MyList' is not a known type. To use it as a type parameter, declare it: fn my_map[MyList](...)
    |
 19 | fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
    | ------------------------ fn my_map() defined here
 ...
-39 | test "my_map on nil" { assert_eq(to_list(my_map(Nil, (x) => x + 1)), []) }
+43 | test "my_map on nil" { assert_eq(to_list(my_map(Nil, (x) => x + 1)), []) }
    |                                                                 ^
 error[E001]: type mismatch in match arm: expected Nil but got Cons
   --> /tmp/dojo-custom-linked-list-1.almd:4:38
@@ -255,53 +271,53 @@ error[E001]: type mismatch in fn 'to_list': expected List[Int] but got Nil
 10 |     Cons(x, ml) => Cons(x, to_list(ml))
    |                                    ^^
 error[E001]: type mismatch in match arm: expected Nil but got Cons
-  --> /tmp/dojo-custom-linked-list-1.almd:22:46
+  --> /tmp/dojo-custom-linked-list-1.almd:22:42
   in match arm
   hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
    |
-22 |     Cons(x, tail) => Cons(f(x), my_map(tail, f))
-   |                                              ^
+22 |     Cons(x, ml) => Cons(f(x), my_map(ml, f))
+   |                                          ^
 error[E001]: type mismatch in fn 'my_map': expected MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-1.almd:22:46
+  --> /tmp/dojo-custom-linked-list-1.almd:22:42
   in fn 'my_map'
   hint: Fix the expression type or change the expected type
    |
-22 |     Cons(x, tail) => Cons(f(x), my_map(tail, f))
-   |                                              ^
+22 |     Cons(x, ml) => Cons(f(x), my_map(ml, f))
+   |                                          ^
 error[E001]: type mismatch in if branches: expected Cons but got MyList
-  --> /tmp/dojo-custom-linked-list-1.almd:28:90
+  --> /tmp/dojo-custom-linked-list-1.almd:30:26
   in if branches
   hint: Both branches of `if/then/else` must have the same type
    |
-28 |     Cons(x, tail) => if pred(x) then Cons(x, my_filter(tail, pred)) else my_filter(tail, pred)
-   |                                                                                          ^^^^
+30 |       else my_filter(ml, pred)
+   |                          ^^^^
 error[E001]: type mismatch in match arm: expected Nil but got Cons
-  --> /tmp/dojo-custom-linked-list-1.almd:28:90
+  --> /tmp/dojo-custom-linked-list-1.almd:30:26
   in match arm
   hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
    |
-28 |     Cons(x, tail) => if pred(x) then Cons(x, my_filter(tail, pred)) else my_filter(tail, pred)
-   |                                                                                          ^^^^
+30 |       else my_filter(ml, pred)
+   |                          ^^^^
 error[E001]: type mismatch in fn 'my_filter': expected MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-1.almd:28:90
+  --> /tmp/dojo-custom-linked-list-1.almd:30:26
   in fn 'my_filter'
   hint: Fix the expression type or change the expected type
    |
-28 |     Cons(x, tail) => if pred(x) then Cons(x, my_filter(tail, pred)) else my_filter(tail, pred)
-   |                                                                                          ^^^^
+30 |       else my_filter(ml, pred)
+   |                          ^^^^
 error[E001]: type mismatch in call to my_len(): expected MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-1.almd:36:40
+  --> /tmp/dojo-custom-linked-list-1.almd:40:40
   in call to my_len()
   hint: Fix the expression type or change the expected type
    |
-36 | test "my_len empty" { assert_eq(my_len(Nil), 0) }
+40 | test "my_len empty" { assert_eq(my_len(Nil), 0) }
    |                                        ^^^
 error[E001]: type mismatch in call to my_map(): expected MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-1.almd:39:65
+  --> /tmp/dojo-custom-linked-list-1.almd:43:65
   in call to my_map()
   hint: Fix the expression type or change the expected type
    |
-39 | test "my_map on nil" { assert_eq(to_list(my_map(Nil, (x) => x + 1)), []) }
+43 | test "my_map on nil" { assert_eq(to_list(my_map(Nil, (x) => x + 1)), []) }
    |                                                                 ^
 
 14 error(s) found
@@ -316,68 +332,76 @@ FAILED: /tmp/dojo-custom-linked-list-1.almd
 ### Attempt 3 (FAIL)
 
 ```almide
-fn from_list(xs: List[Int]) -> MyList = 
+fn from_list(xs: List[Int]) -> MyList =
   match xs {
     Nil => Nil
     Cons(x, xs) => Cons(x, from_list(xs))
   }
 
-fn to_list(ml: MyList) -> List[Int] = 
+fn to_list(ml: MyList) -> List[Int] =
   match ml {
     Nil => Nil
-    Cons(x, ml) => Cons(x, to_list(ml))
+    Cons(x, tail) => Cons(x, to_list(tail))
   }
 
-fn my_len(ml: MyList) -> Int = 
+fn my_len(ml: MyList) -> Int =
   match ml {
     Nil => 0
     Cons(_, tail) => 1 + my_len(tail)
   }
 
-fn my_map(ml: MyList, f: (Int) -> Int) -> MyList = 
+fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
   match ml {
     Nil => Nil
     Cons(x, tail) => Cons(f(x), my_map(tail, f))
   }
 
-fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList = 
+fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
   match ml {
     Nil => Nil
-    Cons(x, tail) => if pred(x) then Cons(x, my_filter(tail, pred)) else my_filter(tail, pred)
+    Cons(x, tail) =>
+      if pred(x) then Cons(x, my_filter(tail, pred))
+      else my_filter(tail, pred)
   }
 
-fn my_reverse(ml: MyList) -> MyList = 
-  fn reverse(tail: MyList, acc: MyList) -> My
+fn my_reverse(ml: MyList) -> MyList =
+  match ml {
+    Nil => Nil
+    Cons(x, tail) => my_reverse(t
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-custom-linked-list-2.almd
-error: Expected expression at line 32:3 (got Fn 'fn')
-  --> /tmp/dojo-custom-linked-list-2.almd:32:3
+error: Expected ')' to close function call opened at line 36:32
+  --> /tmp/dojo-custom-linked-list-2.almd:38:1
+  hint: Add ')' or check for a missing delimiter inside the function call
    |
-32 |   fn reverse(tail: MyList, acc: MyList) -> My
-   |   ^
+36 |     Cons(x, tail) => my_reverse(t
+   |                                --------------- '(' opened here
+...
+38 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
+   | ^^^^
 error[E005]: argument 'ml' expects MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-2.almd:36:40
+  --> /tmp/dojo-custom-linked-list-2.almd:40:40
   in call to my_len()
   hint: 'MyList' is not a known type. To use it as a type parameter, declare it: fn my_len[MyList](...)
    |
 13 | fn my_len(ml: MyList) -> Int =
    | ------------------------ fn my_len() defined here
 ...
-36 | test "my_len empty" { assert_eq(my_len(Nil), 0) }
+40 | test "my_len empty" { assert_eq(my_len(Nil), 0) }
    |                                        ^^^
 error[E005]: argument 'ml' expects MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-2.almd:39:65
+  --> /tmp/dojo-custom-linked-list-2.almd:43:65
   in call to my_map()
   hint: 'MyList' is not a known type. To use it as a type parameter, declare it: fn my_map[MyList](...)
    |
 19 | fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
    | ------------------------ fn my_map() defined here
 ...
-39 | test "my_map on nil" { assert_eq(to_list(my_map(Nil, (x) => x + 1)), []) }
+43 | test "my_map on nil" { assert_eq(to_list(my_map(Nil, (x) => x + 1)), []) }
    |                                                                 ^
 error[E001]: type mismatch in match arm: expected Nil but got Cons
   --> /tmp/dojo-custom-linked-list-2.almd:4:38
@@ -394,19 +418,19 @@ error[E001]: type mismatch in fn 'from_list': expected MyList but got Nil
 4 |     Cons(x, xs) => Cons(x, from_list(xs))
   |                                      ^^
 error[E001]: type mismatch in match arm: expected Nil but got Cons
-  --> /tmp/dojo-custom-linked-list-2.almd:10:36
+  --> /tmp/dojo-custom-linked-list-2.almd:10:38
   in match arm
   hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
    |
-10 |     Cons(x, ml) => Cons(x, to_list(ml))
-   |                                    ^^
+10 |     Cons(x, tail) => Cons(x, to_list(tail))
+   |                                      ^^^^
 error[E001]: type mismatch in fn 'to_list': expected List[Int] but got Nil
-  --> /tmp/dojo-custom-linked-list-2.almd:10:36
+  --> /tmp/dojo-custom-linked-list-2.almd:10:38
   in fn 'to_list'
   hint: Fix the expression type or change the expected type
    |
-10 |     Cons(x, ml) => Cons(x, to_list(ml))
-   |                                    ^^
+10 |     Cons(x, tail) => Cons(x, to_list(tail))
+   |                                      ^^^^
 error[E001]: type mismatch in match arm: expected Nil but got Cons
   --> /tmp/dojo-custom-linked-list-2.almd:22:46
   in match arm
@@ -422,39 +446,39 @@ error[E001]: type mismatch in fn 'my_map': expected MyList but got Nil
 22 |     Cons(x, tail) => Cons(f(x), my_map(tail, f))
    |                                              ^
 error[E001]: type mismatch in if branches: expected Cons but got MyList
-  --> /tmp/dojo-custom-linked-list-2.almd:28:90
+  --> /tmp/dojo-custom-linked-list-2.almd:30:28
   in if branches
   hint: Both branches of `if/then/else` must have the same type
    |
-28 |     Cons(x, tail) => if pred(x) then Cons(x, my_filter(tail, pred)) else my_filter(tail, pred)
-   |                                                                                          ^^^^
+30 |       else my_filter(tail, pred)
+   |                            ^^^^
 error[E001]: type mismatch in match arm: expected Nil but got Cons
-  --> /tmp/dojo-custom-linked-list-2.almd:28:90
+  --> /tmp/dojo-custom-linked-list-2.almd:30:28
   in match arm
   hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
    |
-28 |     Cons(x, tail) => if pred(x) then Cons(x, my_filter(tail, pred)) else my_filter(tail, pred)
-   |                                                                                          ^^^^
+30 |       else my_filter(tail, pred)
+   |                            ^^^^
 error[E001]: type mismatch in fn 'my_filter': expected MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-2.almd:28:90
+  --> /tmp/dojo-custom-linked-list-2.almd:30:28
   in fn 'my_filter'
   hint: Fix the expression type or change the expected type
    |
-28 |     Cons(x, tail) => if pred(x) then Cons(x, my_filter(tail, pred)) else my_filter(tail, pred)
-   |                                                                                          ^^^^
+30 |       else my_filter(tail, pred)
+   |                            ^^^^
 error[E001]: type mismatch in call to my_len(): expected MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-2.almd:36:40
+  --> /tmp/dojo-custom-linked-list-2.almd:40:40
   in call to my_len()
   hint: Fix the expression type or change the expected type
    |
-36 | test "my_len empty" { assert_eq(my_len(Nil), 0) }
+40 | test "my_len empty" { assert_eq(my_len(Nil), 0) }
    |                                        ^^^
 error[E001]: type mismatch in call to my_map(): expected MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-2.almd:39:65
+  --> /tmp/dojo-custom-linked-list-2.almd:43:65
   in call to my_map()
   hint: Fix the expression type or change the expected type
    |
-39 | test "my_map on nil" { assert_eq(to_list(my_map(Nil, (x) => x + 1)), []) }
+43 | test "my_map on nil" { assert_eq(to_list(my_map(Nil, (x) => x + 1)), []) }
    |                                                                 ^
 
 14 error(s) found
@@ -469,70 +493,76 @@ FAILED: /tmp/dojo-custom-linked-list-2.almd
 ### Attempt 4 (FAIL)
 
 ```almide
-fn from_list(xs: List[Int]) -> MyList = 
+fn from_list(xs: List[Int]) -> MyList =
   match xs {
     Nil => Nil
     Cons(x, xs) => Cons(x, from_list(xs))
   }
 
-fn to_list(ml: MyList) -> List[Int] = 
+fn to_list(ml: MyList) -> List[Int] =
   match ml {
     Nil => Nil
-    Cons(x, ml) => Cons(x, to_list(ml))
+    Cons(x, tail) => Cons(x, to_list(tail))
   }
 
-fn my_len(ml: MyList) -> Int = 
+fn my_len(ml: MyList) -> Int =
   match ml {
     Nil => 0
     Cons(_, tail) => 1 + my_len(tail)
   }
 
-fn my_map(ml: MyList, f: (Int) -> Int) -> MyList = 
+fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
   match ml {
     Nil => Nil
     Cons(x, tail) => Cons(f(x), my_map(tail, f))
   }
 
-fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList = 
-  match ml {
-    Nil => Nil
-    Cons(x, tail) => if pred(x) then Cons(x, my_filter(tail, pred)) else my_filter(tail, pred)
-  }
-
-fn my_reverse(ml: MyList) -> MyList = 
+fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
   match ml {
     Nil => Nil
     Cons(x, tail) =>
+      if pred(x) then Cons(x, my_filter(tail, pred))
+      else my_filter(tail, pred)
+  }
+
+fn my_reverse(ml: MyList) -> MyList =
+  match ml {
+    Nil => Nil
+    Cons(x, tail) => my_reverse(t
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-custom-linked-list-3.almd
-error: Expected expression at line 36:1 (got Test 'test')
-  --> /tmp/dojo-custom-linked-list-3.almd:36:1
+error: Expected ')' to close function call opened at line 36:32
+  --> /tmp/dojo-custom-linked-list-3.almd:38:1
+  hint: Add ')' or check for a missing delimiter inside the function call
    |
-36 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
-   | ^
+36 |     Cons(x, tail) => my_reverse(t
+   |                                --------------- '(' opened here
+...
+38 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
+   | ^^^^
 error[E005]: argument 'ml' expects MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-3.almd:38:40
+  --> /tmp/dojo-custom-linked-list-3.almd:40:40
   in call to my_len()
   hint: 'MyList' is not a known type. To use it as a type parameter, declare it: fn my_len[MyList](...)
    |
 13 | fn my_len(ml: MyList) -> Int =
    | ------------------------ fn my_len() defined here
 ...
-38 | test "my_len empty" { assert_eq(my_len(Nil), 0) }
+40 | test "my_len empty" { assert_eq(my_len(Nil), 0) }
    |                                        ^^^
 error[E005]: argument 'ml' expects MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-3.almd:41:65
+  --> /tmp/dojo-custom-linked-list-3.almd:43:65
   in call to my_map()
   hint: 'MyList' is not a known type. To use it as a type parameter, declare it: fn my_map[MyList](...)
    |
 19 | fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
    | ------------------------ fn my_map() defined here
 ...
-41 | test "my_map on nil" { assert_eq(to_list(my_map(Nil, (x) => x + 1)), []) }
+43 | test "my_map on nil" { assert_eq(to_list(my_map(Nil, (x) => x + 1)), []) }
    |                                                                 ^
 error[E001]: type mismatch in match arm: expected Nil but got Cons
   --> /tmp/dojo-custom-linked-list-3.almd:4:38
@@ -549,19 +579,19 @@ error[E001]: type mismatch in fn 'from_list': expected MyList but got Nil
 4 |     Cons(x, xs) => Cons(x, from_list(xs))
   |                                      ^^
 error[E001]: type mismatch in match arm: expected Nil but got Cons
-  --> /tmp/dojo-custom-linked-list-3.almd:10:36
+  --> /tmp/dojo-custom-linked-list-3.almd:10:38
   in match arm
   hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
    |
-10 |     Cons(x, ml) => Cons(x, to_list(ml))
-   |                                    ^^
+10 |     Cons(x, tail) => Cons(x, to_list(tail))
+   |                                      ^^^^
 error[E001]: type mismatch in fn 'to_list': expected List[Int] but got Nil
-  --> /tmp/dojo-custom-linked-list-3.almd:10:36
+  --> /tmp/dojo-custom-linked-list-3.almd:10:38
   in fn 'to_list'
   hint: Fix the expression type or change the expected type
    |
-10 |     Cons(x, ml) => Cons(x, to_list(ml))
-   |                                    ^^
+10 |     Cons(x, tail) => Cons(x, to_list(tail))
+   |                                      ^^^^
 error[E001]: type mismatch in match arm: expected Nil but got Cons
   --> /tmp/dojo-custom-linked-list-3.almd:22:46
   in match arm
@@ -577,39 +607,39 @@ error[E001]: type mismatch in fn 'my_map': expected MyList but got Nil
 22 |     Cons(x, tail) => Cons(f(x), my_map(tail, f))
    |                                              ^
 error[E001]: type mismatch in if branches: expected Cons but got MyList
-  --> /tmp/dojo-custom-linked-list-3.almd:28:90
+  --> /tmp/dojo-custom-linked-list-3.almd:30:28
   in if branches
   hint: Both branches of `if/then/else` must have the same type
    |
-28 |     Cons(x, tail) => if pred(x) then Cons(x, my_filter(tail, pred)) else my_filter(tail, pred)
-   |                                                                                          ^^^^
+30 |       else my_filter(tail, pred)
+   |                            ^^^^
 error[E001]: type mismatch in match arm: expected Nil but got Cons
-  --> /tmp/dojo-custom-linked-list-3.almd:28:90
+  --> /tmp/dojo-custom-linked-list-3.almd:30:28
   in match arm
   hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
    |
-28 |     Cons(x, tail) => if pred(x) then Cons(x, my_filter(tail, pred)) else my_filter(tail, pred)
-   |                                                                                          ^^^^
+30 |       else my_filter(tail, pred)
+   |                            ^^^^
 error[E001]: type mismatch in fn 'my_filter': expected MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-3.almd:28:90
+  --> /tmp/dojo-custom-linked-list-3.almd:30:28
   in fn 'my_filter'
   hint: Fix the expression type or change the expected type
    |
-28 |     Cons(x, tail) => if pred(x) then Cons(x, my_filter(tail, pred)) else my_filter(tail, pred)
-   |                                                                                          ^^^^
+30 |       else my_filter(tail, pred)
+   |                            ^^^^
 error[E001]: type mismatch in call to my_len(): expected MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-3.almd:38:40
+  --> /tmp/dojo-custom-linked-list-3.almd:40:40
   in call to my_len()
   hint: Fix the expression type or change the expected type
    |
-38 | test "my_len empty" { assert_eq(my_len(Nil), 0) }
+40 | test "my_len empty" { assert_eq(my_len(Nil), 0) }
    |                                        ^^^
 error[E001]: type mismatch in call to my_map(): expected MyList but got Nil
-  --> /tmp/dojo-custom-linked-list-3.almd:41:65
+  --> /tmp/dojo-custom-linked-list-3.almd:43:65
   in call to my_map()
   hint: Fix the expression type or change the expected type
    |
-41 | test "my_map on nil" { assert_eq(to_list(my_map(Nil, (x) => x + 1)), []) }
+43 | test "my_map on nil" { assert_eq(to_list(my_map(Nil, (x) => x + 1)), []) }
    |                                                                 ^
 
 14 error(s) found

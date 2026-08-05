@@ -11,36 +11,44 @@
 
 ```almide
 fn rle_encode(s: String) -> String {
-    let mut result = String::new();
-    let mut count = 1;
-    for (i, c) in s.chars().enumerate() {
-        if i + 1 < s.chars().count() && s.chars().nth(i + 1) == Some(c) {
-            count += 1;
-        } else {
-            result += &int.to_string(count);
-            result += &c.to_string();
-            count = 1;
-        }
+  let mut result = "";
+  let mut count = 0;
+  let mut prev = None;
+  for c in string.chars(s) {
+    if prev == Some(c) {
+      count += 1;
+    } else {
+      if prev.is_some() {
+        result += int.to_string(count);
+        result += string.from_codepoint(prev.unwrap());
+      }
+      count = 1;
     }
-    result
+    prev = Some(c);
+  }
+  if prev.is_some() {
+    result += int.to_string(count);
+    result += string.from_codepoint(prev.unwrap());
+  }
+  result
 }
 
 fn rle_decode(s: String) -> String {
-    let mut result = String::new();
-    let mut i = 0;
-    while i < s.chars().count() {
-        let count = int.parse(s.chars().nth(i).unwrap().to_string());
-        match count {
-            ok(count) => {
-                for _ in 0..count {
-                    result += &s.chars().nth(i + 1).unwrap().to_string();
-                }
-                i += 2;
-            }
-            err(_) => return result,
-        }
+  let mut result = "";
+  let mut i = 0;
+  while i < string.len(s) {
+    let count = int.parse(s.slice(i, i + 1));
+    i += 1;
+    match count {
+      ok(count) => {
+        let c = string.from_codepoint(s.slice(i, i + 1));
+        i += 1;
+        result += c.repeat(count);
+      }
+      err(_) => return result,
     }
-    result
+  }
+  result
 }
 ```
 
@@ -51,6 +59,22 @@ Compiling /tmp/dojo-run-length-encoding-0.almd
 error: Missing '=' before function body at line 1:36
   --> /tmp/dojo-run-length-encoding-0.almd:1:36
   hint: Almide requires '=' before the body. Write: fn rle_encode(...) -> Type = { ... }
+  |
+1 | fn rle_encode(s: String) -> String {
+  |                                    ^
+error: Missing '=' before function body at line 24:36
+  --> /tmp/dojo-run-length-encoding-0.almd:24:36
+  hint: Almide requires '=' before the body. Write: fn rle_decode(...) -> Type = { ... }
+   |
+24 | fn rle_decode(s: String) -> String {
+   |                                    ^
+
+2 error(s) found
+Compile error for /tmp/dojo-run-length-encoding-0.almd:
+compile failed
+FAILED: /tmp/dojo-run-length-encoding-0.almd
+
+1/1 test file(s) failed
 
 ```
 
@@ -58,77 +82,125 @@ error: Missing '=' before function body at line 1:36
 
 ```almide
 fn rle_encode(s: String) -> String = {
-    let mut result = string.new();
-    let mut count = 1;
-    for (i, c) in s.chars() |>
-        list.enumerate() |
-        list.filter_map(|(i, c)|
-            if i + 1 < s.chars().len() && s.chars().nth(i + 1) == some(c) {
-                some((i, c))
-            } else {
-                none
-            }
-        ) |
-        list.fold(string.new(), (count, c) => {
-            if count > 0 {
-                result += &int.to_string(count);
-                result += &c.to_string();
-                string.new()
-            } else {
-                count + 1
-            }
-        })
-    result
+  let mut result = "";
+  let mut count = 0;
+  let mut prev = None;
+  for c in string.chars(s) {
+    if prev == Some(c) {
+      count += 1;
+    } else {
+      if prev.is_some() {
+        result += int.to_string(count);
+        result += string.from_codepoint(prev.unwrap());
+      }
+      count = 1;
+    }
+    prev = Some(c);
+  }
+  if prev.is_some() {
+    result += int.to_string(count);
+    result += string.from_codepoint(prev.unwrap());
+  }
+  result
 }
 
 fn rle_decode(s: String) -> String = {
-    let mut result = string.new();
-    let mut i = 0;
-    while i < s.chars().len() {
-        let count = int.parse(s.chars().nth(i).unwrap().to_string());
-        match count {
-            ok(count) => {
-                for _ in 0..count {
-                    result += &s.chars().nth(i + 1).unwrap().to_string();
+  let mut result = "";
+  let mut i = 0;
+  while i < string.len(s) {
+    let count = int.parse(s.slice(i, i + 1));
+    i += 1;
+    match count {
+      ok(count) => {
+        let c = string.from_codepoint(s.slice(i, i + 1));
+        i += 1;
+        result += c.repeat(count);
+      }
+      err(_) => return result,
+    }
+  }
+  result
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-run-length-encoding-1.almd
-error: 'let mut' is not valid in Almide at line 2:9
-  --> /tmp/dojo-run-length-encoding-1.almd:2:9
+error: 'let mut' is not valid in Almide at line 2:7
+  --> /tmp/dojo-run-length-encoding-1.almd:2:7
   hint: Use 'var' for mutable variables. Example: var x = 0
   |
-2 |     let mut result = string.new();
-  |         ^
-error: 'let mut' is not valid in Almide at line 3:9
-  --> /tmp/dojo-run-length-encoding-1.almd:3:9
+2 |   let mut result = "";
+  |       ^
+error: 'let mut' is not valid in Almide at line 3:7
+  --> /tmp/dojo-run-length-encoding-1.almd:3:7
   hint: Use 'var' for mutable variables. Example: var x = 0
   |
-3 |     let mut count = 1;
-  |         ^
-error: Expected LBrace at line 5:26 (got Pipe '|')
-  --> /tmp/dojo-run-length-encoding-1.almd:5:26
+3 |   let mut count = 0;
+  |       ^
+error: 'let mut' is not valid in Almide at line 4:7
+  --> /tmp/dojo-run-length-encoding-1.almd:4:7
+  hint: Use 'var' for mutable variables. Example: var x = 0
   |
-5 |         list.enumerate() |
-  |                          ^
-error: Expected expression at line 6:25 (got Pipe '|')
-  --> /tmp/dojo-run-length-encoding-1.almd:6:25
+4 |   let mut prev = None;
+  |       ^
+error: Expected Then at line 6:24 (got LBrace '{')
+  --> /tmp/dojo-run-length-encoding-1.almd:6:24
+  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
   |
-6 |         list.filter_map(|(i, c)|
-  |                         ^
-error: '&&' is not valid in Almide at line 7:40
-  --> /tmp/dojo-run-length-encoding-1.almd:7:40
-  hint: Use 'and' for logical AND. Example: if a and b then ...
+6 |     if prev == Some(c) {
+  |                        ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-1.almd:7:14
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
   |
-7 |             if i + 1 < s.chars().len() && s.chars().nth(i + 1) == some(c) {
-  |                                        ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 9:15 (got Else 'else')
-  --> /tmp/dojo-run-length-encoding-1.almd:9:15
+7 |       count += 1;
+  |              ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 8:7 (got Else 'else')
+  --> /tmp/dojo-run-length-encoding-1.almd:8:7
   |
-9 |             } else {
-  |               ^
+8 |     } else {
+  |       ^
+error: 'let mut' is not valid in Almide at line 25:7
+  --> /tmp/dojo-run-length-encoding-1.almd:25:7
+  hint: Use 'var' for mutable variables. Example: var x = 0
+   |
+25 |   let mut result = "";
+   |       ^
+error: 'let mut' is not valid in Almide at line 26:7
+  --> /tmp/dojo-run-length-encoding-1.almd:26:7
+  hint: Use 'var' for mutable variables. Example: var x = 0
+   |
+26 |   let mut i = 0;
+   |       ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-1.almd:29:8
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+29 |     i += 1;
+   |        ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-1.almd:33:12
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+33 |         i += 1;
+   |            ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-1.almd:34:17
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+34 |         result += c.repeat(count);
+   |                 ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 38:3 (got RBrace '}')
+  --> /tmp/dojo-run-length-encoding-1.almd:38:3
+   |
+38 |   }
+   |   ^
 error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
   --> /tmp/dojo-run-length-encoding-1.almd:1:38
   in fn 'rle_encode'
@@ -142,8 +214,21 @@ error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
   |
 1 | fn rle_encode(s: String) -> String = {
   |                                      ^
+error[E001]: type mismatch in fn 'rle_decode': expected String but got Unit
+  --> /tmp/dojo-run-length-encoding-1.almd:24:38
+  in fn 'rle_decode'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
+   |
+24 | fn rle_decode(s: String) -> String = {
+   |                                      ^
 
-7 error(s) found
+14 error(s) found
 Compile error for /tmp/dojo-run-length-encoding-1.almd:
 compile failed
 FAILED: /tmp/dojo-run-length-encoding-1.almd
@@ -156,77 +241,97 @@ FAILED: /tmp/dojo-run-length-encoding-1.almd
 
 ```almide
 fn rle_encode(s: String) -> String = {
-    let result = string.new();
-    let mut count = 1;
-    for (i, c) in s.chars() |> list.enumerate() |> list.filter_map(|(i, c)|
-        if i + 1 < s.chars().len() && s.chars().nth(i + 1) == some(c) {
-            some((i, c))
-        } else {
-            none
-        }
-    ) |> list.fold(string.new(), (count, c) => {
-        if count > 0 {
-            result += &int.to_string(count);
-            result += &c.to_string();
-            string.new()
-        } else {
-            count + 1
-        }
-    }) {
-        count = 1;
+  let result = "";
+  let count = 0;
+  let prev = None;
+  for c in string.chars(s) {
+    if prev == Some(c) {
+      count += 1;
+    } else {
+      if prev.is_some() {
+        result += int.to_string(count);
+        result += string.from_codepoint(prev.unwrap());
+      }
+      count = 1;
     }
-    result
+    prev = Some(c);
+  }
+  if prev.is_some() {
+    result += int.to_string(count);
+    result += string.from_codepoint(prev.unwrap());
+  }
+  result
 }
 
 fn rle_decode(s: String) -> String = {
-    let result = string.new();
-    let mut i = 0;
-    while i < s.chars().len() {
-        let count = int.parse(s.chars().nth(i).unwrap().to_string());
-        match count {
-            ok(count) => {
-                for _ in 0..count {
-                    result += &s.chars().nth(i + 1).unwrap().to
+  let result = "";
+  let i = 0;
+  while i < string.len(s) {
+    let count = int.parse(s.slice(i, i + 1));
+    i += 1;
+    match count {
+      ok(count) => {
+        let c = string.from_codepoint(s.slice(i, i + 1));
+        i += 1;
+        result += c.repeat(count);
+      }
+      err(_) => return result,
+    }
+  }
+  result
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-run-length-encoding-2.almd
-error: 'let mut' is not valid in Almide at line 3:9
-  --> /tmp/dojo-run-length-encoding-2.almd:3:9
-  hint: Use 'var' for mutable variables. Example: var x = 0
+error: Expected Then at line 6:24 (got LBrace '{')
+  --> /tmp/dojo-run-length-encoding-2.almd:6:24
+  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
   |
-3 |     let mut count = 1;
-  |         ^
-error: Expected expression at line 4:68 (got Pipe '|')
-  --> /tmp/dojo-run-length-encoding-2.almd:4:68
+6 |     if prev == Some(c) {
+  |                        ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-2.almd:7:14
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
   |
-4 |     for (i, c) in s.chars() |> list.enumerate() |> list.filter_map(|(i, c)|
-  |                                                                    ^
-error: '&&' is not valid in Almide at line 5:36
-  --> /tmp/dojo-run-length-encoding-2.almd:5:36
-  hint: Use 'and' for logical AND. Example: if a and b then ...
+7 |       count += 1;
+  |              ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 8:7 (got Else 'else')
+  --> /tmp/dojo-run-length-encoding-2.almd:8:7
   |
-5 |         if i + 1 < s.chars().len() && s.chars().nth(i + 1) == some(c) {
-  |                                    ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 7:11 (got Else 'else')
-  --> /tmp/dojo-run-length-encoding-2.almd:7:11
-  |
-7 |         } else {
-  |           ^
-error[E002]: undefined function 'string.new'
-  --> /tmp/dojo-run-length-encoding-2.almd:2:28
-  in call to string.new()
-  hint: Did you mean `string.get`?
-  try:
-      // string.new(...)  →  string.get(...)
-      string.get(...)
-  |
-2 |     let result = string.new();
-  |                            ^
+8 |     } else {
+  |       ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-2.almd:29:8
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+29 |     i += 1;
+   |        ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-2.almd:33:12
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+33 |         i += 1;
+   |            ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-2.almd:34:17
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+34 |         result += c.repeat(count);
+   |                 ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 38:3 (got RBrace '}')
+  --> /tmp/dojo-run-length-encoding-2.almd:38:3
+   |
+38 |   }
+   |   ^
 error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
-  --> /tmp/dojo-run-length-encoding-2.almd:2:28
+  --> /tmp/dojo-run-length-encoding-2.almd:4:14
   in fn 'rle_encode'
   hint: Fix the expression type or change the expected type
   try:
@@ -236,10 +341,23 @@ error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
       // Or inline:
       //   <expression>                   // must have type String
   |
-2 |     let result = string.new();
-  |                            ^
+4 |   let prev = None;
+  |              ^^^^
+error[E001]: type mismatch in fn 'rle_decode': expected String but got Unit
+  --> /tmp/dojo-run-length-encoding-2.almd:26:11
+  in fn 'rle_decode'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
+   |
+26 |   let i = 0;
+   |           ^
 
-6 error(s) found
+9 error(s) found
 Compile error for /tmp/dojo-run-length-encoding-2.almd:
 compile failed
 FAILED: /tmp/dojo-run-length-encoding-2.almd
@@ -252,71 +370,88 @@ FAILED: /tmp/dojo-run-length-encoding-2.almd
 
 ```almide
 fn rle_encode(s: String) -> String = {
-    let result = string.new();
-    var count = 1;
-    for (i, c) in s.chars() |> list.enumerate() |> list.filter_map(|(i, c)| {
-        if i + 1 < s.chars().len() and s.chars().nth(i + 1) == some(c) {
-            some((i, c))
-        } else {
-            none
-        }
-    }) |> list.fold(string.new(), (count, c) => {
-        if count > 0 {
-            result += &int.to_string(count);
-            result += &c.to_string();
-            string.new()
-        } else {
-            count + 1
-        }
-    }) {
-        count = 1;
+  let result = "";
+  let count = 0;
+  let prev = None;
+  for c in string.chars(s) {
+    if prev == Some(c) {
+      count += 1;
+    } else {
+      if prev.is_some() {
+        result = result + int.to_string(count) + string.from_codepoint(prev.unwrap());
+      }
+      count = 1;
     }
-    result
+    prev = Some(c);
+  }
+  if prev.is_some() {
+    result = result + int.to_string(count) + string.from_codepoint(prev.unwrap());
+  }
+  result
 }
 
 fn rle_decode(s: String) -> String = {
-    let result = string.new();
-    var i = 0;
-    while i < s.chars().len() {
-        let count = int.parse(s.chars().nth(i).unwrap().to_string());
-        match count {
-            ok(count) => {
-                for _ in 0..count {
-                    result += &s.chars().nth(i + 1).unwrap().to_string();
+  let result = "";
+  let i = 0;
+  while i < string.len(s) {
+    let count = int.parse(s.slice(i, i + 1));
+    i += 1;
+    match count {
+      ok(count) => {
+        let c = string.from_codepoint(s.slice(i, i + 1));
+        i += 1;
+        result = result + c.repeat(count);
+      }
+      err(_) => return result,
+    }
+  }
+  result
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-run-length-encoding-3.almd
-error: Expected expression at line 4:68 (got Pipe '|')
-  --> /tmp/dojo-run-length-encoding-3.almd:4:68
-  |
-4 |     for (i, c) in s.chars() |> list.enumerate() |> list.filter_map(|(i, c)| {
-  |                                                                    ^
-error: Expected Then at line 5:72 (got LBrace '{')
-  --> /tmp/dojo-run-length-encoding-3.almd:5:72
+error: Expected Then at line 6:24 (got LBrace '{')
+  --> /tmp/dojo-run-length-encoding-3.almd:6:24
   hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
   |
-5 |         if i + 1 < s.chars().len() and s.chars().nth(i + 1) == some(c) {
-  |                                                                        ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 7:11 (got Else 'else')
-  --> /tmp/dojo-run-length-encoding-3.almd:7:11
+6 |     if prev == Some(c) {
+  |                        ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-3.almd:7:14
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
   |
-7 |         } else {
-  |           ^
-error[E002]: undefined function 'string.new'
-  --> /tmp/dojo-run-length-encoding-3.almd:2:28
-  in call to string.new()
-  hint: Did you mean `string.get`?
-  try:
-      // string.new(...)  →  string.get(...)
-      string.get(...)
+7 |       count += 1;
+  |              ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 8:7 (got Else 'else')
+  --> /tmp/dojo-run-length-encoding-3.almd:8:7
   |
-2 |     let result = string.new();
-  |                            ^
+8 |     } else {
+  |       ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-3.almd:27:8
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+27 |     i += 1;
+   |        ^
+error: Assignments return Unit and can't appear here
+  --> /tmp/dojo-run-length-encoding-3.almd:31:12
+  in assignment-in-expr
+  hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
+   |
+31 |         i += 1;
+   |            ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 36:3 (got RBrace '}')
+  --> /tmp/dojo-run-length-encoding-3.almd:36:3
+   |
+36 |   }
+   |   ^
 error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
-  --> /tmp/dojo-run-length-encoding-3.almd:3:17
+  --> /tmp/dojo-run-length-encoding-3.almd:4:14
   in fn 'rle_encode'
   hint: Fix the expression type or change the expected type
   try:
@@ -326,10 +461,23 @@ error[E001]: type mismatch in fn 'rle_encode': expected String but got Unit
       // Or inline:
       //   <expression>                   // must have type String
   |
-3 |     var count = 1;
-  |                 ^
+4 |   let prev = None;
+  |              ^^^^
+error[E001]: type mismatch in fn 'rle_decode': expected String but got Unit
+  --> /tmp/dojo-run-length-encoding-3.almd:24:11
+  in fn 'rle_decode'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
+   |
+24 |   let i = 0;
+   |           ^
 
-5 error(s) found
+8 error(s) found
 Compile error for /tmp/dojo-run-length-encoding-3.almd:
 compile failed
 FAILED: /tmp/dojo-run-length-encoding-3.almd

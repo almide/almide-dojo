@@ -3,8 +3,7 @@
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: no
 - **retries**: 3
-- **category**: type-error
-- **diagnostic code**: `E001`
+- **category**: parse-error
 
 ## Attempts
 
@@ -14,35 +13,57 @@
 fn to_roman(n: Int) -> String = 
   let values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
   let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
-  let rec loop(n: Int, i: Int) -> String = 
-    if n == 0 then "" 
-    else if n >= values[i] then symbols[i] + loop(n - values[i], i)
-    else loop(n, i + 1)
-  in loop(n, 0)
+  let pairs = list.zip(values, symbols)
+  in
+  list.fold(pairs, "", (acc, (value, symbol)) => 
+    let count = int.clamp(n / value, 0, n / value)
+    in
+    acc + string.repeat(symbol, count)
+  )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-roman-numeral-0.almd
-error: `let rec` is OCaml/SML syntax; Almide functions are recursive by default
-  --> /tmp/dojo-roman-numeral-0.almd:4:7
-  in let rec
-  hint: Define recursive functions at top level: `fn name(args) -> ReturnType = body`. Almide has no `let rec` — call the fn directly, including from its own body.
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-roman-numeral-0.almd:7:5
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+  |
+7 |     let count = int.clamp(n / value, 0, n / value)
+  |     ^^^
+error: Expected expression at line 10:3 (got RParen ')')
+  --> /tmp/dojo-roman-numeral-0.almd:10:3
+   |
+10 |   )
+   |   ^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-roman-numeral-0.almd:9:5
+  in variable acc
+  hint: Check the variable name
+  |
+9 |     acc + string.repeat(symbol, count)
+  |     ^^^
+error[E003]: undefined variable 'symbol'
+  --> /tmp/dojo-roman-numeral-0.almd:9:25
+  in variable symbol
+  hint: Did you mean `symbols`?
   try:
-      fn fact(n: Int) -> Int =
-          if n == 0 then 1 else n * fact(n - 1)
+      // symbol  →  symbols
+      symbols
   |
-4 |   let rec loop(n: Int, i: Int) -> String =
-  |       ^^^
-error: 'loop' is not valid in Almide at line 6:46
-  --> /tmp/dojo-roman-numeral-0.almd:6:46
-  hint: Use 'while true { ... }' or 'do { guard COND else ok(()) ... }' for loops.
+9 |     acc + string.repeat(symbol, count)
+  |                         ^^^^^^
+error[E003]: undefined variable 'count'
+  --> /tmp/dojo-roman-numeral-0.almd:9:33
+  in variable count
+  hint: Check the variable name
   |
-6 |     else if n >= values[i] then symbols[i] + loop(n - values[i], i)
-  |                                              ^
+9 |     acc + string.repeat(symbol, count)
+  |                                 ^^^^^
 error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
-  --> /tmp/dojo-roman-numeral-0.almd:3:84
+  --> /tmp/dojo-roman-numeral-0.almd:9:33
   in fn 'to_roman'
   hint: Fix the expression type or change the expected type
   try:
@@ -52,10 +73,10 @@ error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
       // Or inline:
       //   <expression>                   // must have type String
   |
-3 |   let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
-  |                                                                                    ^^^
+9 |     acc + string.repeat(symbol, count)
+  |                                 ^^^^^
 
-3 error(s) found
+6 error(s) found
 Compile error for /tmp/dojo-roman-numeral-0.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-0.almd
@@ -70,41 +91,85 @@ FAILED: /tmp/dojo-roman-numeral-0.almd
 fn to_roman(n: Int) -> String = 
   let values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
   let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
-  fn loop(n: Int, i: Int) -> String = 
-    if n == 0 then "" 
-    else if n >= values[i] then symbols[i] + loop(n - values[i], i)
-    else if i < list.len(values) - 1 then loop(n, i + 1)
-    else ""
-  in loop(n, 0)
+  let pairs = list.zip(values, symbols)
+  in
+  list.fold(pairs, "", (acc, pair) => 
+    let (value, symbol) = pair
+    let count = n / value
+    let n = n - count * value
+    in
+    acc + string.repeat(symbol, count)
+  )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-roman-numeral-1.almd
-error: 'loop' is not valid in Almide at line 6:46
-  --> /tmp/dojo-roman-numeral-1.almd:6:46
-  hint: Use 'while true { ... }' or 'do { guard COND else ok(()) ... }' for loops.
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-roman-numeral-1.almd:7:5
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-6 |     else if n >= values[i] then symbols[i] + loop(n - values[i], i)
-  |                                              ^
+7 |     let (value, symbol) = pair
+  |     ^^^
+error: Expected expression at line 12:3 (got RParen ')')
+  --> /tmp/dojo-roman-numeral-1.almd:12:3
+   |
+12 |   )
+   |   ^
+error[E003]: undefined variable 'value'
+  --> /tmp/dojo-roman-numeral-1.almd:8:21
+  in variable value
+  hint: Did you mean `values`?
+  try:
+      // value  →  values
+      values
+  |
+8 |     let count = n / value
+  |                     ^^^^^
+error[E003]: undefined variable 'value'
+  --> /tmp/dojo-roman-numeral-1.almd:9:25
+  in variable value
+  hint: Did you mean `values`?
+  try:
+      // value  →  values
+      values
+  |
+9 |     let n = n - count * value
+  |                         ^^^^^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-roman-numeral-1.almd:11:5
+  in variable acc
+  hint: Check the variable name
+   |
+11 |     acc + string.repeat(symbol, count)
+   |     ^^^
+error[E003]: undefined variable 'symbol'
+  --> /tmp/dojo-roman-numeral-1.almd:11:25
+  in variable symbol
+  hint: Did you mean `symbols`?
+  try:
+      // symbol  →  symbols
+      symbols
+   |
+11 |     acc + string.repeat(symbol, count)
+   |                         ^^^^^^
 error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
-  --> /tmp/dojo-roman-numeral-1.almd:3:84
+  --> /tmp/dojo-roman-numeral-1.almd:11:33
   in fn 'to_roman'
   hint: Fix the expression type or change the expected type
   try:
-      // fn body ends with `let symbols = ...` (a statement, returns Unit).
-      // Add `symbols` as the trailing expression so the fn returns String:
-      //
-      //   let symbols = <computation>
-      //   symbols                         // <-- add this line
-      //
-      // Or inline the computation as the tail expression directly.
-  |
-3 |   let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
-  |                                                                                    ^^^
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
+   |
+11 |     acc + string.repeat(symbol, count)
+   |                                 ^^^^^
 
-2 error(s) found
+7 error(s) found
 Compile error for /tmp/dojo-roman-numeral-1.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-1.almd
@@ -119,36 +184,57 @@ FAILED: /tmp/dojo-roman-numeral-1.almd
 fn to_roman(n: Int) -> String = 
   let values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
   let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
-  let rec loop(n: Int, i: Int) -> String = 
-    if n == 0 then "" 
-    else if n >= values[i] then symbols[i] + loop(n - values[i], i)
-    else if i < list.len(values) - 1 then loop(n, i + 1)
-    else ""
-  in loop(n, 0)
+  let pairs = list.zip(values, symbols)
+  in
+  list.fold(pairs, "", (acc, (value, symbol)) => 
+    let count = n / value
+    in
+    acc + string.repeat(symbol, count)
+  )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-roman-numeral-2.almd
-error: `let rec` is OCaml/SML syntax; Almide functions are recursive by default
-  --> /tmp/dojo-roman-numeral-2.almd:4:7
-  in let rec
-  hint: Define recursive functions at top level: `fn name(args) -> ReturnType = body`. Almide has no `let rec` — call the fn directly, including from its own body.
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-roman-numeral-2.almd:7:5
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+  |
+7 |     let count = n / value
+  |     ^^^
+error: Expected expression at line 10:3 (got RParen ')')
+  --> /tmp/dojo-roman-numeral-2.almd:10:3
+   |
+10 |   )
+   |   ^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-roman-numeral-2.almd:9:5
+  in variable acc
+  hint: Check the variable name
+  |
+9 |     acc + string.repeat(symbol, count)
+  |     ^^^
+error[E003]: undefined variable 'symbol'
+  --> /tmp/dojo-roman-numeral-2.almd:9:25
+  in variable symbol
+  hint: Did you mean `symbols`?
   try:
-      fn fact(n: Int) -> Int =
-          if n == 0 then 1 else n * fact(n - 1)
+      // symbol  →  symbols
+      symbols
   |
-4 |   let rec loop(n: Int, i: Int) -> String =
-  |       ^^^
-error: 'loop' is not valid in Almide at line 6:46
-  --> /tmp/dojo-roman-numeral-2.almd:6:46
-  hint: Use 'while true { ... }' or 'do { guard COND else ok(()) ... }' for loops.
+9 |     acc + string.repeat(symbol, count)
+  |                         ^^^^^^
+error[E003]: undefined variable 'count'
+  --> /tmp/dojo-roman-numeral-2.almd:9:33
+  in variable count
+  hint: Check the variable name
   |
-6 |     else if n >= values[i] then symbols[i] + loop(n - values[i], i)
-  |                                              ^
+9 |     acc + string.repeat(symbol, count)
+  |                                 ^^^^^
 error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
-  --> /tmp/dojo-roman-numeral-2.almd:3:84
+  --> /tmp/dojo-roman-numeral-2.almd:9:33
   in fn 'to_roman'
   hint: Fix the expression type or change the expected type
   try:
@@ -158,10 +244,10 @@ error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
       // Or inline:
       //   <expression>                   // must have type String
   |
-3 |   let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
-  |                                                                                    ^^^
+9 |     acc + string.repeat(symbol, count)
+  |                                 ^^^^^
 
-3 error(s) found
+6 error(s) found
 Compile error for /tmp/dojo-roman-numeral-2.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-2.almd
@@ -176,41 +262,70 @@ FAILED: /tmp/dojo-roman-numeral-2.almd
 fn to_roman(n: Int) -> String = 
   let values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
   let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
-  fn loop(n: Int, i: Int) -> String = 
-    if n == 0 then "" 
-    else if n >= values[i] then symbols[i] + loop(n - values[i], i)
-    else if i < list.len(values) - 1 then loop(n, i + 1)
-    else ""
-  in loop(n, 0)
+  let pairs = list.zip(values, symbols)
+  in
+  list.fold(pairs, "", (acc, (value, symbol)) => 
+    let count = int.clamp(n / value, 0, n / value)
+    in
+    acc + string.repeat(symbol, count)
+  )
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-roman-numeral-3.almd
-error: 'loop' is not valid in Almide at line 6:46
-  --> /tmp/dojo-roman-numeral-3.almd:6:46
-  hint: Use 'while true { ... }' or 'do { guard COND else ok(()) ... }' for loops.
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-roman-numeral-3.almd:7:5
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-6 |     else if n >= values[i] then symbols[i] + loop(n - values[i], i)
-  |                                              ^
+7 |     let count = int.clamp(n / value, 0, n / value)
+  |     ^^^
+error: Expected expression at line 10:3 (got RParen ')')
+  --> /tmp/dojo-roman-numeral-3.almd:10:3
+   |
+10 |   )
+   |   ^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-roman-numeral-3.almd:9:5
+  in variable acc
+  hint: Check the variable name
+  |
+9 |     acc + string.repeat(symbol, count)
+  |     ^^^
+error[E003]: undefined variable 'symbol'
+  --> /tmp/dojo-roman-numeral-3.almd:9:25
+  in variable symbol
+  hint: Did you mean `symbols`?
+  try:
+      // symbol  →  symbols
+      symbols
+  |
+9 |     acc + string.repeat(symbol, count)
+  |                         ^^^^^^
+error[E003]: undefined variable 'count'
+  --> /tmp/dojo-roman-numeral-3.almd:9:33
+  in variable count
+  hint: Check the variable name
+  |
+9 |     acc + string.repeat(symbol, count)
+  |                                 ^^^^^
 error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
-  --> /tmp/dojo-roman-numeral-3.almd:3:84
+  --> /tmp/dojo-roman-numeral-3.almd:9:33
   in fn 'to_roman'
   hint: Fix the expression type or change the expected type
   try:
-      // fn body ends with `let symbols = ...` (a statement, returns Unit).
-      // Add `symbols` as the trailing expression so the fn returns String:
-      //
-      //   let symbols = <computation>
-      //   symbols                         // <-- add this line
-      //
-      // Or inline the computation as the tail expression directly.
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
   |
-3 |   let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
-  |                                                                                    ^^^
+9 |     acc + string.repeat(symbol, count)
+  |                                 ^^^^^
 
-2 error(s) found
+6 error(s) found
 Compile error for /tmp/dojo-roman-numeral-3.almd:
 compile failed
 FAILED: /tmp/dojo-roman-numeral-3.almd

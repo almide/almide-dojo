@@ -10,7 +10,7 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn reverse(s: String) -> String =
+fn reverse(s: String) -> String = 
   let chars = string.chars(s)
   in string.join(list.reverse(chars), "")
 ```

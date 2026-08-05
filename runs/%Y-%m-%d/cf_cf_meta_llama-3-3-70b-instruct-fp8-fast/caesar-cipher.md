@@ -10,24 +10,24 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn encrypt(text: String, shift: Int) -> String = 
+fn encrypt(text: String, shift: Int) -> String =
   string.join(
     list.map(
-      string.chars(text), 
+      string.chars(text),
       (c) => 
-        if string.is_lower(c) then 
-          let 
+        if string.is_lower(c) then
+          let
             code = string.codepoint(c) |> option.unwrap_or(0)
             new_code = (code - 97 + shift) % 26 + 97
-          in 
-            string.from_codepoint(new_code) 
-        else 
+          in
+            string.from_codepoint(new_code)
+        else
           c
-    ), 
+    ),
     ""
   )
 
-fn decrypt(text: String, shift: Int) -> String = 
+fn decrypt(text: String, shift: Int) -> String =
   encrypt(text, 26 - shift)
 ```
 
@@ -55,23 +55,23 @@ FAILED: /tmp/dojo-caesar-cipher-0.almd
 ### Attempt 2 (PASS)
 
 ```almide
-fn encrypt(text: String, shift: Int) -> String = 
+fn encrypt(text: String, shift: Int) -> String =
   string.join(
     list.map(
-      string.chars(text), 
+      string.chars(text),
       (c) => 
-        if string.is_lower(c) then 
+        if string.is_lower(c) then
           {
             let code = string.codepoint(c) |> option.unwrap_or(0)
             let new_code = (code - 97 + shift) % 26 + 97
             string.from_codepoint(new_code)
-          } 
-        else 
+          }
+        else
           c
-    ), 
+    ),
     ""
   )
 
-fn decrypt(text: String, shift: Int) -> String = 
+fn decrypt(text: String, shift: Int) -> String =
   encrypt(text, 26 - shift)
 ```

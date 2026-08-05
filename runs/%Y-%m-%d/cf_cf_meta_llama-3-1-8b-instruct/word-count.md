@@ -3,40 +3,37 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: parse-error
+- **category**: name-error
+- **diagnostic code**: `E003`
 
 ## Attempts
 
 ### Attempt 1 (FAIL)
 
 ```almide
-fn word_count(s: String) -> Map[String, Int] = 
-    let words = string.split(s, " ") |> list.filter(fn(x) => x != "")
-    list.fold(words, map.new[String, Int](), (acc, x) => 
-        match map.get(acc, x) {
-            some(count) => map.set(acc, x, count + 1)
-            none => map.set(acc, x, 1)
-        })
+fn word_count(s: String) -> Map[String, Int] {
+  let words = string.split(s, " ").filter(|x| !x.is_empty()).map(string.to_lower)
+  let mut count = map.new()
+  list.fold(words, count, |acc, x| {
+    let new_count = map.get_or(acc, x, 0) + 1
+    map.set(acc, x, new_count)
+    new_count
+  })
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-word-count-0.almd
-error: Expected expression at line 2:53 (got Fn 'fn')
-  --> /tmp/dojo-word-count-0.almd:2:53
+error: Missing '=' before function body at line 1:46
+  --> /tmp/dojo-word-count-0.almd:1:46
+  hint: Almide requires '=' before the body. Write: fn word_count(...) -> Type = { ... }
   |
-2 |     let words = string.split(s, " ") |> list.filter(fn(x) => x != "")
-  |                                                     ^
-error[E003]: undefined variable 'words'
-  --> /tmp/dojo-word-count-0.almd:3:15
-  in variable words
-  hint: Check the variable name
-  |
-3 |     list.fold(words, map.new[String, Int](), (acc, x) =>
-  |               ^^^^^
+1 | fn word_count(s: String) -> Map[String, Int] {
+  |                                              ^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-word-count-0.almd:
 compile failed
 FAILED: /tmp/dojo-word-count-0.almd
@@ -48,33 +45,87 @@ FAILED: /tmp/dojo-word-count-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn word_count(s: String) -> Map[String, Int] = 
-    let words = string.split(s, " ") |> list.filter(fn(x) => x != "")
-    list.fold(words, map.new[String, Int](), (acc, x) => 
-        match map.get(acc, x) {
-            some(count) => map.set(acc, x, count + 1)
-            none => map.set(acc, x, 1)
-        })
+fn word_count(s: String) -> Map[String, Int] = {
+  let words = string.split(s, " ").filter(|x| !x.is_empty()).map(string.to_lower)
+  let mut count = map.new()
+  list.fold(words, count, |acc, x| {
+    let new_count = map.get_or(acc, x, 0) + 1
+    map.set(acc, x, new_count)
+    new_count
+  })
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-word-count-1.almd
-error: Expected expression at line 2:53 (got Fn 'fn')
-  --> /tmp/dojo-word-count-1.almd:2:53
+error: '|x|' closure syntax is not valid in Almide at line 2:43
+  --> /tmp/dojo-word-count-1.almd:2:43
+  hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
   |
-2 |     let words = string.split(s, " ") |> list.filter(fn(x) => x != "")
-  |                                                     ^
-error[E003]: undefined variable 'words'
-  --> /tmp/dojo-word-count-1.almd:3:15
-  in variable words
+2 |   let words = string.split(s, " ").filter(|x| !x.is_empty()).map(string.to_lower)
+  |                                           ^
+error: 'let mut' is not valid in Almide at line 3:7
+  --> /tmp/dojo-word-count-1.almd:3:7
+  hint: Use 'var' for mutable variables. Example: var x = 0
+  |
+3 |   let mut count = map.new()
+  |       ^
+error: '|x|' closure syntax is not valid in Almide at line 4:27
+  --> /tmp/dojo-word-count-1.almd:4:27
+  hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
+  |
+4 |   list.fold(words, count, |acc, x| {
+  |                           ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 8:4 (got RParen ')')
+  --> /tmp/dojo-word-count-1.almd:8:4
+  |
+8 |   })
+  |    ^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-word-count-1.almd:5:32
+  in variable acc
   hint: Check the variable name
   |
-3 |     list.fold(words, map.new[String, Int](), (acc, x) =>
-  |               ^^^^^
+5 |     let new_count = map.get_or(acc, x, 0) + 1
+  |                                ^^^
+error[E003]: undefined variable 'x'
+  --> /tmp/dojo-word-count-1.almd:5:37
+  in variable x
+  hint: Did you mean `s`?
+  try:
+      // x  →  s
+      s
+  |
+5 |     let new_count = map.get_or(acc, x, 0) + 1
+  |                                     ^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-word-count-1.almd:6:13
+  in variable acc
+  hint: Check the variable name
+  |
+6 |     map.set(acc, x, new_count)
+  |             ^^^
+error[E003]: undefined variable 'x'
+  --> /tmp/dojo-word-count-1.almd:6:18
+  in variable x
+  hint: Did you mean `s`?
+  try:
+      // x  →  s
+      s
+  |
+6 |     map.set(acc, x, new_count)
+  |                  ^
+error[E001]: type mismatch in fn 'word_count': expected Map[String, Int] but got Int
+  --> /tmp/dojo-word-count-1.almd:7:5
+  in fn 'word_count'
+  hint: Fix the expression type or change the expected type
+  |
+7 |     new_count
+  |     ^^^^^^^^^
 
-2 error(s) found
+9 error(s) found
 Compile error for /tmp/dojo-word-count-1.almd:
 compile failed
 FAILED: /tmp/dojo-word-count-1.almd
@@ -86,34 +137,50 @@ FAILED: /tmp/dojo-word-count-1.almd
 ### Attempt 3 (FAIL)
 
 ```almide
-fn word_count(s: String) -> Map[String, Int] = 
-    let words = string.split(s, " ") |> list.filter(fn(x) => x != "")
-    let count_map = map.new[String, Int]()
-    list.fold(words, count_map, (acc, x) => 
-        match map.get(acc, x) {
-            some(count) => map.set(acc, x, count + 1)
-            none => map.set(acc, x, 1)
-        })
+fn word_count(s: String) -> Map[String, Int] = {
+  let words = string.split(s, " ").filter(|x| !string.is_empty(x)).map(string.to_lower)
+  var count = map.new()
+  list.fold(words, count, (acc, x) => {
+    let new_count = map.get_or(acc, x, 0) + 1
+    map.set(acc, x, new_count)
+    new_count
+  })
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-word-count-2.almd
-error: Expected expression at line 2:53 (got Fn 'fn')
-  --> /tmp/dojo-word-count-2.almd:2:53
+error: '|x|' closure syntax is not valid in Almide at line 2:43
+  --> /tmp/dojo-word-count-2.almd:2:43
+  hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
   |
-2 |     let words = string.split(s, " ") |> list.filter(fn(x) => x != "")
-  |                                                     ^
+2 |   let words = string.split(s, " ").filter(|x| !string.is_empty(x)).map(string.to_lower)
+  |                                           ^
 error[E003]: undefined variable 'words'
-  --> /tmp/dojo-word-count-2.almd:4:15
+  --> /tmp/dojo-word-count-2.almd:4:13
   in variable words
   hint: Check the variable name
   |
-4 |     list.fold(words, count_map, (acc, x) =>
-  |               ^^^^^
+4 |   list.fold(words, count, (acc, x) => {
+  |             ^^^^^
+error[E005]: argument 'f' expects fn(Map[?0, ?1], ?3) -> Map[?0, ?1] but got fn(Map[?3, Int], ?3) -> Int
+  --> /tmp/dojo-word-count-2.almd:7:5
+  in call to list.fold()
+  hint: Fix the argument type
+  |
+7 |     new_count
+  |     ^^^^^^^^^
+error[E001]: type mismatch in call to list.fold(): expected fn(Map[String, Int], String) -> Map[String, Int] but got fn(Map[String, Int], String) -> Int
+  --> /tmp/dojo-word-count-2.almd:7:5
+  in call to list.fold()
+  hint: Fix the expression type or change the expected type
+  |
+7 |     new_count
+  |     ^^^^^^^^^
 
-2 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-word-count-2.almd:
 compile failed
 FAILED: /tmp/dojo-word-count-2.almd
@@ -125,84 +192,50 @@ FAILED: /tmp/dojo-word-count-2.almd
 ### Attempt 4 (FAIL)
 
 ```almide
-fn word_count(s: String) -> Map[String, Int] = 
-    let words = string.split(s, " ") |> list.filter(fn(x) => x != "")
-    let count_map = map.new[String, Int]()
-    list.fold(words, count_map, (acc, x) => 
-        match map.get(acc, x) {
-            some(count) => map.set(acc, x, count + 1)
-            none => map.set(acc, x, 1)
-        })
-
-fn word_count_test(s: String) -> Map[String, Int] = word_count(s)
-
-fn test_word_count() -> Unit = 
-    let test_cases = [
-        ("the cat and the dog", map.new[String, Int]({"the": 2, "cat": 1, "and": 1, "dog": 1})),
-        ("", map.new[String, Int]()),
-        ("hello world", map.new[String, Int]({"hello": 1, "world": 1}))
-    ]
-    for (input, expected) in test_cases {
-        let actual = word_count(input)
-        assert(map.equals(actual, expected))
-    }
+fn word_count(s: String) -> Map[String, Int] = {
+  let words = string.split(s, " ").filter(|x| !string.is_empty(x)).map(string.to_lower)
+  var count = map.new()
+  list.fold(words, count, (acc, x) => {
+    let new_count = map.get_or(acc, x, 0) + 1
+    map.set(acc, x, new_count)
+    new_count
+  })
+}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-word-count-3.almd
-error: Expected expression at line 2:53 (got Fn 'fn')
-  --> /tmp/dojo-word-count-3.almd:2:53
+error: '|x|' closure syntax is not valid in Almide at line 2:43
+  --> /tmp/dojo-word-count-3.almd:2:43
+  hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
   |
-2 |     let words = string.split(s, " ") |> list.filter(fn(x) => x != "")
-  |                                                     ^
-error: Expected expression at line 14:60 (got Colon ':')
-  --> /tmp/dojo-word-count-3.almd:14:60
-   |
-14 |         ("the cat and the dog", map.new[String, Int]({"the": 2, "cat": 1, "and": 1, "dog": 1})),
-   |                                                            ^
-error: Expected expression at line 16:54 (got Colon ':')
-  --> /tmp/dojo-word-count-3.almd:16:54
-   |
-16 |         ("hello world", map.new[String, Int]({"hello": 1, "world": 1}))
-   |                                                      ^
+2 |   let words = string.split(s, " ").filter(|x| !string.is_empty(x)).map(string.to_lower)
+  |                                           ^
 error[E003]: undefined variable 'words'
-  --> /tmp/dojo-word-count-3.almd:4:15
+  --> /tmp/dojo-word-count-3.almd:4:13
   in variable words
   hint: Check the variable name
   |
-4 |     list.fold(words, count_map, (acc, x) =>
-  |               ^^^^^
-error[E004]: map.new() expects 0 argument(s) but got 1
-  --> /tmp/dojo-word-count-3.almd:14:55
-  in call to map.new()
-  hint: Check the number of arguments
-  try:
-      // map.new() takes 0 arg(s) — you passed 1
-      map.new()
-   |
-14 |         ("the cat and the dog", map.new[String, Int]({"the": 2, "cat": 1, "and": 1, "dog": 1})),
-   |                                                       ^^^^^
-error[E004]: map.new() expects 0 argument(s) but got 1
-  --> /tmp/dojo-word-count-3.almd:16:47
-  in call to map.new()
-  hint: Check the number of arguments
-  try:
-      // map.new() takes 0 arg(s) — you passed 1
-      map.new()
-   |
-16 |         ("hello world", map.new[String, Int]({"hello": 1, "world": 1}))
-   |                                               ^^^^^^^
-error[E002]: undefined function 'map.equals'
-  --> /tmp/dojo-word-count-3.almd:20:35
-  in call to map.equals()
-  hint: No function 'equals' in module 'map'. See docs/CHEATSHEET.md for available functions
-   |
-20 |         assert(map.equals(actual, expected))
-   |                                   ^^^^^^^^
+4 |   list.fold(words, count, (acc, x) => {
+  |             ^^^^^
+error[E005]: argument 'f' expects fn(Map[?0, ?1], ?3) -> Map[?0, ?1] but got fn(Map[?3, Int], ?3) -> Int
+  --> /tmp/dojo-word-count-3.almd:7:5
+  in call to list.fold()
+  hint: Fix the argument type
+  |
+7 |     new_count
+  |     ^^^^^^^^^
+error[E001]: type mismatch in call to list.fold(): expected fn(Map[String, Int], String) -> Map[String, Int] but got fn(Map[String, Int], String) -> Int
+  --> /tmp/dojo-word-count-3.almd:7:5
+  in call to list.fold()
+  hint: Fix the expression type or change the expected type
+  |
+7 |     new_count
+  |     ^^^^^^^^^
 
-7 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-word-count-3.almd:
 compile failed
 FAILED: /tmp/dojo-word-count-3.almd

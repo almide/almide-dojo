@@ -2,18 +2,90 @@
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: yes
-- **retries**: 0
-- **category**: pass-1shot
+- **retries**: 1
+- **category**: pass-retry
 
 ## Attempts
 
-### Attempt 1 (PASS)
+### Attempt 1 (FAIL)
 
 ```almide
-fn word_count(s: String) -> Map[String, Int] = 
-    list.fold(
-        list.filter(string.split(s, " "), (x) => x != ""),
-        map.new(),
-        (acc, x) => map.set(acc, x, map.get_or(acc, x, 0) + 1)
+fn word_count(s: String) -> Map[String, Int] =
+  let
+    words = string.split(s, " ")
+    non_empty_words = list.filter(words, (x) => not(string.is_empty(x)))
+    frequency_map = list.fold(
+      non_empty_words,
+      map.new(),
+      (acc, word) =>
+        map.set(
+          acc,
+          word,
+          map.get_or(acc, word, 0) + 1
+        )
     )
+  in
+    frequency_map
+```
+
+**Diagnostic:**
+
+```
+Compiling /tmp/dojo-word-count-0.almd
+error: Expected identifier at line 2:6 (got Newline '')
+  --> /tmp/dojo-word-count-0.almd:2:6
+  |
+2 |   let
+  |      ^
+error: Expected expression at line 15:3 (got In 'in')
+  --> /tmp/dojo-word-count-0.almd:15:3
+   |
+15 |   in
+   |   ^
+error[E003]: undefined variable 'words'
+  --> /tmp/dojo-word-count-0.almd:4:35
+  in variable words
+  hint: Check the variable name
+  |
+4 |     non_empty_words = list.filter(words, (x) => not(string.is_empty(x)))
+  |                                   ^^^^^
+error[E003]: undefined variable 'non_empty_words'
+  --> /tmp/dojo-word-count-0.almd:6:7
+  in variable non_empty_words
+  hint: Check the variable name
+  |
+6 |       non_empty_words,
+  |       ^^^^^^^^^^^^^^^
+error[E003]: undefined variable 'frequency_map'
+  --> /tmp/dojo-word-count-0.almd:16:5
+  in variable frequency_map
+  hint: Check the variable name
+   |
+16 |     frequency_map
+   |     ^^^^^^^^^^^^^
+
+5 error(s) found
+Compile error for /tmp/dojo-word-count-0.almd:
+compile failed
+FAILED: /tmp/dojo-word-count-0.almd
+
+1/1 test file(s) failed
+
+```
+
+### Attempt 2 (PASS)
+
+```almide
+fn word_count(s: String) -> Map[String, Int] =
+  string.split(s, " ") 
+  |> list.filter((x) => not(string.is_empty(x)))
+  |> list.fold(
+    map.new(),
+    (acc, word) =>
+      map.set(
+        acc,
+        word,
+        map.get_or(acc, word, 0) + 1
+      )
+  )
 ```

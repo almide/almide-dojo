@@ -10,35 +10,44 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn is_anagram(a: String, b: String) -> Bool {
-  let a = string.to_lower(a) |> string.chars |> list.filter(fn(x) => not(string.is_whitespace(x)))
-  let b = string.to_lower(b) |> string.chars |> list.filter(fn(x) => not(string.is_whitespace(x)))
-  list.sort(a) == list.sort(b)
-}
+fn is_anagram(a: String, b: String) -> Bool = 
+  let lower_a = string.to_lower(a) 
+  let lower_b = string.to_lower(b) 
+  let filtered_a = list.filter(lower_a.chars(), fn(x) => not(x.is_whitespace())) 
+  let filtered_b = list.filter(lower_b.chars(), fn(x) => not(x.is_whitespace())) 
+  list.sort(filtered_a) == list.sort(filtered_b)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-anagram-check-0.almd
-error: Missing '=' before function body at line 1:45
-  --> /tmp/dojo-anagram-check-0.almd:1:45
-  hint: Almide requires '=' before the body. Write: fn is_anagram(...) -> Type = { ... }
+error: Expected expression at line 4:49 (got Fn 'fn')
+  --> /tmp/dojo-anagram-check-0.almd:4:49
   |
-1 | fn is_anagram(a: String, b: String) -> Bool {
-  |                                             ^
-error: Expected function name at line 2:63 (got LParen '(')
-  --> /tmp/dojo-anagram-check-0.almd:2:63
+4 |   let filtered_a = list.filter(lower_a.chars(), fn(x) => not(x.is_whitespace()))
+  |                                                 ^
+error: Expected expression at line 5:49 (got Fn 'fn')
+  --> /tmp/dojo-anagram-check-0.almd:5:49
   |
-2 |   let a = string.to_lower(a) |> string.chars |> list.filter(fn(x) => not(string.is_whitespace(x)))
-  |                                                               ^
-error: Expected function name at line 3:63 (got LParen '(')
-  --> /tmp/dojo-anagram-check-0.almd:3:63
+5 |   let filtered_b = list.filter(lower_b.chars(), fn(x) => not(x.is_whitespace()))
+  |                                                 ^
+error[E003]: undefined variable 'filtered_a'
+  --> /tmp/dojo-anagram-check-0.almd:6:13
+  in variable filtered_a
+  hint: Check the variable name
   |
-3 |   let b = string.to_lower(b) |> string.chars |> list.filter(fn(x) => not(string.is_whitespace(x)))
-  |                                                               ^
+6 |   list.sort(filtered_a) == list.sort(filtered_b)
+  |             ^^^^^^^^^^
+error[E003]: undefined variable 'filtered_b'
+  --> /tmp/dojo-anagram-check-0.almd:6:38
+  in variable filtered_b
+  hint: Check the variable name
+  |
+6 |   list.sort(filtered_a) == list.sort(filtered_b)
+  |                                      ^^^^^^^^^^
 
-3 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-anagram-check-0.almd:
 compile failed
 FAILED: /tmp/dojo-anagram-check-0.almd
@@ -50,57 +59,44 @@ FAILED: /tmp/dojo-anagram-check-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn is_anagram(a: String, b: String) -> Bool = {
-  let a = string.to_lower(a) |> string.chars |> list.filter(fn(x) => not(string.is_whitespace(x)))
-  let b = string.to_lower(b) |> string.chars |> list.filter(fn(x) => not(string.is_whitespace(x)))
-  list.sort(a) == list.sort(b)
-}
+fn is_anagram(a: String, b: String) -> Bool = 
+  let lower_a = string.to_lower(a) 
+  let lower_b = string.to_lower(b) 
+  let filtered_a = list.filter(lower_a.chars(), fn(x) => not(x.is_whitespace())) 
+  let filtered_b = list.filter(lower_b.chars(), fn(x) => not(x.is_whitespace())) 
+  list.sort(filtered_a) == list.sort(filtered_b)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-anagram-check-1.almd
-error: Expected expression at line 2:61 (got Fn 'fn')
-  --> /tmp/dojo-anagram-check-1.almd:2:61
+error: Expected expression at line 4:49 (got Fn 'fn')
+  --> /tmp/dojo-anagram-check-1.almd:4:49
   |
-2 |   let a = string.to_lower(a) |> string.chars |> list.filter(fn(x) => not(string.is_whitespace(x)))
-  |                                                             ^
-error: Expected expression at line 3:61 (got Fn 'fn')
-  --> /tmp/dojo-anagram-check-1.almd:3:61
+4 |   let filtered_a = list.filter(lower_a.chars(), fn(x) => not(x.is_whitespace()))
+  |                                                 ^
+error: Expected expression at line 5:49 (got Fn 'fn')
+  --> /tmp/dojo-anagram-check-1.almd:5:49
   |
-3 |   let b = string.to_lower(b) |> string.chars |> list.filter(fn(x) => not(string.is_whitespace(x)))
-  |                                                             ^
-error[E005]: argument 'xs' expects List[A] but got String
-  --> /tmp/dojo-anagram-check-1.almd:4:13
-  in call to list.sort()
-  hint: Fix the argument type
+5 |   let filtered_b = list.filter(lower_b.chars(), fn(x) => not(x.is_whitespace()))
+  |                                                 ^
+error[E003]: undefined variable 'filtered_a'
+  --> /tmp/dojo-anagram-check-1.almd:6:13
+  in variable filtered_a
+  hint: Check the variable name
   |
-4 |   list.sort(a) == list.sort(b)
-  |             ^
-error[E005]: argument 'xs' expects List[A] but got String
-  --> /tmp/dojo-anagram-check-1.almd:4:29
-  in call to list.sort()
-  hint: Fix the argument type
+6 |   list.sort(filtered_a) == list.sort(filtered_b)
+  |             ^^^^^^^^^^
+error[E003]: undefined variable 'filtered_b'
+  --> /tmp/dojo-anagram-check-1.almd:6:38
+  in variable filtered_b
+  hint: Check the variable name
   |
-4 |   list.sort(a) == list.sort(b)
-  |                             ^
-error[E001]: type mismatch in call to list.sort(): expected List[A] but got String
-  --> /tmp/dojo-anagram-check-1.almd:4:13
-  in call to list.sort()
-  hint: Fix the expression type or change the expected type
-  |
-4 |   list.sort(a) == list.sort(b)
-  |             ^
-error[E001]: type mismatch in call to list.sort(): expected List[A] but got String
-  --> /tmp/dojo-anagram-check-1.almd:4:29
-  in call to list.sort()
-  hint: Fix the expression type or change the expected type
-  |
-4 |   list.sort(a) == list.sort(b)
-  |                             ^
+6 |   list.sort(filtered_a) == list.sort(filtered_b)
+  |                                      ^^^^^^^^^^
 
-6 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-anagram-check-1.almd:
 compile failed
 FAILED: /tmp/dojo-anagram-check-1.almd
@@ -112,45 +108,42 @@ FAILED: /tmp/dojo-anagram-check-1.almd
 ### Attempt 3 (FAIL)
 
 ```almide
-fn is_anagram(a: String, b: String) -> Bool = {
-  let a = string.to_lower(a) |> string.chars |> list.filter(fn(x) => not(string.is_whitespace(x)))
-  let b = string.to_lower(b) |> string.chars |> list.filter(fn(x) => not(string.is_whitespace(x)))
-  list.sort(list.map(a, fn(x) => x)) == list.sort(list.map(b, fn(x) => x))
-}
+fn is_anagram(a: String, b: String) -> Bool = 
+  let lower_a = string.to_lower(a)
+  let lower_b = string.to_lower(b)
+  let filtered_a = list.filter(lower_a.chars(), fn(x) => not(x.is_whitespace()))
+  let filtered_b = list.filter(lower_b.chars(), fn(x) => not(x.is_whitespace()))
+  list.sort(filtered_a) == list.sort(filtered_b)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-anagram-check-2.almd
-error: Expected expression at line 2:61 (got Fn 'fn')
-  --> /tmp/dojo-anagram-check-2.almd:2:61
+error: Expected expression at line 4:49 (got Fn 'fn')
+  --> /tmp/dojo-anagram-check-2.almd:4:49
   |
-2 |   let a = string.to_lower(a) |> string.chars |> list.filter(fn(x) => not(string.is_whitespace(x)))
-  |                                                             ^
-error: Expected expression at line 3:61 (got Fn 'fn')
-  --> /tmp/dojo-anagram-check-2.almd:3:61
+4 |   let filtered_a = list.filter(lower_a.chars(), fn(x) => not(x.is_whitespace()))
+  |                                                 ^
+error: Expected expression at line 5:49 (got Fn 'fn')
+  --> /tmp/dojo-anagram-check-2.almd:5:49
   |
-3 |   let b = string.to_lower(b) |> string.chars |> list.filter(fn(x) => not(string.is_whitespace(x)))
-  |                                                             ^
-error: Expected expression at line 4:25 (got Fn 'fn')
-  --> /tmp/dojo-anagram-check-2.almd:4:25
+5 |   let filtered_b = list.filter(lower_b.chars(), fn(x) => not(x.is_whitespace()))
+  |                                                 ^
+error[E003]: undefined variable 'filtered_a'
+  --> /tmp/dojo-anagram-check-2.almd:6:13
+  in variable filtered_a
+  hint: Check the variable name
   |
-4 |   list.sort(list.map(a, fn(x) => x)) == list.sort(list.map(b, fn(x) => x))
-  |                         ^
-error[E001]: type mismatch in fn 'is_anagram': expected Bool but got Unit
-  --> /tmp/dojo-anagram-check-2.almd:1:47
-  in fn 'is_anagram'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Bool:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type Bool
+6 |   list.sort(filtered_a) == list.sort(filtered_b)
+  |             ^^^^^^^^^^
+error[E003]: undefined variable 'filtered_b'
+  --> /tmp/dojo-anagram-check-2.almd:6:38
+  in variable filtered_b
+  hint: Check the variable name
   |
-1 | fn is_anagram(a: String, b: String) -> Bool = {
-  |                                               ^
+6 |   list.sort(filtered_a) == list.sort(filtered_b)
+  |                                      ^^^^^^^^^^
 
 4 error(s) found
 Compile error for /tmp/dojo-anagram-check-2.almd:
@@ -164,45 +157,44 @@ FAILED: /tmp/dojo-anagram-check-2.almd
 ### Attempt 4 (FAIL)
 
 ```almide
-fn is_anagram(a: String, b: String) -> Bool = {
-  let a = string.to_lower(a) |> string.chars |> list.filter(fn(x) => not(string.is_whitespace(x)))
-  let b = string.to_lower(b) |> string.chars |> list.filter(fn(x) => not(string.is_whitespace(x)))
-  list.sort(list.map(a, fn(x) => x)) == list.sort(list.map(b, fn(x) => x))
-}
+fn is_anagram(a: String, b: String) -> Bool = 
+  let lower_a = string.to_lower(a)
+  let lower_b = string.to_lower(b)
+  let chars_a = lower_a.chars()
+  let chars_b = lower_b.chars()
+  let filtered_a = list.filter(chars_a, fn(x) => not(x.is_whitespace()))
+  let filtered_b = list.filter(chars_b, fn(x) => not(x.is_whitespace()))
+  list.sort(filtered_a) == list.sort(filtered_b)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-anagram-check-3.almd
-error: Expected expression at line 2:61 (got Fn 'fn')
-  --> /tmp/dojo-anagram-check-3.almd:2:61
+error: Expected expression at line 6:41 (got Fn 'fn')
+  --> /tmp/dojo-anagram-check-3.almd:6:41
   |
-2 |   let a = string.to_lower(a) |> string.chars |> list.filter(fn(x) => not(string.is_whitespace(x)))
-  |                                                             ^
-error: Expected expression at line 3:61 (got Fn 'fn')
-  --> /tmp/dojo-anagram-check-3.almd:3:61
+6 |   let filtered_a = list.filter(chars_a, fn(x) => not(x.is_whitespace()))
+  |                                         ^
+error: Expected expression at line 7:41 (got Fn 'fn')
+  --> /tmp/dojo-anagram-check-3.almd:7:41
   |
-3 |   let b = string.to_lower(b) |> string.chars |> list.filter(fn(x) => not(string.is_whitespace(x)))
-  |                                                             ^
-error: Expected expression at line 4:25 (got Fn 'fn')
-  --> /tmp/dojo-anagram-check-3.almd:4:25
+7 |   let filtered_b = list.filter(chars_b, fn(x) => not(x.is_whitespace()))
+  |                                         ^
+error[E003]: undefined variable 'filtered_a'
+  --> /tmp/dojo-anagram-check-3.almd:8:13
+  in variable filtered_a
+  hint: Check the variable name
   |
-4 |   list.sort(list.map(a, fn(x) => x)) == list.sort(list.map(b, fn(x) => x))
-  |                         ^
-error[E001]: type mismatch in fn 'is_anagram': expected Bool but got Unit
-  --> /tmp/dojo-anagram-check-3.almd:1:47
-  in fn 'is_anagram'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Bool:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type Bool
+8 |   list.sort(filtered_a) == list.sort(filtered_b)
+  |             ^^^^^^^^^^
+error[E003]: undefined variable 'filtered_b'
+  --> /tmp/dojo-anagram-check-3.almd:8:38
+  in variable filtered_b
+  hint: Check the variable name
   |
-1 | fn is_anagram(a: String, b: String) -> Bool = {
-  |                                               ^
+8 |   list.sort(filtered_a) == list.sort(filtered_b)
+  |                                      ^^^^^^^^^^
 
 4 error(s) found
 Compile error for /tmp/dojo-anagram-check-3.almd:

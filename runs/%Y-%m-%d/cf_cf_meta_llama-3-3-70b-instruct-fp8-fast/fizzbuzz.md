@@ -11,9 +11,9 @@
 
 ```almide
 fn fizzbuzz(n: Int) -> String = 
-  if int.mod(n, 15) == 0 then "FizzBuzz"
-  else if int.mod(n, 3) == 0 then "Fizz"
-  else if int.mod(n, 5) == 0 then "Buzz"
+  if int.rem(n, 15) == 0 then "FizzBuzz"
+  else if int.rem(n, 3) == 0 then "Fizz"
+  else if int.rem(n, 5) == 0 then "Buzz"
   else int.to_string(n)
 ```
 
@@ -21,28 +21,29 @@ fn fizzbuzz(n: Int) -> String =
 
 ```
 Compiling /tmp/dojo-fizzbuzz-0.almd
-error: Expected name at line 2:10 (got Mod 'mod')
-  --> /tmp/dojo-fizzbuzz-0.almd:2:10
+error[E002]: undefined function 'int.rem'
+  --> /tmp/dojo-fizzbuzz-0.almd:2:17
+  in call to int.rem()
+  hint: No function 'rem' in module 'int'. See docs/CHEATSHEET.md for available functions
   |
-2 |   if int.mod(n, 15) == 0 then "FizzBuzz"
-  |          ^
-error: Expected Fn at line 2:13 (got LParen '(')
-  --> /tmp/dojo-fizzbuzz-0.almd:2:13
+2 |   if int.rem(n, 15) == 0 then "FizzBuzz"
+  |                 ^^
+error[E002]: undefined function 'int.rem'
+  --> /tmp/dojo-fizzbuzz-0.almd:3:22
+  in call to int.rem()
+  hint: No function 'rem' in module 'int'. See docs/CHEATSHEET.md for available functions
   |
-2 |   if int.mod(n, 15) == 0 then "FizzBuzz"
-  |             ^
-error: Expected Fn at line 3:18 (got LParen '(')
-  --> /tmp/dojo-fizzbuzz-0.almd:3:18
+3 |   else if int.rem(n, 3) == 0 then "Fizz"
+  |                      ^
+error[E002]: undefined function 'int.rem'
+  --> /tmp/dojo-fizzbuzz-0.almd:4:22
+  in call to int.rem()
+  hint: No function 'rem' in module 'int'. See docs/CHEATSHEET.md for available functions
   |
-3 |   else if int.mod(n, 3) == 0 then "Fizz"
-  |                  ^
-error: Expected Fn at line 4:18 (got LParen '(')
-  --> /tmp/dojo-fizzbuzz-0.almd:4:18
-  |
-4 |   else if int.mod(n, 5) == 0 then "Buzz"
-  |                  ^
+4 |   else if int.rem(n, 5) == 0 then "Buzz"
+  |                      ^
 
-4 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-fizzbuzz-0.almd:
 compile failed
 FAILED: /tmp/dojo-fizzbuzz-0.almd

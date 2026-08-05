@@ -11,52 +11,65 @@
 
 ```almide
 fn parse_int(s: String) -> Result[Int, String] = 
-  int.parse(s)
+  match int.parse(s) {
+    ok(x) => ok(x),
+    err(e) => err(e)
+  }
 
 fn validate_positive(n: Int) -> Result[Int, String] = 
-  if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
+  if n > 0 then ok(n) else err(s"must be positive: $n")
 
 fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = 
-  if lo <= n && n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+  if lo <= n && n <= hi then ok(n) else err(s"out of range: $n")
 
 fn process(input: String) -> Result[String, String] = 
-  result.flat_map(parse_int, fn(n) => 
-    result.flat_map(validate_positive, fn(n) => 
-      result.map(validate_range(1, 100, n), fn(n) => "valid: " + int.to_string(n))))
+  parse_int(input) 
+  |> result.flat_map(fn(x) => validate_positive(x))
+  |> result.flat_map(fn(x) => validate_range(x, 1, 100))
+  |> result.map(fn(x) => s"valid: $x")
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-result-pipeline-0.almd
-error: '&&' is not valid in Almide at line 8:14
-  --> /tmp/dojo-result-pipeline-0.almd:8:14
-  hint: Use 'and' for logical AND. Example: if a and b then ...
+error: Expected ')' to close err() opened at line 8:31
+  --> /tmp/dojo-result-pipeline-0.almd:8:33
+  hint: Add ')' or check for a missing delimiter inside the err()
   |
-8 |   if lo <= n && n <= hi then ok(n) else err("out of range: " + int.to_string(n))
-  |              ^
-error: Expected expression at line 11:30 (got Fn 'fn')
-  --> /tmp/dojo-result-pipeline-0.almd:11:30
+8 |   if n > 0 then ok(n) else err(s"must be positive: $n")
+  |                               --------------- '(' opened here
+  |
+8 |   if n > 0 then ok(n) else err(s"must be positive: $n")
+  |                                 ^^^^^^^^^^^^^^^^^^^^^^
+error: '&&' is not valid in Almide at line 11:14
+  --> /tmp/dojo-result-pipeline-0.almd:11:14
+  hint: Use 'and' for logical AND. Example: if a and b then ...
    |
-11 |   result.flat_map(parse_int, fn(n) =>
-   |                              ^
-error: Expected function name at line 11:32 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-0.almd:11:32
+11 |   if lo <= n && n <= hi then ok(n) else err(s"out of range: $n")
+   |              ^
+error: Expected expression at line 15:22 (got Fn 'fn')
+  --> /tmp/dojo-result-pipeline-0.almd:15:22
    |
-11 |   result.flat_map(parse_int, fn(n) =>
-   |                                ^
-error: Expected function name at line 12:42 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-0.almd:12:42
+15 |   |> result.flat_map(fn(x) => validate_positive(x))
+   |                      ^
+error: Expected function name at line 15:24 (got LParen '(')
+  --> /tmp/dojo-result-pipeline-0.almd:15:24
    |
-12 |     result.flat_map(validate_positive, fn(n) =>
-   |                                          ^
-error: Expected function name at line 13:47 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-0.almd:13:47
+15 |   |> result.flat_map(fn(x) => validate_positive(x))
+   |                        ^
+error: Expected function name at line 16:24 (got LParen '(')
+  --> /tmp/dojo-result-pipeline-0.almd:16:24
    |
-13 |       result.map(validate_range(1, 100, n), fn(n) => "valid: " + int.to_string(n))))
-   |                                               ^
+16 |   |> result.flat_map(fn(x) => validate_range(x, 1, 100))
+   |                        ^
+error: Expected function name at line 17:19 (got LParen '(')
+  --> /tmp/dojo-result-pipeline-0.almd:17:19
+   |
+17 |   |> result.map(fn(x) => s"valid: $x")
+   |                   ^
 
-5 error(s) found
+6 error(s) found
 Compile error for /tmp/dojo-result-pipeline-0.almd:
 compile failed
 FAILED: /tmp/dojo-result-pipeline-0.almd
@@ -69,46 +82,68 @@ FAILED: /tmp/dojo-result-pipeline-0.almd
 
 ```almide
 fn parse_int(s: String) -> Result[Int, String] = 
-  int.parse(s)
+  match int.parse(s) {
+    ok(x) => ok(x),
+    err(e) => err(e)
+  }
 
 fn validate_positive(n: Int) -> Result[Int, String] = 
-  if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
+  if n > 0 then ok(n) else err(s"must be positive: $n")
 
 fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = 
-  if lo <= n and n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+  if lo <= n and n <= hi then ok(n) else err(s"out of range: $n")
 
 fn process(input: String) -> Result[String, String] = 
-  result.flat_map(parse_int, fn(r) => 
-    result.flat_map(validate_positive, fn(r) => 
-      result.map(validate_range(1, 100, int.to_int(r)), fn(n) => "valid: " + int.to_string(n))))
+  parse_int(input) 
+  |> result.flat_map(fn(x) => validate_positive(x))
+  |> result.flat_map(fn(x) => validate_range(x, 1, 100))
+  |> result.map(fn(x) => s"valid: " + int.to_string(x))
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-result-pipeline-1.almd
-error: Expected expression at line 11:30 (got Fn 'fn')
-  --> /tmp/dojo-result-pipeline-1.almd:11:30
+error: Expected ')' to close err() opened at line 8:31
+  --> /tmp/dojo-result-pipeline-1.almd:8:33
+  hint: Add ')' or check for a missing delimiter inside the err()
+  |
+8 |   if n > 0 then ok(n) else err(s"must be positive: $n")
+  |                               --------------- '(' opened here
+  |
+8 |   if n > 0 then ok(n) else err(s"must be positive: $n")
+  |                                 ^^^^^^^^^^^^^^^^^^^^^^
+error: Expected ')' to close err() opened at line 11:45
+  --> /tmp/dojo-result-pipeline-1.almd:11:47
+  hint: Add ')' or check for a missing delimiter inside the err()
    |
-11 |   result.flat_map(parse_int, fn(r) =>
-   |                              ^
-error: Expected function name at line 11:32 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-1.almd:11:32
+11 |   if lo <= n and n <= hi then ok(n) else err(s"out of range: $n")
+   |                                             --------------- '(' opened here
    |
-11 |   result.flat_map(parse_int, fn(r) =>
-   |                                ^
-error: Expected function name at line 12:42 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-1.almd:12:42
+11 |   if lo <= n and n <= hi then ok(n) else err(s"out of range: $n")
+   |                                               ^^^^^^^^^^^^^^^^^^
+error: Expected expression at line 15:22 (got Fn 'fn')
+  --> /tmp/dojo-result-pipeline-1.almd:15:22
    |
-12 |     result.flat_map(validate_positive, fn(r) =>
-   |                                          ^
-error: Expected function name at line 13:59 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-1.almd:13:59
+15 |   |> result.flat_map(fn(x) => validate_positive(x))
+   |                      ^
+error: Expected function name at line 15:24 (got LParen '(')
+  --> /tmp/dojo-result-pipeline-1.almd:15:24
    |
-13 |       result.map(validate_range(1, 100, int.to_int(r)), fn(n) => "valid: " + int.to_string(n))))
-   |                                                           ^
+15 |   |> result.flat_map(fn(x) => validate_positive(x))
+   |                        ^
+error: Expected function name at line 16:24 (got LParen '(')
+  --> /tmp/dojo-result-pipeline-1.almd:16:24
+   |
+16 |   |> result.flat_map(fn(x) => validate_range(x, 1, 100))
+   |                        ^
+error: Expected function name at line 17:19 (got LParen '(')
+  --> /tmp/dojo-result-pipeline-1.almd:17:19
+   |
+17 |   |> result.map(fn(x) => s"valid: " + int.to_string(x))
+   |                   ^
 
-4 error(s) found
+6 error(s) found
 Compile error for /tmp/dojo-result-pipeline-1.almd:
 compile failed
 FAILED: /tmp/dojo-result-pipeline-1.almd
@@ -121,46 +156,77 @@ FAILED: /tmp/dojo-result-pipeline-1.almd
 
 ```almide
 fn parse_int(s: String) -> Result[Int, String] = 
-  int.parse(s)
+  match int.parse(s) {
+    ok(x) => ok(x),
+    err(e) => err(e)
+  }
 
 fn validate_positive(n: Int) -> Result[Int, String] = 
-  if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
+  if n > 0 then ok(n) else err(s"must be positive: $n")
 
 fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = 
-  if lo <= n and n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+  if lo <= n and n <= hi then ok(n) else err(s"out of range: $n")
 
 fn process(input: String) -> Result[String, String] = 
-  result.flat_map(parse_int, fn(r) => 
-    result.flat_map(validate_positive, fn(r) => 
-      result.map(validate_range(1, 100, r), fn(n) => "valid: " + int.to_string(n))))
+  parse_int(input)
+  |> result.flat_map(fn(r) => match r {
+    ok(x) => validate_positive(x),
+    err(e) => err(e)
+  })
+  |> result.flat_map(fn(r) => match r {
+    ok(x) => validate_range(x, 1, 100),
+    err(e) => err(e)
+  })
+  |> result.map(fn(r) => match r {
+    ok(x) => s"valid: " + int.to_string(x),
+    err(e) => e
+  })
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-result-pipeline-2.almd
-error: Expected expression at line 11:30 (got Fn 'fn')
-  --> /tmp/dojo-result-pipeline-2.almd:11:30
+error: Expected ')' to close err() opened at line 8:31
+  --> /tmp/dojo-result-pipeline-2.almd:8:33
+  hint: Add ')' or check for a missing delimiter inside the err()
+  |
+8 |   if n > 0 then ok(n) else err(s"must be positive: $n")
+  |                               --------------- '(' opened here
+  |
+8 |   if n > 0 then ok(n) else err(s"must be positive: $n")
+  |                                 ^^^^^^^^^^^^^^^^^^^^^^
+error: Expected ')' to close err() opened at line 11:45
+  --> /tmp/dojo-result-pipeline-2.almd:11:47
+  hint: Add ')' or check for a missing delimiter inside the err()
    |
-11 |   result.flat_map(parse_int, fn(r) =>
-   |                              ^
-error: Expected function name at line 11:32 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-2.almd:11:32
+11 |   if lo <= n and n <= hi then ok(n) else err(s"out of range: $n")
+   |                                             --------------- '(' opened here
    |
-11 |   result.flat_map(parse_int, fn(r) =>
-   |                                ^
-error: Expected function name at line 12:42 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-2.almd:12:42
+11 |   if lo <= n and n <= hi then ok(n) else err(s"out of range: $n")
+   |                                               ^^^^^^^^^^^^^^^^^^
+error: Expected expression at line 15:22 (got Fn 'fn')
+  --> /tmp/dojo-result-pipeline-2.almd:15:22
    |
-12 |     result.flat_map(validate_positive, fn(r) =>
-   |                                          ^
-error: Expected function name at line 13:47 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-2.almd:13:47
+15 |   |> result.flat_map(fn(r) => match r {
+   |                      ^
+error: Expected function name at line 15:24 (got LParen '(')
+  --> /tmp/dojo-result-pipeline-2.almd:15:24
    |
-13 |       result.map(validate_range(1, 100, r), fn(n) => "valid: " + int.to_string(n))))
-   |                                               ^
+15 |   |> result.flat_map(fn(r) => match r {
+   |                        ^
+error: Expected function name at line 19:24 (got LParen '(')
+  --> /tmp/dojo-result-pipeline-2.almd:19:24
+   |
+19 |   |> result.flat_map(fn(r) => match r {
+   |                        ^
+error: Expected function name at line 23:19 (got LParen '(')
+  --> /tmp/dojo-result-pipeline-2.almd:23:19
+   |
+23 |   |> result.map(fn(r) => match r {
+   |                   ^
 
-4 error(s) found
+6 error(s) found
 Compile error for /tmp/dojo-result-pipeline-2.almd:
 compile failed
 FAILED: /tmp/dojo-result-pipeline-2.almd
@@ -173,58 +239,84 @@ FAILED: /tmp/dojo-result-pipeline-2.almd
 
 ```almide
 fn parse_int(s: String) -> Result[Int, String] = 
-  int.parse(s)
+  match int.parse(s) {
+    ok(x) => ok(x),
+    err(e) => err(e)
+  }
 
 fn validate_positive(n: Int) -> Result[Int, String] = 
-  if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
+  if n > 0 then ok(n) else err(s"must be positive: $n")
 
 fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = 
-  if lo <= n and n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+  if lo <= n and n <= hi then ok(n) else err(s"out of range: $n")
 
 fn process(input: String) -> Result[String, String] = 
-  result.flat_map(parse_int, (fn(r) => 
-    result.flat_map(validate_positive, (fn(r) => 
-      result.map(validate_range(1, 100, r), (fn(n) => "valid: " + int.to_string(n)))))))
+  parse_int(input)
+  |> result.flat_map(fn(r) => match r {
+    ok(x) => validate_positive(x),
+    err(e) => err(e)
+  })
+  |> result.flat_map(fn(r) => match r {
+    ok(x) => validate_range(x, 1, 100),
+    err(e) => err(e)
+  })
+  |> result.map(fn(r) => match r {
+    ok(x) => s"valid: " + int.to_string(x),
+    err(e) => e
+  })
 
-fn process(input: String) -> Result[String, String] = 
-  result.flat_map(parse_int, (r => 
-    result.flat_map(validate_positive, (r => 
-      result.map(validate_range(1, 100, r), (n => "valid: " + int.to_string(n)))))))
+fn process(input: String) -> Result[String,
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-result-pipeline-3.almd
-error: Expected expression at line 11:31 (got Fn 'fn')
-  --> /tmp/dojo-result-pipeline-3.almd:11:31
+error: Expected ')' to close err() opened at line 8:31
+  --> /tmp/dojo-result-pipeline-3.almd:8:33
+  hint: Add ')' or check for a missing delimiter inside the err()
+  |
+8 |   if n > 0 then ok(n) else err(s"must be positive: $n")
+  |                               --------------- '(' opened here
+  |
+8 |   if n > 0 then ok(n) else err(s"must be positive: $n")
+  |                                 ^^^^^^^^^^^^^^^^^^^^^^
+error: Expected ')' to close err() opened at line 11:45
+  --> /tmp/dojo-result-pipeline-3.almd:11:47
+  hint: Add ')' or check for a missing delimiter inside the err()
    |
-11 |   result.flat_map(parse_int, (fn(r) =>
-   |                               ^
-error: Expected function name at line 11:33 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-3.almd:11:33
+11 |   if lo <= n and n <= hi then ok(n) else err(s"out of range: $n")
+   |                                             --------------- '(' opened here
    |
-11 |   result.flat_map(parse_int, (fn(r) =>
-   |                                 ^
-error: Expected function name at line 12:43 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-3.almd:12:43
+11 |   if lo <= n and n <= hi then ok(n) else err(s"out of range: $n")
+   |                                               ^^^^^^^^^^^^^^^^^^
+error: Expected expression at line 15:22 (got Fn 'fn')
+  --> /tmp/dojo-result-pipeline-3.almd:15:22
    |
-12 |     result.flat_map(validate_positive, (fn(r) =>
-   |                                           ^
-error: Expected function name at line 13:48 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-3.almd:13:48
+15 |   |> result.flat_map(fn(r) => match r {
+   |                      ^
+error: Expected function name at line 15:24 (got LParen '(')
+  --> /tmp/dojo-result-pipeline-3.almd:15:24
    |
-13 |       result.map(validate_range(1, 100, r), (fn(n) => "valid: " + int.to_string(n)))))))
-   |                                                ^
-error: Lambda parameter must be wrapped in parentheses
-  --> /tmp/dojo-result-pipeline-3.almd:16:33
-  in lambda syntax
-  hint: Almide lambdas require parentheses around parameters. Write `(x) => expr` instead of `x => expr`
+15 |   |> result.flat_map(fn(r) => match r {
+   |                        ^
+error: Expected function name at line 19:24 (got LParen '(')
+  --> /tmp/dojo-result-pipeline-3.almd:19:24
    |
-16 |   result.flat_map(parse_int, (r =>
-   |                                 ^^
+19 |   |> result.flat_map(fn(r) => match r {
+   |                        ^
+error: Expected function name at line 23:19 (got LParen '(')
+  --> /tmp/dojo-result-pipeline-3.almd:23:19
+   |
+23 |   |> result.map(fn(r) => match r {
+   |                   ^
+error: Expected type name at line 28:44 (got Newline '')
+  --> /tmp/dojo-result-pipeline-3.almd:28:44
+   |
+28 | fn process(input: String) -> Result[String,
+   |                                            ^
 
-5 error(s) found
+7 error(s) found
 Compile error for /tmp/dojo-result-pipeline-3.almd:
 compile failed
 FAILED: /tmp/dojo-result-pipeline-3.almd

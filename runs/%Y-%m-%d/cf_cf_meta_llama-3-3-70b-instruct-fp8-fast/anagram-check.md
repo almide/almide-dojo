@@ -10,47 +10,76 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn is_anagram(a: String, b: String) -> Bool =
-  let
-    normalize = (s) => 
-      string.chars(s) 
-      |> list.filter((x) => not(string.is_whitespace(x)))
-      |> list.map((x) => string.to_lower(x))
-      |> list.sort
-  in
-    normalize(a) == normalize(b)
+fn is_anagram(a: String, b: String) -> Bool = 
+  let 
+    lower_a = string.to_lower(a)
+    lower_b = string.to_lower(b)
+    no_spaces_a = list.filter(string.chars(lower_a), (x) => x != " ")
+    no_spaces_b = list.filter(string.chars(lower_b), (x) => x != " ")
+    sorted_a = list.sort(no_spaces_a)
+    sorted_b = list.sort(no_spaces_b)
+  in 
+    sorted_a == sorted_b
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-anagram-check-0.almd
-error: Expected identifier at line 2:6 (got Newline '')
-  --> /tmp/dojo-anagram-check-0.almd:2:6
+error: Expected identifier at line 2:7 (got Newline '')
+  --> /tmp/dojo-anagram-check-0.almd:2:7
   |
 2 |   let
-  |      ^
-error: Expected expression at line 8:3 (got In 'in')
-  --> /tmp/dojo-anagram-check-0.almd:8:3
+  |       ^
+error: Expected expression at line 9:3 (got In 'in')
+  --> /tmp/dojo-anagram-check-0.almd:9:3
   |
-8 |   in
+9 |   in
   |   ^
-error[E002]: undefined function 'normalize'
-  --> /tmp/dojo-anagram-check-0.almd:9:15
-  in call to normalize()
-  hint: Check the function name
+error[E003]: undefined variable 'lower_a'
+  --> /tmp/dojo-anagram-check-0.almd:5:44
+  in variable lower_a
+  hint: Check the variable name
   |
-9 |     normalize(a) == normalize(b)
-  |               ^
-error[E002]: undefined function 'normalize'
-  --> /tmp/dojo-anagram-check-0.almd:9:31
-  in call to normalize()
-  hint: Check the function name
+5 |     no_spaces_a = list.filter(string.chars(lower_a), (x) => x != " ")
+  |                                            ^^^^^^^
+error[E003]: undefined variable 'lower_b'
+  --> /tmp/dojo-anagram-check-0.almd:6:44
+  in variable lower_b
+  hint: Check the variable name
   |
-9 |     normalize(a) == normalize(b)
-  |                               ^
+6 |     no_spaces_b = list.filter(string.chars(lower_b), (x) => x != " ")
+  |                                            ^^^^^^^
+error[E003]: undefined variable 'no_spaces_a'
+  --> /tmp/dojo-anagram-check-0.almd:7:26
+  in variable no_spaces_a
+  hint: Check the variable name
+  |
+7 |     sorted_a = list.sort(no_spaces_a)
+  |                          ^^^^^^^^^^^
+error[E003]: undefined variable 'no_spaces_b'
+  --> /tmp/dojo-anagram-check-0.almd:8:26
+  in variable no_spaces_b
+  hint: Check the variable name
+  |
+8 |     sorted_b = list.sort(no_spaces_b)
+  |                          ^^^^^^^^^^^
+error[E003]: undefined variable 'sorted_a'
+  --> /tmp/dojo-anagram-check-0.almd:10:5
+  in variable sorted_a
+  hint: Check the variable name
+   |
+10 |     sorted_a == sorted_b
+   |     ^^^^^^^^
+error[E003]: undefined variable 'sorted_b'
+  --> /tmp/dojo-anagram-check-0.almd:10:17
+  in variable sorted_b
+  hint: Check the variable name
+   |
+10 |     sorted_a == sorted_b
+   |                 ^^^^^^^^
 
-4 error(s) found
+8 error(s) found
 Compile error for /tmp/dojo-anagram-check-0.almd:
 compile failed
 FAILED: /tmp/dojo-anagram-check-0.almd
@@ -62,11 +91,12 @@ FAILED: /tmp/dojo-anagram-check-0.almd
 ### Attempt 2 (PASS)
 
 ```almide
-fn is_anagram(a: String, b: String) -> Bool =
-  let normalize = (s) => 
-    string.chars(s) 
-    |> list.filter((x) => not(string.is_whitespace(x)))
-    |> list.map((x) => string.to_lower(x))
-    |> list.sort
-  normalize(a) == normalize(b)
+fn is_anagram(a: String, b: String) -> Bool = 
+  let lower_a = string.to_lower(a)
+  in let lower_b = string.to_lower(b)
+  in let no_spaces_a = list.filter(string.chars(lower_a), (x) => x != " ")
+  in let no_spaces_b = list.filter(string.chars(lower_b), (x) => x != " ")
+  in let sorted_a = list.sort(no_spaces_a)
+  in let sorted_b = list.sort(no_spaces_b)
+  in sorted_a == sorted_b
 ```

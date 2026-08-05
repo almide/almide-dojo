@@ -3,44 +3,50 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: parse-error
+- **category**: name-error
+- **diagnostic code**: `E003`
 
 ## Attempts
 
 ### Attempt 1 (FAIL)
 
 ```almide
-fn is_prime(n: Int) -> Bool {
-  if n <= 1 {
-    false
-  } else if n == 2 {
-    true
-  } else if n % 2 == 0 {
-    false
-  } else {
-    let sqrt_n = float.to_int(math.sqrt(float.to_float(n)))
-    list.all(list.range(3, sqrt_n + 1), fn(x) => n % x != 0)
-  }
-}
+fn is_prime(n: Int) -> Bool = 
+    if n <= 1 then false
+    else 
+        if n == 2 then true
+        else 
+            if n % 2 == 0 then false
+            else 
+                let is_prime_candidate = fn (i: Int) -> i * i > n
+                let check_divisor = fn (i: Int) -> n % i == 0
+                let primes = list.filter(list.range(3, n), check_divisor)
+                list.all(primes, is_prime_candidate)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-prime-0.almd
-error: Missing '=' before function body at line 1:29
-  --> /tmp/dojo-is-prime-0.almd:1:29
-  hint: Almide requires '=' before the body. Write: fn is_prime(...) -> Type = { ... }
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-is-prime-0.almd:8:17
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-1 | fn is_prime(n: Int) -> Bool {
-  |                             ^
-error: Expected function name at line 10:43 (got LParen '(')
-  --> /tmp/dojo-is-prime-0.almd:10:43
-   |
-10 |     list.all(list.range(3, sqrt_n + 1), fn(x) => n % x != 0)
-   |                                           ^
+8 |                 let is_prime_candidate = fn (i: Int) -> i * i > n
+  |                 ^^^
+error: Expected function name at line 8:45 (got LParen '(')
+  --> /tmp/dojo-is-prime-0.almd:8:45
+  |
+8 |                 let is_prime_candidate = fn (i: Int) -> i * i > n
+  |                                             ^
+error: Expected function name at line 9:40 (got LParen '(')
+  --> /tmp/dojo-is-prime-0.almd:9:40
+  |
+9 |                 let check_divisor = fn (i: Int) -> n % i == 0
+  |                                        ^
 
-2 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-is-prime-0.almd:
 compile failed
 FAILED: /tmp/dojo-is-prime-0.almd
@@ -52,50 +58,72 @@ FAILED: /tmp/dojo-is-prime-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn is_prime(n: Int) -> Bool = {
-  if n <= 1 {
-    false
-  } else if n == 2 {
-    true
-  } else if n % 2 == 0 {
-    false
-  } else {
-    let sqrt_n = float.to_int(math.sqrt(float.to_float(n)))
-    list.all(list.range(3, sqrt_n + 1), (x) => n % x != 0)
-  }
-}
+fn is_prime(n: Int) -> Bool = 
+    if n <= 1 then false
+    else 
+        if n == 2 then true
+        else 
+            if n % 2 == 0 then false
+            else 
+                let is_prime_candidate = (i: Int) -> i * i > n
+                let check_divisor = (i: Int) -> n % i == 0
+                list.filter(list.range(3, n), check_divisor) |>
+                list.all(_, is_prime_candidate)
+
+fn is_prime_candidate(i: Int) -> Bool = i * i > n
+fn check_divisor(i: Int) -> Bool = n % i == 0
+
+fn is_prime(n: Int) -> Bool = 
+    if n <= 1 then false
+    else 
+        if n == 2 then true
+        else 
+            if n % 2 == 0 then false
+            else 
+                let primes = list.filter(list.range(3, n), check_divisor)
+                list.all(primes, is_prime_candidate)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-prime-1.almd
-error: Expected Then at line 2:13 (got LBrace '{')
-  --> /tmp/dojo-is-prime-1.almd:2:13
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-is-prime-1.almd:8:17
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-2 |   if n <= 1 {
-  |             ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 4:5 (got Else 'else')
-  --> /tmp/dojo-is-prime-1.almd:4:5
-  |
-4 |   } else if n == 2 {
-  |     ^
-error[E001]: type mismatch in fn 'is_prime': expected Bool but got Unit
-  --> /tmp/dojo-is-prime-1.almd:1:31
-  in fn 'is_prime'
-  hint: Fix the expression type or change the expected type
+8 |                 let is_prime_candidate = (i: Int) -> i * i > n
+  |                 ^^^
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-is-prime-1.almd:23:17
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+   |
+23 |                 let primes = list.filter(list.range(3, n), check_divisor)
+   |                 ^^^
+error[E003]: undefined variable 'n'
+  --> /tmp/dojo-is-prime-1.almd:13:49
+  in variable n
+  hint: Did you mean `i`?
   try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Bool:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type Bool
-  |
-1 | fn is_prime(n: Int) -> Bool = {
-  |                               ^
+      // n  →  i
+      i
+   |
+13 | fn is_prime_candidate(i: Int) -> Bool = i * i > n
+   |                                                 ^
+error[E003]: undefined variable 'n'
+  --> /tmp/dojo-is-prime-1.almd:14:36
+  in variable n
+  hint: Did you mean `i`?
+  try:
+      // n  →  i
+      i
+   |
+14 | fn check_divisor(i: Int) -> Bool = n % i == 0
+   |                                    ^
 
-3 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-is-prime-1.almd:
 compile failed
 FAILED: /tmp/dojo-is-prime-1.almd
@@ -107,50 +135,90 @@ FAILED: /tmp/dojo-is-prime-1.almd
 ### Attempt 3 (FAIL)
 
 ```almide
-fn is_prime(n: Int) -> Bool = {
-  if n <= 1 {
-    false
-  } else if n == 2 {
-    true
-  } else if n % 2 == 0 {
-    false
-  } else {
-    let sqrt_n = float.to_int(math.sqrt(float.to_float(n)))
-    list.all(list.range(3, sqrt_n + 1), (x) => n % x != 0)
-  }
-}
+fn is_prime(n: Int) -> Bool = 
+    if n <= 1 then false
+    else 
+        if n == 2 then true
+        else 
+            if n % 2 == 0 then false
+            else 
+                let is_prime_candidate = (i: Int) -> i * i > n
+                let check_divisor = (i: Int) -> n % i == 0
+                list.filter(list.range(3, n), check_divisor) |>
+                list.all(_, is_prime_candidate)
+
+fn is_prime_candidate(i: Int) -> Bool = i * i > n
+fn check_divisor(i: Int) -> Bool = n % i == 0
+
+fn is_prime(n: Int) -> Bool = 
+    if n <= 1 then false
+    else 
+        if n == 2 then true
+        else 
+            if n % 2 == 0 then false
+            else 
+                let primes = list.filter(list.range(3, n), check_divisor)
+                list.all(primes, is_prime_candidate)
+
+fn is_prime(n: Int) -> Bool = 
+    if n <= 1 then false
+    else 
+        if n == 2 then true
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-prime-2.almd
-error: Expected Then at line 2:13 (got LBrace '{')
-  --> /tmp/dojo-is-prime-2.almd:2:13
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-is-prime-2.almd:8:17
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-2 |   if n <= 1 {
-  |             ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 4:5 (got Else 'else')
-  --> /tmp/dojo-is-prime-2.almd:4:5
-  |
-4 |   } else if n == 2 {
-  |     ^
-error[E001]: type mismatch in fn 'is_prime': expected Bool but got Unit
-  --> /tmp/dojo-is-prime-2.almd:1:31
-  in fn 'is_prime'
-  hint: Fix the expression type or change the expected type
+8 |                 let is_prime_candidate = (i: Int) -> i * i > n
+  |                 ^^^
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-is-prime-2.almd:23:17
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+   |
+23 |                 let primes = list.filter(list.range(3, n), check_divisor)
+   |                 ^^^
+error[E003]: undefined variable 'n'
+  --> /tmp/dojo-is-prime-2.almd:13:49
+  in variable n
+  hint: Did you mean `i`?
   try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Bool:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type Bool
-  |
-1 | fn is_prime(n: Int) -> Bool = {
-  |                               ^
+      // n  →  i
+      i
+   |
+13 | fn is_prime_candidate(i: Int) -> Bool = i * i > n
+   |                                                 ^
+error[E003]: undefined variable 'n'
+  --> /tmp/dojo-is-prime-2.almd:14:36
+  in variable n
+  hint: Did you mean `i`?
+  try:
+      // n  →  i
+      i
+   |
+14 | fn check_divisor(i: Int) -> Bool = n % i == 0
+   |                                    ^
+error[E001]: type mismatch in if branches: expected Bool but got Unit
+  --> /tmp/dojo-is-prime-2.almd:29:9
+  in if branches
+  hint: Both branches of `if/then/else` must have the same type
+  try:
+      // an if-arm is a statement (e.g. `x = y` or a bare `let`) — returns Unit.
+      // if/else is an *expression*: both arms must produce Bool. Rebind via let instead:
+      //   let new_x = if cond then <then-value> else <else-value>
+      // Or for loop-like state, use recursion:
+      //   fn step(x: Bool) -> Bool = if cond then step(<update>) else x
+   |
+29 |         if n == 2 then true
+   |         ^^
 
-3 error(s) found
+5 error(s) found
 Compile error for /tmp/dojo-is-prime-2.almd:
 compile failed
 FAILED: /tmp/dojo-is-prime-2.almd
@@ -162,48 +230,53 @@ FAILED: /tmp/dojo-is-prime-2.almd
 ### Attempt 4 (FAIL)
 
 ```almide
-fn is_prime(n: Int) -> Bool = {
-  if n <= 1 {
-    false
-  } else if n == 2 {
-    true
-  } else if n % 2 == 0 {
-    false
-  } else {
-    let sqrt_n = float.to_int(math.sqrt(float.to_float(n)))
-    list.all(list.range(3, sqrt_n + 1), (x) => n % x != 0)
-  }
-}
+fn is_prime(n: Int) -> Bool = 
+    if n <= 1 then false
+    else 
+        if n == 2 then true
+        else 
+            if n % 2 == 0 then false
+            else 
+                let is_prime_candidate = (i: Int) -> i * i > n
+                let check_divisor = (i: Int) -> n % i == 0
+                list.filter(list.range(3, int.to_int(math.sqrt(n)) + 1), check_divisor) |>
+                list.all(_, is_prime_candidate)
+
+fn is_prime_candidate(i: Int) -> Bool = i * i > n
+fn check_divisor(i: Int) -> Bool = n % i == 0
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-is-prime-3.almd
-error: Expected Then at line 2:13 (got LBrace '{')
-  --> /tmp/dojo-is-prime-3.almd:2:13
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-is-prime-3.almd:8:17
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-2 |   if n <= 1 {
-  |             ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 4:5 (got Else 'else')
-  --> /tmp/dojo-is-prime-3.almd:4:5
-  |
-4 |   } else if n == 2 {
-  |     ^
-error[E001]: type mismatch in fn 'is_prime': expected Bool but got Unit
-  --> /tmp/dojo-is-prime-3.almd:1:31
-  in fn 'is_prime'
-  hint: Fix the expression type or change the expected type
+8 |                 let is_prime_candidate = (i: Int) -> i * i > n
+  |                 ^^^
+error[E003]: undefined variable 'n'
+  --> /tmp/dojo-is-prime-3.almd:13:49
+  in variable n
+  hint: Did you mean `i`?
   try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Bool:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type Bool
-  |
-1 | fn is_prime(n: Int) -> Bool = {
-  |                               ^
+      // n  →  i
+      i
+   |
+13 | fn is_prime_candidate(i: Int) -> Bool = i * i > n
+   |                                                 ^
+error[E003]: undefined variable 'n'
+  --> /tmp/dojo-is-prime-3.almd:14:36
+  in variable n
+  hint: Did you mean `i`?
+  try:
+      // n  →  i
+      i
+   |
+14 | fn check_divisor(i: Int) -> Bool = n % i == 0
+   |                                    ^
 
 3 error(s) found
 Compile error for /tmp/dojo-is-prime-3.almd:

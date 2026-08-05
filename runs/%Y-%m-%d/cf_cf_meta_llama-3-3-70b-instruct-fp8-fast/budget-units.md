@@ -122,10 +122,7 @@ FAILED: /tmp/dojo-budget-units-1.almd
 ```almide
 effect fn run_with_budget(ms: Int, us: Int, n: Int) -> Int = {
   let budget = compute.ms(ms) + compute.us(us)
-  match fan.bounded(budget, count_to(n)) {
-    some(v) => v
-    none => -1
-  }
+  fan.bounded(budget, count_to(n)) |> result.to_option() |> option.unwrap_or(-1)
 }
 
 fn count_to(n: Int) -> Int = {
@@ -155,12 +152,12 @@ error[E003]: undefined variable 'compute'
 2 |   let budget = compute.ms(ms) + compute.us(us)
   |                                 ^^^^^^^
 error: unknown function 'fan.bounded'
-  --> /tmp/dojo-budget-units-2.almd:3:38
+  --> /tmp/dojo-budget-units-2.almd:3:32
   in call to fan.bounded()
   hint: Available: fan.map, fan.race, fan.any, fan.settle, fan.timeout
   |
-3 |   match fan.bounded(budget, count_to(n)) {
-  |                                      ^
+3 |   fan.bounded(budget, count_to(n)) |> result.to_option() |> option.unwrap_or(-1)
+  |                                ^
 
 3 error(s) found
 Compile error for /tmp/dojo-budget-units-2.almd:
@@ -176,10 +173,7 @@ FAILED: /tmp/dojo-budget-units-2.almd
 ```almide
 effect fn run_with_budget(ms: Int, us: Int, n: Int) -> Int = {
   let budget = time.ms(ms) + time.us(us)
-  match fan.timeout(budget, count_to(n)) {
-    some(v) => v
-    none => -1
-  }
+  fan.timeout(budget, count_to(n)) |> result.to_option() |> option.unwrap_or(-1)
 }
 
 fn count_to(n: Int) -> Int = {
@@ -208,15 +202,8 @@ error[E003]: undefined variable 'time'
   |
 2 |   let budget = time.ms(ms) + time.us(us)
   |                              ^^^^
-error[E010]: non-exhaustive match: missing ok(_), err(_)
-  --> /tmp/dojo-budget-units-3.almd:3:38
-  in match
-  hint: Add arms for ok(_), err(_), or use '_'
-  |
-3 |   match fan.timeout(budget, count_to(n)) {
-  |                                      ^
 
-3 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-budget-units-3.almd:
 compile failed
 FAILED: /tmp/dojo-budget-units-3.almd

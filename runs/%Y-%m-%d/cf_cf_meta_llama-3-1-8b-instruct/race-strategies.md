@@ -11,57 +11,99 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn exact(n: Int) -> Int = {
-  let acc = 0
-  while acc < n {
-    acc + 1
-  }
-  acc
-}
+fn exact(n: Int) -> Int = 
+  let i = 0 in
+  while i < n do
+    i = i + 1
+  end;
+  i
 
-fn heuristic(n: Int) -> Int = {
+fn heuristic(n: Int) -> Int = 
   n * (n - 1) / 2
-}
 
-effect fn best_effort(n: Int) -> Int = {
-  let (exact_cost, exact_result) = fan.race(compute.ms(1)) {
-    exact(n);
-    heuristic(n)
-  }
-  if exact_cost <= compute.ms(1) {
-    exact_result
-  } else if heuristic(n) == exact_result {
-    exact_result
-  } else {
+effect fn best_effort(n: Int) -> Int = 
+  let (exact_cost, exact_result) = 
+    compute.ms(1).map { exact(n) } 
+  in
+  let (heuristic_cost, heuristic_result) = 
+    compute.ms(1).map { heuristic(n) } 
+  in
+  if exact_cost <= heuristic_cost then 
+    exact_result 
+  else if heuristic_cost <= exact_cost then 
+    heuristic_result 
+  else 
     -1
-  }
-}
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-race-strategies-0.almd
-error: Expected Then at line 18:34 (got LBrace '{')
-  --> /tmp/dojo-race-strategies-0.almd:18:34
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+error: `while ... do ... done` is Pascal/Ruby syntax
+  --> /tmp/dojo-race-strategies-0.almd:3:15
+  in while body
+  hint: Almide uses `while cond { ... }` (curly braces). But `while` requires a `var` accumulator — pure/effect fns usually want recursion instead.
+  try:
+      // Almide `while` needs braces (not `do ... done`):
+      var i = 0
+      while cond(i) { i = i + 1 }
+      
+      // For pure fn, prefer recursion over `var` + while:
+      fn loop(i: Int, acc: T) -> T =
+      if !cond(i) then acc else loop(i + 1, next(acc, i))
+  |
+3 |   while i < n do
+  |               ^^
+error: Expected expression at line 14:3 (got In 'in')
+  --> /tmp/dojo-race-strategies-0.almd:14:3
    |
-18 |   if exact_cost <= compute.ms(1) {
-   |                                  ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 20:5 (got Else 'else')
-  --> /tmp/dojo-race-strategies-0.almd:20:5
+14 |   in
+   |   ^
+error: Expected expression at line 17:3 (got In 'in')
+  --> /tmp/dojo-race-strategies-0.almd:17:3
    |
-20 |   } else if heuristic(n) == exact_result {
-   |     ^
+17 |   in
+   |   ^
+error[E009]: cannot reassign immutable binding 'i'
+  --> /tmp/dojo-race-strategies-0.almd:4:13
+  in i = ...
+  hint: Use 'var i = ...' instead of 'let i = ...' to declare a mutable variable
+  try:
+      // let i = ...  →  var i = ...
+      var i = <initial value>
+  |
+2 |   let i = 0
+  |   ----------------- 'i' declared here
+...
+4 |     i = i + 1
+  |             ^
+error[E003]: undefined variable 'end'
+  --> /tmp/dojo-race-strategies-0.almd:5:3
+  in variable end
+  hint: Did you mean `n`?
+  try:
+      // end  →  n
+      n
+  |
+5 |   end;
+  |   ^^^
 error[E003]: undefined variable 'compute'
-  --> /tmp/dojo-race-strategies-0.almd:14:45
+  --> /tmp/dojo-race-strategies-0.almd:13:5
   in variable compute
   hint: Check the variable name
    |
-14 |   let (exact_cost, exact_result) = fan.race(compute.ms(1)) {
-   |                                             ^^^^^^^
+13 |     compute.ms(1).map { exact(n) }
+   |     ^^^^^^^
+error[E003]: undefined variable 'compute'
+  --> /tmp/dojo-race-strategies-0.almd:16:5
+  in variable compute
+  hint: Check the variable name
+   |
+16 |     compute.ms(1).map { heuristic(n) }
+   |     ^^^^^^^
 
-3 error(s) found
+7 error(s) found
 Compile error for /tmp/dojo-race-strategies-0.almd:
 compile failed
 FAILED: /tmp/dojo-race-strategies-0.almd
@@ -73,47 +115,92 @@ FAILED: /tmp/dojo-race-strategies-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn exact(n: Int) -> Int = {
-  let acc = 0
-  while acc < n {
-    acc + 1
-  }
-  acc
-}
+fn exact(n: Int) -> Int = 
+  var i = 0
+  while i < n do
+    i = i + 1
+  end;
+  i
 
-fn heuristic(n: Int) -> Int = {
+fn heuristic(n: Int) -> Int = 
   n * (n - 1) / 2
-}
 
-effect fn best_effort(n: Int) -> Int = {
-  let (exact_cost, exact_result) = fan.race(compute.ms(1)) {
-    exact(n);
-    heuristic(n)
-  }
-  if exact_cost <= compute.ms(1) then exact_result else -1
-}
+effect fn best_effort(n: Int) -> Int = 
+  let (exact_cost, exact_result) = 
+    fs.time { exact(n) } 
+  in
+  let (heuristic_cost, heuristic_result) = 
+    fs.time { heuristic(n) } 
+  in
+  if exact_cost <= heuristic_cost then 
+    exact_result 
+  else if heuristic_cost <= exact_cost then 
+    heuristic_result 
+  else 
+    -1
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-race-strategies-1.almd
-error[E003]: undefined variable 'compute'
-  --> /tmp/dojo-race-strategies-1.almd:14:45
-  in variable compute
-  hint: Check the variable name
+error: `while ... do ... done` is Pascal/Ruby syntax
+  --> /tmp/dojo-race-strategies-1.almd:3:15
+  in while body
+  hint: Almide uses `while cond { ... }` (curly braces). But `while` requires a `var` accumulator — pure/effect fns usually want recursion instead.
+  try:
+      // Almide `while` needs braces (not `do ... done`):
+      var i = 0
+      while cond(i) { i = i + 1 }
+      
+      // For pure fn, prefer recursion over `var` + while:
+      fn loop(i: Int, acc: T) -> T =
+      if !cond(i) then acc else loop(i + 1, next(acc, i))
+  |
+3 |   while i < n do
+  |               ^^
+error: Expected expression at line 14:3 (got In 'in')
+  --> /tmp/dojo-race-strategies-1.almd:14:3
    |
-14 |   let (exact_cost, exact_result) = fan.race(compute.ms(1)) {
-   |                                             ^^^^^^^
-error[E003]: undefined variable 'compute'
-  --> /tmp/dojo-race-strategies-1.almd:18:20
-  in variable compute
-  hint: Check the variable name
+14 |   in
+   |   ^
+error: Expected expression at line 17:3 (got In 'in')
+  --> /tmp/dojo-race-strategies-1.almd:17:3
    |
-18 |   if exact_cost <= compute.ms(1) then exact_result else -1
-   |                    ^^^^^^^
+17 |   in
+   |   ^
+error[E003]: undefined variable 'end'
+  --> /tmp/dojo-race-strategies-1.almd:5:3
+  in variable end
+  hint: Did you mean `n`?
+  try:
+      // end  →  n
+      n
+  |
+5 |   end;
+  |   ^^^
+error[E003]: undefined variable 'fs'
+  --> /tmp/dojo-race-strategies-1.almd:13:5
+  in variable fs
+  hint: Add `import fs` (stdlib: file system operations)
+Or run `almide fmt` to auto-add missing imports
+  try:
+      import fs
+   |
+13 |     fs.time { exact(n) }
+   |     ^^
+error[E003]: undefined variable 'fs'
+  --> /tmp/dojo-race-strategies-1.almd:16:5
+  in variable fs
+  hint: Add `import fs` (stdlib: file system operations)
+Or run `almide fmt` to auto-add missing imports
+  try:
+      import fs
+   |
+16 |     fs.time { heuristic(n) }
+   |     ^^
 
-2 error(s) found
+6 error(s) found
 Compile error for /tmp/dojo-race-strategies-1.almd:
 compile failed
 FAILED: /tmp/dojo-race-strategies-1.almd
@@ -125,47 +212,71 @@ FAILED: /tmp/dojo-race-strategies-1.almd
 ### Attempt 3 (FAIL)
 
 ```almide
-fn exact(n: Int) -> Int = {
-  let acc = 0
-  while acc < n {
-    acc + 1
-  }
-  acc
-}
+fn exact(n: Int) -> Int = 
+  var i = 0
+  while i < n { i = i + 1 }
+  i
 
-fn heuristic(n: Int) -> Int = {
+fn heuristic(n: Int) -> Int = 
   n * (n - 1) / 2
-}
 
-effect fn best_effort(n: Int) -> Int = {
-  let (exact_cost, exact_result) = fan.race(compute.ms(1)) {
-    exact(n);
-    heuristic(n)
-  }
-  if exact_cost <= compute.ms(1) then exact_result else -1
-}
+import fs
+
+effect fn best_effort(n: Int) -> Int = 
+  let (exact_cost, exact_result) = fs.time { exact(n) } 
+  in
+  let (heuristic_cost, heuristic_result) = fs.time { heuristic(n) } 
+  in
+  if exact_cost <= heuristic_cost then 
+    exact_result 
+  else if heuristic_cost <= exact_cost then 
+    heuristic_result 
+  else 
+    -1
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-race-strategies-2.almd
-error[E003]: undefined variable 'compute'
-  --> /tmp/dojo-race-strategies-2.almd:14:45
-  in variable compute
-  hint: Check the variable name
+error: Unexpected token at top level at line 9:1
+  --> /tmp/dojo-race-strategies-2.almd:9:1
+  hint: All imports must come before other declarations.
+  |
+9 | import fs
+  | ^
+error: Expected expression at line 13:3 (got In 'in')
+  --> /tmp/dojo-race-strategies-2.almd:13:3
    |
-14 |   let (exact_cost, exact_result) = fan.race(compute.ms(1)) {
-   |                                             ^^^^^^^
-error[E003]: undefined variable 'compute'
-  --> /tmp/dojo-race-strategies-2.almd:18:20
-  in variable compute
-  hint: Check the variable name
+13 |   in
+   |   ^
+error: Expected expression at line 15:3 (got In 'in')
+  --> /tmp/dojo-race-strategies-2.almd:15:3
    |
-18 |   if exact_cost <= compute.ms(1) then exact_result else -1
-   |                    ^^^^^^^
+15 |   in
+   |   ^
+error[E003]: undefined variable 'fs'
+  --> /tmp/dojo-race-strategies-2.almd:12:36
+  in variable fs
+  hint: Add `import fs` (stdlib: file system operations)
+Or run `almide fmt` to auto-add missing imports
+  try:
+      import fs
+   |
+12 |   let (exact_cost, exact_result) = fs.time { exact(n) }
+   |                                    ^^
+error[E003]: undefined variable 'fs'
+  --> /tmp/dojo-race-strategies-2.almd:14:44
+  in variable fs
+  hint: Add `import fs` (stdlib: file system operations)
+Or run `almide fmt` to auto-add missing imports
+  try:
+      import fs
+   |
+14 |   let (heuristic_cost, heuristic_result) = fs.time { heuristic(n) }
+   |                                            ^^
 
-2 error(s) found
+5 error(s) found
 Compile error for /tmp/dojo-race-strategies-2.almd:
 compile failed
 FAILED: /tmp/dojo-race-strategies-2.almd
@@ -177,47 +288,63 @@ FAILED: /tmp/dojo-race-strategies-2.almd
 ### Attempt 4 (FAIL)
 
 ```almide
-fn exact(n: Int) -> Int = {
-  let acc = 0
-  while acc < n {
-    acc + 1
-  }
-  acc
-}
+import fs
 
-fn heuristic(n: Int) -> Int = {
+fn exact(n: Int) -> Int = 
+  var i = 0
+  while i < n { i = i + 1 }
+  i
+
+fn heuristic(n: Int) -> Int = 
   n * (n - 1) / 2
-}
 
-effect fn best_effort(n: Int) -> Int = {
-  let (exact_cost, exact_result) = fan.race(compute.ms(1)) {
-    exact(n);
-    heuristic(n)
-  }
-  if exact_cost <= compute.ms(1) then exact_result else -1
-}
+effect fn best_effort(n: Int) -> Int = 
+  let (exact_cost, exact_result) = fs.time { exact(n) } 
+  let (heuristic_cost, heuristic_result) = fs.time { heuristic(n) } 
+  if exact_cost <= heuristic_cost then 
+    exact_result 
+  else if heuristic_cost <= exact_cost then 
+    heuristic_result 
+  else 
+    -1
+
+effect fn race(n: Int) -> Int = 
+  fan.race(compute.ms(1)) { exact(n); heuristic(n) }
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-race-strategies-3.almd
+error[E003]: undefined variable 'fs'
+  --> /tmp/dojo-race-strategies-3.almd:13:36
+  in variable fs
+  hint: Add `import fs` (stdlib: file system operations)
+Or run `almide fmt` to auto-add missing imports
+  try:
+      import fs
+   |
+13 |   let (exact_cost, exact_result) = fs.time;
+   |                                    ^^
+error[E003]: undefined variable 'fs'
+  --> /tmp/dojo-race-strategies-3.almd:15:44
+  in variable fs
+  hint: Add `import fs` (stdlib: file system operations)
+Or run `almide fmt` to auto-add missing imports
+  try:
+      import fs
+   |
+15 |   let (heuristic_cost, heuristic_result) = fs.time;
+   |                                            ^^
 error[E003]: undefined variable 'compute'
-  --> /tmp/dojo-race-strategies-3.almd:14:45
+  --> /tmp/dojo-race-strategies-3.almd:21:42
   in variable compute
   hint: Check the variable name
    |
-14 |   let (exact_cost, exact_result) = fan.race(compute.ms(1)) {
-   |                                             ^^^^^^^
-error[E003]: undefined variable 'compute'
-  --> /tmp/dojo-race-strategies-3.almd:18:20
-  in variable compute
-  hint: Check the variable name
-   |
-18 |   if exact_cost <= compute.ms(1) then exact_result else -1
-   |                    ^^^^^^^
+21 | effect fn race(n: Int) -> Int = fan.race(compute.ms(1))
+   |                                          ^^^^^^^
 
-2 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-race-strategies-3.almd:
 compile failed
 FAILED: /tmp/dojo-race-strategies-3.almd
