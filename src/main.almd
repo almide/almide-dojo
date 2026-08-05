@@ -222,13 +222,12 @@ let SYSTEM_PROMPT = """
   - fn option.map[A, B](o: Option[A], f: fn(A) -> B) -> Option[B]
   - fn option.or_else[A](o: Option[A], f: fn(Unit) -> Option[A]) -> Option[A]
   - fn option.to_list[A](o: Option[A]) -> List[A]
-  - fn option.to_result[A](o: Option[A], err: String) -> Result[A, String]
+  - fn option.to_result[A, E](o: Option[A], e: E) -> Result[A, E]
   - fn option.unwrap_or[A](o: Option[A], default: A) -> A
   - fn option.unwrap_or_else[A](o: Option[A], f: fn(Unit) -> A) -> A
   - fn option.zip[A, B](a: Option[A], b: Option[B]) -> Option[(A, B)]
 
   ### result
-  - fn result.collect[T, E](rs: List[Result[T, E]]) -> Result[List[T], List[E]]
   - fn result.flat_map[A, B, E](r: Result[A, E], f: fn(A) -> Result[B, E]) -> Result[B, E]
   - fn result.is_err[A, E](r: Result[A, E]) -> Bool
   - fn result.is_ok[A, E](r: Result[A, E]) -> Bool
