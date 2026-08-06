@@ -498,7 +498,7 @@ effect fn run_task(task_name: String, model: String) -> Result[RunResult, String
       match fix_loop(task, model, DEFAULT_MAX_RETRIES) {
         err(e) => err("fix_loop: " + e)
         ok(result) => {
-          print_result(result)
+          print_result(result)!
           match write_metrics(result) {
             ok(path) => println("\nReport: " + path)
             err(e) => println("\nWarning: failed to write report: " + e)

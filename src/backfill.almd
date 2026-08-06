@@ -42,7 +42,7 @@ effect fn backfill_subs_loop(date: String, parent: String, subs: List[String]) -
   else {
     let sub = list.get(subs, 0) |> option.unwrap_or("")
     let rest = list.drop(subs, 1)
-    backfill_dir(date, parent + "/" + sub)
+    backfill_dir(date, parent + "/" + sub)!
     backfill_subs_loop(date, parent, rest)
   }
 
@@ -53,11 +53,11 @@ effect fn backfill_loop(dates: List[String]) -> Unit =
     let rest = list.drop(dates, 1)
     println("[" + date + "]")
     match fs.read_text("runs/" + date + "/summary.md") {
-      ok(_) => { backfill_dir(date, "runs/" + date); {} }
+      ok(_) => { backfill_dir(date, "runs/" + date)!; {} }
       err(_) =>
         match fs.list_dir("runs/" + date) {
           err(_) => { println("  skip (no subdirs)"); {} }
-          ok(subs) => { backfill_subs_loop(date, "runs/" + date, subs); {} }
+          ok(subs) => { backfill_subs_loop(date, "runs/" + date, subs)!; {} }
         }
     }
     backfill_loop(rest)
@@ -74,7 +74,7 @@ effect fn backfill_all() -> Unit = {
         |> list.filter((e) => not string.starts_with(e, ".") and e != "README.md")
         |> list.sort
       println("Backfilling " + int.to_string(list.len(dates)) + " date dirs...")
-      backfill_loop(dates)
+      backfill_loop(dates)!
       println("Done.")
     }
   }
