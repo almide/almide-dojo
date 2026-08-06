@@ -3,7 +3,8 @@
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: no
 - **retries**: 3
-- **category**: parse-error
+- **category**: name-error
+- **diagnostic code**: `E003`
 
 ## Attempts
 
@@ -14,10 +15,9 @@ import fan
 
 fn exact(n: Int) -> Int = 
   let sum = ref 0 in
-  while sum.get < n * (n - 1) / 2 do
-    sum.set(sum.get + sum.get)
-  ;
-  sum.get
+  while sum.get() < n * (n - 1) / 2 do
+    sum.set(sum.get() + (sum.get() / (n - 1)))
+  sum.get()
 
 fn heuristic(n: Int) -> Int = 
   n * (n - 1) / 2
@@ -42,7 +42,7 @@ error: Expected expression at line 4:19 (got In 'in')
 4 |   let sum = ref 0 in
   |                   ^
 error: `while ... do ... done` is Pascal/Ruby syntax
-  --> /tmp/dojo-race-strategies-0.almd:5:35
+  --> /tmp/dojo-race-strategies-0.almd:5:37
   in while body
   hint: Almide uses `while cond { ... }` (curly braces). But `while` requires a `var` accumulator — pure/effect fns usually want recursion instead.
   try:
@@ -54,12 +54,12 @@ error: `while ... do ... done` is Pascal/Ruby syntax
       fn loop(i: Int, acc: T) -> T =
       if !cond(i) then acc else loop(i + 1, next(acc, i))
   |
-5 |   while sum.get < n * (n - 1) / 2 do
-  |                                   ^^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 14:27 (got LBrace '{')
-  --> /tmp/dojo-race-strategies-0.almd:14:27
+5 |   while sum.get() < n * (n - 1) / 2 do
+  |                                     ^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 13:27 (got LBrace '{')
+  --> /tmp/dojo-race-strategies-0.almd:13:27
    |
-14 |   fan.race(compute.ms(1)) { exact(n); heuristic(n) }
+13 |   fan.race(compute.ms(1)) { exact(n); heuristic(n) }
    |                           ^
 error[E003]: undefined variable 'ref'
   --> /tmp/dojo-race-strategies-0.almd:4:13
@@ -69,11 +69,11 @@ error[E003]: undefined variable 'ref'
 4 |   let sum = ref 0 in
   |             ^^^
 error[E003]: undefined variable 'compute'
-  --> /tmp/dojo-race-strategies-0.almd:14:12
+  --> /tmp/dojo-race-strategies-0.almd:13:12
   in variable compute
   hint: Check the variable name
    |
-14 |   fan.race(compute.ms(1)) { exact(n); heuristic(n) }
+13 |   fan.race(compute.ms(1)) { exact(n); heuristic(n) }
    |            ^^^^^^^
 
 6 error(s) found
@@ -169,8 +169,7 @@ fn heuristic(n: Int) -> Int =
   n * (n - 1) / 2
 
 effect fn best_effort(n: Int) -> Int = 
-  import fan
-  fan.race(fan.compute.ms(1)) { exact(n); heuristic(n) } 
+  fan.race(compute.ms(1)) { exact(n); heuristic(n) } 
   |> option.unwrap_or(-1)
 ```
 
@@ -178,13 +177,20 @@ effect fn best_effort(n: Int) -> Int =
 
 ```
 Compiling /tmp/dojo-race-strategies-2.almd
-error: Expected expression at line 8:3 (got Import 'import')
-  --> /tmp/dojo-race-strategies-2.almd:8:3
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 8:27 (got LBrace '{')
+  --> /tmp/dojo-race-strategies-2.almd:8:27
   |
-8 |   import fan
-  |   ^
+8 |   fan.race(compute.ms(1)) { exact(n); heuristic(n) }
+  |                           ^
+error[E003]: undefined variable 'compute'
+  --> /tmp/dojo-race-strategies-2.almd:8:12
+  in variable compute
+  hint: Check the variable name
+  |
+8 |   fan.race(compute.ms(1)) { exact(n); heuristic(n) }
+  |            ^^^^^^^
 
-1 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-race-strategies-2.almd:
 compile failed
 FAILED: /tmp/dojo-race-strategies-2.almd
@@ -203,7 +209,7 @@ fn heuristic(n: Int) -> Int =
   n * (n - 1) / 2
 
 effect fn best_effort(n: Int) -> Int = 
-  fan.race(fan.compute.ms(1)) { exact(n); heuristic(n) } 
+  fan.race(compute.ms(1)) (exact(n), heuristic(n)) 
   |> option.unwrap_or(-1)
 ```
 
@@ -211,23 +217,15 @@ effect fn best_effort(n: Int) -> Int =
 
 ```
 Compiling /tmp/dojo-race-strategies-3.almd
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 8:31 (got LBrace '{')
-  --> /tmp/dojo-race-strategies-3.almd:8:31
-  |
-8 |   fan.race(fan.compute.ms(1)) { exact(n); heuristic(n) }
-  |                               ^
-error[E003]: undefined variable 'fan'
+error[E003]: undefined variable 'compute'
   --> /tmp/dojo-race-strategies-3.almd:8:12
-  in variable fan
-  hint: Did you mean `n`?
-  try:
-      // fan  →  n
-      n
+  in variable compute
+  hint: Check the variable name
   |
-8 |   fan.race(fan.compute.ms(1)) { exact(n); heuristic(n) }
-  |            ^^^
+8 |   fan.race(compute.ms(1)) (exact(n), heuristic(n))
+  |            ^^^^^^^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-race-strategies-3.almd:
 compile failed
 FAILED: /tmp/dojo-race-strategies-3.almd

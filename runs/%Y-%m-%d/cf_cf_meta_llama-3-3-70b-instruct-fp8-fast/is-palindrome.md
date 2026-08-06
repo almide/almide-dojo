@@ -11,5 +11,5 @@
 
 ```almide
 fn is_palindrome(s: String) -> Bool = 
-    string.reverse(s) == s
+  string.reverse(s) == s
 ```

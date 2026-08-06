@@ -3,8 +3,8 @@
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
 - **success**: no
 - **retries**: 3
-- **category**: type-error
-- **diagnostic code**: `E001`
+- **category**: compile-error
+- **diagnostic code**: `E012`
 
 ## Attempts
 
@@ -13,17 +13,13 @@
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] = 
   match xs {
-    none => none
-    some(xxs) => 
+    some(x) => 
       match ys {
-        none => none
-        some(ys) => 
-          match list.zip(xxs, ys) {
-            none => none
-            some(zipped) => 
-              list.map(zipped, f)
-          }
+        some(y) => 
+          list.cons(f(x, y), zip_with(list.drop(xs, 1), list.drop(ys, 1), f))
+        none => list.nil()
       }
+    none => list.nil()
   }
 ```
 
@@ -31,36 +27,38 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
 
 ```
 Compiling /tmp/dojo-zip-with-0.almd
-error[E005]: argument 'f' expects fn(A) -> B but got fn(Int, Int) -> Int
-  --> /tmp/dojo-zip-with-0.almd:11:32
-  in call to list.map()
-  hint: Fix the argument type
-   |
-11 |               list.map(zipped, f)
-   |                                ^
-error[E001]: type mismatch in call to list.map(): expected fn(A) -> B but got fn(Int, Int) -> Int
-  --> /tmp/dojo-zip-with-0.almd:11:32
-  in call to list.map()
-  hint: Fix the expression type or change the expected type
-   |
-11 |               list.map(zipped, f)
-   |                                ^
-error[E001]: type mismatch in match arm: expected Option[?1] but got List[?6]
-  --> /tmp/dojo-zip-with-0.almd:11:32
-  in match arm
-  hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
-   |
-11 |               list.map(zipped, f)
-   |                                ^
-error[E001]: type mismatch in fn 'zip_with': expected List[Int] but got Option[?1]
-  --> /tmp/dojo-zip-with-0.almd:11:32
-  in fn 'zip_with'
-  hint: Fix the expression type or change the expected type
-   |
-11 |               list.map(zipped, f)
-   |                                ^
+error[E002]: undefined function 'list.cons'
+  --> /tmp/dojo-zip-with-0.almd:6:75
+  in call to list.cons()
+  hint: Did you mean `list.count`?
+  try:
+      // list.cons(...)  →  list.count(...)
+      list.count(...)
+  |
+6 |           list.cons(f(x, y), zip_with(list.drop(xs, 1), list.drop(ys, 1), f))
+  |                                                                           ^
+error[E002]: undefined function 'list.nil'
+  --> /tmp/dojo-zip-with-0.almd:7:25
+  in call to list.nil()
+  hint: Did you mean `list.all`?
+  try:
+      // list.nil(...)  →  list.all(...)
+      list.all(...)
+  |
+7 |         none => list.nil()
+  |                         ^
+error[E002]: undefined function 'list.nil'
+  --> /tmp/dojo-zip-with-0.almd:9:21
+  in call to list.nil()
+  hint: Did you mean `list.all`?
+  try:
+      // list.nil(...)  →  list.all(...)
+      list.all(...)
+  |
+9 |     none => list.nil()
+  |                     ^
 
-4 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-zip-with-0.almd:
 compile failed
 FAILED: /tmp/dojo-zip-with-0.almd
@@ -73,10 +71,14 @@ FAILED: /tmp/dojo-zip-with-0.almd
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] = 
-  match list.zip(xs, ys) {
-    none => none
-    some(zipped) => 
-      list.map(zipped, (pair) => f(pair.first, pair.second))
+  match xs {
+    some(x) => 
+      match ys {
+        some(y) => 
+          list.cons(f(x, y), zip_with(list.drop(xs, 1), list.drop(ys, 1), f))
+        none => list.nil()
+      }
+    none => list.nil()
   }
 ```
 
@@ -84,22 +86,38 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
 
 ```
 Compiling /tmp/dojo-zip-with-1.almd
-error[E001]: type mismatch in match arm: expected Option[?0] but got List[Int]
-  --> /tmp/dojo-zip-with-1.almd:5:34
-  in match arm
-  hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
+error[E002]: undefined function 'list.cons'
+  --> /tmp/dojo-zip-with-1.almd:6:75
+  in call to list.cons()
+  hint: Did you mean `list.count`?
+  try:
+      // list.cons(...)  →  list.count(...)
+      list.count(...)
   |
-5 |       list.map(zipped, (pair) => f(pair.first, pair.second))
-  |                                  ^
-error[E001]: type mismatch in fn 'zip_with': expected List[Int] but got Option[?0]
-  --> /tmp/dojo-zip-with-1.almd:5:34
-  in fn 'zip_with'
-  hint: Fix the expression type or change the expected type
+6 |           list.cons(f(x, y), zip_with(list.drop(xs, 1), list.drop(ys, 1), f))
+  |                                                                           ^
+error[E002]: undefined function 'list.nil'
+  --> /tmp/dojo-zip-with-1.almd:7:25
+  in call to list.nil()
+  hint: Did you mean `list.all`?
+  try:
+      // list.nil(...)  →  list.all(...)
+      list.all(...)
   |
-5 |       list.map(zipped, (pair) => f(pair.first, pair.second))
-  |                                  ^
+7 |         none => list.nil()
+  |                         ^
+error[E002]: undefined function 'list.nil'
+  --> /tmp/dojo-zip-with-1.almd:9:21
+  in call to list.nil()
+  hint: Did you mean `list.all`?
+  try:
+      // list.nil(...)  →  list.all(...)
+      list.all(...)
+  |
+9 |     none => list.nil()
+  |                     ^
 
-2 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-zip-with-1.almd:
 compile failed
 FAILED: /tmp/dojo-zip-with-1.almd
@@ -112,10 +130,14 @@ FAILED: /tmp/dojo-zip-with-1.almd
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] = 
-  match list.zip(xs, ys) {
-    none => none
-    some(zipped) => 
-      list.map(zipped, (pair) => f(pair.first, pair.second))
+  match xs {
+    some(x) => 
+      match ys {
+        some(y) => 
+          list.cons(f(x, y), zip_with(list.drop(xs, 1), list.drop(ys, 1), f))
+        none => list.nil()
+      }
+    none => list.nil()
   }
 ```
 
@@ -123,22 +145,38 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
 
 ```
 Compiling /tmp/dojo-zip-with-2.almd
-error[E001]: type mismatch in match arm: expected Option[?0] but got List[Int]
-  --> /tmp/dojo-zip-with-2.almd:5:34
-  in match arm
-  hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
+error[E002]: undefined function 'list.cons'
+  --> /tmp/dojo-zip-with-2.almd:6:75
+  in call to list.cons()
+  hint: Did you mean `list.count`?
+  try:
+      // list.cons(...)  →  list.count(...)
+      list.count(...)
   |
-5 |       list.map(zipped, (pair) => f(pair.first, pair.second))
-  |                                  ^
-error[E001]: type mismatch in fn 'zip_with': expected List[Int] but got Option[?0]
-  --> /tmp/dojo-zip-with-2.almd:5:34
-  in fn 'zip_with'
-  hint: Fix the expression type or change the expected type
+6 |           list.cons(f(x, y), zip_with(list.drop(xs, 1), list.drop(ys, 1), f))
+  |                                                                           ^
+error[E002]: undefined function 'list.nil'
+  --> /tmp/dojo-zip-with-2.almd:7:25
+  in call to list.nil()
+  hint: Did you mean `list.all`?
+  try:
+      // list.nil(...)  →  list.all(...)
+      list.all(...)
   |
-5 |       list.map(zipped, (pair) => f(pair.first, pair.second))
-  |                                  ^
+7 |         none => list.nil()
+  |                         ^
+error[E002]: undefined function 'list.nil'
+  --> /tmp/dojo-zip-with-2.almd:9:21
+  in call to list.nil()
+  hint: Did you mean `list.all`?
+  try:
+      // list.nil(...)  →  list.all(...)
+      list.all(...)
+  |
+9 |     none => list.nil()
+  |                     ^
 
-2 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-zip-with-2.almd:
 compile failed
 FAILED: /tmp/dojo-zip-with-2.almd
@@ -151,10 +189,29 @@ FAILED: /tmp/dojo-zip-with-2.almd
 
 ```almide
 fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] = 
-  match list.zip(xs, ys) {
-    none => none
-    some(zipped) => 
-      list.map(zipped, (pair) => f(pair.first, pair.second))
+  match xs {
+    some(x) => 
+      match ys {
+        some(y) => 
+          list.cons(f(x, y), zip_with(list.drop(xs, 1), list.drop(ys, 1), f))
+        none => list.nil()
+      }
+    none => list.nil()
+  }
+
+// Corrected version with explicit imports
+import list
+import option
+
+fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] = 
+  match xs {
+    some(x) => 
+      match ys {
+        some(y) => 
+          list.cons(f(x, y), zip_with(list.drop(xs, 1), list.drop(ys, 1), f))
+        none => list.nil()
+      }
+    none => list.nil()
   }
 ```
 
@@ -162,22 +219,84 @@ fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
 
 ```
 Compiling /tmp/dojo-zip-with-3.almd
-error[E001]: type mismatch in match arm: expected Option[?0] but got List[Int]
-  --> /tmp/dojo-zip-with-3.almd:5:34
-  in match arm
-  hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
+error: Unexpected token at top level at line 13:1
+  --> /tmp/dojo-zip-with-3.almd:13:1
+  hint: All imports must come before other declarations.
+   |
+13 | import list
+   | ^
+error[E012]: duplicate function 'zip_with'
+  at line 16
+  in fn zip_with
+  hint: Rename one of the definitions, or remove the earlier one. Almide requires each function name to be unique within a module.
+   |
+ 1 | fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
+   | ----------------------------------- first definition of 'zip_with' here
+...
+16 | fn zip_with(xs: List[Int], ys: List[Int], f: (Int, Int) -> Int) -> List[Int] =
+   | ^^^^^^^^^^^
+error[E002]: undefined function 'list.cons'
+  --> /tmp/dojo-zip-with-3.almd:6:75
+  in call to list.cons()
+  hint: Did you mean `list.count`?
+  try:
+      // list.cons(...)  →  list.count(...)
+      list.count(...)
   |
-5 |       list.map(zipped, (pair) => f(pair.first, pair.second))
-  |                                  ^
-error[E001]: type mismatch in fn 'zip_with': expected List[Int] but got Option[?0]
-  --> /tmp/dojo-zip-with-3.almd:5:34
-  in fn 'zip_with'
-  hint: Fix the expression type or change the expected type
+6 |           list.cons(f(x, y), zip_with(list.drop(xs, 1), list.drop(ys, 1), f))
+  |                                                                           ^
+error[E002]: undefined function 'list.nil'
+  --> /tmp/dojo-zip-with-3.almd:7:25
+  in call to list.nil()
+  hint: Did you mean `list.all`?
+  try:
+      // list.nil(...)  →  list.all(...)
+      list.all(...)
   |
-5 |       list.map(zipped, (pair) => f(pair.first, pair.second))
-  |                                  ^
+7 |         none => list.nil()
+  |                         ^
+error[E002]: undefined function 'list.nil'
+  --> /tmp/dojo-zip-with-3.almd:9:21
+  in call to list.nil()
+  hint: Did you mean `list.all`?
+  try:
+      // list.nil(...)  →  list.all(...)
+      list.all(...)
+  |
+9 |     none => list.nil()
+  |                     ^
+error[E002]: undefined function 'list.cons'
+  --> /tmp/dojo-zip-with-3.almd:21:75
+  in call to list.cons()
+  hint: Did you mean `list.count`?
+  try:
+      // list.cons(...)  →  list.count(...)
+      list.count(...)
+   |
+21 |           list.cons(f(x, y), zip_with(list.drop(xs, 1), list.drop(ys, 1), f))
+   |                                                                           ^
+error[E002]: undefined function 'list.nil'
+  --> /tmp/dojo-zip-with-3.almd:22:25
+  in call to list.nil()
+  hint: Did you mean `list.all`?
+  try:
+      // list.nil(...)  →  list.all(...)
+      list.all(...)
+   |
+22 |         none => list.nil()
+   |                         ^
+error[E002]: undefined function 'list.nil'
+  --> /tmp/dojo-zip-with-3.almd:24:21
+  in call to list.nil()
+  hint: Did you mean `list.all`?
+  try:
+      // list.nil(...)  →  list.all(...)
+      list.all(...)
+   |
+24 |     none => list.nil()
+   |                     ^
 
-2 error(s) found
+8 error(s) found
 Compile error for /tmp/dojo-zip-with-3.almd:
 compile failed
 FAILED: /tmp/dojo-zip-with-3.almd

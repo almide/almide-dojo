@@ -10,7 +10,6 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn factorial(n: Int) -> Int =
-  if n == 0 then 1
-  else n * factorial(n - 1)
+fn factorial(n: Int) -> Int = 
+  list.fold(list.range(1, n + 1), 1, (acc, x) => acc * x)
 ```

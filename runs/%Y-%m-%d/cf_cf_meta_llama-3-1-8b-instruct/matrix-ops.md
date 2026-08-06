@@ -10,105 +10,91 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn mat_add(a: List[List[Int]], b: List[List[Int]]) -> List[List[Int]] = {
-  list.map(a, (row_a) => list.map(b, (row_b) => list.map(row_a, (x) => x + list.get(row_b, list.index_of(row_b, x)))))))
-}
+fn mat_add(a: List[List[Int]], b: List[List[Int]]) -> List[List[Int]] = 
+  list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
 
-fn mat_transpose(m: List[List[Int]]) -> List[List[Int]] = {
-  if list.is_empty(m) then return list.new[Int]()
-  let ncols = list.len(list.first(m))
-  list.map(list.range(0, ncols), (i) => list.map(m, (row) => list.get(row, i) |> option.unwrap_or(0)))
-}
+fn mat_transpose(m: List[List[Int]]) -> List[List[Int]] = 
+  if list.is_empty(m) then [] else 
+  let ncols = list.len(list.first(m)) in 
+  let result = list.range(0, ncols) |> list.map(fn(col_idx) => 
+    list.map(m, fn(row) => list.get(row, col_idx) |> option.unwrap_or(0))) in 
+  result
 
-fn mat_scale(m: List[List[Int]], s: Int) -> List[List[Int]] = {
-  list.map(m, (row) => list.map(row, (x) => x * s))
-}
+fn mat_scale(m: List[List[Int]], s: Int) -> List[List[Int]] = 
+  list.map(m, fn(row) => list.map(row, fn(x) => x * s))
 
-fn mat_dot_row(row_a: List[Int], col_b: List[Int]) -> Int = {
-  list.fold(list.range(0, list.len(row_a)), 0, (acc, i) => acc + list.get(row_a, i) * list.get(col_b, i))
-}
+fn mat_dot_row(row_a: List[Int], col_b: List[Int]) -> Int = 
+  list.fold(row_a, 0, fn(acc, x) => acc + x * list.get(col_b, list.indexOf(row_a, x)) |> option.unwrap_or
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-matrix-ops-0.almd
-error: Expected expression at line 2:119 (got RParen ')')
-  --> /tmp/dojo-matrix-ops-0.almd:2:119
+error: Expected expression at line 2:15 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-0.almd:2:15
   |
-2 |   list.map(a, (row_a) => list.map(b, (row_b) => list.map(row_a, (x) => x + list.get(row_b, list.index_of(row_b, x)))))))
-  |                                                                                                                       ^
-error[E005]: argument 'i' expects Int but got Option[Int]
-  --> /tmp/dojo-matrix-ops-0.almd:2:113
-  in call to list.get()
-  hint: Fix the argument type
+2 |   list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
+  |               ^
+error: Expected function name at line 2:17 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-0.almd:2:17
   |
-2 |   list.map(a, (row_a) => list.map(b, (row_b) => list.map(row_a, (x) => x + list.get(row_b, list.index_of(row_b, x)))))))
-  |                                                                                                                 ^
-error: operator '+' requires numeric, String, or List types but got ?2 and Option[?2]
-  --> /tmp/dojo-matrix-ops-0.almd:2:113
-  in operator +
-  hint: Use + with numeric types, String, or List
+2 |   list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
+  |                 ^
+error: Expected function name at line 2:42 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-0.almd:2:42
   |
-2 |   list.map(a, (row_a) => list.map(b, (row_b) => list.map(row_a, (x) => x + list.get(row_b, list.index_of(row_b, x)))))))
-  |                                                                                                                 ^
-error[E002]: undefined function 'list.new'
-  --> /tmp/dojo-matrix-ops-0.almd:6:36
-  in call to list.new()
-  hint: Did you mean `[] (empty list literal)`?
+2 |   list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
+  |                                          ^
+error: Expected function name at line 2:71 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-0.almd:2:71
   |
-6 |   if list.is_empty(m) then list.new[Int]()
-  |                                    ^
-error[E005]: argument 'xs' expects List[A] but got Option[List[Int]]
-  --> /tmp/dojo-matrix-ops-0.almd:7:35
-  in call to list.len()
-  hint: Fix the argument type
+2 |   list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
+  |                                                                       ^
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-matrix-ops-0.almd:6:3
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-7 |   let ncols = list.len(list.first(m))
-  |                                   ^
-error: operator '*' requires numeric types but got Option[Int] and Option[Int]
-  --> /tmp/dojo-matrix-ops-0.almd:16:103
-  in operator *
-  hint: Use numeric types (Int or Float)
+6 |   let ncols = list.len(list.first(m)) in
+  |   ^^^
+error: Expected function name at line 7:51 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-0.almd:7:51
+  |
+7 |   let result = list.range(0, ncols) |> list.map(fn(col_idx) =>
+  |                                                   ^
+error: Expected function name at line 8:19 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-0.almd:8:19
+  |
+8 |     list.map(m, fn(row) => list.get(row, col_idx) |> option.unwrap_or(0))) in
+  |                   ^
+error: Expected expression at line 12:15 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-0.almd:12:15
    |
-16 |   list.fold(list.range(0, list.len(row_a)), 0, (acc, i) => acc + list.get(row_a, i) * list.get(col_b, i))
-   |                                                                                                       ^
-error: operator '+' requires numeric, String, or List types but got ?9 and Option[Int]
-  --> /tmp/dojo-matrix-ops-0.almd:16:103
-  in operator +
-  hint: Use + with numeric types, String, or List
+12 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+   |               ^
+error: Expected function name at line 12:17 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-0.almd:12:17
    |
-16 |   list.fold(list.range(0, list.len(row_a)), 0, (acc, i) => acc + list.get(row_a, i) * list.get(col_b, i))
-   |                                                                                                       ^
-error[E001]: type mismatch in call to list.get(): expected Int but got Option[Int]
-  --> /tmp/dojo-matrix-ops-0.almd:2:113
-  in call to list.get()
-  hint: Fix the expression type or change the expected type
-  |
-2 |   list.map(a, (row_a) => list.map(b, (row_b) => list.map(row_a, (x) => x + list.get(row_b, list.index_of(row_b, x)))))))
-  |                                                                                                                 ^
-error[E001]: type mismatch in fn 'mat_add': expected List[List[Int]] but got Unit
-  --> /tmp/dojo-matrix-ops-0.almd:2:113
-  in fn 'mat_add'
-  hint: Fix the expression type or change the expected type. Or Got Unit where a List was expected. `list.push`/`pop`/`clear` mutate and return Unit — use `xs + [item]` for an immutable append. `for x in xs { ... }` is a side-effect loop (Unit); for element transforms, use `list.map(xs, (x) => ...)`.
-  try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to List[List[Int]]:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type List[List[Int]]
-  |
-2 |   list.map(a, (row_a) => list.map(b, (row_b) => list.map(row_a, (x) => x + list.get(row_b, list.index_of(row_b, x)))))))
-  |                                                                                                                 ^
-error[E001]: type mismatch in call to list.len(): expected List[A] but got Option[List[Int]]
-  --> /tmp/dojo-matrix-ops-0.almd:7:35
-  in call to list.len()
-  hint: Fix the expression type or change the expected type
-  |
-7 |   let ncols = list.len(list.first(m))
-  |                                   ^
+12 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+   |                 ^
+error: Expected function name at line 12:42 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-0.almd:12:42
+   |
+12 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+   |                                          ^
+error: Expected expression at line 15:23 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-0.almd:15:23
+   |
+15 |   list.fold(row_a, 0, fn(acc, x) => acc + x * list.get(col_b, list.indexOf(row_a, x)) |> option.unwrap_or
+   |                       ^
+error: Expected function name at line 15:25 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-0.almd:15:25
+   |
+15 |   list.fold(row_a, 0, fn(acc, x) => acc + x * list.get(col_b, list.indexOf(row_a, x)) |> option.unwrap_or
+   |                         ^
 
-10 error(s) found
+12 error(s) found
 Compile error for /tmp/dojo-matrix-ops-0.almd:
 compile failed
 FAILED: /tmp/dojo-matrix-ops-0.almd
@@ -120,87 +106,91 @@ FAILED: /tmp/dojo-matrix-ops-0.almd
 ### Attempt 2 (FAIL)
 
 ```almide
-fn mat_add(a: List[List[Int]], b: List[List[Int]]) -> List[List[Int]] = {
-  list.map(a, (row_a) => list.map(b, (row_b) => list.map(row_a, (x) => {
-    let idx = list.index_of(row_b, x);
-    match idx {
-      some(i) => x + list.get(row_b, i),
-      none => x
-    }
-  })))
-}
+fn mat_add(a: List[List[Int]], b: List[List[Int]]) -> List[List[Int]] = 
+  list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
 
-fn mat_transpose(m: List[List[Int]]) -> List[List[Int]] = {
-  if list.is_empty(m) then [] else {
-    let ncols = list.len(list.first(m));
-    list.map(list.range(0, ncols), (i) => list.map(m, (row) => list.get(row, i) |> option.unwrap_or(0)))
-  }
-}
+fn mat_transpose(m: List[List[Int]]) -> List[List[Int]] = 
+  if list.is_empty(m) then [] 
+  else 
+    let ncols = list.len(list.first(m)) in 
+    list.range(0, ncols) |> list.map(fn(col_idx) => 
+      list.map(m, fn(row) => list.get(row, col_idx) |> option.unwrap_or(0)))
 
-fn mat_scale(m: List[List[Int]], s: Int) -> List[List[Int]] = {
-  list.map(m, (row) => list.map(row, (x) => x * s))
-}
+fn mat_scale(m: List[List[Int]], s: Int) -> List[List[Int]] = 
+  list.map(m, fn(row) => list.map(row, fn(x) => x * s))
 
-fn mat_dot_row(row_a: List[Int], col_b: List[Int]) -> Int = {
-  list.fold(list.range(0, list.len(row_a)), 0, (acc, i) => acc + list.get
+fn mat_dot_row(row_a: List[Int], col_b: List[Int]) -> Int = 
+  list.fold(row_a, 0, fn(acc, x) => acc + x * list.get(col_b, list.indexOf(row_a, x)) |> option.unwrap_or(0))
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-matrix-ops-1.almd
-error: Expected ')' to close function call opened at line 23:12
-  --> /tmp/dojo-matrix-ops-1.almd:25:1
-  hint: Add ')' or check for a missing delimiter inside the function call
-   |
-23 |   list.fold(list.range(0, list.len(row_a)), 0, (acc, i) => acc + list.get
-   |            --------------- '(' opened here
-...
-25 | test "mat_add 2x2" { assert_eq(mat_add([[1, 2], [3, 4]], [[5, 6], [7, 8]]), [[6, 8], [10, 12]]) }
-   | ^^^^
-error: operator '+' requires numeric, String, or List types but got ?2 and Option[?2]
-  --> /tmp/dojo-matrix-ops-1.almd:5:38
-  in operator +
-  hint: Use + with numeric types, String, or List
+error: Expected expression at line 2:15 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-1.almd:2:15
   |
-5 |       some(i) => x + list.get(row_b, i),
-  |                                      ^
-error[E005]: argument 'xs' expects List[A] but got Option[List[Int]]
-  --> /tmp/dojo-matrix-ops-1.almd:13:37
-  in call to list.len()
-  hint: Fix the argument type
-   |
-13 |     let ncols = list.len(list.first(m));
-   |                                     ^
-error[E001]: type mismatch in fn 'mat_add': expected List[List[Int]] but got List[List[List[Int]]]
-  --> /tmp/dojo-matrix-ops-1.almd:6:15
-  in fn 'mat_add'
-  hint: Fix the expression type or change the expected type
-  |
-6 |       none => x
+2 |   list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
   |               ^
-error[E001]: type mismatch in call to list.len(): expected List[A] but got Option[List[Int]]
-  --> /tmp/dojo-matrix-ops-1.almd:13:37
-  in call to list.len()
-  hint: Fix the expression type or change the expected type
+error: Expected function name at line 2:17 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-1.almd:2:17
+  |
+2 |   list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
+  |                 ^
+error: Expected function name at line 2:42 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-1.almd:2:42
+  |
+2 |   list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
+  |                                          ^
+error: Expected function name at line 2:71 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-1.almd:2:71
+  |
+2 |   list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
+  |                                                                       ^
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-matrix-ops-1.almd:7:5
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+  |
+7 |     let ncols = list.len(list.first(m)) in
+  |     ^^^
+error: Expected function name at line 8:40 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-1.almd:8:40
+  |
+8 |     list.range(0, ncols) |> list.map(fn(col_idx) =>
+  |                                        ^
+error: Expected function name at line 9:21 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-1.almd:9:21
+  |
+9 |       list.map(m, fn(row) => list.get(row, col_idx) |> option.unwrap_or(0)))
+  |                     ^
+error: Expected expression at line 12:15 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-1.almd:12:15
    |
-13 |     let ncols = list.len(list.first(m));
-   |                                     ^
-error[E001]: type mismatch in fn 'mat_dot_row': expected Int but got Unit
-  --> /tmp/dojo-matrix-ops-1.almd:22:61
-  in fn 'mat_dot_row'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Int:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type Int
+12 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+   |               ^
+error: Expected function name at line 12:17 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-1.almd:12:17
    |
-22 | fn mat_dot_row(row_a: List[Int], col_b: List[Int]) -> Int = {
-   |                                                             ^
+12 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+   |                 ^
+error: Expected function name at line 12:42 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-1.almd:12:42
+   |
+12 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+   |                                          ^
+error: Expected expression at line 15:23 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-1.almd:15:23
+   |
+15 |   list.fold(row_a, 0, fn(acc, x) => acc + x * list.get(col_b, list.indexOf(row_a, x)) |> option.unwrap_or(0))
+   |                       ^
+error: Expected function name at line 15:25 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-1.almd:15:25
+   |
+15 |   list.fold(row_a, 0, fn(acc, x) => acc + x * list.get(col_b, list.indexOf(row_a, x)) |> option.unwrap_or(0))
+   |                         ^
 
-6 error(s) found
+12 error(s) found
 Compile error for /tmp/dojo-matrix-ops-1.almd:
 compile failed
 FAILED: /tmp/dojo-matrix-ops-1.almd
@@ -212,88 +202,98 @@ FAILED: /tmp/dojo-matrix-ops-1.almd
 ### Attempt 3 (FAIL)
 
 ```almide
-fn mat_add(a: List[List[Int]], b: List[List[Int]]) -> List[List[Int]] = {
-  list.map(a, (row_a) => list.map(b, (row_b) => list.map(row_a, (x) => {
-    let idx = list.index_of(row_b, x);
-    match idx {
-      some(i) => x + list.get(row_b, i) |> option.unwrap_or(0),
-      none => x
-    }
-  })))
-}
+fn mat_add(a: List[List[Int]], b: List[List[Int]]) -> List[List[Int]] = 
+  list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
 
-fn mat_transpose(m: List[List[Int]]) -> List[List[Int]] = {
-  if list.is_empty(m) then [] else {
-    let ncols = list.len(list.first(m));
-    list.map(list.range(0, ncols), (i) => list.map(m, (row) => list.get(row, i) |> option.unwrap_or(0)))
-  }
-}
+fn mat_transpose(m: List[List[Int]]) -> List[List[Int]] = 
+  if list.is_empty(m) then [] 
+  else 
+    let ncols = list.len(list.first(m)) in 
+    list.range(0, ncols) |> list.map(fn(col_idx) => 
+      list.map(m, fn(row) => list.get(row, col_idx) |> option.unwrap_or(0)))
 
-fn mat_scale(m: List[List[Int]], s: Int) -> List[List[Int]] = {
-  list.map(m, (row) => list.map(row, (x) => x * s))
-}
+fn mat_scale(m: List[List[Int]], s: Int) -> List[List[Int]] = 
+  list.map(m, fn(row) => list.map(row, fn(x) => x * s))
 
-fn mat_dot_row(row_a: List[Int], col_b: List[Int]) -> Int = {
-  list.fold(list.range(0, list.len(row_a)), 0, (acc,
+fn mat_dot_row(row_a: List[Int], col_b: List[Int]) -> Int = 
+  list.fold(row_a, 0, fn(acc, x) => acc + x * list.get(col_b, list.indexOf(row_a, x)) |> option.unwrap_or(0))
+
+fn mat_mul
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-matrix-ops-2.almd
-error: Expected expression at line 23:53 (got Newline '')
-  --> /tmp/dojo-matrix-ops-2.almd:23:53
-   |
-23 |   list.fold(list.range(0, list.len(row_a)), 0, (acc,
-   |                                                     ^
-error: Expected expression at line 25:1 (got Test 'test')
-  --> /tmp/dojo-matrix-ops-2.almd:25:1
-   |
-25 | test "mat_add 2x2" { assert_eq(mat_add([[1, 2], [3, 4]], [[5, 6], [7, 8]]), [[6, 8], [10, 12]]) }
-   | ^
-error: operator '+' requires numeric, String, or List types but got ?2 and Option[?2]
-  --> /tmp/dojo-matrix-ops-2.almd:5:38
-  in operator +
-  hint: Use + with numeric types, String, or List
+error: Expected expression at line 2:15 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-2.almd:2:15
   |
-5 |       some(i) => x + list.get(row_b, i) |> option.unwrap_or(0),
-  |                                      ^
-error[E005]: argument 'xs' expects List[A] but got Option[List[Int]]
-  --> /tmp/dojo-matrix-ops-2.almd:13:37
-  in call to list.len()
-  hint: Fix the argument type
-   |
-13 |     let ncols = list.len(list.first(m));
-   |                                     ^
-error[E001]: type mismatch in fn 'mat_add': expected List[List[Int]] but got List[List[List[Int]]]
-  --> /tmp/dojo-matrix-ops-2.almd:6:15
-  in fn 'mat_add'
-  hint: Fix the expression type or change the expected type
-  |
-6 |       none => x
+2 |   list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
   |               ^
-error[E001]: type mismatch in call to list.len(): expected List[A] but got Option[List[Int]]
-  --> /tmp/dojo-matrix-ops-2.almd:13:37
-  in call to list.len()
-  hint: Fix the expression type or change the expected type
+error: Expected function name at line 2:17 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-2.almd:2:17
+  |
+2 |   list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
+  |                 ^
+error: Expected function name at line 2:42 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-2.almd:2:42
+  |
+2 |   list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
+  |                                          ^
+error: Expected function name at line 2:71 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-2.almd:2:71
+  |
+2 |   list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
+  |                                                                       ^
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-matrix-ops-2.almd:7:5
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+  |
+7 |     let ncols = list.len(list.first(m)) in
+  |     ^^^
+error: Expected function name at line 8:40 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-2.almd:8:40
+  |
+8 |     list.range(0, ncols) |> list.map(fn(col_idx) =>
+  |                                        ^
+error: Expected function name at line 9:21 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-2.almd:9:21
+  |
+9 |       list.map(m, fn(row) => list.get(row, col_idx) |> option.unwrap_or(0)))
+  |                     ^
+error: Expected expression at line 12:15 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-2.almd:12:15
    |
-13 |     let ncols = list.len(list.first(m));
-   |                                     ^
-error[E001]: type mismatch in fn 'mat_dot_row': expected Int but got Unit
-  --> /tmp/dojo-matrix-ops-2.almd:22:61
-  in fn 'mat_dot_row'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Int:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type Int
+12 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+   |               ^
+error: Expected function name at line 12:17 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-2.almd:12:17
    |
-22 | fn mat_dot_row(row_a: List[Int], col_b: List[Int]) -> Int = {
-   |                                                             ^
+12 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+   |                 ^
+error: Expected function name at line 12:42 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-2.almd:12:42
+   |
+12 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+   |                                          ^
+error: Expected expression at line 15:23 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-2.almd:15:23
+   |
+15 |   list.fold(row_a, 0, fn(acc, x) => acc + x * list.get(col_b, list.indexOf(row_a, x)) |> option.unwrap_or(0))
+   |                       ^
+error: Expected function name at line 15:25 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-2.almd:15:25
+   |
+15 |   list.fold(row_a, 0, fn(acc, x) => acc + x * list.get(col_b, list.indexOf(row_a, x)) |> option.unwrap_or(0))
+   |                         ^
+error: Expected LParen at line 17:11 (got Newline '')
+  --> /tmp/dojo-matrix-ops-2.almd:17:11
+   |
+17 | fn mat_mul
+   |           ^
 
-7 error(s) found
+13 error(s) found
 Compile error for /tmp/dojo-matrix-ops-2.almd:
 compile failed
 FAILED: /tmp/dojo-matrix-ops-2.almd
@@ -305,88 +305,98 @@ FAILED: /tmp/dojo-matrix-ops-2.almd
 ### Attempt 4 (FAIL)
 
 ```almide
-fn mat_add(a: List[List[Int]], b: List[List[Int]]) -> List[List[Int]] = {
-  list.map(a, (row_a) => list.map(b, (row_b) => list.map(row_a, (x) => {
-    let idx = list.index_of(row_b, x);
-    match idx {
-      some(i) => x + list.get(row_b, i) |> option.unwrap_or(0),
-      none => x
-    }
-  })))
-}
+fn mat_add(a: List[List[Int]], b: List[List[Int]]) -> List[List[Int]] = 
+  list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
 
-fn mat_transpose(m: List[List[Int]]) -> List[List[Int]] = {
-  if list.is_empty(m) then [] else {
-    let ncols = list.len(list.first(m));
-    list.map(list.range(0, ncols), (i) => list.map(m, (row) => list.get(row, i) |> option.unwrap_or(0)))
-  }
-}
+fn mat_transpose(m: List[List[Int]]) -> List[List[Int]] = 
+  if list.is_empty(m) then [] 
+  else 
+    let ncols = list.len(list.first(m)) in 
+    list.range(0, ncols) |> list.map(fn(col_idx) => 
+      list.map(m, fn(row) => list.get(row, col_idx) |> option.unwrap_or(0)))
 
-fn mat_scale(m: List[List[Int]], s: Int) -> List[List[Int]] = {
-  list.map(m, (row) => list.map(row, (x) => x * s))
-}
+fn mat_scale(m: List[List[Int]], s: Int) -> List[List[Int]] = 
+  list.map(m, fn(row) => list.map(row, fn(x) => x * s))
 
-fn mat_dot_row(row_a: List[Int], col_b: List[Int]) -> Int = {
-  list.fold(list.range(0, list.len(row_a)), 0, (acc,
+fn mat_dot_row(row_a: List[Int], col_b: List[Int]) -> Int = 
+  list.fold(row_a, 0, fn(acc, x) => acc + x * list.get(col_b, list.indexOf(row_a, x)) |> option.unwrap_or(0))
+
+fn mat_mul
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-matrix-ops-3.almd
-error: Expected expression at line 23:53 (got Newline '')
-  --> /tmp/dojo-matrix-ops-3.almd:23:53
-   |
-23 |   list.fold(list.range(0, list.len(row_a)), 0, (acc,
-   |                                                     ^
-error: Expected expression at line 25:1 (got Test 'test')
-  --> /tmp/dojo-matrix-ops-3.almd:25:1
-   |
-25 | test "mat_add 2x2" { assert_eq(mat_add([[1, 2], [3, 4]], [[5, 6], [7, 8]]), [[6, 8], [10, 12]]) }
-   | ^
-error: operator '+' requires numeric, String, or List types but got ?2 and Option[?2]
-  --> /tmp/dojo-matrix-ops-3.almd:5:38
-  in operator +
-  hint: Use + with numeric types, String, or List
+error: Expected expression at line 2:15 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-3.almd:2:15
   |
-5 |       some(i) => x + list.get(row_b, i) |> option.unwrap_or(0),
-  |                                      ^
-error[E005]: argument 'xs' expects List[A] but got Option[List[Int]]
-  --> /tmp/dojo-matrix-ops-3.almd:13:37
-  in call to list.len()
-  hint: Fix the argument type
-   |
-13 |     let ncols = list.len(list.first(m));
-   |                                     ^
-error[E001]: type mismatch in fn 'mat_add': expected List[List[Int]] but got List[List[List[Int]]]
-  --> /tmp/dojo-matrix-ops-3.almd:6:15
-  in fn 'mat_add'
-  hint: Fix the expression type or change the expected type
-  |
-6 |       none => x
+2 |   list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
   |               ^
-error[E001]: type mismatch in call to list.len(): expected List[A] but got Option[List[Int]]
-  --> /tmp/dojo-matrix-ops-3.almd:13:37
-  in call to list.len()
-  hint: Fix the expression type or change the expected type
+error: Expected function name at line 2:17 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-3.almd:2:17
+  |
+2 |   list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
+  |                 ^
+error: Expected function name at line 2:42 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-3.almd:2:42
+  |
+2 |   list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
+  |                                          ^
+error: Expected function name at line 2:71 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-3.almd:2:71
+  |
+2 |   list.map(a, fn(row_a) => list.map(b, fn(row_b) => list.map(row_a, fn(x) => list.get(row_b, list.indexOf(row_a, x)) |> option.unwrap_or(0) + x)))
+  |                                                                       ^
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-matrix-ops-3.almd:7:5
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+  |
+7 |     let ncols = list.len(list.first(m)) in
+  |     ^^^
+error: Expected function name at line 8:40 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-3.almd:8:40
+  |
+8 |     list.range(0, ncols) |> list.map(fn(col_idx) =>
+  |                                        ^
+error: Expected function name at line 9:21 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-3.almd:9:21
+  |
+9 |       list.map(m, fn(row) => list.get(row, col_idx) |> option.unwrap_or(0)))
+  |                     ^
+error: Expected expression at line 12:15 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-3.almd:12:15
    |
-13 |     let ncols = list.len(list.first(m));
-   |                                     ^
-error[E001]: type mismatch in fn 'mat_dot_row': expected Int but got Unit
-  --> /tmp/dojo-matrix-ops-3.almd:22:61
-  in fn 'mat_dot_row'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Int:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type Int
+12 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+   |               ^
+error: Expected function name at line 12:17 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-3.almd:12:17
    |
-22 | fn mat_dot_row(row_a: List[Int], col_b: List[Int]) -> Int = {
-   |                                                             ^
+12 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+   |                 ^
+error: Expected function name at line 12:42 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-3.almd:12:42
+   |
+12 |   list.map(m, fn(row) => list.map(row, fn(x) => x * s))
+   |                                          ^
+error: Expected expression at line 15:23 (got Fn 'fn')
+  --> /tmp/dojo-matrix-ops-3.almd:15:23
+   |
+15 |   list.fold(row_a, 0, fn(acc, x) => acc + x * list.get(col_b, list.indexOf(row_a, x)) |> option.unwrap_or(0))
+   |                       ^
+error: Expected function name at line 15:25 (got LParen '(')
+  --> /tmp/dojo-matrix-ops-3.almd:15:25
+   |
+15 |   list.fold(row_a, 0, fn(acc, x) => acc + x * list.get(col_b, list.indexOf(row_a, x)) |> option.unwrap_or(0))
+   |                         ^
+error: Expected LParen at line 17:11 (got Newline '')
+  --> /tmp/dojo-matrix-ops-3.almd:17:11
+   |
+17 | fn mat_mul
+   |           ^
 
-7 error(s) found
+13 error(s) found
 Compile error for /tmp/dojo-matrix-ops-3.almd:
 compile failed
 FAILED: /tmp/dojo-matrix-ops-3.almd

@@ -11,31 +11,19 @@
 
 ```almide
 fn encrypt(text: String, shift: Int) -> String {
-  let chars = string.chars(text);
-  let result = chars.map((c) => {
-    let codepoint = string.codepoint(c);
-    if codepoint >= 97 && codepoint <= 122 {
-      let new_codepoint = ((codepoint - 97 + shift) % 26) + 97;
-      string.from_codepoint(new_codepoint)
-    } else {
-      c
-    }
-  }).join("");
-  result
+    string.map(text, (c) => {
+        let code = string.codepoint(c);
+        if (code >= 97 && code <= 122) {
+            let new_code = (code - 97 + shift) % 26 + 97;
+            string.from_codepoint(new_code)
+        } else {
+            c
+        }
+    })
 }
 
 fn decrypt(text: String, shift: Int) -> String {
-  let chars = string.chars(text);
-  let result = chars.map((c) => {
-    let codepoint = string.codepoint(c);
-    if codepoint >= 97 && codepoint <= 122 {
-      let new_codepoint = ((codepoint - 97 - shift + 26) % 26) + 97;
-      string.from_codepoint(new_codepoint)
-    } else {
-      c
-    }
-  }).join("");
-  result
+    encrypt(text, 26 - shift)
 }
 ```
 
@@ -49,11 +37,11 @@ error: Missing '=' before function body at line 1:48
   |
 1 | fn encrypt(text: String, shift: Int) -> String {
   |                                                ^
-error: Missing '=' before function body at line 15:48
-  --> /tmp/dojo-caesar-cipher-0.almd:15:48
+error: Missing '=' before function body at line 13:48
+  --> /tmp/dojo-caesar-cipher-0.almd:13:48
   hint: Almide requires '=' before the body. Write: fn decrypt(...) -> Type = { ... }
    |
-15 | fn decrypt(text: String, shift: Int) -> String {
+13 | fn decrypt(text: String, shift: Int) -> String {
    |                                                ^
 
 2 error(s) found
@@ -69,31 +57,19 @@ FAILED: /tmp/dojo-caesar-cipher-0.almd
 
 ```almide
 fn encrypt(text: String, shift: Int) -> String = {
-  let chars = string.chars(text);
-  let result = chars.map((c) => {
-    let codepoint = string.codepoint(c);
-    if codepoint >= 97 && codepoint <= 122 {
-      let new_codepoint = ((codepoint - 97 + shift) % 26) + 97;
-      string.from_codepoint(new_codepoint)
-    } else {
-      c
-    }
-  }).join("");
-  result
+    string.map(text, (c) => {
+        let code = string.codepoint(c);
+        if (code >= 97 && code <= 122) {
+            let new_code = (code - 97 + shift) % 26 + 97;
+            string.from_codepoint(new_code)
+        } else {
+            c
+        }
+    })
 }
 
 fn decrypt(text: String, shift: Int) -> String = {
-  let chars = string.chars(text);
-  let result = chars.map((c) => {
-    let codepoint = string.codepoint(c);
-    if codepoint >= 97 && codepoint <= 122 {
-      let new_codepoint = ((codepoint - 97 - shift + 26) % 26) + 97;
-      string.from_codepoint(new_codepoint)
-    } else {
-      c
-    }
-  }).join("");
-  result
+    encrypt(text, 26 - shift)
 }
 ```
 
@@ -101,62 +77,35 @@ fn decrypt(text: String, shift: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-caesar-cipher-1.almd
-error: '&&' is not valid in Almide at line 5:24
-  --> /tmp/dojo-caesar-cipher-1.almd:5:24
+error: '&&' is not valid in Almide at line 4:24
+  --> /tmp/dojo-caesar-cipher-1.almd:4:24
   hint: Use 'and' for logical AND. Example: if a and b then ...
   |
-5 |     if codepoint >= 97 && codepoint <= 122 {
+4 |         if (code >= 97 && code <= 122) {
   |                        ^
-error: Expected ')' to close function call opened at line 3:25
-  --> /tmp/dojo-caesar-cipher-1.almd:8:7
+error: Expected ')' to close function call opened at line 2:15
+  --> /tmp/dojo-caesar-cipher-1.almd:7:11
   hint: Add ')' or check for a missing delimiter inside the function call
   |
-3 |   let result = chars.map((c) => {
-  |                         --------------- '(' opened here
+2 |     string.map(text, (c) => {
+  |               --------------- '(' opened here
 ...
-8 |     } else {
-  |       ^^^^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 11:3 (got RBrace '}')
-  --> /tmp/dojo-caesar-cipher-1.almd:11:3
+7 |         } else {
+  |           ^^^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 10:5 (got RBrace '}')
+  --> /tmp/dojo-caesar-cipher-1.almd:10:5
    |
-11 |   }).join("");
-   |   ^
-error: '&&' is not valid in Almide at line 19:24
-  --> /tmp/dojo-caesar-cipher-1.almd:19:24
-  hint: Use 'and' for logical AND. Example: if a and b then ...
-   |
-19 |     if codepoint >= 97 && codepoint <= 122 {
-   |                        ^
-error: Expected ')' to close function call opened at line 17:25
-  --> /tmp/dojo-caesar-cipher-1.almd:22:7
-  hint: Add ')' or check for a missing delimiter inside the function call
-   |
-17 |   let result = chars.map((c) => {
-   |                         --------------- '(' opened here
-...
-22 |     } else {
-   |       ^^^^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 25:3 (got RBrace '}')
-  --> /tmp/dojo-caesar-cipher-1.almd:25:3
-   |
-25 |   }).join("");
-   |   ^
+10 |     })
+   |     ^
 error[E003]: undefined variable 'c'
-  --> /tmp/dojo-caesar-cipher-1.almd:9:7
+  --> /tmp/dojo-caesar-cipher-1.almd:8:13
   in variable c
   hint: Check the variable name
   |
-9 |       c
-  |       ^
-error[E003]: undefined variable 'c'
-  --> /tmp/dojo-caesar-cipher-1.almd:23:7
-  in variable c
-  hint: Check the variable name
-   |
-23 |       c
-   |       ^
+8 |             c
+  |             ^
 
-8 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-caesar-cipher-1.almd:
 compile failed
 FAILED: /tmp/dojo-caesar-cipher-1.almd
@@ -169,31 +118,19 @@ FAILED: /tmp/dojo-caesar-cipher-1.almd
 
 ```almide
 fn encrypt(text: String, shift: Int) -> String = {
-  let chars = string.chars(text);
-  let result = chars.map((c) => {
-    let codepoint = string.codepoint(c);
-    if (codepoint >= 97) and (codepoint <= 122) {
-      let new_codepoint = ((codepoint - 97 + shift) % 26) + 97;
-      string.from_codepoint(new_codepoint)
-    } else {
-      c
-    }
-  }).join("");
-  result
+    string.map(text, (c) => {
+        let code = string.codepoint(c);
+        if (code >= 97 and code <= 122) {
+            let new_code = (code - 97 + shift) % 26 + 97;
+            string.from_codepoint(new_code)
+        } else {
+            c
+        }
+    })
 }
 
 fn decrypt(text: String, shift: Int) -> String = {
-  let chars = string.chars(text);
-  let result = chars.map((c) => {
-    let codepoint = string.codepoint(c);
-    if (codepoint >= 97) and (codepoint <= 122) {
-      let new_codepoint = ((codepoint - 97 - shift + 26) % 26) + 97;
-      string.from_codepoint(new_codepoint)
-    } else {
-      c
-    }
-  }).join("");
-  result
+    encrypt(text, 26 - shift)
 }
 ```
 
@@ -201,62 +138,35 @@ fn decrypt(text: String, shift: Int) -> String = {
 
 ```
 Compiling /tmp/dojo-caesar-cipher-2.almd
-error: Expected Then at line 5:49 (got LBrace '{')
-  --> /tmp/dojo-caesar-cipher-2.almd:5:49
+error: Expected Then at line 4:41 (got LBrace '{')
+  --> /tmp/dojo-caesar-cipher-2.almd:4:41
   hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
   |
-5 |     if (codepoint >= 97) and (codepoint <= 122) {
-  |                                                 ^
-error: Expected ')' to close function call opened at line 3:25
-  --> /tmp/dojo-caesar-cipher-2.almd:8:7
+4 |         if (code >= 97 and code <= 122) {
+  |                                         ^
+error: Expected ')' to close function call opened at line 2:15
+  --> /tmp/dojo-caesar-cipher-2.almd:7:11
   hint: Add ')' or check for a missing delimiter inside the function call
   |
-3 |   let result = chars.map((c) => {
-  |                         --------------- '(' opened here
+2 |     string.map(text, (c) => {
+  |               --------------- '(' opened here
 ...
-8 |     } else {
-  |       ^^^^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 11:3 (got RBrace '}')
-  --> /tmp/dojo-caesar-cipher-2.almd:11:3
+7 |         } else {
+  |           ^^^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 10:5 (got RBrace '}')
+  --> /tmp/dojo-caesar-cipher-2.almd:10:5
    |
-11 |   }).join("");
-   |   ^
-error: Expected Then at line 19:49 (got LBrace '{')
-  --> /tmp/dojo-caesar-cipher-2.almd:19:49
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
-   |
-19 |     if (codepoint >= 97) and (codepoint <= 122) {
-   |                                                 ^
-error: Expected ')' to close function call opened at line 17:25
-  --> /tmp/dojo-caesar-cipher-2.almd:22:7
-  hint: Add ')' or check for a missing delimiter inside the function call
-   |
-17 |   let result = chars.map((c) => {
-   |                         --------------- '(' opened here
-...
-22 |     } else {
-   |       ^^^^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 25:3 (got RBrace '}')
-  --> /tmp/dojo-caesar-cipher-2.almd:25:3
-   |
-25 |   }).join("");
-   |   ^
+10 |     })
+   |     ^
 error[E003]: undefined variable 'c'
-  --> /tmp/dojo-caesar-cipher-2.almd:9:7
+  --> /tmp/dojo-caesar-cipher-2.almd:8:13
   in variable c
   hint: Check the variable name
   |
-9 |       c
-  |       ^
-error[E003]: undefined variable 'c'
-  --> /tmp/dojo-caesar-cipher-2.almd:23:7
-  in variable c
-  hint: Check the variable name
-   |
-23 |       c
-   |       ^
+8 |             c
+  |             ^
 
-8 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-caesar-cipher-2.almd:
 compile failed
 FAILED: /tmp/dojo-caesar-cipher-2.almd
@@ -269,135 +179,91 @@ FAILED: /tmp/dojo-caesar-cipher-2.almd
 
 ```almide
 fn encrypt(text: String, shift: Int) -> String = {
-  let chars = string.chars(text);
-  let result = chars.map((c) => {
-    let codepoint = string.codepoint(c);
-    if (codepoint >= 97) and (codepoint <= 122) {
-      let new_codepoint = ((codepoint - 97 + shift) % 26) + 97;
-      string.from_codepoint(new_codepoint)
-    } else {
-      c
-    }
-  }).join("");
-  result
+    string.map(text, (c) => {
+        let code = string.codepoint(c);
+        if (code >= 97 and code <= 122) {
+            let new_code = (code - 97 + shift) % 26 + 97;
+            string.from_codepoint(new_code)
+        } else {
+            c
+        }
+    })
 }
 
 fn decrypt(text: String, shift: Int) -> String = {
-  let chars = string.chars(text);
-  let result = chars.map((c) => {
-    let codepoint = string.codepoint(c);
-    if (codepoint >= 97) and (codepoint <= 122) {
-      let new_codepoint = ((codepoint - 97 - shift + 26) % 26) + 97;
-      string.from_codepoint(new_codepoint)
-    } else {
-      c
-    }
-  }).join("");
-  result
+    let shifted = 26 - shift;
+    string.map(text, (c) => {
+        let code = string.codepoint(c);
+        if (code >= 97 and code <= 122) {
+            let new_code = (code - 97 + shifted) % 26 + 97;
+            string.from_codepoint(new_code)
+        } else {
+            c
+        }
+    })
 }
-
-// Corrected version:
-
-fn encrypt(text: String, shift: Int) -> String = {
-  let chars = string.chars(text);
-  let result = chars.map
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-caesar-cipher-3.almd
-error: Expected Then at line 5:49 (got LBrace '{')
-  --> /tmp/dojo-caesar-cipher-3.almd:5:49
+error: Expected Then at line 4:41 (got LBrace '{')
+  --> /tmp/dojo-caesar-cipher-3.almd:4:41
   hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
   |
-5 |     if (codepoint >= 97) and (codepoint <= 122) {
-  |                                                 ^
-error: Expected ')' to close function call opened at line 3:25
-  --> /tmp/dojo-caesar-cipher-3.almd:8:7
+4 |         if (code >= 97 and code <= 122) {
+  |                                         ^
+error: Expected ')' to close function call opened at line 2:15
+  --> /tmp/dojo-caesar-cipher-3.almd:7:11
   hint: Add ')' or check for a missing delimiter inside the function call
   |
-3 |   let result = chars.map((c) => {
-  |                         --------------- '(' opened here
+2 |     string.map(text, (c) => {
+  |               --------------- '(' opened here
 ...
-8 |     } else {
-  |       ^^^^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 11:3 (got RBrace '}')
-  --> /tmp/dojo-caesar-cipher-3.almd:11:3
+7 |         } else {
+  |           ^^^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 10:5 (got RBrace '}')
+  --> /tmp/dojo-caesar-cipher-3.almd:10:5
    |
-11 |   }).join("");
-   |   ^
-error: Expected Then at line 19:49 (got LBrace '{')
-  --> /tmp/dojo-caesar-cipher-3.almd:19:49
+10 |     })
+   |     ^
+error: Expected Then at line 17:41 (got LBrace '{')
+  --> /tmp/dojo-caesar-cipher-3.almd:17:41
   hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
    |
-19 |     if (codepoint >= 97) and (codepoint <= 122) {
-   |                                                 ^
-error: Expected ')' to close function call opened at line 17:25
-  --> /tmp/dojo-caesar-cipher-3.almd:22:7
+17 |         if (code >= 97 and code <= 122) {
+   |                                         ^
+error: Expected ')' to close function call opened at line 15:15
+  --> /tmp/dojo-caesar-cipher-3.almd:20:11
   hint: Add ')' or check for a missing delimiter inside the function call
    |
-17 |   let result = chars.map((c) => {
-   |                         --------------- '(' opened here
+15 |     string.map(text, (c) => {
+   |               --------------- '(' opened here
 ...
-22 |     } else {
-   |       ^^^^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 25:3 (got RBrace '}')
-  --> /tmp/dojo-caesar-cipher-3.almd:25:3
+20 |         } else {
+   |           ^^^^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 23:5 (got RBrace '}')
+  --> /tmp/dojo-caesar-cipher-3.almd:23:5
    |
-25 |   }).join("");
-   |   ^
-error: Expected expression at line 35:1 (got Test 'test')
-  --> /tmp/dojo-caesar-cipher-3.almd:35:1
-   |
-35 | test "encrypt abc by 1" { assert_eq(encrypt("abc", 1), "bcd") }
-   | ^
-error[E012]: duplicate function 'encrypt'
-  at line 31
-  in fn encrypt
-  hint: Rename one of the definitions, or remove the earlier one. Almide requires each function name to be unique within a module.
-   |
- 1 | fn encrypt(text: String, shift: Int) -> String = {
-   | ---------------------------------- first definition of 'encrypt' here
-...
-31 | fn encrypt(text: String, shift: Int) -> String = {
-   | ^^^^^^^^^^
+23 |     })
+   |     ^
 error[E003]: undefined variable 'c'
-  --> /tmp/dojo-caesar-cipher-3.almd:9:7
+  --> /tmp/dojo-caesar-cipher-3.almd:8:13
   in variable c
   hint: Check the variable name
   |
-9 |       c
-  |       ^
+8 |             c
+  |             ^
 error[E003]: undefined variable 'c'
-  --> /tmp/dojo-caesar-cipher-3.almd:23:7
+  --> /tmp/dojo-caesar-cipher-3.almd:21:13
   in variable c
   hint: Check the variable name
    |
-23 |       c
-   |       ^
-error[E013]: no field 'map' on list
-  --> /tmp/dojo-caesar-cipher-3.almd:33:16
-  in field access .map
-  hint: Almide values have no fields. Use `list.<fn>(x)` (or `x |> list.<fn>`) — see docs/stdlib/list.md for available functions.
-   |
-33 |   let result = chars.map
-   |                ^^^^^
-error[E001]: type mismatch in fn 'encrypt': expected String but got Unit
-  --> /tmp/dojo-caesar-cipher-3.almd:33:16
-  in fn 'encrypt'
-  hint: Fix the expression type or change the expected type
-  try:
-      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
-      //   let tmp = <computation>
-      //   tmp                            // <-- the returned value
-      // Or inline:
-      //   <expression>                   // must have type String
-   |
-33 |   let result = chars.map
-   |                ^^^^^
+21 |             c
+   |             ^
 
-12 error(s) found
+8 error(s) found
 Compile error for /tmp/dojo-caesar-cipher-3.almd:
 compile failed
 FAILED: /tmp/dojo-caesar-cipher-3.almd

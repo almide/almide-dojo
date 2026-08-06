@@ -3,8 +3,7 @@
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: no
 - **retries**: 3
-- **category**: name-error
-- **diagnostic code**: `E003`
+- **category**: parse-error
 
 ## Attempts
 
@@ -21,7 +20,7 @@ effect fn health(code: Int, free: Int) -> String =
   let (net, disk) = fan.settle { 
     check_net(code); 
     check_disk(free) 
-  } in
+  }
   match (net, disk) {
     (ok(_), ok(_)) => "healthy",
     (err(_), ok(_)) => "net degraded",
@@ -34,11 +33,6 @@ effect fn health(code: Int, free: Int) -> String =
 
 ```
 Compiling /tmp/dojo-settle-health-0.almd
-error: Expected expression at line 11:5 (got In 'in')
-  --> /tmp/dojo-settle-health-0.almd:11:5
-   |
-11 |   } in
-   |     ^
 error[E003]: undefined variable 'fan'
   --> /tmp/dojo-settle-health-0.almd:8:21
   in variable fan
@@ -47,7 +41,7 @@ error[E003]: undefined variable 'fan'
 8 |   let (net, disk) = fan.settle {
   |                     ^^^
 
-2 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-settle-health-0.almd:
 compile failed
 FAILED: /tmp/dojo-settle-health-0.almd
@@ -66,10 +60,10 @@ fn check_disk(free: Int) -> Result[Int, String] =
   if free > 10 then ok(free) else err("disk full")
 
 effect fn health(code: Int, free: Int) -> String = 
-  let (net, disk) = fan.settle { 
+  let (net, disk) = value.settle { 
     check_net(code); 
     check_disk(free) 
-  };
+  }
   match (net, disk) {
     (ok(_), ok(_)) => "healthy",
     (err(_), ok(_)) => "net degraded",
@@ -82,13 +76,13 @@ effect fn health(code: Int, free: Int) -> String =
 
 ```
 Compiling /tmp/dojo-settle-health-1.almd
-error[E003]: undefined variable 'fan'
+error[E003]: undefined variable 'value'
   --> /tmp/dojo-settle-health-1.almd:8:21
-  in variable fan
+  in variable value
   hint: Check the variable name
   |
-8 |   let (net, disk) = fan.settle {
-  |                     ^^^
+8 |   let (net, disk) = value.settle {
+  |                     ^^^^^
 
 1 error(s) found
 Compile error for /tmp/dojo-settle-health-1.almd:
@@ -109,10 +103,10 @@ fn check_disk(free: Int) -> Result[Int, String] =
   if free > 10 then ok(free) else err("disk full")
 
 effect fn health(code: Int, free: Int) -> String = 
-  let (net, disk) = effect.fan.settle { 
+  let (net, disk) = fan.settle { 
     check_net(code); 
     check_disk(free) 
-  };
+  }
   match (net, disk) {
     (ok(_), ok(_)) => "healthy",
     (err(_), ok(_)) => "net degraded",
@@ -125,25 +119,15 @@ effect fn health(code: Int, free: Int) -> String =
 
 ```
 Compiling /tmp/dojo-settle-health-2.almd
-error: Expected expression at line 8:21 (got Effect 'effect')
+error[E003]: undefined variable 'fan'
   --> /tmp/dojo-settle-health-2.almd:8:21
+  in variable fan
+  hint: Check the variable name
   |
-8 |   let (net, disk) = effect.fan.settle {
-  |                     ^
-error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 11:3 (got RBrace '}')
-  --> /tmp/dojo-settle-health-2.almd:11:3
-   |
-11 |   };
-   |   ^
-error[E001]: type mismatch in fn 'health': expected String but got Int
-  --> /tmp/dojo-settle-health-2.almd:10:16
-  in fn 'health'
-  hint: Fix the expression type or change the expected type. Or use `int.to_string(x)` to convert Int to String
-   |
-10 |     check_disk(free)
-   |                ^^^^
+8 |   let (net, disk) = fan.settle {
+  |                     ^^^
 
-3 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-settle-health-2.almd:
 compile failed
 FAILED: /tmp/dojo-settle-health-2.almd
@@ -162,10 +146,10 @@ fn check_disk(free: Int) -> Result[Int, String] =
   if free > 10 then ok(free) else err("disk full")
 
 effect fn health(code: Int, free: Int) -> String = 
-  let (net, disk) = fan.settle { 
-    (check_net(code)); 
-    (check_disk(free)) 
-  };
+  let (net, disk) = effect.fan.settle { 
+    check_net(code); 
+    check_disk(free) 
+  }
   match (net, disk) {
     (ok(_), ok(_)) => "healthy",
     (err(_), ok(_)) => "net degraded",
@@ -178,15 +162,25 @@ effect fn health(code: Int, free: Int) -> String =
 
 ```
 Compiling /tmp/dojo-settle-health-3.almd
-error[E003]: undefined variable 'fan'
+error: Expected expression at line 8:21 (got Effect 'effect')
   --> /tmp/dojo-settle-health-3.almd:8:21
-  in variable fan
-  hint: Check the variable name
   |
-8 |   let (net, disk) = fan.settle {
-  |                     ^^^
+8 |   let (net, disk) = effect.fan.settle {
+  |                     ^
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 11:3 (got RBrace '}')
+  --> /tmp/dojo-settle-health-3.almd:11:3
+   |
+11 |   }
+   |   ^
+error[E001]: type mismatch in fn 'health': expected String but got Int
+  --> /tmp/dojo-settle-health-3.almd:10:16
+  in fn 'health'
+  hint: Fix the expression type or change the expected type. Or use `int.to_string(x)` to convert Int to String
+   |
+10 |     check_disk(free)
+   |                ^^^^
 
-1 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-settle-health-3.almd:
 compile failed
 FAILED: /tmp/dojo-settle-health-3.almd

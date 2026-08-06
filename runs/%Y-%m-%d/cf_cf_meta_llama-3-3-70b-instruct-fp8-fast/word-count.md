@@ -13,8 +13,8 @@
 fn word_count(s: String) -> Map[String, Int] =
   let
     words = string.split(s, " ")
-    non_empty_words = list.filter(words, (x) => not(string.is_empty(x)))
-    frequency_map = list.fold(
+    non_empty_words = list.filter(words, (x) => x != "")
+    freq_map = list.fold(
       non_empty_words,
       map.new(),
       (acc, word) =>
@@ -25,7 +25,7 @@ fn word_count(s: String) -> Map[String, Int] =
         )
     )
   in
-    frequency_map
+    freq_map
 ```
 
 **Diagnostic:**
@@ -47,7 +47,7 @@ error[E003]: undefined variable 'words'
   in variable words
   hint: Check the variable name
   |
-4 |     non_empty_words = list.filter(words, (x) => not(string.is_empty(x)))
+4 |     non_empty_words = list.filter(words, (x) => x != "")
   |                                   ^^^^^
 error[E003]: undefined variable 'non_empty_words'
   --> /tmp/dojo-word-count-0.almd:6:7
@@ -56,13 +56,13 @@ error[E003]: undefined variable 'non_empty_words'
   |
 6 |       non_empty_words,
   |       ^^^^^^^^^^^^^^^
-error[E003]: undefined variable 'frequency_map'
+error[E003]: undefined variable 'freq_map'
   --> /tmp/dojo-word-count-0.almd:16:5
-  in variable frequency_map
+  in variable freq_map
   hint: Check the variable name
    |
-16 |     frequency_map
-   |     ^^^^^^^^^^^^^
+16 |     freq_map
+   |     ^^^^^^^^
 
 5 error(s) found
 Compile error for /tmp/dojo-word-count-0.almd:
@@ -78,7 +78,7 @@ FAILED: /tmp/dojo-word-count-0.almd
 ```almide
 fn word_count(s: String) -> Map[String, Int] =
   string.split(s, " ") 
-  |> list.filter((x) => not(string.is_empty(x)))
+  |> list.filter((x) => x != "") 
   |> list.fold(
     map.new(),
     (acc, word) =>

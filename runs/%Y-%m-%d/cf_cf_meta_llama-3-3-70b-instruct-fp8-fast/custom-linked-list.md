@@ -14,38 +14,39 @@ type MyList =
   | Nil
   | Cons(Int, MyList)
 
-fn from_list(xs: List[Int]) -> MyList = 
+fn from_list(xs: List[Int]) -> MyList =
   list.fold(xs, Nil, (acc, x) => Cons(x, acc))
 
-fn to_list(ml: MyList) -> List[Int] = 
+fn to_list(ml: MyList) -> List[Int] =
   match ml {
     Nil => []
     Cons(head, tail) => head :: to_list(tail)
   }
 
-fn my_len(ml: MyList) -> Int = 
+fn my_len(ml: MyList) -> Int =
   match ml {
     Nil => 0
     Cons(_, tail) => 1 + my_len(tail)
   }
 
-fn my_map(ml: MyList, f: (Int) -> Int) -> MyList = 
+fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
   match ml {
     Nil => Nil
     Cons(head, tail) => Cons(f(head), my_map(tail, f))
   }
 
-fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList = 
+fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
   match ml {
     Nil => Nil
-    Cons(head, tail) => 
-      if pred(head) then 
+    Cons(head, tail) =>
+      if pred(head) then
         Cons(head, my_filter(tail, pred))
-      else 
+      else
         my_filter(tail, pred)
   }
 
-fn my_reverse(ml: MyList) -> My
+fn my_reverse(ml: MyList) -> MyList =
+  match ml {
 ```
 
 **Diagnostic:**
@@ -58,8 +59,14 @@ error: Expected pattern at line 11:30 (got Colon ':')
    |
 11 |     Cons(head, tail) => head :: to_list(tail)
    |                              ^
+error: Expected pattern at line 39:1 (got Test 'test')
+  --> /tmp/dojo-custom-linked-list-0.almd:39:1
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+   |
+39 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
+   | ^
 
-1 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-custom-linked-list-0.almd:
 compile failed
 FAILED: /tmp/dojo-custom-linked-list-0.almd
@@ -75,49 +82,51 @@ type MyList =
   | Nil
   | Cons(Int, MyList)
 
-fn from_list(xs: List[Int]) -> MyList = 
+fn from_list(xs: List[Int]) -> MyList =
   list.fold(xs, Nil, (acc, x) => Cons(x, acc))
 
-fn to_list(ml: MyList) -> List[Int] = 
+fn to_list(ml: MyList) -> List[Int] =
   match ml {
-    Nil => list.repeat(0, 0)
+    Nil => []
     Cons(head, tail) => list.cons(head, to_list(tail))
   }
 
-fn my_len(ml: MyList) -> Int = 
+fn my_len(ml: MyList) -> Int =
   match ml {
     Nil => 0
     Cons(_, tail) => 1 + my_len(tail)
   }
 
-fn my_map(ml: MyList, f: (Int) -> Int) -> MyList = 
+fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
   match ml {
     Nil => Nil
     Cons(head, tail) => Cons(f(head), my_map(tail, f))
   }
 
-fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList = 
+fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
   match ml {
     Nil => Nil
-    Cons(head, tail) => 
-      if pred(head) then 
+    Cons(head, tail) =>
+      if pred(head) then
         Cons(head, my_filter(tail, pred))
-      else 
+      else
         my_filter(tail, pred)
   }
 
-fn my_reverse(ml:
+fn my_reverse(ml: MyList) -> MyList =
+  match ml {
+    Nil
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-custom-linked-list-1.almd
-error: Expected type name at line 36:18 (got Newline '')
-  --> /tmp/dojo-custom-linked-list-1.almd:36:18
+error: Expected FatArrow at line 38:8 (got Newline '')
+  --> /tmp/dojo-custom-linked-list-1.almd:38:8
    |
-36 | fn my_reverse(ml:
-   |                  ^
+38 |     Nil
+   |        ^
 error[E002]: undefined function 'list.cons'
   --> /tmp/dojo-custom-linked-list-1.almd:11:49
   in call to list.cons()
@@ -145,49 +154,51 @@ type MyList =
   | Nil
   | Cons(Int, MyList)
 
-fn from_list(xs: List[Int]) -> MyList = 
+fn from_list(xs: List[Int]) -> MyList =
   list.fold(xs, Nil, (acc, x) => Cons(x, acc))
 
-fn to_list(ml: MyList) -> List[Int] = 
+fn to_list(ml: MyList) -> List[Int] =
   match ml {
-    Nil => list.repeat(0, 0)
+    Nil => []
     Cons(head, tail) => [head] + to_list(tail)
   }
 
-fn my_len(ml: MyList) -> Int = 
+fn my_len(ml: MyList) -> Int =
   match ml {
     Nil => 0
     Cons(_, tail) => 1 + my_len(tail)
   }
 
-fn my_map(ml: MyList, f: (Int) -> Int) -> MyList = 
+fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
   match ml {
     Nil => Nil
     Cons(head, tail) => Cons(f(head), my_map(tail, f))
   }
 
-fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList = 
+fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
   match ml {
     Nil => Nil
-    Cons(head, tail) => 
-      if pred(head) then 
+    Cons(head, tail) =>
+      if pred(head) then
         Cons(head, my_filter(tail, pred))
-      else 
+      else
         my_filter(tail, pred)
   }
 
-fn my_reverse(ml:
+fn my_reverse(ml: MyList) -> MyList =
+  match ml {
+    Nil
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-custom-linked-list-2.almd
-error: Expected type name at line 36:18 (got Newline '')
-  --> /tmp/dojo-custom-linked-list-2.almd:36:18
+error: Expected FatArrow at line 38:8 (got Newline '')
+  --> /tmp/dojo-custom-linked-list-2.almd:38:8
    |
-36 | fn my_reverse(ml:
-   |                  ^
+38 |     Nil
+   |        ^
 
 1 error(s) found
 Compile error for /tmp/dojo-custom-linked-list-2.almd:
@@ -205,49 +216,51 @@ type MyList =
   | Nil
   | Cons(Int, MyList)
 
-fn from_list(xs: List[Int]) -> MyList = 
+fn from_list(xs: List[Int]) -> MyList =
   list.fold(xs, Nil, (acc, x) => Cons(x, acc))
 
-fn to_list(ml: MyList) -> List[Int] = 
+fn to_list(ml: MyList) -> List[Int] =
   match ml {
-    Nil => list.repeat(0, 0)
+    Nil => []
     Cons(head, tail) => [head] + to_list(tail)
   }
 
-fn my_len(ml: MyList) -> Int = 
+fn my_len(ml: MyList) -> Int =
   match ml {
     Nil => 0
     Cons(_, tail) => 1 + my_len(tail)
   }
 
-fn my_map(ml: MyList, f: (Int) -> Int) -> MyList = 
+fn my_map(ml: MyList, f: (Int) -> Int) -> MyList =
   match ml {
     Nil => Nil
     Cons(head, tail) => Cons(f(head), my_map(tail, f))
   }
 
-fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList = 
+fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
   match ml {
     Nil => Nil
-    Cons(head, tail) => 
-      if pred(head) then 
+    Cons(head, tail) =>
+      if pred(head) then
         Cons(head, my_filter(tail, pred))
-      else 
+      else
         my_filter(tail, pred)
   }
 
-fn my_reverse(ml:
+fn my_reverse(ml: MyList) -> MyList =
+  match ml {
+    Nil
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-custom-linked-list-3.almd
-error: Expected type name at line 36:18 (got Newline '')
-  --> /tmp/dojo-custom-linked-list-3.almd:36:18
+error: Expected FatArrow at line 38:8 (got Newline '')
+  --> /tmp/dojo-custom-linked-list-3.almd:38:8
    |
-36 | fn my_reverse(ml:
-   |                  ^
+38 |     Nil
+   |        ^
 
 1 error(s) found
 Compile error for /tmp/dojo-custom-linked-list-3.almd:

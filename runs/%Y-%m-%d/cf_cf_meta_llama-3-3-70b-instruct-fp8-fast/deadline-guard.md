@@ -3,8 +3,8 @@
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: no
 - **retries**: 3
-- **category**: name-error
-- **diagnostic code**: `E003`
+- **category**: compile-error
+- **diagnostic code**: `E0593`
 
 ## Attempts
 
@@ -13,10 +13,10 @@
 ```almide
 effect fn within_deadline(n: Int) -> Int = 
   fan.timeout(duration.s(2)) { 
-    compute_work(n) 
+    pure_helper(n) 
   } ?? 0
 
-fn compute_work(n: Int) -> Int = 
+fn pure_helper(n: Int) -> Int = 
   n * n + 1
 ```
 
@@ -57,9 +57,9 @@ FAILED: /tmp/dojo-deadline-guard-0.almd
 
 ```almide
 effect fn within_deadline(n: Int) -> Int = 
-  fan.timeout(2000, (x) => compute_work(n)) ?? 0
+  fan.timeout(2000, (x) => pure_helper(n)) ?? 0
 
-fn compute_work(n: Int) -> Int = 
+fn pure_helper(n: Int) -> Int = 
   n * n + 1
 ```
 
@@ -75,8 +75,8 @@ Please file a minimal repro at https://github.com/almide/almide/issues
 error[E0593]: closure is expected to take 0 arguments, but it takes 1 argument
    --> <generated.rs>:332:14
     |
-332 |     Ok(match almide_rt_fan_timeout(2000i64, move |x| compute_work(n)) { Ok(v) => v, Err(_) => 0i64, })
-    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^--------^^^^^^^^^^^^^^^^^
+332 |     Ok(match almide_rt_fan_timeout(2000i64, move |x| pure_helper(n)) { Ok(v) => v, Err(_) => 0i64, })
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^--------^^^^^^^^^^^^^^^^
     |              |                              |
     |              |                              takes 1 argument
     |              expected closure that takes 0 arguments
@@ -94,9 +94,9 @@ FAILED: /tmp/dojo-deadline-guard-1.almd
 
 ```almide
 effect fn within_deadline(n: Int) -> Int = 
-  fan.timeout(duration.s(2), () => compute_work(n)) ?? 0
+  fan.timeout(duration.s(2)) { pure_helper(n) } ?? 0
 
-fn compute_work(n: Int) -> Int = 
+fn pure_helper(n: Int) -> Int = 
   n * n + 1
 ```
 
@@ -104,15 +104,27 @@ fn compute_work(n: Int) -> Int =
 
 ```
 Compiling /tmp/dojo-deadline-guard-2.almd
+error: Expected top-level declaration (fn, effect fn, type, let, trait, impl, test) at line 2:30 (got LBrace '{')
+  --> /tmp/dojo-deadline-guard-2.almd:2:30
+  |
+2 |   fan.timeout(duration.s(2)) { pure_helper(n) } ?? 0
+  |                              ^
 error[E003]: undefined variable 'duration'
   --> /tmp/dojo-deadline-guard-2.almd:2:15
   in variable duration
   hint: Check the variable name
   |
-2 |   fan.timeout(duration.s(2), () => compute_work(n)) ?? 0
+2 |   fan.timeout(duration.s(2)) { pure_helper(n) } ?? 0
+  |               ^^^^^^^^
+error: fan.timeout() expects 2 arguments but got 1
+  --> /tmp/dojo-deadline-guard-2.almd:2:15
+  in call to fan.timeout()
+  hint: Usage: fan.timeout(5000, () => expr)
+  |
+2 |   fan.timeout(duration.s(2)) { pure_helper(n) } ?? 0
   |               ^^^^^^^^
 
-1 error(s) found
+3 error(s) found
 Compile error for /tmp/dojo-deadline-guard-2.almd:
 compile failed
 FAILED: /tmp/dojo-deadline-guard-2.almd
@@ -125,9 +137,9 @@ FAILED: /tmp/dojo-deadline-guard-2.almd
 
 ```almide
 effect fn within_deadline(n: Int) -> Int = 
-  fan.timeout(time.duration.s(2), () => compute_work(n)) ?? 0
+  fan.timeout(2000, (x) => pure_helper(n)) ?? 0
 
-fn compute_work(n: Int) -> Int = 
+fn pure_helper(n: Int) -> Int = 
   n * n + 1
 ```
 
@@ -135,17 +147,23 @@ fn compute_work(n: Int) -> Int =
 
 ```
 Compiling /tmp/dojo-deadline-guard-3.almd
-error[E003]: undefined variable 'time'
-  --> /tmp/dojo-deadline-guard-3.almd:2:15
-  in variable time
-  hint: Check the variable name
-  |
-2 |   fan.timeout(time.duration.s(2), () => compute_work(n)) ?? 0
-  |               ^^^^
-
-1 error(s) found
 Compile error for /tmp/dojo-deadline-guard-3.almd:
-compile failed
+codegen produced invalid Rust — this is an Almide bug.
+Please file a minimal repro at https://github.com/almide/almide/issues
+
+--- rustc output (edited to hide generated paths) ---
+error[E0593]: closure is expected to take 0 arguments, but it takes 1 argument
+   --> <generated.rs>:332:14
+    |
+332 |     Ok(match almide_rt_fan_timeout(2000i64, move |x| pure_helper(n)) { Ok(v) => v, Err(_) => 0i64, })
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^--------^^^^^^^^^^^^^^^^
+    |              |                              |
+    |              |                              takes 1 argument
+    |              expected closure that takes 0 arguments
+
+
+error: could not compile `almide-generated` (bin "almide-generated" test) due to 1 previous error; 2 warnings emitted
+
 FAILED: /tmp/dojo-deadline-guard-3.almd
 
 1/1 test file(s) failed

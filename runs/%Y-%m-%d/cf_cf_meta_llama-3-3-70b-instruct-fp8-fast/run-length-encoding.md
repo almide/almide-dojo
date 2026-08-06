@@ -3,8 +3,8 @@
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: no
 - **retries**: 3
-- **category**: type-error
-- **diagnostic code**: `E005`
+- **category**: import-error
+- **diagnostic code**: `E004`
 
 ## Attempts
 
@@ -12,19 +12,24 @@
 
 ```almide
 fn rle_encode(s: String) -> String = 
-  let encoded = list.fold(string.run_length_encode(s), "", (acc, (ch, count)) => 
-    acc + int.to_string(count) + ch)
-  in encoded
+    let encoded = string.run_length_encode(s) 
+    in list.map(encoded, (x) => int.to_string(x.1) + x.0)
+    |> list.join(_, "")
 
 fn rle_decode(s: String) -> String = 
-  if string.is_empty(s) then ""
-  else
-    let chars = string.chars(s)
-    let pairs = list.chunk(chars, 2)
-    in list.fold(pairs, "", (acc, pair) => 
-      let count = int.parse(pair.0).unwrap_or(1)
-      let ch = pair.1
-      in acc + string.repeat(ch, count))
+    if string.is_empty(s) then ""
+    else 
+        let chars = string.chars(s)
+        in list.fold(chars, "", (acc, c) => 
+            if string.is_digit(c) 
+            then acc + c
+            else 
+                let count = int.parse(acc) 
+                in match count {
+                    ok(n) => string.repeat(c, n) + ""
+                    err(_) => ""
+                })
+        |> string.trim_start
 ```
 
 **Diagnostic:**
@@ -32,19 +37,22 @@ fn rle_decode(s: String) -> String =
 ```
 Compiling /tmp/dojo-run-length-encoding-0.almd
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-run-length-encoding-0.almd:9:5
+  --> /tmp/dojo-run-length-encoding-0.almd:9:9
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-9 |     let chars = string.chars(s)
-  |     ^^^
-error[E003]: undefined variable 'count'
-  --> /tmp/dojo-run-length-encoding-0.almd:3:25
-  in variable count
-  hint: Check the variable name
+9 |         let chars = string.chars(s)
+  |         ^^^
+error[E004]: list.join() expects 2 argument(s) but got 3
+  --> /tmp/dojo-run-length-encoding-0.almd:4:21
+  in call to list.join()
+  hint: Check the number of arguments
+  try:
+      // list.join() takes 2 arg(s) — you passed 3
+      list.join(<xs: List[String]>, <sep: String>)
   |
-3 |     acc + int.to_string(count) + ch)
-  |                         ^^^^^
+4 |     |> list.join(_, "")
+  |                     ^^
 
 2 error(s) found
 Compile error for /tmp/dojo-run-length-encoding-0.almd:
@@ -59,29 +67,49 @@ FAILED: /tmp/dojo-run-length-encoding-0.almd
 
 ```almide
 fn rle_encode(s: String) -> String = 
-  list.fold(string.run_length_encode(s), "", (acc, (ch, count)) => 
-    acc + int.to_string(count) + ch)
+    string.run_length_encode(s) 
+    |> list.map((x) => int.to_string(x.1) + x.0)
+    |> list.join(_, "")
 
 fn rle_decode(s: String) -> String = 
-  if string.is_empty(s) then ""
-  else
-    list.fold(list.chunk(string.chars(s), 2), "", (acc, pair) => 
-      acc + string.repeat(pair.1, int.parse(pair.0).unwrap_or(1)))
+    if string.is_empty(s) then ""
+    else 
+        let chars = string.chars(s)
+        in list.fold(chars, "", (acc, c) => 
+            if string.is_digit(c) 
+            then acc + c
+            else 
+                let count = int.parse(acc) 
+                in match count {
+                    ok(n) => string.repeat(c, n) + string.drop(s, string.len(acc) + 1)
+                    err(_) => ""
+                })
+        |> string.trim_start
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-run-length-encoding-1.almd
-error[E003]: undefined variable 'count'
-  --> /tmp/dojo-run-length-encoding-1.almd:3:25
-  in variable count
-  hint: Check the variable name
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-run-length-encoding-1.almd:9:9
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-3 |     acc + int.to_string(count) + ch)
-  |                         ^^^^^
+9 |         let chars = string.chars(s)
+  |         ^^^
+error[E004]: list.join() expects 2 argument(s) but got 3
+  --> /tmp/dojo-run-length-encoding-1.almd:4:21
+  in call to list.join()
+  hint: Check the number of arguments
+  try:
+      // list.join() takes 2 arg(s) — you passed 3
+      list.join(<xs: List[String]>, <sep: String>)
+  |
+4 |     |> list.join(_, "")
+  |                     ^^
 
-1 error(s) found
+2 error(s) found
 Compile error for /tmp/dojo-run-length-encoding-1.almd:
 compile failed
 FAILED: /tmp/dojo-run-length-encoding-1.almd
@@ -94,41 +122,52 @@ FAILED: /tmp/dojo-run-length-encoding-1.almd
 
 ```almide
 fn rle_encode(s: String) -> String = 
-  list.fold(string.run_length_encode(s), "", (acc, x) => 
-    acc + int.to_string(x.1) + x.0)
+    string.run_length_encode(s) 
+    |> list.map((x) => int.to_string(x.1) + x.0)
+    |> string.join(_, "")
 
 fn rle_decode(s: String) -> String = 
-  if string.is_empty(s) then ""
-  else
-    list.fold(list.chunk(string.chars(s), 2), "", (acc, pair) => 
-      acc + string.repeat(pair.1, int.parse(pair.0).unwrap_or(1)))
+    if string.is_empty(s) then ""
+    else 
+        let chars = string.chars(s)
+        in 
+        list.fold(chars, "", (acc, c) => 
+            if string.is_digit(c) 
+            then acc + c
+            else 
+                let count = int.parse(acc) 
+                in match count {
+                    ok(n) => string.repeat(c, n) + string.drop(s, string.len(acc) + 1)
+                    err(_) => ""
+                }) 
+        |> string.trim_start
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-run-length-encoding-2.almd
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-run-length-encoding-2.almd:9:9
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+  |
+9 |         let chars = string.chars(s)
+  |         ^^^
+error[E004]: string.join() expects 2 argument(s) but got 3
+  --> /tmp/dojo-run-length-encoding-2.almd:4:23
+  in call to string.join()
+  hint: Check the number of arguments
+  try:
+      // string.join() takes 2 arg(s) — you passed 3
+      string.join(<list: List[String]>, <sep: String>)
+  |
+4 |     |> string.join(_, "")
+  |                       ^^
+
+2 error(s) found
 Compile error for /tmp/dojo-run-length-encoding-2.almd:
-codegen produced invalid Rust — this is an Almide bug.
-Please file a minimal repro at https://github.com/almide/almide/issues
-
---- rustc output (edited to hide generated paths) ---
-error[E0609]: no field `1` on type `Vec<String>`
-   --> <generated.rs>:505:73
-    |
-505 | ...   format!("{}{}", acc, almide_rt_string_repeat(&*pair.clone().1, almide_rt_result_unwrap_or(almide_rt_int_parse(&*pair.0), 1i64)))
-    |                                                                   ^ unknown field
-
-
-error[E0609]: no field `0` on type `Vec<String>`
-   --> <generated.rs>:505:130
-    |
-505 | ..., almide_rt_result_unwrap_or(almide_rt_int_parse(&*pair.0), 1i64)))
-    |                                                            ^ unknown field
-
-
-error: could not compile `almide-generated` (bin "almide-generated" test) due to 2 previous errors; 2 warnings emitted
-
+compile failed
 FAILED: /tmp/dojo-run-length-encoding-2.almd
 
 1/1 test file(s) failed
@@ -139,36 +178,64 @@ FAILED: /tmp/dojo-run-length-encoding-2.almd
 
 ```almide
 fn rle_encode(s: String) -> String = 
-  list.fold(string.run_length_encode(s), "", (acc, x) => 
-    acc + int.to_string(x.1) + x.0)
+    string.run_length_encode(s) 
+    |> list.map((x) => int.to_string(x.1) + x.0)
+    |> list.fold(_, "", (acc, x) => acc + x)
 
 fn rle_decode(s: String) -> String = 
-  if string.is_empty(s) then ""
-  else
-    list.fold(list.chunk(string.chars(s), 2), "", (acc, pair) => 
-      acc + string.repeat(list.first(pair |> option.unwrap_or(["1"])).unwrap_or("1"), int.parse(list.first(pair |> option.unwrap_or(["1"])).unwrap_or("1")).unwrap_or(1)))
+    if string.is_empty(s) then ""
+    else 
+        let chars = string.chars(s)
+        in 
+        list.fold(chars, "", (acc, c) => 
+            if string.is_digit(c) 
+            then acc + c
+            else 
+                let count = int.parse(acc) 
+                in match count {
+                    ok(n) => string.repeat(c, n) + string.drop(s, string.len(acc) + 1)
+                    err(_) => ""
+                }) 
+        |> string.trim_start
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-run-length-encoding-3.almd
-error[E005]: argument 'f' expects fn(String, List[String]) -> String but got fn(String, Option[List[String]]) -> String
-  --> /tmp/dojo-run-length-encoding-3.almd:9:134
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-run-length-encoding-3.almd:9:9
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+  |
+9 |         let chars = string.chars(s)
+  |         ^^^
+error[E004]: list.fold() expects 3 argument(s) but got 4
+  --> /tmp/dojo-run-length-encoding-3.almd:4:43
+  in call to list.fold()
+  hint: Check the number of arguments
+  try:
+      // list.fold() takes 3 arg(s) — you passed 4
+      list.fold(<xs: List[A]>, <init: B>, <f: fn(B, A) -> B>)
+  |
+4 |     |> list.fold(_, "", (acc, x) => acc + x)
+  |                                           ^
+error[E005]: argument 'f' expects fn(B, String) -> B but got String
+  --> /tmp/dojo-run-length-encoding-3.almd:4:43
   in call to list.fold()
   hint: Fix the argument type
   |
-9 |       acc + string.repeat(list.first(pair |> option.unwrap_or(["1"])).unwrap_or("1"), int.parse(list.first(pair |> option.unwrap_or(["1"])).unwrap_or("1")).unwrap_or(1)))
-  |                                                                                                                                      ^^^
-error[E001]: type mismatch in call to list.fold(): expected fn(String, List[String]) -> String but got fn(String, Option[List[String]]) -> String
-  --> /tmp/dojo-run-length-encoding-3.almd:9:134
+4 |     |> list.fold(_, "", (acc, x) => acc + x)
+  |                                           ^
+error[E001]: type mismatch in call to list.fold(): expected fn(B, String) -> B but got String
+  --> /tmp/dojo-run-length-encoding-3.almd:4:43
   in call to list.fold()
   hint: Fix the expression type or change the expected type
   |
-9 |       acc + string.repeat(list.first(pair |> option.unwrap_or(["1"])).unwrap_or("1"), int.parse(list.first(pair |> option.unwrap_or(["1"])).unwrap_or("1")).unwrap_or(1)))
-  |                                                                                                                                      ^^^
+4 |     |> list.fold(_, "", (acc, x) => acc + x)
+  |                                           ^
 
-2 error(s) found
+4 error(s) found
 Compile error for /tmp/dojo-run-length-encoding-3.almd:
 compile failed
 FAILED: /tmp/dojo-run-length-encoding-3.almd

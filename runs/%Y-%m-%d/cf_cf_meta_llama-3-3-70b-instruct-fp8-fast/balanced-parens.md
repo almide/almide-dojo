@@ -3,7 +3,7 @@
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
 - **success**: no
 - **retries**: 3
-- **category**: parse-error
+- **category**: unknown
 
 ## Attempts
 
@@ -13,19 +13,20 @@
 fn is_balanced(s: String) -> Bool = 
   let stack = list.new[String]()
   in list.fold(string.chars(s), true, (acc, ch) => 
-    if acc then 
-      if ch == "(" || ch == "[" || ch == "{" then 
-        stack = stack + [ch]
+    if acc then
+      if ch == "(" || ch == "[" || ch == "{" then
+        stack := stack + [ch]
         true
-      else if ch == ")" || ch == "]" || ch == "}" then 
+      else if ch == ")" || ch == "]" || ch == "}" then
         if list.is_empty(stack) then false
-        else 
-          let top = list.last(stack) |> option.unwrap_or("")
-          in if (top == "(" && ch == ")") || 
-               (top == "[" && ch == "]") || 
-               (top == "{" && ch == "}") 
-             then stack = list.drop_end(stack, 1); true
-             else false
+        else
+          let last = list.last(stack) |> option.unwrap_or("")
+          in if (last == "(" && ch == ")") || 
+                (last == "[" && ch == "]") || 
+                (last == "{" && ch == "}") then
+            stack := list.drop_end(stack, 1)
+            true
+          else false
       else true
     else false)
 ```
@@ -40,18 +41,23 @@ error: '||' is not valid in Almide at line 5:20
   |
 5 |       if ch == "(" || ch == "[" || ch == "{" then
   |                    ^
-error: Expected expression at line 8:7 (got Else 'else')
-  --> /tmp/dojo-balanced-parens-0.almd:8:7
+error: Expected expression at line 6:15 (got Colon ':')
+  --> /tmp/dojo-balanced-parens-0.almd:6:15
   |
-8 |       else if ch == ")" || ch == "]" || ch == "}" then
-  |       ^
+6 |         stack := stack + [ch]
+  |               ^
 error: 'let' is not an expression in Almide
   --> /tmp/dojo-balanced-parens-0.almd:11:11
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
    |
-11 |           let top = list.last(stack) |> option.unwrap_or("")
+11 |           let last = list.last(stack) |> option.unwrap_or("")
    |           ^^^
+error: Expected expression at line 15:19 (got Colon ':')
+  --> /tmp/dojo-balanced-parens-0.almd:15:19
+   |
+15 |             stack := list.drop_end(stack, 1)
+   |                   ^
 error[E002]: undefined function 'list.new'
   --> /tmp/dojo-balanced-parens-0.almd:2:23
   in call to list.new()
@@ -59,31 +65,8 @@ error[E002]: undefined function 'list.new'
   |
 2 |   let stack = list.new[String]()
   |                       ^
-error[E003]: undefined variable 'ch'
-  --> /tmp/dojo-balanced-parens-0.almd:6:26
-  in variable ch
-  hint: Did you mean `s`?
-  try:
-      // ch  →  s
-      s
-  |
-6 |         stack = stack + [ch]
-  |                          ^^
-error[E009]: cannot reassign immutable binding 'stack'
-  --> /tmp/dojo-balanced-parens-0.almd:6:26
-  in stack = ...
-  hint: Use 'var stack = ...' instead of 'let stack = ...' to declare a mutable variable
-  try:
-      // let stack = ...  →  var stack = ...
-      var stack = <initial value>
-  |
-2 |   let stack = list.new[String]()
-  |   --------------------- 'stack' declared here
-...
-6 |         stack = stack + [ch]
-  |                          ^^
 error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
-  --> /tmp/dojo-balanced-parens-0.almd:7:9
+  --> /tmp/dojo-balanced-parens-0.almd:15:13
   in fn 'is_balanced'
   hint: Fix the expression type or change the expected type
   try:
@@ -92,11 +75,11 @@ error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
       //   tmp                            // <-- the returned value
       // Or inline:
       //   <expression>                   // must have type Bool
-  |
-7 |         true
-  |         ^^^^
+   |
+15 |             stack := list.drop_end(stack, 1)
+   |             ^^^^^
 
-7 error(s) found
+6 error(s) found
 Compile error for /tmp/dojo-balanced-parens-0.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-0.almd
@@ -109,21 +92,22 @@ FAILED: /tmp/dojo-balanced-parens-0.almd
 
 ```almide
 fn is_balanced(s: String) -> Bool = 
-  list.fold(string.chars(s), [], (acc, ch) => 
-    if ch == "(" or ch == "[" or ch == "{" then 
-      acc + [ch]
-    else if ch == ")" or ch == "]" or ch == "}" then 
-      if list.is_empty(acc) then 
-        false
-      else 
-        let top = list.last(acc) |> option.unwrap_or("")
-        in if (top == "(" and ch == ")") or 
-             (top == "[" and ch == "]") or 
-             (top == "{" and ch == "}")
-           then list.drop_end(acc, 1)
-           else []
-    else acc)
-  |> list.is_empty
+  let stack = []
+  in list.fold(string.chars(s), true, (acc, ch) => 
+    if acc then
+      if ch == "(" or ch == "[" or ch == "{" then
+        true
+      else if ch == ")" or ch == "]" or ch == "}" then
+        if list.is_empty(stack) then false
+        else
+          let last = list.last(stack) |> option.unwrap_or("")
+          in if (last == "(" and ch == ")") or 
+                (last == "[" and ch == "]") or 
+                (last == "{" and ch == "}") then
+            true
+          else false
+      else true
+    else false) and list.is_empty(stack)
 ```
 
 **Diagnostic:**
@@ -131,14 +115,83 @@ fn is_balanced(s: String) -> Bool =
 ```
 Compiling /tmp/dojo-balanced-parens-1.almd
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-balanced-parens-1.almd:9:9
+  --> /tmp/dojo-balanced-parens-1.almd:10:11
   in let-in
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
-  |
-9 |         let top = list.last(acc) |> option.unwrap_or("")
-  |         ^^^
+   |
+10 |           let last = list.last(stack) |> option.unwrap_or("")
+   |           ^^^
+error: Expected expression at line 16:7 (got Else 'else')
+  --> /tmp/dojo-balanced-parens-1.almd:16:7
+   |
+16 |       else true
+   |       ^
+error[E003]: undefined variable 'last'
+  --> /tmp/dojo-balanced-parens-1.almd:11:15
+  in variable last
+  hint: Check the variable name
+   |
+11 |           if (last == "(" and ch == ")") or
+   |               ^^^^
+error[E003]: undefined variable 'ch'
+  --> /tmp/dojo-balanced-parens-1.almd:11:31
+  in variable ch
+  hint: Did you mean `s`?
+  try:
+      // ch  →  s
+      s
+   |
+11 |           if (last == "(" and ch == ")") or
+   |                               ^^
+error[E003]: undefined variable 'last'
+  --> /tmp/dojo-balanced-parens-1.almd:12:18
+  in variable last
+  hint: Check the variable name
+   |
+12 |                 (last == "[" and ch == "]") or
+   |                  ^^^^
+error[E003]: undefined variable 'ch'
+  --> /tmp/dojo-balanced-parens-1.almd:12:34
+  in variable ch
+  hint: Did you mean `s`?
+  try:
+      // ch  →  s
+      s
+   |
+12 |                 (last == "[" and ch == "]") or
+   |                                  ^^
+error[E003]: undefined variable 'last'
+  --> /tmp/dojo-balanced-parens-1.almd:13:18
+  in variable last
+  hint: Check the variable name
+   |
+13 |                 (last == "{" and ch == "}") then
+   |                  ^^^^
+error[E003]: undefined variable 'ch'
+  --> /tmp/dojo-balanced-parens-1.almd:13:34
+  in variable ch
+  hint: Did you mean `s`?
+  try:
+      // ch  →  s
+      s
+   |
+13 |                 (last == "{" and ch == "}") then
+   |                                  ^^
+error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
+  --> /tmp/dojo-balanced-parens-1.almd:15:16
+  in fn 'is_balanced'
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Bool:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type Bool
+   |
+15 |           else false
+   |                ^^^^^
 
-1 error(s) found
+9 error(s) found
 Compile error for /tmp/dojo-balanced-parens-1.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-1.almd
@@ -151,66 +204,40 @@ FAILED: /tmp/dojo-balanced-parens-1.almd
 
 ```almide
 fn is_balanced(s: String) -> Bool = 
-  list.fold(string.chars(s), [], (acc, ch) => 
-    if ch == "(" or ch == "[" or ch == "{" then 
-      acc + [ch]
-    else if ch == ")" or ch == "]" or ch == "}" then 
-      if list.is_empty(acc) then 
-        false
+  list.fold(string.chars(s), ([], true), (acc, ch) => 
+    if acc.1 then
+      if ch == "(" or ch == "[" or ch == "{" then
+        (acc.0 + [ch], true)
+      else if ch == ")" or ch == "]" or ch == "}" then
+        if list.is_empty(acc.0) then 
+          ([], false)
+        else
+          let last = list.last(acc.0) |> option.unwrap_or("")
+          in if (last == "(" and ch == ")") or 
+                (last == "[" and ch == "]") or 
+                (last == "{" and ch == "}") then
+            (list.drop_end(acc.0, 1), true)
+          else 
+            ([], false)
       else 
-        {
-          let top = list.last(acc) |> option.unwrap_or("");
-          if (top == "(" and ch == ")") or 
-             (top == "[" and ch == "]") or 
-             (top == "{" and ch == "}")
-           then list.drop_end(acc, 1)
-           else false
-        }
-    else acc)
-  |> list.is_empty
+        (acc.0, true)
+    else 
+      (acc.0, false)) |> (x) => x.1 and list.is_empty(x.0)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-2.almd
-error[E005]: argument 'f' expects fn(List[?0], String) -> List[?0] but got fn(Bool, String) -> List[String]
-  --> /tmp/dojo-balanced-parens-2.almd:17:10
-  in call to list.fold()
-  hint: Fix the argument type
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-balanced-parens-2.almd:10:11
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
    |
-17 |     else acc)
-   |          ^^^
-error[E001]: type mismatch in if branches: expected List[String] but got Bool
-  --> /tmp/dojo-balanced-parens-2.almd:15:17
-  in if branches
-  hint: Both branches of `if/then/else` must have the same type
-   |
-15 |            else false
-   |                 ^^^^^
-error[E001]: type mismatch in if branches: expected Bool but got List[String]
-  --> /tmp/dojo-balanced-parens-2.almd:15:17
-  in if branches
-  hint: Both branches of `if/then/else` must have the same type
-   |
-15 |            else false
-   |                 ^^^^^
-error[E001]: type mismatch in if branches: expected List[String] but got Bool
-  --> /tmp/dojo-balanced-parens-2.almd:17:10
-  in if branches
-  hint: Both branches of `if/then/else` must have the same type
-   |
-17 |     else acc)
-   |          ^^^
-error[E001]: type mismatch in call to list.fold(): expected fn(List[?0], String) -> List[?0] but got fn(Bool, String) -> List[String]
-  --> /tmp/dojo-balanced-parens-2.almd:17:10
-  in call to list.fold()
-  hint: Fix the expression type or change the expected type
-   |
-17 |     else acc)
-   |          ^^^
+10 |           let last = list.last(acc.0) |> option.unwrap_or("")
+   |           ^^^
 
-5 error(s) found
+1 error(s) found
 Compile error for /tmp/dojo-balanced-parens-2.almd:
 compile failed
 FAILED: /tmp/dojo-balanced-parens-2.almd
@@ -223,36 +250,38 @@ FAILED: /tmp/dojo-balanced-parens-2.almd
 
 ```almide
 fn is_balanced(s: String) -> Bool = 
-  list.fold(string.chars(s), [], (acc, ch) => 
-    if ch == "(" or ch == "[" or ch == "{" then 
-      acc + [ch]
-    else if ch == ")" or ch == "]" or ch == "}" then 
-      if list.is_empty(acc) then 
-        false
+  list.fold(string.chars(s), ([], true), (acc, ch) => 
+    if acc.1 then
+      if ch == "(" or ch == "[" or ch == "{" then
+        (acc.0 + [ch], true)
+      else if ch == ")" or ch == "]" or ch == "}" then
+        if list.is_empty(acc.0) then 
+          ([], false)
+        else
+          let last = list.last(acc.0) |> option.unwrap_or("") 
+          in if (last == "(" and ch == ")") or 
+                (last == "[" and ch == "]") or 
+                (last == "{" and ch == "}") then
+            (list.drop_end(acc.0, 1), true)
+          else 
+            ([], false)
       else 
-        {
-          let top = list.last(acc) |> option.unwrap_or("");
-          if (top == "(" and ch == ")") or 
-             (top == "[" and ch == "]") or 
-             (top == "{" and ch == "}")
-           then list.drop_end(acc, 1)
-           else false
-        }
-    else acc)
-  |> (x => list.is_empty(x))
+        (acc.0, true)
+    else 
+      (acc.0, false)) |> (x) => x.1 and list.is_empty(x.0)
 ```
 
 **Diagnostic:**
 
 ```
 Compiling /tmp/dojo-balanced-parens-3.almd
-error: Lambda parameter must be wrapped in parentheses
-  --> /tmp/dojo-balanced-parens-3.almd:18:9
-  in lambda syntax
-  hint: Almide lambdas require parentheses around parameters. Write `(x) => expr` instead of `x => expr`
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-balanced-parens-3.almd:10:11
+  in let-in
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
    |
-18 |   |> (x => list.is_empty(x))
-   |         ^^
+10 |           let last = list.last(acc.0) |> option.unwrap_or("")
+   |           ^^^
 
 1 error(s) found
 Compile error for /tmp/dojo-balanced-parens-3.almd:
