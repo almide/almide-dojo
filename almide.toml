@@ -3,4 +3,5 @@ name = "dojo"
 version = "0.1.0"
 
 [dependencies]
+almai = { git = "https://github.com/almide/almai" }
 almai = { git = "https://github.com/almide/almai.git" }

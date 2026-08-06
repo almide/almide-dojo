@@ -595,13 +595,16 @@ effect fn run_all_loop(tasks: List[String], model: String, acc: List[RunResult])
     let task_name = list.get(tasks, 0) |> option.unwrap_or("")
     let rest = list.drop(tasks, 1)
     println("=== " + task_name + " ===")
+    // almide codegen workaround (clone-insertion gap in the synthesized
+    // continuation — reported upstream): take an owned copy for the err arm.
+    let model_for_err = string.repeat(model, 1)
     let next_acc = match run_task(task_name, model) {
       ok(r) => acc + [r]
       err(e) => {
         println("  harness error: " + e)
         acc + [RunResult {
           task: task_name,
-          model: model,
+          model: model_for_err,
           success: false,
           retries: 0,
           final_diagnostic: e,
