@@ -17,11 +17,22 @@ import regex
 
 type Verdict = { id: String, change: String, landed: String, prediction: String, measured: String }
 
-type RunPoint = { date: String, with_retry: Int }
+/// One scored run. `model` and `total` are carried because a verdict may
+/// only be scored against runs of the SAME model on the SAME task bank —
+/// see `comparable_rows`. Averaging across models makes a model upgrade
+/// read as a compiler win, which is the one answer this loop must never
+/// produce.
+type RunPoint = { date: String, model: String, total: Int, with_retry: Int }
 
+// `regex.captures` returns [whole match, group 1, ...] — group N is at index
+// N. This tool was first written against almide#1432, when the runtime
+// returned groups only, and read group 1 from index 0; the upstream fix
+// silently turned every capture here into the un-stripped whole match, which
+// is why the ledger's dates arrived quote-wrapped and no run ever sorted
+// before a landing date.
 fn quoted(line: String) -> String =
   match regex.captures("\"([^\"]*)\"", line) {
-    some(gs) => list.get(gs, 0) ?? "",
+    some(gs) => list.get(gs, 1) ?? "",
     none => "",
   }
 
@@ -51,21 +62,60 @@ effect fn parse_ledger(path: String) -> List[Verdict] = {
   out
 }
 
+fn field(pattern: String, text: String) -> Option[String] =
+  match regex.captures(pattern, text) {
+    some(gs) => list.get(gs, 1),
+    none => none,
+  }
+
+/// One machine-generated summary as a scorable point.
+///
+/// ONLY the harness-emitted shape is accepted (`- **model**:` /
+/// `- **tasks**:` / `- **passed**: N / M`). The hand-written round-up
+/// summaries carry a prose `MSR-with-retry N%` headline but name no model
+/// and no bank size, so they are not comparable to anything and are
+/// deliberately skipped rather than averaged in.
+fn summary_point(date: String, text: String) -> Option[RunPoint] = {
+  let model = field("model\\*\\*: `([^`]+)`", text) ?? ""
+  let total = int.parse(field("tasks\\*\\*: ([0-9]+)", text) ?? "") ?? 0
+  let passed = int.parse(field("passed\\*\\*: ([0-9]+) /", text) ?? "") ?? -1
+  if model == "" or total <= 0 or passed < 0 then none
+  else
+    some(RunPoint {
+      date: date,
+      model: model,
+      total: total,
+      with_retry: (passed * 100) / total,
+    })
+}
+
+/// Every summary under one date: the flat `runs/<date>/summary.md` of the
+/// hand-written rounds, plus `runs/<date>/<model>/summary.md` for every
+/// model the harness ran that day.
+effect fn date_summaries(dir: String, d: String) -> List[String] = {
+  let flat = match fs.read_text("${dir}/${d}/summary.md") {
+    ok(t) => [t],
+    err(_e) => [],
+  }
+  let nested = match fs.list_dir("${dir}/${d}") {
+    ok(entries) =>
+      entries
+        |> list.filter_map((m) => fs.read_text("${dir}/${d}/${m}/summary.md")?),
+    err(_e) => [],
+  }
+  flat + nested
+}
+
 effect fn scan_runs(dir: String) -> List[RunPoint] = {
   let dates = fs.list_dir(dir)!
   var out: List[RunPoint] = []
   for d in dates {
-    match fs.read_text("${dir}/${d}/summary.md") {
-      ok(text) => {
-        match regex.captures("MSR-with-retry ([0-9]+)%", text) {
-          some(gs) => {
-            let pct = int.parse(list.get(gs, 0) ?? "0") ?? 0
-            out = out + [RunPoint { date: d, with_retry: pct }]
-          },
-          none => println("l1-loop: ${d}: no MSR headline — skipped"),
-        }
-      },
-      err(_e) => println("l1-loop: ${d}: no summary.md — skipped"),
+    let texts = date_summaries(dir, d)!
+    // One point PER MODEL, never averaged across them.
+    let pts = texts |> list.filter_map((t) => summary_point(d, t))
+    match list.len(pts) {
+      0 => println("l1-loop: ${d}: no scorable summary — skipped"),
+      _ => { out = out + pts },
     }
   }
   out
@@ -82,28 +132,47 @@ fn direction(before: Int, after: Int) -> String =
   else if before > after + 2 then "down"
   else "flat"
 
-fn standing(v: Verdict, before: Int, after: Int, n_after: Int) -> String =
-  if before < 0 or n_after == 0 then "awaiting post-landing runs"
-  else {
-    let dir = direction(before, after)
-    match dir == v.prediction {
-      true => "CONFIRMED (${dir})",
-      false => match dir {
-        "flat" => "inconclusive (flat)",
-        _ => "REFUTED (predicted ${v.prediction}, measured ${dir})",
-      },
-    }
+fn standing(v: Verdict, before: Int, after: Int) -> String = {
+  let dir = direction(before, after)
+  match dir == v.prediction {
+    true => "CONFIRMED (${dir})",
+    false => match dir {
+      "flat" => "inconclusive (flat)",
+      _ => "REFUTED (predicted ${v.prediction}, measured ${dir})",
+    },
   }
+}
+
+/// The strata that can actually score a landing: one (model, bank size)
+/// pair that has at least one run on each side of the landing date. A
+/// pair present on only one side proves nothing — the difference would be
+/// the model or the bank, not the compiler.
+fn comparable_strata(v: Verdict, points: List[RunPoint]) -> List[(String, Int, Int)] = {
+  let keys =
+    points
+      |> list.map((p) => "${p.model}@${p.total}")
+      |> list.unique
+  keys |> list.filter_map((k) => {
+    let same = points |> list.filter((p) => "${p.model}@${p.total}" == k)
+    let b = same |> list.filter((p) => p.date < v.landed) |> mean_pct
+    let a = same |> list.filter((p) => p.date >= v.landed) |> mean_pct
+    if b < 0 or a < 0 then none else some((k, b, a))
+  })
+}
 
 fn row(v: Verdict, points: List[RunPoint]) -> String = {
-  let before_pts = points |> list.filter((p) => p.date < v.landed)
-  let after_pts = points |> list.filter((p) => p.date >= v.landed)
-  let before = mean_pct(before_pts)
-  let after = mean_pct(after_pts)
-  let s = standing(v, before, after, list.len(after_pts))
-  let b = match before { -1 => "—", x => "${x}%" }
-  let a = match list.len(after_pts) { 0 => "—", _ => "${after}%" }
-  "| ${v.id} | ${v.change} | ${v.landed} | ${v.prediction} | ${b} | ${a} | ${s} |"
+  let strata = comparable_strata(v, points)
+  match strata {
+    [] =>
+      "| ${v.id} | ${v.change} | ${v.landed} | ${v.prediction} | — | — | awaiting comparable runs (same model + same task bank on both sides) |",
+    _ => {
+      let cells =
+        strata
+          |> list.map(((k, b, a)) => "${k}: ${b}%→${a}% ${standing(v, b, a)}")
+          |> list.join("; ")
+      "| ${v.id} | ${v.change} | ${v.landed} | ${v.prediction} | ${cells} |"
+    },
+  }
 }
 
 effect fn main() -> Unit = {
