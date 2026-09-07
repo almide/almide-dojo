@@ -1,0 +1,9 @@
+test "hidden: empty key is still fatal after a skipped line" {
+  assert_eq(load(["junk", "=v"]), err("empty key: =v"))
+}
+test "hidden: value keeps its own separators" {
+  assert_eq(load(["a=b=c"]), ok(Config { entries: ["a": "b=c"], skipped: 0 }))
+}
+test "hidden: parse_entry unchanged" {
+  assert_eq(parse_entry("junk"), err("missing separator: junk"))
+}

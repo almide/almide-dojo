@@ -32,7 +32,11 @@ fn classify_failure(diag: String) -> (String, String) = {
   // missing, method syntax, etc.) usually cascades into many downstream
   // E002 "undefined function" errors. Without this priority, the cascade
   // hides the real root cause in the dashboard breakdown.
-  if string.contains(diag, "Lambda parameter must be wrapped") then ("parse-error", "")
+  // Bank verdicts (tasks/bank/): marker lines written by the harness, never
+  // compiler output. They outrank everything — the program compiled and passed.
+  if string.starts_with(diag, "[bank] silent-violation") then ("silent-violation", "")
+  else if string.starts_with(diag, "[bank] target-divergence") then ("target-divergence", "")
+  else if string.contains(diag, "Lambda parameter must be wrapped") then ("parse-error", "")
   else if string.contains(diag, "Expected ") then ("parse-error", "")
   else {
     let code = primary_diagnostic_code(diag)
@@ -69,7 +73,8 @@ fn final_failed_code(result: RunResult) -> String =
 fn category_order() -> List[String] = [
   "pass-1shot", "pass-retry",
   "parse-error", "type-error", "name-error", "import-error",
-  "compile-error", "runtime-error", "wrong-output", "timeout", "unknown",
+  "compile-error", "runtime-error", "wrong-output", "timeout",
+  "silent-violation", "target-divergence", "unknown",
 ]
 
 test "primary_diagnostic_code extracts E003" {

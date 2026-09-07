@@ -73,6 +73,16 @@ almide run src/main.almd -- all
 **Advanced** (6 tasks, > 80 LOC) — custom ADTs, pattern matching, error handling:
 `expression-eval`, `custom-linked-list`, `result-pipeline`, `mini-json-query`, `matrix-ops`, `red-black-tree`
 
+## The contract-preserving bank (`tasks/bank/`, 8 seed tasks)
+
+The 31-task bank above saturates: every language scores 20/20 on it, so it no
+longer discriminates. The second bank asks a model to **modify** an already-correct
+program under a stated contract and scores the edit against a hidden oracle on
+both targets — no partial credit, and a compiler refusal counts only when the
+repair survives within the retry budget. Eight edit families, one seed each;
+`scripts/check-bank.sh` refuses any task whose plausible wrong patch is not caught.
+Spec: [docs/bank.md](./docs/bank.md). Run: `almide run src/main.almd -- bank <model>`.
+
 ## Current phase
 
 **Phase 3** — 31-task bank with three difficulty tiers, harness searches across `basic/`, `intermediate/`, `advanced/` directories. Next: add GitHub Actions daily workflow, build the dashboards.

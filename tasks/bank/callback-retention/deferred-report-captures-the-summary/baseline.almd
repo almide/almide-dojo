@@ -1,0 +1,2 @@
+// Sum of squares over a list.
+fn analyse(xs: List[Int]) -> Int = xs |> list.fold(0, (acc, x) => acc + x * x)

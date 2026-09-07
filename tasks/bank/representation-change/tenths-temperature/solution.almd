@@ -1,0 +1,20 @@
+// Sensor readings in tenths of a degree.
+type Temp: Eq, Repr = { tenths: Int }
+type Reading: Eq, Repr = { sensor: String, temp: Temp }
+
+fn reading(sensor: String, tenths: Int) -> Reading = Reading { sensor: sensor, temp: Temp { tenths: tenths } }
+
+fn render_temp(t: Temp) -> String = {
+  let sign = if t.tenths < 0 then "-" else ""
+  let a = if t.tenths < 0 then 0 - t.tenths else t.tenths
+  sign + int.to_string(a / 10) + "." + int.to_string(a % 10)
+}
+
+fn render(r: Reading) -> String = r.sensor + ":" + render_temp(r.temp)
+
+// The sensor with the highest temperature; the FIRST one on a tie.
+fn hottest(rs: List[Reading]) -> String? =
+  rs |> list.fold(none, (best, r) => match best {
+    none => some(r),
+    some(b) => if r.temp.tenths > b.temp.tenths then some(r) else some(b),
+  }) |> option.map((r) => r.sensor)

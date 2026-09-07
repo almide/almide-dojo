@@ -1,0 +1,9 @@
+kind = "modify"
+family = "dojo:callback-retention"
+contracts = []
+oracles = ["behaviour", "cross-target"]
+# Capturing `xs` instead of the summary is invisible to behaviour; it is the
+# retained-ownership check of almide/almide#1996 that scores it.
+resource_oracle = "pending"
+expected_loc = 5
+timeout_sec = 60

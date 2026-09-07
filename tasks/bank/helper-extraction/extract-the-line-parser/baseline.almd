@@ -1,0 +1,7 @@
+// Sum of the lines that are plain non-negative integers; every other line is ignored.
+fn sum_valid(lines: List[String]) -> Int =
+  lines |> list.fold(0, (acc, line) =>
+    match int.parse(line) {
+      ok(n) => if n >= 0 then acc + n else acc,
+      err(_) => acc,
+    })

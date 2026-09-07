@@ -1,0 +1,28 @@
+// A repository port with two adapters, selected at runtime.
+protocol Repo {
+  fn find(r: Self, id: String) -> String?
+}
+
+type MemRepo: Repo = { rows: Map[String, String] }
+fn MemRepo.find(r: MemRepo, id: String) -> String? = map.get(r.rows, id)
+
+type FallbackRepo: Repo = { inner: MemRepo, fallback: String }
+fn FallbackRepo.find(r: FallbackRepo, id: String) -> String? =
+  match r.inner.find(id) {
+    some(name) => some(name),
+    none => if r.fallback == "" then none else some(r.fallback),
+  }
+
+type Backend = | Mem(MemRepo) | Fallback(FallbackRepo)
+
+fn greet[R: Repo](repo: R, id: String) -> String =
+  match repo.find(id) {
+    some(name) => "hi " + name,
+    none => "who?",
+  }
+
+fn greet_via(b: Backend, id: String) -> String =
+  match b {
+    Mem(m) => greet(m, id),
+    Fallback(f) => greet(f, id),
+  }

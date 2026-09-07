@@ -1,0 +1,15 @@
+// Plausible wrong patch: renders with `/` and `%` directly, so a negative
+// temperature between -1.0 and 0 renders as "0.-5". Passes the visible tests.
+type Temp: Eq, Repr = { tenths: Int }
+type Reading: Eq, Repr = { sensor: String, temp: Temp }
+
+fn reading(sensor: String, tenths: Int) -> Reading = Reading { sensor: sensor, temp: Temp { tenths: tenths } }
+
+fn render(r: Reading) -> String =
+  r.sensor + ":" + int.to_string(r.temp.tenths / 10) + "." + int.to_string(r.temp.tenths % 10)
+
+fn hottest(rs: List[Reading]) -> String? =
+  rs |> list.fold(none, (best, r) => match best {
+    none => some(r),
+    some(b) => if r.temp.tenths > b.temp.tenths then some(r) else some(b),
+  }) |> option.map((r) => r.sensor)

@@ -1,0 +1,9 @@
+kind = "modify"
+family = "dojo:nested-scopes"
+contracts = []
+oracles = ["behaviour", "cross-target"]
+# The inner-cleanup-preserves-outer-data observation is resource-side
+# (almide/almide#1996); the behavioural half is scored now.
+resource_oracle = "pending"
+expected_loc = 3
+timeout_sec = 60

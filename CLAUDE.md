@@ -23,6 +23,24 @@ When adding a new task:
 4. The LLM will be given `prompt.md` only. It must not see `tests.almd`.
 5. The combined test+solution must compile and pass on the pinned Almide version.
 
+## The contract-preserving bank (`tasks/bank/`)
+
+The second bank asks a model to MODIFY an already-correct program under a
+stated contract and scores it against a hidden oracle on both targets. Spec:
+[docs/bank.md](./docs/bank.md). When adding a bank task:
+
+1. Directory `tasks/bank/<family>/<task-name>/`; the family is a row of `bank/families.txt`
+   (the pinned copy of the compiler repo's `scripts/lib/dojo-families.txt` — add rows there first)
+2. Required files: `baseline.almd`, `prompt.md` (requested change + a **Preserve** section),
+   `tests.almd` (visible), `hidden.almd` (never shown), `solution.almd`, `wrong.almd`
+   (a plausible wrong patch: compiles, passes `tests.almd`, fails `hidden.almd`), `meta.toml`
+   (`kind = "modify"`, `family`, `contracts`, `resource_oracle`)
+3. `bash scripts/check-bank.sh` must be green: it compiles every leg and refuses a task that
+   does not discriminate (see the table in the spec)
+4. `wrong.almd` may be omitted only while `resource_oracle = "pending"`
+5. Run the lane with `almide run src/main.almd -- bank <model>`; the hidden oracle's detail
+   never reaches the model or the committed report
+
 ## Difficulty levels
 
 - `basic/` — single function, < 20 LOC expected

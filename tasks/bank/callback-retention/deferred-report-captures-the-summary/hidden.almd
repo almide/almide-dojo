@@ -1,0 +1,8 @@
+test "hidden: empty and repeated calls" {
+  let f = deferred([])
+  assert_eq(f(), "sum=0")
+  assert_eq(f(), "sum=0")
+}
+test "hidden: analyse unchanged" {
+  assert_eq(analyse([-2, 2]), 8)
+}

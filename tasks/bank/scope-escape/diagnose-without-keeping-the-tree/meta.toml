@@ -1,0 +1,10 @@
+kind = "modify"
+family = "dojo:scope-escape"
+contracts = []
+oracles = ["behaviour", "cross-target"]
+# The protected observation is RESOURCE-side (no tree storage survives the
+# call). It becomes checkable when almide/almide#1996 lands the boundary
+# ownership counter; until then only the behavioural half is scored.
+resource_oracle = "pending"
+expected_loc = 5
+timeout_sec = 60

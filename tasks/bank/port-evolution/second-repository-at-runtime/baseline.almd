@@ -1,0 +1,13 @@
+// A repository port with one adapter.
+protocol Repo {
+  fn find(r: Self, id: String) -> String?
+}
+
+type MemRepo: Repo = { rows: Map[String, String] }
+fn MemRepo.find(r: MemRepo, id: String) -> String? = map.get(r.rows, id)
+
+fn greet[R: Repo](repo: R, id: String) -> String =
+  match repo.find(id) {
+    some(name) => "hi " + name,
+    none => "who?",
+  }

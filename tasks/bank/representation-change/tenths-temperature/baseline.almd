@@ -1,0 +1,13 @@
+// Sensor readings in whole degrees.
+type Reading: Eq, Repr = { sensor: String, value: Int }
+
+fn reading(sensor: String, value: Int) -> Reading = Reading { sensor: sensor, value: value }
+
+fn render(r: Reading) -> String = r.sensor + ":" + int.to_string(r.value)
+
+// The sensor with the highest value; the FIRST one on a tie.
+fn hottest(rs: List[Reading]) -> String? =
+  rs |> list.fold(none, (best, r) => match best {
+    none => some(r),
+    some(b) => if r.value > b.value then some(r) else some(b),
+  }) |> option.map((r) => r.sensor)

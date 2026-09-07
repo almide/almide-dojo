@@ -1,0 +1,10 @@
+test "negative qty is an error" {
+  assert(result.is_err(parse_line("A1,-2,50")))
+}
+test "zero qty is fine" {
+  assert_eq(parse_line("A1,0,50"), ok(Line { sku: "A1", qty: 0, unit_price: 50 }))
+}
+test "total of two" {
+  let ls = parse_all(["A1,2,50", "B2,1,30"])
+  assert_eq(ls |> result.map((x) => total(x)), ok(130))
+}
