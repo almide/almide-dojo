@@ -482,7 +482,7 @@ fn language_entry(pr: Probe, tasks: List[PTask]) -> Value = {
 // part of the run's identity. "" = the compiler's own default.
 effect fn http_timeout_secs() -> String = env.get("ALMIDE_HTTP_TIMEOUT_SECS") ?? ""
 
-effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask], task_set_sha: String, v: Verdict, cells: List[LResult]) -> Value = {
+effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask], task_set_sha: String, v: Verdict, cells: List[LResult], sampling: List[(String, Value)]) -> Value = {
   let provider = llm.provider_of(o.model)
   value.object([
     ("verdict", verdict_json(v, list.len(tasks), cells, probes)),
@@ -498,20 +498,21 @@ effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask
       ("pin", value.str(compiler_pin()!)),
       ("version", value.str(match process.exec("almide", ["--version"]) { ok(v) => string.trim(v), err(_) => "" })),
     ])),
+    // What was ASKED FOR, then what the provider actually wrote into the
+    // request body. The second half is `sampling`, measured by a preflight
+    // call with these same options — not this harness's opinion of what the
+    // provider does. The two can disagree (a provider that ignores the
+    // temperature leaves `temperature_sent: false` next to the request
+    // below), and a reader deciding whether the run is reproducible needs
+    // the wire half, not the asked half.
     ("model", value.object([
       ("spec", value.str(o.model)),
       ("provider", value.str(provider)),
-      ("temperature", value.float(TEMPERATURE)),
-      // Whether almai puts the temperature on the wire for this provider;
-      // when false the provider's default sampling applied.
-      ("temperature_sent", value.bool(llm.temperature_sent(provider))),
-      // almai has no seed option, so no provider receives one.
-      ("seed", value.null()),
-      ("seed_sent", value.bool(false)),
-      ("max_tokens", value.int(4096)),
+      ("temperature_requested", value.float(TEMPERATURE)),
+      ("seed_requested", value.int(llm.SEED)),
       ("transport_attempts", value.int(TRANSPORT_ATTEMPTS)),
       ("http_timeout_secs", value.str(http_timeout_secs()!)),
-    ])),
+    ] + sampling)),
     ("retries", value.int(o.retries)),
     ("condition", value.object([("effects", value.str(o.condition))])),
     ("task_set", value.object([
@@ -647,6 +648,12 @@ effect fn cmd_run(o: Opts) -> Unit! = {
     println("no plugin has its toolchain: nothing to measure")
     process.exit(2)
   }
+  // Preflight: ask the provider, with this run's own options, what it put on
+  // the wire. The answer goes into the manifest, so the table reports its own
+  // reproducibility instead of this harness guessing on the provider's
+  // behalf. A dead key or an unknown model name also fails HERE, before a
+  // single task has been scored 0 against an empty completion.
+  let sampling = llm.probe_sampling(o.model, TEMPERATURE)!
   let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
   let dir = o.out + "/" + date + "/" + model_slug(o.model)
   let raw_dir = dir + "/raw"
@@ -669,7 +676,7 @@ effect fn cmd_run(o: Opts) -> Unit! = {
   let cells = full_grid(probes, tasks, results)
   let saturated = is_saturated(cells)
   let v = verdict_of(probes, tasks, cells)
-  let m = manifest(o, date, probes, tasks, task_set_sha, v, cells)!
+  let m = manifest(o, date, probes, tasks, task_set_sha, v, cells, sampling)!
   fs.write(dir + "/manifest.json", json.stringify_pretty(m) + "\n")!
   fs.write(dir + "/results.json", json.stringify_pretty(value.object([
     ("results", value.array(cells |> list.map((r) => result_json(r, state_of(probe_available(probes, r.language), r, saturated))))),

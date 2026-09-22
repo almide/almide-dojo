@@ -11,6 +11,7 @@
 // NOT the Claude CLI; any other unprefixed name is OpenAI.
 
 import almai
+import json
 
 fn strip_code_fences(s: String) -> String =
   s
@@ -40,15 +41,68 @@ fn provider_of(model: String) -> String = {
   }
 }
 
-// Whether almai (at the commit in almide.lock) puts `temperature` on the
-// wire for this provider. The OpenAI-compatible providers send it; the
-// Anthropic and Cloudflare providers build their request body without it,
-// and the CLI providers cannot set it — for those the provider's default
-// applies. The cross-language manifest records this next to the requested
-// value so a reader knows which one the numbers were sampled at.
-fn temperature_sent(provider: String) -> Bool = match provider {
-  "openai" | "openrouter" | "groq" => true,
-  _ => false,
+// The seed every measured call is pinned at.
+//
+// A cross-language table is only citable if a third party can re-run it, so
+// the run asks for a fixed seed rather than letting each provider roll its
+// own. 0 is almai's "unset" sentinel and would silently mean "no seed", so
+// the value is deliberately non-zero; Cloudflare documents the valid range
+// as 1..=9_999_999_999 and this sits inside it. `seed_sent` in the manifest
+// says whether the provider actually wrote it into the request body —
+// asking is not the same as being honoured, and neither is the same as the
+// model obeying it (see almai's Sampling doc).
+let SEED: Int = 20260922
+
+// ONE construction of the request options, used by every call this harness
+// makes and by the probe that reports them. Two expressions would be two
+// places to remember, and the manifest would describe a request nobody sent.
+fn opts_for(system: String, temperature: Float) -> almai.CallOptions =
+  almai.defaults()
+    |> almai.with_system(system)
+    |> almai.with_temperature(temperature)
+    |> almai.with_seed(SEED)
+
+// What the provider PUT ON THE WIRE for these options, as a manifest-ready
+// object.
+//
+// This used to be a table in this file that said, per provider, whether
+// temperature reached the wire. It was written when almai's Cloudflare
+// provider sent no sampling fields, it was pinned by a test asserting
+// exactly that, and when almai started sending them the table kept printing
+// `temperature_sent: false` — green tests, stale answer, and a run that WAS
+// pinned published a manifest declaring it was not. A local mirror of a
+// remote fact drifts silently; this reads the fact.
+//
+// `r.sampling` is almai's echo of the request it built, so the values below
+// are a projection of it and cannot disagree with it.
+// A value is printed only when its `*_sent` companion says it was written:
+// a number beside `sent: false` is the provider's default, not this run's
+// setting, and printing one would claim a pinned run.
+fn sent_or_null(sent: Bool, v: Value) -> Value = if sent then v else value.null()
+
+fn sampling_fields(s: almai.Sampling) -> List[(String, Value)] = [
+  ("temperature_sent", value.bool(s.temperature_sent)),
+  ("temperature", sent_or_null(s.temperature_sent, value.float(s.temperature))),
+  ("top_p_sent", value.bool(s.top_p_sent)),
+  ("top_p", sent_or_null(s.top_p_sent, value.float(s.top_p))),
+  ("max_tokens_sent", value.bool(s.max_tokens_sent)),
+  ("max_tokens", sent_or_null(s.max_tokens_sent, value.int(s.max_tokens))),
+  ("seed_sent", value.bool(s.seed_sent)),
+  ("seed", sent_or_null(s.seed_sent, value.int(s.seed))),
+]
+
+// Resolve the echo by making one real, tiny call with the run's own options.
+//
+// Deriving it instead — a second dispatch on the provider name — would be
+// the same mirror one level up. This asks the wire. It doubles as the
+// credential preflight the empty-completion guard below exists for: a run
+// on a dead key fails here, before it has scored a single task as 0.
+effect fn probe_sampling(model: String, temperature: Float) -> Result[List[(String, Value)], String] = {
+  let opts = opts_for("Reply with the single word OK.", temperature)
+  match almai.call_retry(to_almai_spec(model), [almai.user("OK")], opts, 2) {
+    err(e) => err("sampling probe failed for '" + model + "': " + e)
+    ok(r) => ok(sampling_fields(r.sampling))
+  }
 }
 
 // A completion that is empty once the fences are stripped is NOT a
@@ -66,7 +120,7 @@ fn is_empty_completion(content: String) -> Bool = string.trim(strip_code_fences(
 
 effect fn call(model: String, system: String, user_prompt: String, temperature: Float, max_attempts: Int) -> Result[String, String] = {
   let spec = to_almai_spec(model)
-  let opts = almai.defaults() |> almai.with_system(system) |> almai.with_temperature(temperature)
+  let opts = opts_for(system, temperature)
   let msgs = [almai.user(user_prompt)]
   match almai.call_retry(spec, msgs, opts, max_attempts) {
     err(e) => err(e)
@@ -109,10 +163,44 @@ test "the Claude CLI is spelled cli:claude, not a bare claude-* name" {
   assert_eq(provider_of("cf:@cf/meta/llama-3.1-8b-instruct"), "cf")
 }
 
-test "temperature reaches the wire only for the OpenAI-compatible providers" {
-  assert(temperature_sent("openai"))
-  assert(temperature_sent("openrouter"))
-  assert(not temperature_sent("anthropic"))
-  assert(not temperature_sent("cf"))
-  assert(not temperature_sent("cli"))
+// The test that stood here asserted the deleted table: `not
+// temperature_sent("cf")`. It was green on the day it was written and green
+// on the day almai started sending temperature to Cloudflare, because what
+// it checked was this file's memory of almai, not almai. A test over a
+// mirror can only ever confirm the mirror.
+//
+// What is checkable locally is the projection: given an echo, the manifest
+// object says exactly what the echo says. Whether the echo is true of the
+// wire is almai's own test's job (spec/sampling_wire_test.almd), and which
+// echo applies to a run is answered by probing, not by asserting.
+test "the manifest fields report the echo, including a seed that went out" {
+  let j = value.object(sampling_fields(almai.Sampling {
+    temperature_sent: true, temperature: 0.0,
+    max_tokens_sent: true, max_tokens: 4096, seed_sent: true, seed: SEED }))
+  assert((json.get_bool(j, "temperature_sent") ?? false), "temperature_sent must follow the echo")
+  assert((json.get_bool(j, "seed_sent") ?? false), "seed_sent must follow the echo")
+  assert((json.get_int(j, "seed") ?? 0) == SEED, "the recorded seed is the one asked for")
+  assert((json.get_int(j, "max_tokens") ?? 0) == 4096, "a sent value is printed")
+}
+
+// A provider that writes nothing must read as nothing — and each value must
+// be null rather than its zero, so "not sent" and "sent as 0" stop looking
+// alike. A `temperature: 0.0` beside `temperature_sent: false` is exactly
+// the sentence that made a previous manifest unreadable: it looks like a
+// pinned greedy run and means "the provider's default applied".
+test "an echo that claims nothing records null, not zero" {
+  let j = value.object(sampling_fields(almai.Sampling { }))
+  assert(not (json.get_bool(j, "temperature_sent") ?? true), "temperature_sent must be false")
+  assert(not (json.get_bool(j, "seed_sent") ?? true), "seed_sent must be false")
+  assert(json.get_int(j, "seed") == none, "an unsent seed is null, never 0")
+  assert(json.get_float(j, "temperature") == none, "an unsent temperature is null, never 0.0")
+}
+
+test "every measured call and the probe share one options construction" {
+  // Not a style point: the probe's echo is only evidence about the run if
+  // the run's requests are built by the same expression.
+  let a = opts_for("sys", 0.0)
+  assert(a.seed == SEED, "the run pins a seed")
+  assert(a.temperature == 0.0, "the requested temperature is carried")
+  assert(a.system == "sys", "the system prompt is carried")
 }
