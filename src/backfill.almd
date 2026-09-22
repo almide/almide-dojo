@@ -44,7 +44,7 @@ effect fn backfill_subs_loop(date: String, parent: String, subs: List[String]) -
     let sub = list.get(subs, 0) |> option.unwrap_or("")
     let rest = list.drop(subs, 1)
     backfill_dir(date, parent + "/" + sub)!
-    backfill_subs_loop(date, parent, rest)
+    backfill_subs_loop(date, parent, rest)!
   }
 
 effect fn backfill_loop(dates: List[String]) -> Unit =
@@ -61,7 +61,7 @@ effect fn backfill_loop(dates: List[String]) -> Unit =
           ok(subs) => { backfill_subs_loop(date, "runs/" + date, subs)!; {} }
         }
     }
-    backfill_loop(rest)
+    backfill_loop(rest)!
   }
 
 effect fn backfill_all() -> Unit = {

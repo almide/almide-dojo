@@ -327,7 +327,7 @@ effect fn run_all(model: String) -> Unit = {
             process.exit(2)
           } else {
             let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
-            run_all_finish(date, model, results)
+            run_all_finish(date, model, results)!
           }
         }
       }
@@ -382,14 +382,14 @@ effect fn main() -> Unit = {
   let args = env.args()
   let argc = list.len(args)
   if argc < 1 then
-    print_usage()
+    print_usage()!
   else {
     let first = list.get(args, 0) |> option.unwrap_or("")
     let model = list.get(args, 1) |> option.unwrap_or(DEFAULT_MODEL)
     if first == "all" then
-      run_all(model)
+      run_all(model)!
     else if first == "backfill" then
-      backfill.backfill_all()
+      backfill.backfill_all()!
     else {
       match run_task(first, model) {
         ok(r) => if not r.success then process.exit(1) else {}
