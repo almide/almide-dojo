@@ -1,0 +1,1856 @@
+{
+  "results": [
+    {
+      "language": "almide",
+      "task": "clamp",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "almide",
+      "task": "count-vowels",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "almide",
+      "task": "factorial",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "almide",
+      "task": "fibonacci",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "almide",
+      "task": "fizzbuzz",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "almide",
+      "task": "gcd",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "almide",
+      "task": "is-palindrome",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "almide",
+      "task": "is-prime",
+      "success": false,
+      "retries": 0,
+      "attempts": []
+    },
+    {
+      "language": "almide",
+      "task": "list-sum",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "almide",
+      "task": "remove-duplicates",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "almide",
+      "task": "repeat-string",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "almide",
+      "task": "string-reverse",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "almide",
+      "task": "sum-digits",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "almide",
+      "task": "title-case",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "almide",
+      "task": "anagram-check",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "almide",
+      "task": "balanced-parens",
+      "success": false,
+      "retries": 0,
+      "attempts": []
+    },
+    {
+      "language": "almide",
+      "task": "caesar-cipher",
+      "success": false,
+      "retries": 0,
+      "attempts": []
+    },
+    {
+      "language": "almide",
+      "task": "flatten-nested",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "almide",
+      "task": "roman-numeral",
+      "success": false,
+      "retries": 0,
+      "attempts": []
+    },
+    {
+      "language": "almide",
+      "task": "run-length-encoding",
+      "success": false,
+      "retries": 0,
+      "attempts": []
+    },
+    {
+      "language": "almide",
+      "task": "matrix-ops",
+      "success": false,
+      "retries": 0,
+      "attempts": []
+    },
+    {
+      "language": "rust",
+      "task": "clamp",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "count-vowels",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "factorial",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "fibonacci",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "fizzbuzz",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "gcd",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "is-palindrome",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "is-prime",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "list-sum",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "remove-duplicates",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "repeat-string",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "string-reverse",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "sum-digits",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "title-case",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "anagram-check",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "balanced-parens",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "caesar-cipher",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "flatten-nested",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "roman-numeral",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "run-length-encoding",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "rust",
+      "task": "matrix-ops",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "clamp",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "count-vowels",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "factorial",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "fibonacci",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "fizzbuzz",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "gcd",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "is-palindrome",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "is-prime",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "list-sum",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "remove-duplicates",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "repeat-string",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "string-reverse",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "sum-digits",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "title-case",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "anagram-check",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "balanced-parens",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "caesar-cipher",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "flatten-nested",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "roman-numeral",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "go",
+      "task": "run-length-encoding",
+      "success": false,
+      "retries": 0,
+      "attempts": []
+    },
+    {
+      "language": "go",
+      "task": "matrix-ops",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "clamp",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "count-vowels",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "factorial",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "fibonacci",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "fizzbuzz",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "gcd",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "is-palindrome",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "is-prime",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "list-sum",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "remove-duplicates",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "repeat-string",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "string-reverse",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "sum-digits",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "title-case",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "anagram-check",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "balanced-parens",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "caesar-cipher",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "flatten-nested",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "roman-numeral",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "run-length-encoding",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "typescript",
+      "task": "matrix-ops",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "clamp",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "count-vowels",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "factorial",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "fibonacci",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "fizzbuzz",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "gcd",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "is-palindrome",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "is-prime",
+      "success": true,
+      "retries": 2,
+      "attempts": [
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:4:9: error: remainder division with 'i64' and 'comptime_int': signed integers and floats must use @rem or @mod\n    if (n % 2 == 0) return false;\n        ^\nreferenced by:\n    main: main.zi"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:7:19: error: division with 'i64' and 'i64': signed integers must use @divTrunc, @divFloor, or @divExact\n    while (i <= n / i) : (i += 6) {\n                ~~^~~\nreferenced by:\n    main: "
+        },
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "list-sum",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "remove-duplicates",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "repeat-string",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "string-reverse",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "sum-digits",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "title-case",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "anagram-check",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "balanced-parens",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "caesar-cipher",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "flatten-nested",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "roman-numeral",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "run-length-encoding",
+      "success": false,
+      "retries": 0,
+      "attempts": []
+    },
+    {
+      "language": "zig",
+      "task": "matrix-ops",
+      "success": false,
+      "retries": 0,
+      "attempts": []
+    },
+    {
+      "language": "gleam",
+      "task": "clamp",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "count-vowels",
+      "success": true,
+      "retries": 1,
+      "attempts": [
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nwarning: Unused imported module\n  ┌─ /home/runner/work"
+        },
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "factorial",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "fibonacci",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "fizzbuzz",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "gcd",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "is-palindrome",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "is-prime",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "list-sum",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "remove-duplicates",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "repeat-string",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "string-reverse",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "sum-digits",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "title-case",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "anagram-check",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "balanced-parens",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "caesar-cipher",
+      "success": false,
+      "retries": 0,
+      "attempts": []
+    },
+    {
+      "language": "gleam",
+      "task": "flatten-nested",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "roman-numeral",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "run-length-encoding",
+      "success": true,
+      "retries": 1,
+      "attempts": [
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Inexhaustive patterns\n   ┌─ /home/runner/work/a"
+        },
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "matrix-ops",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "clamp",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "count-vowels",
+      "success": true,
+      "retries": 1,
+      "attempts": [
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_zai-org_glm-5-3-flash/raw/moonbit/count-vowels/0' is deprecated. Run `moon fmt` to migrate to `moon.mod"
+        },
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "factorial",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "fibonacci",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "fizzbuzz",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "gcd",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "is-palindrome",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "is-prime",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "list-sum",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "remove-duplicates",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "repeat-string",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "string-reverse",
+      "success": false,
+      "retries": 0,
+      "attempts": []
+    },
+    {
+      "language": "moonbit",
+      "task": "sum-digits",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "title-case",
+      "success": false,
+      "retries": 0,
+      "attempts": []
+    },
+    {
+      "language": "moonbit",
+      "task": "anagram-check",
+      "success": false,
+      "retries": 0,
+      "attempts": []
+    },
+    {
+      "language": "moonbit",
+      "task": "balanced-parens",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "caesar-cipher",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "flatten-nested",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "roman-numeral",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "run-length-encoding",
+      "success": false,
+      "retries": 0,
+      "attempts": []
+    },
+    {
+      "language": "moonbit",
+      "task": "matrix-ops",
+      "success": true,
+      "retries": 0,
+      "attempts": [
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
+        }
+      ]
+    }
+  ]
+}
