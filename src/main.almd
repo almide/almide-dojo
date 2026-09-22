@@ -1,7 +1,8 @@
 // dojo — Almide Dojo harness
 //
 // Multi-provider LLM harness for MSR measurement.
-// Supports Cloudflare Workers AI, Anthropic, OpenRouter, OpenAI, and Claude CLI.
+// Supports Cloudflare Workers AI, Anthropic, OpenRouter, OpenAI, and the
+// Claude Code CLI (all through almai; see src/llm.almd).
 //
 // Usage:
 //   almide run src/main.almd -- <task-name> [provider:model]
@@ -9,16 +10,18 @@
 //
 // Model formats:
 //   cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast    Cloudflare Workers AI
-//   anthropic:claude-sonnet-4-6                      Anthropic Messages API
+//   anthropic:claude-sonnet-5                        Anthropic Messages API
+//   claude-sonnet-5                                  Anthropic Messages API (an unprefixed claude-* is the API, not the CLI)
 //   openrouter:meta-llama/llama-3.3-70b-instruct    OpenRouter (100+ models)
-//   openai:gpt-4o                                   OpenAI API
-//   claude-sonnet-4-6                               Claude CLI (no prefix)
+//   openai:<model>                                  OpenAI API
+//   cli:claude                                      Claude Code CLI (`claude -p`; no API key, the CLI's own model and sampling)
 //
 // Environment variables (per provider):
-//   CF_ACCOUNT_ID, CLOUDFLARE_API_KEY               Cloudflare Workers AI
-//   ANTHROPIC_API_KEY                               Anthropic / Claude CLI
-//   OPENROUTER_API_KEY                              OpenRouter
-//   OPENAI_API_KEY                                  OpenAI
+//   CF_ACCOUNT_ID, CLOUDFLARE_API_KEY, CLOUDFLARE_EMAIL   Cloudflare Workers AI (Global API Key auth)
+//   ANTHROPIC_API_KEY                                     Anthropic Messages API
+//   OPENROUTER_API_KEY                                    OpenRouter
+//   OPENAI_API_KEY                                        OpenAI
+//   (none)                                                cli:claude — needs a logged-in `claude` on PATH
 
 import env
 import fs
@@ -205,10 +208,10 @@ effect fn print_usage() -> Unit = {
   println("")
   println("Providers:")
   println("  cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast")
-  println("  anthropic:claude-sonnet-4-6")
+  println("  anthropic:claude-sonnet-5   (an unprefixed claude-* is also the Anthropic API)")
   println("  openrouter:meta-llama/llama-3.3-70b-instruct")
-  println("  openai:gpt-4o")
-  println("  claude-sonnet-4-6  (Claude CLI, no prefix)")
+  println("  openai:<model>")
+  println("  cli:claude                  (Claude Code CLI, no API key)")
 }
 
 effect fn print_result(result: RunResult) -> Unit = {
