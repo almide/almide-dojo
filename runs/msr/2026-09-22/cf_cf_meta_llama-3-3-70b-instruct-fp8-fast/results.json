@@ -3,8 +3,10 @@
     {
       "language": "almide",
       "task": "clamp",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -16,8 +18,10 @@
     {
       "language": "almide",
       "task": "count-vowels",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -29,8 +33,10 @@
     {
       "language": "almide",
       "task": "factorial",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -42,8 +48,10 @@
     {
       "language": "almide",
       "task": "fibonacci",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -55,13 +63,15 @@
     {
       "language": "almide",
       "task": "fizzbuzz",
+      "state": "measured",
       "success": true,
       "retries": 1,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "error[E002]: undefined function 'int.rem'\n  --> main.almd:4:17\n  in call to int.rem()\n  here: if int.rem(n, 15) == 0 then \"FizzBuzz\"\n  hint: No function 'rem' in module 'int'. See docs/CHEATSHEET.md f"
+          "diagnostic_head": "error: Expected name at line 4:10 (got Mod 'mod')\n  --> main.almd:4:10\n  here: if int.mod(n, 15) == 0 then \"FizzBuzz\"\n  hint: The parser expected a different token here. The message names what it want"
         },
         {
           "passed": true,
@@ -73,8 +83,10 @@
     {
       "language": "almide",
       "task": "gcd",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -86,8 +98,10 @@
     {
       "language": "almide",
       "task": "is-palindrome",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -99,36 +113,30 @@
     {
       "language": "almide",
       "task": "is-prime",
-      "success": false,
-      "retries": 3,
+      "state": "measured",
+      "success": true,
+      "retries": 1,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "error: Expected name at line 5:47 (got PipeArrow '|>')\n  --> main.almd:5:47\n  here: else list.all(list.range(2, int.to_float(n).|> math.sqrt().|> float.to_int()), (x) => n % x != 0)\n  hint: The parser"
+          "diagnostic_head": "error[E002]: undefined function 'int.sqrt'\n  --> main.almd:5:40\n  in call to int.sqrt()\n  here: else list.all(list.range(2, int.sqrt(n) |> int.to_float |> float.to_int + 1), (x) => n % x != 0)\n  hint:"
         },
         {
-          "passed": false,
-          "kind": "run",
-          "diagnostic_head": "FAIL is_prime(4): expected false, got true\nFAIL is_prime(9): expected false, got true\nFAIL is_prime(25): expected false, got true\nmsr: 3 of 11 cases failed\n"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "internal compiler error: IR verify: AddFloat expects Float operands, got Float and Int (in is_prime) at line 5\n"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "error: Missing ',' between function arguments at line 8:1\n  --> main.almd:8:1\n  here: fn msr_check[T](failed: Int, label: String, got: T, want: T) -> Int =\n  hint: Add a comma after the previous eleme"
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
         }
       ]
     },
     {
       "language": "almide",
       "task": "list-sum",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -140,8 +148,10 @@
     {
       "language": "almide",
       "task": "remove-duplicates",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -153,8 +163,10 @@
     {
       "language": "almide",
       "task": "repeat-string",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -166,8 +178,10 @@
     {
       "language": "almide",
       "task": "string-reverse",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -179,13 +193,20 @@
     {
       "language": "almide",
       "task": "sum-digits",
+      "state": "measured",
       "success": true,
-      "retries": 1,
+      "retries": 2,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
           "diagnostic_head": "error[E049]: `let ... in <expr>` is OCaml/Haskell syntax\n  --> main.almd:5:3\n  in let ... in\n  here: in list.sum(list.map(string.chars(int.to_string(abs_n)), (x) => int.parse(x).unwrap_or(0)))\n  hint:"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "error[E049]: `let ... in <expr>` is OCaml/Haskell syntax\n  --> main.almd:8:3\n  in let ... in\n  here: in list.sum(digits)\n  hint: In Almide, multiple lets chain by newlines inside a block — no `in` key"
         },
         {
           "passed": true,
@@ -197,13 +218,15 @@
     {
       "language": "almide",
       "task": "title-case",
+      "state": "measured",
       "success": true,
       "retries": 1,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "error[E046]: placeholder `_` is not valid in a call argument (argument 1 of list.join())\n  --> main.almd:6:16\n  in call argument\n  here: |> list.join(_, \" \")\n  hint: `_` here is a hole with no value —"
+          "diagnostic_head": "error[E046]: placeholder `_` is not valid in a call argument (argument 1 of list.join())\n  --> main.almd:6:16\n  in call argument\n  here: |> list.join(_ , \" \")\n  hint: `_` here is a hole with no value "
         },
         {
           "passed": true,
@@ -215,13 +238,15 @@
     {
       "language": "almide",
       "task": "anagram-check",
+      "state": "measured",
       "success": true,
       "retries": 1,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "error[E049]: `let ... in <expr>` is OCaml/Haskell syntax\n  --> main.almd:6:3\n  in let ... in\n  here: in list.sort(string.chars(a1)) == list.sort(string.chars(b1))\n  hint: In Almide, multiple lets chai"
+          "diagnostic_head": "error[E049]: `let ... in <expr>` is OCaml/Haskell syntax\n  --> main.almd:4:55\n  in let ... in\n  here: let a = string.to_lower(string.replace(a, \" \", \"\")) in\n  hint: In Almide, multiple lets chain by n"
         },
         {
           "passed": true,
@@ -233,52 +258,41 @@
     {
       "language": "almide",
       "task": "balanced-parens",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "error: Expected identifier at line 4:7 (got Newline '')\n  --> main.almd:4:7\n  here: let\n  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFOR"
+          "diagnostic_head": "error: Missing ',' between function arguments at line 10:9\n  --> main.almd:10:9\n  here: true\n  hint: Add a comma after the previous element. Example: f(a, b, c)\n   |\n10 |         true\n   |         ^\ne"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "error[E049]: `let ... in <expr>` is OCaml/Haskell syntax\n  --> main.almd:4:18\n  in let ... in\n  here: let stack = [] in\n  hint: In Almide, multiple lets chain by newlines inside a block — no `in` keyw"
+          "diagnostic_head": "error: 'let' is not an expression in Almide\n  --> main.almd:14:11\n  in let-in\n  here: let top = list.first(acc.0) |> option.unwrap_or(\"\")\n  hint: Lists are immutable — use `+` to build a new list: `so"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "error[E049]: `let ... in <expr>` is OCaml/Haskell syntax\n  --> main.almd:4:32\n  in let ... in\n  here: let stack: List[String] = [] in\n  hint: In Almide, multiple lets chain by newlines inside a block "
+          "diagnostic_head": "error: 'let' is not an expression in Almide\n  --> main.almd:14:11\n  in let-in\n  here: let top = list.first(acc.0) |> option.unwrap_or(\"\")\n  hint: Lists are immutable — use `+` to build a new list: `so"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "error: 'let' is not an expression in Almide\n  --> main.almd:9:9\n  in let-in\n  here: let top = list.first(acc)\n  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you "
+          "diagnostic_head": "error: 'let' is not an expression in Almide\n  --> main.almd:14:11\n  in let-in\n  here: let top = list.first(acc.0)\n  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If "
         }
       ]
     },
     {
       "language": "almide",
       "task": "caesar-cipher",
+      "state": "measured",
       "success": true,
-      "retries": 3,
+      "retries": 0,
+      "reason": "",
       "attempts": [
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "error: 'let' is not an expression in Almide\n  --> main.almd:9:11\n  in let-in\n  here: let\n  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary bind"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "error: Missing ',' between function arguments at line 37:1\n  --> main.almd:37:1\n  here: fn msr_check[T](failed: Int, label: String, got: T, want: T) -> Int =\n  hint: Add a comma after the previous ele"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "error: Expected expression at line 38:1 (got Fn 'fn')\n  --> main.almd:38:1\n  here: fn msr_check[T](failed: Int, label: String, got: T, want: T) -> Int =\n  hint: The parser expected a different token h"
-        },
         {
           "passed": true,
           "kind": "",
@@ -289,8 +303,10 @@
     {
       "language": "almide",
       "task": "flatten-nested",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -302,36 +318,40 @@
     {
       "language": "almide",
       "task": "roman-numeral",
-      "success": false,
+      "state": "measured",
+      "success": true,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "error: 'let' is not an expression in Almide\n  --> main.almd:7:5\n  in let-in\n  here: let count = int.clamp(n / value, 0, n)\n  hint: Lists are immutable — use `+` to build a new list: `some(stack + [ite"
+          "diagnostic_head": "error[E049]: `let ... in <expr>` is OCaml/Haskell syntax\n  --> main.almd:6:3\n  in let ... in\n  here: in list.fold(list.zip(values, symbols), \"\", (acc, (value, symbol)) =>\n  hint: In Almide, multiple l"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "error: 'let' is not an expression in Almide\n  --> main.almd:7:5\n  in let-in\n  here: let count = n / value\n  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need"
+          "diagnostic_head": "error: 'let' is not an expression in Almide\n  --> main.almd:8:5\n  in let-in\n  here: let count = n / value\n  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need"
         },
         {
           "passed": false,
-          "kind": "run",
-          "diagnostic_head": "FAIL to_roman(4): expected IV, got IVIIII\nFAIL to_roman(9): expected IX, got IXVIVIVIIIIIIIII\nFAIL to_roman(14): expected XIV, got XIXVVIVIVIVIIIIIIIIIIIIII\nFAIL to_roman(42): expected XLII, got XLXXX"
+          "kind": "compile",
+          "diagnostic_head": "error: 'let' is not an expression in Almide\n  --> main.almd:8:5\n  in let-in\n  here: let count = acc.0 / value\n  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you "
         },
         {
-          "passed": false,
-          "kind": "run",
-          "diagnostic_head": "FAIL to_roman(4): expected IV, got IVIIII\nFAIL to_roman(9): expected IX, got IXVIVIVIIIIIIIII\nFAIL to_roman(14): expected XIV, got XIXVVIVIVIVIIIIIIIIIIIIII\nFAIL to_roman(42): expected XLII, got XLXXX"
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
         }
       ]
     },
     {
       "language": "almide",
       "task": "run-length-encoding",
-      "success": true,
-      "retries": 2,
+      "state": "measured",
+      "success": false,
+      "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -341,30 +361,32 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "error[E046]: placeholder `_` is not valid in a call argument (argument 1 of list.join())\n  --> main.almd:6:16\n  in call argument\n  here: |> list.join(_, \"\")\n  hint: `_` here is a hole with no value — "
+          "diagnostic_head": "error: 'let' is not an expression in Almide\n  --> main.almd:11:5\n  in let-in\n  here: let chars = string.chars(s)\n  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If y"
         },
         {
-          "passed": true,
-          "kind": "",
-          "diagnostic_head": ""
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "error[E004]: list.join() expects 2 argument(s) but got 3\n  --> main.almd:6:20\n  in call to list.join()\n  here: |> list.join(\"\", \"\")\n  hint: Check the number of arguments\n  try:\n      // list.join() ta"
+        },
+        {
+          "passed": false,
+          "kind": "run",
+          "diagnostic_head": "FAIL rle_decode(\"3a2b1c\"): expected aaabbc, got caa21\nFAIL rle_decode(rle_encode(\"aabbccdd\")): expected aabbccdd, got da222\nmsr: 2 of 10 cases failed\n"
         }
       ]
     },
     {
       "language": "almide",
       "task": "matrix-ops",
+      "state": "measured",
       "success": true,
-      "retries": 2,
+      "retries": 1,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "error: 'let' is not an expression in Almide\n  --> main.almd:10:5\n  in let-in\n  here: let first_cols = list.map(m, (x) => list.first(x) |> option.unwrap_or(0))\n  hint: Lists are immutable — use `+` to "
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "error[E049]: `let ... in <expr>` is OCaml/Haskell syntax\n  --> main.almd:13:7\n  in let ... in\n  here: in [first_cols] + mat_transpose(rest_cols)\n  hint: In Almide, multiple lets chain by newlines insi"
+          "diagnostic_head": "error[E002]: undefined function 'list.to_list'\n  --> main.almd:8:88\n  in call to list.to_list()\n  here: else list.transpose(list.map(m, (x) => list.to_list(option.unwrap_or(list.get(m, 0), []))))\n  hi"
         },
         {
           "passed": true,
@@ -376,8 +398,10 @@
     {
       "language": "rust",
       "task": "clamp",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -389,8 +413,10 @@
     {
       "language": "rust",
       "task": "count-vowels",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -402,8 +428,10 @@
     {
       "language": "rust",
       "task": "factorial",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -415,8 +443,10 @@
     {
       "language": "rust",
       "task": "fibonacci",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -428,8 +458,10 @@
     {
       "language": "rust",
       "task": "fizzbuzz",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -441,8 +473,10 @@
     {
       "language": "rust",
       "task": "gcd",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -454,8 +488,10 @@
     {
       "language": "rust",
       "task": "is-palindrome",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -467,8 +503,10 @@
     {
       "language": "rust",
       "task": "is-prime",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -480,8 +518,10 @@
     {
       "language": "rust",
       "task": "list-sum",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -493,8 +533,10 @@
     {
       "language": "rust",
       "task": "remove-duplicates",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -506,8 +548,10 @@
     {
       "language": "rust",
       "task": "repeat-string",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -519,8 +563,10 @@
     {
       "language": "rust",
       "task": "string-reverse",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -532,8 +578,10 @@
     {
       "language": "rust",
       "task": "sum-digits",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -545,9 +593,16 @@
     {
       "language": "rust",
       "task": "title-case",
+      "state": "measured",
       "success": true,
-      "retries": 0,
+      "retries": 1,
+      "reason": "",
       "attempts": [
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "error[E0308]: `if` and `else` have incompatible types\n  --> main.rs:10:25\n   |\n 7 | /                     if i == 0 {\n 8 | |                         c.to_uppercase()\n   | |                         ---"
+        },
         {
           "passed": true,
           "kind": "",
@@ -558,8 +613,10 @@
     {
       "language": "rust",
       "task": "anagram-check",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -571,8 +628,10 @@
     {
       "language": "rust",
       "task": "balanced-parens",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -584,8 +643,10 @@
     {
       "language": "rust",
       "task": "caesar-cipher",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -597,8 +658,10 @@
     {
       "language": "rust",
       "task": "flatten-nested",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -610,8 +673,10 @@
     {
       "language": "rust",
       "task": "roman-numeral",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -623,8 +688,10 @@
     {
       "language": "rust",
       "task": "run-length-encoding",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -636,8 +703,10 @@
     {
       "language": "rust",
       "task": "matrix-ops",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -649,8 +718,10 @@
     {
       "language": "go",
       "task": "clamp",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -662,8 +733,10 @@
     {
       "language": "go",
       "task": "count-vowels",
+      "state": "measured",
       "success": true,
       "retries": 1,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -680,8 +753,10 @@
     {
       "language": "go",
       "task": "factorial",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -693,14 +768,11 @@
     {
       "language": "go",
       "task": "fibonacci",
+      "state": "measured",
       "success": true,
-      "retries": 1,
+      "retries": 0,
+      "reason": "",
       "attempts": [
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.go:1:1: expected 'package', found 'func'\n"
-        },
         {
           "passed": true,
           "kind": "",
@@ -711,8 +783,10 @@
     {
       "language": "go",
       "task": "fizzbuzz",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -724,8 +798,10 @@
     {
       "language": "go",
       "task": "gcd",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -737,8 +813,10 @@
     {
       "language": "go",
       "task": "is-palindrome",
+      "state": "measured",
       "success": true,
       "retries": 1,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -755,8 +833,10 @@
     {
       "language": "go",
       "task": "is-prime",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -768,8 +848,10 @@
     {
       "language": "go",
       "task": "list-sum",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -781,13 +863,15 @@
     {
       "language": "go",
       "task": "remove-duplicates",
+      "state": "measured",
       "success": true,
       "retries": 1,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "# command-line-arguments\n./solution.go:3:8: \"fmt\" imported and not used\n"
+          "diagnostic_head": "# command-line-arguments\n./solution.go:4:2: \"fmt\" imported and not used\n"
         },
         {
           "passed": true,
@@ -799,8 +883,10 @@
     {
       "language": "go",
       "task": "repeat-string",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -812,8 +898,10 @@
     {
       "language": "go",
       "task": "string-reverse",
+      "state": "measured",
       "success": true,
       "retries": 1,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -830,8 +918,10 @@
     {
       "language": "go",
       "task": "sum-digits",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -843,9 +933,21 @@
     {
       "language": "go",
       "task": "title-case",
+      "state": "measured",
       "success": true,
-      "retries": 0,
+      "retries": 2,
+      "reason": "",
       "attempts": [
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "# command-line-arguments\n./solution.go:5:2: \"unicode\" imported and not used\n"
+        },
+        {
+          "passed": false,
+          "kind": "run",
+          "diagnostic_head": "FAIL title_case(\"HELLO WORLD\"): expected \"Hello World\", got \"HELLO WORLD\"\nFAIL title_case(\"hELLO wORLD\"): expected \"Hello World\", got \"HELLO WORLD\"\nmsr: 2 of 7 cases failed\n"
+        },
         {
           "passed": true,
           "kind": "",
@@ -856,14 +958,11 @@
     {
       "language": "go",
       "task": "anagram-check",
+      "state": "measured",
       "success": true,
-      "retries": 1,
+      "retries": 0,
+      "reason": "",
       "attempts": [
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "# command-line-arguments\n./solution.go:4:2: \"fmt\" imported and not used\n"
-        },
         {
           "passed": true,
           "kind": "",
@@ -874,19 +973,11 @@
     {
       "language": "go",
       "task": "balanced-parens",
+      "state": "measured",
       "success": true,
-      "retries": 2,
+      "retries": 0,
+      "reason": "",
       "attempts": [
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.go:1:1: expected 'package', found 'func'\n"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "# command-line-arguments\n./solution.go:4:2: \"fmt\" imported and not used\n"
-        },
         {
           "passed": true,
           "kind": "",
@@ -897,8 +988,10 @@
     {
       "language": "go",
       "task": "caesar-cipher",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -910,13 +1003,15 @@
     {
       "language": "go",
       "task": "flatten-nested",
+      "state": "measured",
       "success": true,
       "retries": 1,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "# command-line-arguments\n./solution.go:4:2: \"errors\" imported and not used\n./solution.go:5:2: \"fmt\" imported and not used\n"
+          "diagnostic_head": "# command-line-arguments\n./solution.go:4:2: \"fmt\" imported and not used\n"
         },
         {
           "passed": true,
@@ -928,8 +1023,10 @@
     {
       "language": "go",
       "task": "roman-numeral",
+      "state": "measured",
       "success": true,
       "retries": 1,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -946,8 +1043,10 @@
     {
       "language": "go",
       "task": "run-length-encoding",
-      "success": false,
-      "retries": 3,
+      "state": "measured",
+      "success": true,
+      "retries": 2,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -957,53 +1056,37 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "# command-line-arguments\n./solution.go:52:15: syntax error: unexpected EOF, expected }\n"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "# command-line-arguments\n./solution.go:47:13: syntax error: unexpected ., expected (\n"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
           "diagnostic_head": "# command-line-arguments\n./solution.go:4:2: \"errors\" imported and not used\n"
+        },
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
         }
       ]
     },
     {
       "language": "go",
       "task": "matrix-ops",
-      "success": false,
-      "retries": 3,
+      "state": "measured",
+      "success": true,
+      "retries": 0,
+      "reason": "",
       "attempts": [
         {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "# command-line-arguments\n./solution.go:44:25: syntax error: unexpected EOF, expected }\n"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "# command-line-arguments\n./solution.go:45:11: syntax error: unexpected EOF, expected comma, : or ]\n"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "# command-line-arguments\n./solution.go:44:7: syntax error: unexpected EOF, expected expression\n"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "# command-line-arguments\n./solution.go:44:7: syntax error: unexpected EOF, expected expression\n"
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
         }
       ]
     },
     {
       "language": "typescript",
       "task": "clamp",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1015,8 +1098,10 @@
     {
       "language": "typescript",
       "task": "count-vowels",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1028,8 +1113,10 @@
     {
       "language": "typescript",
       "task": "factorial",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1041,8 +1128,10 @@
     {
       "language": "typescript",
       "task": "fibonacci",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1054,8 +1143,10 @@
     {
       "language": "typescript",
       "task": "fizzbuzz",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1067,8 +1158,10 @@
     {
       "language": "typescript",
       "task": "gcd",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1080,8 +1173,10 @@
     {
       "language": "typescript",
       "task": "is-palindrome",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1093,8 +1188,10 @@
     {
       "language": "typescript",
       "task": "is-prime",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1106,8 +1203,10 @@
     {
       "language": "typescript",
       "task": "list-sum",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1119,8 +1218,10 @@
     {
       "language": "typescript",
       "task": "remove-duplicates",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1132,8 +1233,10 @@
     {
       "language": "typescript",
       "task": "repeat-string",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1145,8 +1248,10 @@
     {
       "language": "typescript",
       "task": "string-reverse",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1158,8 +1263,10 @@
     {
       "language": "typescript",
       "task": "sum-digits",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1171,8 +1278,10 @@
     {
       "language": "typescript",
       "task": "title-case",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1184,8 +1293,10 @@
     {
       "language": "typescript",
       "task": "anagram-check",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1197,8 +1308,10 @@
     {
       "language": "typescript",
       "task": "balanced-parens",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1210,8 +1323,10 @@
     {
       "language": "typescript",
       "task": "caesar-cipher",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1223,8 +1338,10 @@
     {
       "language": "typescript",
       "task": "flatten-nested",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1236,8 +1353,10 @@
     {
       "language": "typescript",
       "task": "roman-numeral",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1249,8 +1368,10 @@
     {
       "language": "typescript",
       "task": "run-length-encoding",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1262,8 +1383,10 @@
     {
       "language": "typescript",
       "task": "matrix-ops",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1275,8 +1398,10 @@
     {
       "language": "zig",
       "task": "clamp",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1288,8 +1413,10 @@
     {
       "language": "zig",
       "task": "count-vowels",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1301,8 +1428,10 @@
     {
       "language": "zig",
       "task": "factorial",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1314,8 +1443,10 @@
     {
       "language": "zig",
       "task": "fibonacci",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1327,8 +1458,10 @@
     {
       "language": "zig",
       "task": "fizzbuzz",
-      "success": false,
-      "retries": 3,
+      "state": "measured",
+      "success": true,
+      "retries": 2,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -1338,30 +1471,27 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:12:13: error: local variable is never mutated\n        var fbs = try std.fmt.intToSliceBuf(&buf, n, 10);\n            ^~~\nsolution.zig:12:13: note: consider using 'const'\nsolution.zig:4:9: "
+          "diagnostic_head": "solution.zig:4:9: error: remainder division with 'i64' and 'comptime_int': signed integers and floats must use @rem or @mod\n    if (n % 15 == 0) {\n        ^\nreferenced by:\n    main: main.zig:56:61\n   "
         },
         {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:12:32: error: root source file struct 'fmt' has no member named 'intToSliceBuf'\n        const fbs = try std.fmt.intToSliceBuf(&buf, n, 10);\n                        ~~~~~~~^~~~~~~~~~~~~~\n/"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:12:28: error: root source file struct 'fmt' has no member named 'intToSlice'\n        const fbs = std.fmt.intToSlice(&buf, n, 10, true, std.builtin.maxInt(i64).bits);\n                    ~"
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
         }
       ]
     },
     {
       "language": "zig",
       "task": "gcd",
+      "state": "measured",
       "success": true,
       "retries": 1,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:3:19: error: remainder division with 'i64' and 'i64': signed integers and floats must use @rem or @mod\n    return gcd(b, a % b);\n                  ^\nreferenced by:\n    main: main.zig:57:5"
+          "diagnostic_head": "solution.zig:5:23: error: remainder division with 'i64' and 'i64': signed integers and floats must use @rem or @mod\n        return gcd(b, a % b);\n                      ^\nreferenced by:\n    main: main."
         },
         {
           "passed": true,
@@ -1373,13 +1503,15 @@
     {
       "language": "zig",
       "task": "is-palindrome",
+      "state": "measured",
       "success": true,
       "retries": 1,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "run",
-          "diagnostic_head": "thread 7937 panic: integer overflow\n/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/zig/is-palindrome/0/solution.zig:3:30: 0x11d4b05 in is_"
+          "diagnostic_head": "thread 7827 panic: integer overflow\n/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/zig/is-palindrome/0/solution.zig:3:30: 0x11d4b05 in is_"
         },
         {
           "passed": true,
@@ -1391,8 +1523,10 @@
     {
       "language": "zig",
       "task": "is-prime",
+      "state": "measured",
       "success": true,
       "retries": 1,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -1409,8 +1543,10 @@
     {
       "language": "zig",
       "task": "list-sum",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -1422,9 +1558,16 @@
     {
       "language": "zig",
       "task": "remove-duplicates",
-      "success": true,
-      "retries": 2,
+      "state": "measured",
+      "success": false,
+      "retries": 3,
+      "reason": "",
       "attempts": [
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:4:14: error: expected '=', found '}'\n        {0, 0},\n             ^\n"
+        },
         {
           "passed": false,
           "kind": "compile",
@@ -1433,31 +1576,23 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:11:28: error: expected type '[]const u8', found 'i64'\n        if (!seen.contains(x)) {\n                           ^\n/home/runner/work/_temp/bf483b92-c0a1-4725-a736-0b438ff0b794/zig-x86_64"
+          "diagnostic_head": "solution.zig:8:9: error: local variable is never mutated\n    var map_allocator = gpa.allocator();\n        ^~~~~~~~~~~~~\nsolution.zig:8:9: note: consider using 'const'\nsolution.zig:5:19: error: expecte"
         },
         {
-          "passed": true,
-          "kind": "",
-          "diagnostic_head": ""
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:5:19: error: expected 4 argument(s), found 5\n    var seen = std.HashMap(i64, void, std.hash_map.DefaultHasher(i64), std.hash_map.DefaultEq(i64), .{});\n               ~~~^~~~~~~~\n/home/run"
         }
       ]
     },
     {
       "language": "zig",
       "task": "repeat-string",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:4:23: error: extra capture in for loop\n    for (result) |*c, i| {\n                      ^\n"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:9:21: error: extra capture in for loop\n        for (s) |c, j| {\n                    ^\n"
-        },
         {
           "passed": false,
           "kind": "compile",
@@ -1466,25 +1601,32 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:6:50: error: expected 1 argument, found 2\n    var result = try allocator.alloc(u8, s.len * @intCast(usize, n));\n                                                 ^~~~~~~~~~~~~~~~~~\n"
+          "diagnostic_head": "solution.zig:4:50: error: expected 1 argument, found 2\n    var result = try allocator.alloc(u8, s.len * @intCast(usize, n));\n                                                 ^~~~~~~~~~~~~~~~~~\n"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:4:42: error: expected 1 argument, found 2\n    var result = try allocator.alloc(u8, @intCast(usize, s.len) * @intCast(usize, n));\n                                         ^~~~~~~~~~~~~~~~~"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:4:50: error: expected 1 argument, found 2\n    var result = try allocator.alloc(u8, s.len * @intCast(usize, n));\n                                                 ^~~~~~~~~~~~~~~~~~\n"
         }
       ]
     },
     {
       "language": "zig",
       "task": "string-reverse",
+      "state": "measured",
       "success": true,
-      "retries": 3,
+      "retries": 2,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
           "diagnostic_head": "solution.zig:4:20: error: extra capture in for loop\n    for (s) |char, i| {\n                   ^\n"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:1:27: error: use of undeclared identifier 'std'\npub fn reverse(allocator: std.mem.Allocator, s: []const u8) ![]u8 {\n                          ^~~\n"
         },
         {
           "passed": false,
@@ -1501,8 +1643,10 @@
     {
       "language": "zig",
       "task": "sum-digits",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -1512,30 +1656,37 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:3:17: error: use of undeclared identifier 'std'\n    var abs_n = std.math.absInt(i64, n) catch unreachable;\n                ^~~\n"
+          "diagnostic_head": "solution.zig:3:17: error: use of undeclared identifier 'std'\n    var abs_n = std.math.absInt(n) catch unreachable;\n                ^~~\n"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:3:21: error: use of undeclared identifier 'std'\n    var abs_n = try std.math.absInt(i64, n);\n                    ^~~\n"
+          "diagnostic_head": "solution.zig:3:21: error: use of undeclared identifier 'std'\n    var abs_n = try std.math.absInt(n);\n                    ^~~\n"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:3:17: error: use of undeclared identifier 'std'\n    var abs_n = std.math.absInt(i64, n) catch unreachable;\n                ^~~\n"
+          "diagnostic_head": "solution.zig:3:17: error: use of undeclared identifier 'std'\n    var abs_n = std.math.absInt(n) catch unreachable;\n                ^~~\n"
         }
       ]
     },
     {
       "language": "zig",
       "task": "title-case",
+      "state": "measured",
       "success": true,
-      "retries": 1,
+      "retries": 2,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
           "diagnostic_head": "solution.zig:1:30: error: use of undeclared identifier 'std'\npub fn title_case(allocator: std.mem.Allocator, s: []const u8) ![]u8 {\n                             ^~~\n"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:19:50: error: expected error union type, found 'u8'\n                result[j] = try std.ascii.toUpper(s[i]);\n                                ~~~~~~~~~~~~~~~~~^~~~~~\nsolution.zig:19:50: no"
         },
         {
           "passed": true,
@@ -1547,23 +1698,105 @@
     {
       "language": "zig",
       "task": "anagram-check",
-      "success": true,
+      "state": "measured",
+      "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:2:20: error: use of undeclared identifier 'std'\n    var counts_a = std.ComptimeString.init(\"abcdefghijklmnopqrstuvwxyz\", .{});\n                   ^~~\n"
+          "diagnostic_head": "solution.zig:4:5: error: use of undeclared identifier 'std'\n    std.mem.set(u32, &count_a, 0);\n    ^~~\n"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:10:13: error: local variable is never mutated\n        var index: u8 = lower_char - 'a';\n            ^~~~~\nsolution.zig:10:13: note: consider using 'const'\nsolution.zig:9:13: error: local "
+          "diagnostic_head": "solution.zig:11:17: error: local variable is never mutated\n            var lower_char = std.ascii.toLower(char);\n                ^~~~~~~~~~\nsolution.zig:11:17: note: consider using 'const'\nsolution.zi"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:11:17: error: local variable is never mutated\n            var index: u8 = lower_char - 'a';\n                ^~~~~\nsolution.zig:11:17: note: consider using 'const'\nsolution.zig:9:13: error"
+          "diagnostic_head": "solution.zig:6:12: error: root source file struct 'mem' has no member named 'set'\n    std.mem.set(u32, &count_a, 0);\n    ~~~~~~~^~~~\n/home/runner/work/_temp/ad12a8fb-2435-43ed-945f-92a036a1aa6e/zig-x8"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:6:12: error: root source file struct 'mem' has no member named 'set'\n    std.mem.set(u32, &count_a, 0);\n    ~~~~~~~^~~~\n/home/runner/work/_temp/ad12a8fb-2435-43ed-945f-92a036a1aa6e/zig-x8"
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "balanced-parens",
+      "state": "measured",
+      "success": false,
+      "retries": 3,
+      "reason": "",
+      "attempts": [
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:2:17: error: use of undeclared identifier 'std'\n    var stack = std.ArrayList(u8).init(std.heap.page_allocator);\n                ^~~\n"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:2:17: error: use of undeclared identifier 'std'\n    var stack = std.ArrayList(u8).init(std.heap.page_allocator);\n                ^~~\n"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:2:17: error: use of undeclared identifier 'std'\n    var stack = std.ArrayList(u8).init(std.heap.page_allocator);\n                ^~~\n"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:2:17: error: use of undeclared identifier 'std'\n    var stack = std.ArrayList(u8).init(std.heap.page_allocator);\n                ^~~\n"
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "caesar-cipher",
+      "state": "measured",
+      "success": false,
+      "retries": 3,
+      "reason": "",
+      "attempts": [
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:5:23: error: extra capture in for loop\n    for (text) |char, i| {\n                      ^\n"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:1:27: error: use of undeclared identifier 'std'\npub fn encrypt(allocator: std.mem.Allocator, text: []const u8, shift: i64) ![]u8 {\n                          ^~~\nsolution.zig:18:27: error:"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:10:31: error: expected 1 argument, found 2\n            result[i] = 'a' + @intCast(u8, ((@intCast(i64, char - 'a') + shift) % 26));\n                              ^~~~~~~~~~~~~~~~~~~~~~~~~~"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:9:31: error: expected 1 argument, found 2\n            result[i] = 'a' + @truncate(u8, ((@intCast(i32, char - 'a') + @intCast(i32, shift)) % 26));\n                              ^~~~~~~~~~~"
+        }
+      ]
+    },
+    {
+      "language": "zig",
+      "task": "flatten-nested",
+      "state": "measured",
+      "success": true,
+      "retries": 1,
+      "reason": "",
+      "attempts": [
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:1:27: error: use of undeclared identifier 'std'\npub fn flatten(allocator: std.mem.Allocator, xss: []const []const i64) ![]i64 {\n                          ^~~\n"
         },
         {
           "passed": true,
@@ -1574,99 +1807,12 @@
     },
     {
       "language": "zig",
-      "task": "balanced-parens",
-      "success": false,
-      "retries": 3,
-      "attempts": [
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:2:17: error: use of undeclared identifier 'std'\n    var stack = std.ArrayList(u8).initCapacity(std.heap.page_allocator, s.len) catch unreachable;\n                ^~~\n"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:2:17: error: use of undeclared identifier 'std'\n    var stack = std.ArrayList(u8).initCapacity(@import(\"std\").heap.page_allocator, s.len) catch unreachable;\n                ^~~\n"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:2:17: error: use of undeclared identifier 'std'\n    var stack = std.ArrayList(u8).initCapacity(std.heap.page_allocator, s.len) catch unreachable;\n                ^~~\n"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:10:29: error: no field or member function named 'popOrNull' in 'array_list.Aligned(u8,null)'\n            ')' => if (stack.popOrNull()) |top| {\n                       ~~~~~^~~~~~~~~~\n/home"
-        }
-      ]
-    },
-    {
-      "language": "zig",
-      "task": "caesar-cipher",
-      "success": false,
-      "retries": 3,
-      "attempts": [
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:5:23: error: extra capture in for loop\n    for (text) |char, i| {\n                      ^\n"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:4:23: error: extra capture in for loop\n    for (text) |char, i| {\n                      ^\n"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:25:30: error: expected statement, found 'EOF'\n            result[i] = char;\n                             ^\n"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:25:22: error: expected ';' after statement\n            result[i]\n                     ^\n"
-        }
-      ]
-    },
-    {
-      "language": "zig",
-      "task": "flatten-nested",
-      "success": false,
-      "retries": 3,
-      "attempts": [
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:1:27: error: use of undeclared identifier 'std'\npub fn flatten(allocator: std.mem.Allocator, xss: []const []const i64) ![]i64 {\n                          ^~~\n"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:4:34: error: struct 'array_list.Aligned(i64,null)' has no member named 'init'\n    var list = std.ArrayList(i64).init(allocator);\n               ~~~~~~~~~~~~~~~~~~^~~~~\n/home/runner/work/_"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:4:66: error: root source file struct 'mem' has no member named 'totalMem'\n    var list = std.ArrayList(i64).initCapacity(allocator, std.mem.totalMem(xss)) catch unreachable;\n             "
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:4:34: error: struct 'array_list.Aligned(i64,null)' has no member named 'init'\n    var list = std.ArrayList(i64).init(allocator) catch unreachable;\n               ~~~~~~~~~~~~~~~~~~^~~~~\n/"
-        }
-      ]
-    },
-    {
-      "language": "zig",
       "task": "roman-numeral",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:11:26: error: extra capture in for loop\n    for (values) |value, index| {\n                         ^~~~~\n"
-        },
         {
           "passed": false,
           "kind": "compile",
@@ -1675,81 +1821,87 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:23:22: error: expected ']', found 'EOF'\n    return result[0..\n                     ^\n"
+          "diagnostic_head": "solution.zig:20:35: error: struct 'array_list.Aligned(u8,null)' has no member named 'init'\n    var result = std.ArrayList(u8).init(allocator);\n                 ~~~~~~~~~~~~~~~~~^~~~~\n/home/runner/work"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:16:24: error: root source file struct 'mem' has no member named 'copy'\n            try std.mem.copy(u8, result[i..], symbols[index]);\n                ~~~~~~~^~~~~\n/home/runner/work/_temp/"
+          "diagnostic_head": "solution.zig:26:23: error: member function expected 2 argument(s), found 1\n            try result.appendSlice(rn.numeral);\n                ~~~~~~^~~~~~~~~~~~\n/home/runner/work/_temp/ad12a8fb-2435-43ed"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "solution.zig:21:20: error: member function expected 1 argument(s), found 0\n    errdefer result.deinit();\n             ~~~~~~^~~~~~~\n/home/runner/work/_temp/ad12a8fb-2435-43ed-945f-92a036a1aa6e/zig-x86"
         }
       ]
     },
     {
       "language": "zig",
       "task": "run-length-encoding",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:32:33: error: expected ';' after statement\n        try result.appendSliceNT\n                                ^\n"
+          "diagnostic_head": "solution.zig:30:13: error: local variable is never mutated\n        var char: u8 = s[i];\n            ^~~~\nsolution.zig:30:13: note: consider using 'const'\nsolution.zig:28:13: error: local variable is n"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:32:48: error: expected ',' after argument\n        try result.appendSlice(std.mem.repeat(u\n                                               ^\n"
+          "diagnostic_head": "solution.zig:14:19: error: member function expected 2 argument(s), found 1\n        try result.appendSlice(&.{std.fmt.digitToChar(count) catch unreachable});\n            ~~~~~~^~~~~~~~~~~~\n/home/runner"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:32:19: error: expected ';' after statement\n        try result\n                  ^\n"
+          "diagnostic_head": "solution.zig:14:19: error: member function expected 2 argument(s), found 1\n        try result.appendSlice(&.{std.fmt.digitToChar(count) catch unreachable});\n            ~~~~~~^~~~~~~~~~~~\n/home/runner"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:32:19: error: expected ';' after statement\n        try result\n                  ^\n"
+          "diagnostic_head": "solution.zig:14:19: error: member function expected 2 argument(s), found 1\n        try result.appendSlice(&.{std.fmt.digitToChar(count) catch unreachable});\n            ~~~~~~^~~~~~~~~~~~\n/home/runner"
         }
       ]
     },
     {
       "language": "zig",
       "task": "matrix-ops",
-      "success": false,
-      "retries": 3,
+      "state": "measured",
+      "success": true,
+      "retries": 2,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:10:21: error: extra capture in for loop\n    for (a) |row_a, i| {\n                    ^\n"
+          "diagnostic_head": "solution.zig:7:21: error: extra capture in for loop\n    for (a) |row_a, i| {\n                    ^\n"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "solution.zig:24:86: error: expected statement, found 'EOF'\npub fn mat_transpose(allocator: std.mem.Allocator, m: []const []const i64) ![][]i64 {\n                                                       "
+          "diagnostic_head": "solution.zig:12:21: error: extra capture in for loop\n    for (a) |row_a, i| {\n                    ^\n"
         },
         {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:24:86: error: expected statement, found 'EOF'\npub fn mat_transpose(allocator: std.mem.Allocator, m: []const []const i64) ![][]i64 {\n                                                       "
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "solution.zig:24:86: error: expected statement, found 'EOF'\npub fn mat_transpose(allocator: std.mem.Allocator, m: []const []const i64) ![][]i64 {\n                                                       "
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
         }
       ]
     },
     {
       "language": "gleam",
       "task": "clamp",
+      "state": "measured",
       "success": true,
       "retries": 1,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.04s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.06s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
         },
         {
           "passed": true,
@@ -1761,14 +1913,11 @@
     {
       "language": "gleam",
       "task": "count-vowels",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
-        },
         {
           "passed": false,
           "kind": "compile",
@@ -1782,15 +1931,22 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Type mismatch\n  ┌─ /home/runner/work/almide-doj"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nwarning: Unused imported module\n  ┌─ /home/runner/work"
         }
       ]
     },
     {
       "language": "gleam",
       "task": "factorial",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -1817,8 +1973,10 @@
     {
       "language": "gleam",
       "task": "fibonacci",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -1845,8 +2003,10 @@
     {
       "language": "gleam",
       "task": "fizzbuzz",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -1856,25 +2016,27 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n   ┌─ /home/runner/work/almide-dojo/almide-dojo/ru"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown module\n   ┌─ /home/runner/work/almide-d"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown module\n  ┌─ /home/runner/work/almide-do"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n   ┌─ /home/runner/work/almide-dojo/almide-dojo/ru"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
         }
       ]
     },
     {
       "language": "gleam",
       "task": "gcd",
+      "state": "measured",
       "success": true,
       "retries": 1,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -1891,17 +2053,14 @@
     {
       "language": "gleam",
       "task": "is-palindrome",
-      "success": false,
+      "state": "measured",
+      "success": true,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown variable\n  ┌─ /home/runner/work/almide-"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
           "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown module\n  ┌─ /home/runner/work/almide-do"
         },
         {
@@ -1912,15 +2071,22 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown module\n  ┌─ /home/runner/work/almide-do"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
+        },
+        {
+          "passed": true,
+          "kind": "",
+          "diagnostic_head": ""
         }
       ]
     },
     {
       "language": "gleam",
       "task": "is-prime",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -1930,25 +2096,27 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown variable\n  ┌─ /home/runner/work/almide-"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown variable\n  ┌─ /home/runner/work/almide-"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown variable\n  ┌─ /home/runner/work/almide-"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
         }
       ]
     },
     {
       "language": "gleam",
       "task": "list-sum",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -1975,8 +2143,10 @@
     {
       "language": "gleam",
       "task": "remove-duplicates",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -1996,21 +2166,48 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown module\n  ┌─ /home/runner/work/almide-do"
         }
       ]
     },
     {
       "language": "gleam",
       "task": "repeat-string",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
           "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown module\n  ┌─ /home/runner/work/almide-do"
         },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Incorrect arity\n  ┌─ /home/runner/work/almide-d"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Type mismatch\n  ┌─ /home/runner/work/almide-doj"
+        }
+      ]
+    },
+    {
+      "language": "gleam",
+      "task": "string-reverse",
+      "state": "measured",
+      "success": false,
+      "retries": 3,
+      "reason": "",
+      "attempts": [
         {
           "passed": false,
           "kind": "compile",
@@ -2024,16 +2221,28 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Type mismatch\n  ┌─ /home/runner/work/almide-doj"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nwarning: Unused imported module\n  ┌─ /home/runner/work"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
         }
       ]
     },
     {
       "language": "gleam",
-      "task": "string-reverse",
-      "success": true,
+      "task": "sum-digits",
+      "state": "measured",
+      "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
+        },
         {
           "passed": false,
           "kind": "compile",
@@ -2042,53 +2251,22 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nwarning: Unused imported module\n  ┌─ /home/runner/work"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown module\n  ┌─ /home/runner/work/almide-do"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown module value\n  ┌─ /home/runner/work/alm"
-        },
-        {
-          "passed": true,
-          "kind": "",
-          "diagnostic_head": ""
-        }
-      ]
-    },
-    {
-      "language": "gleam",
-      "task": "sum-digits",
-      "success": false,
-      "retries": 3,
-      "attempts": [
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown module\n  ┌─ /home/runner/work/almide-do"
         }
       ]
     },
     {
       "language": "gleam",
       "task": "title-case",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2108,15 +2286,17 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nwarning: Unused variable\n  ┌─ /home/runner/work/almide"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown module value\n  ┌─ /home/runner/work/alm"
         }
       ]
     },
     {
       "language": "gleam",
       "task": "anagram-check",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2126,25 +2306,27 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown module type\n  ┌─ /home/runner/work/almi"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown module value\n  ┌─ /home/runner/work/alm"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown module type\n  ┌─ /home/runner/work/almi"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n   ┌─ /home/runner/work/almide-dojo/almide-dojo/ru"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nwarning: Unused imported module\n  ┌─ /home/runner/work"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown module value\n  ┌─ /home/runner/work/alm"
         }
       ]
     },
     {
       "language": "gleam",
       "task": "balanced-parens",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2171,8 +2353,10 @@
     {
       "language": "gleam",
       "task": "caesar-cipher",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2199,8 +2383,10 @@
     {
       "language": "gleam",
       "task": "flatten-nested",
-      "success": true,
-      "retries": 2,
+      "state": "measured",
+      "success": false,
+      "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2210,48 +2396,57 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown module type\n  ┌─ /home/runner/work/almi"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
         },
         {
-          "passed": true,
-          "kind": "",
-          "diagnostic_head": ""
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nerror: Unknown module\n  ┌─ /home/runner/work/almide-do"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
         }
       ]
     },
     {
       "language": "gleam",
       "task": "roman-numeral",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n   ┌─ /home/runner/work/almide-dojo/almide-dojo/ru"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n   ┌─ /home/runner/work/almide-dojo/almide-dojo/ru"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n   ┌─ /home/runner/work/almide-dojo/almide-dojo/ru"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n   ┌─ /home/runner/work/almide-dojo/almide-dojo/ru"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
         }
       ]
     },
     {
       "language": "gleam",
       "task": "run-length-encoding",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2278,8 +2473,10 @@
     {
       "language": "gleam",
       "task": "matrix-ops",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2289,25 +2486,27 @@
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n   ┌─ /home/runner/work/almide-dojo/almide-dojo/ru"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\n  Compiling msr\nwarning: Unused variable\n   ┌─ /home/runner/work/almid"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n   ┌─ /home/runner/work/almide-dojo/almide-dojo/ru"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
         },
         {
           "passed": false,
           "kind": "compile",
-          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n   ┌─ /home/runner/work/almide-dojo/almide-dojo/ru"
+          "diagnostic_head": "  Resolving versions\nDownloading packages\n Downloaded 1 package in 0.01s\n      Added gleam_stdlib v1.0.5\n  Compiling gleam_stdlib\nerror: Syntax error\n  ┌─ /home/runner/work/almide-dojo/almide-dojo/run"
         }
       ]
     },
     {
       "language": "moonbit",
       "task": "clamp",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -2319,8 +2518,10 @@
     {
       "language": "moonbit",
       "task": "count-vowels",
-      "success": true,
+      "state": "measured",
+      "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2338,17 +2539,19 @@
           "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/count-vowels/2' is deprecated. Run `moon fmt` to migra"
         },
         {
-          "passed": true,
-          "kind": "",
-          "diagnostic_head": ""
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/count-vowels/3' is deprecated. Run `moon fmt` to migra"
         }
       ]
     },
     {
       "language": "moonbit",
       "task": "factorial",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -2360,8 +2563,10 @@
     {
       "language": "moonbit",
       "task": "fibonacci",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -2373,8 +2578,10 @@
     {
       "language": "moonbit",
       "task": "fizzbuzz",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2401,8 +2608,10 @@
     {
       "language": "moonbit",
       "task": "gcd",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -2414,8 +2623,10 @@
     {
       "language": "moonbit",
       "task": "is-palindrome",
-      "success": true,
+      "state": "measured",
+      "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2433,6 +2644,21 @@
           "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/is-palindrome/2' is deprecated. Run `moon fmt` to migr"
         },
         {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/is-palindrome/3' is deprecated. Run `moon fmt` to migr"
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "is-prime",
+      "state": "measured",
+      "success": true,
+      "retries": 0,
+      "reason": "",
+      "attempts": [
+        {
           "passed": true,
           "kind": "",
           "diagnostic_head": ""
@@ -2441,37 +2667,11 @@
     },
     {
       "language": "moonbit",
-      "task": "is-prime",
-      "success": false,
-      "retries": 3,
-      "attempts": [
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/is-prime/0' is deprecated. Run `moon fmt` to migrate t"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/is-prime/1' is deprecated. Run `moon fmt` to migrate t"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/is-prime/2' is deprecated. Run `moon fmt` to migrate t"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/is-prime/3' is deprecated. Run `moon fmt` to migrate t"
-        }
-      ]
-    },
-    {
-      "language": "moonbit",
       "task": "list-sum",
+      "state": "measured",
       "success": true,
       "retries": 0,
+      "reason": "",
       "attempts": [
         {
           "passed": true,
@@ -2483,8 +2683,10 @@
     {
       "language": "moonbit",
       "task": "remove-duplicates",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2511,8 +2713,10 @@
     {
       "language": "moonbit",
       "task": "repeat-string",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2539,8 +2743,10 @@
     {
       "language": "moonbit",
       "task": "string-reverse",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2567,42 +2773,11 @@
     {
       "language": "moonbit",
       "task": "sum-digits",
-      "success": false,
-      "retries": 3,
-      "attempts": [
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/sum-digits/0' is deprecated. Run `moon fmt` to migrate"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/sum-digits/1' is deprecated. Run `moon fmt` to migrate"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/sum-digits/2' is deprecated. Run `moon fmt` to migrate"
-        },
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/sum-digits/3' is deprecated. Run `moon fmt` to migrate"
-        }
-      ]
-    },
-    {
-      "language": "moonbit",
-      "task": "title-case",
+      "state": "measured",
       "success": true,
-      "retries": 1,
+      "retries": 0,
+      "reason": "",
       "attempts": [
-        {
-          "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/title-case/0' is deprecated. Run `moon fmt` to migrate"
-        },
         {
           "passed": true,
           "kind": "",
@@ -2612,9 +2787,41 @@
     },
     {
       "language": "moonbit",
-      "task": "anagram-check",
+      "task": "title-case",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
+      "attempts": [
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/title-case/0' is deprecated. Run `moon fmt` to migrate"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/title-case/1' is deprecated. Run `moon fmt` to migrate"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/title-case/2' is deprecated. Run `moon fmt` to migrate"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/title-case/3' is deprecated. Run `moon fmt` to migrate"
+        }
+      ]
+    },
+    {
+      "language": "moonbit",
+      "task": "anagram-check",
+      "state": "measured",
+      "success": false,
+      "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2623,8 +2830,8 @@
         },
         {
           "passed": false,
-          "kind": "run",
-          "diagnostic_head": "FAIL is_anagram(\"hello\", \"world\"): expected false, got true\nFAIL is_anagram(\"abc\", \"abcd\"): expected false, got true\nFAIL is_anagram(\"abc\", \"ab\"): expected false, got true\nmsr: 3 of 8 cases failed\nWar"
+          "kind": "compile",
+          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/anagram-check/1' is deprecated. Run `moon fmt` to migr"
         },
         {
           "passed": false,
@@ -2633,16 +2840,18 @@
         },
         {
           "passed": false,
-          "kind": "compile",
-          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/anagram-check/3' is deprecated. Run `moon fmt` to migr"
+          "kind": "run",
+          "diagnostic_head": "FAIL is_anagram(\"hello\", \"world\"): expected false, got true\nFAIL is_anagram(\"abc\", \"abcd\"): expected false, got true\nFAIL is_anagram(\"abc\", \"ab\"): expected false, got true\nmsr: 3 of 8 cases failed\nWar"
         }
       ]
     },
     {
       "language": "moonbit",
       "task": "balanced-parens",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2669,8 +2878,10 @@
     {
       "language": "moonbit",
       "task": "caesar-cipher",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2697,8 +2908,10 @@
     {
       "language": "moonbit",
       "task": "flatten-nested",
-      "success": true,
-      "retries": 2,
+      "state": "measured",
+      "success": false,
+      "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2711,22 +2924,34 @@
           "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/flatten-nested/1' is deprecated. Run `moon fmt` to mig"
         },
         {
-          "passed": true,
-          "kind": "",
-          "diagnostic_head": ""
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/flatten-nested/2' is deprecated. Run `moon fmt` to mig"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/flatten-nested/3' is deprecated. Run `moon fmt` to mig"
         }
       ]
     },
     {
       "language": "moonbit",
       "task": "roman-numeral",
+      "state": "measured",
       "success": true,
-      "retries": 1,
+      "retries": 2,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
           "kind": "compile",
           "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/roman-numeral/0' is deprecated. Run `moon fmt` to migr"
+        },
+        {
+          "passed": false,
+          "kind": "compile",
+          "diagnostic_head": "Warning: `moon.mod.json` at '/home/runner/work/almide-dojo/almide-dojo/runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-instruct-fp8-fast/raw/moonbit/roman-numeral/1' is deprecated. Run `moon fmt` to migr"
         },
         {
           "passed": true,
@@ -2738,8 +2963,10 @@
     {
       "language": "moonbit",
       "task": "run-length-encoding",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,
@@ -2766,8 +2993,10 @@
     {
       "language": "moonbit",
       "task": "matrix-ops",
+      "state": "measured",
       "success": false,
       "retries": 3,
+      "reason": "",
       "attempts": [
         {
           "passed": false,

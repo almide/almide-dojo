@@ -1,10 +1,24 @@
 {
+  "verdict": {
+    "id": "comparable",
+    "comparable": true,
+    "conclusive": true,
+    "planned_tasks": 21,
+    "planned_cells": 147,
+    "cells": {
+      "measured": 147,
+      "inconclusive-saturated": 0,
+      "not-run": 0,
+      "harness-limitation": 0
+    },
+    "reasons": []
+  },
   "lane": "cross-language",
-  "label": "",
+  "label": "pinned sampling, certified",
   "date": "2026-09-22",
   "harness": {
     "repo": "almide/almide-dojo",
-    "commit": "19de6c3683ff70f8a4332738a6f9e20b27b0b4de",
+    "commit": "b4de77f1ef28d6c419f39f0cdc74c51dc46523ce",
     "dirty": false
   },
   "compiler": {
@@ -19,7 +33,8 @@
     "seed": null,
     "seed_sent": false,
     "max_tokens": 4096,
-    "transport_attempts": 3
+    "transport_attempts": 3,
+    "http_timeout_secs": "140"
   },
   "retries": 3,
   "condition": {
