@@ -1,6 +1,7 @@
 # string-reverse
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
+- **state**: `measured`
 - **success**: no
 - **retries**: 3
 - **category**: type-error
@@ -11,23 +12,25 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn reverse(s: String) -> String {
-  let chars = string.chars(s);
-  let reversed = list.reverse(chars);
+fn reverse(s: String) -> String = 
+  let chars = string.chars(s)
+  let reversed = list.reverse(chars)
   string.from_chars(reversed)
-}
 ```
 
 **Diagnostic:**
 
 ```
-error: Missing '=' before function body at line 1:33
-  --> /tmp/dojo-string-reverse-0.almd:1:33
-  here: fn reverse(s: String) -> String {
-  hint: Almide requires '=' before the body. Write: fn reverse(...) -> Type = { ... }
+error[E002]: undefined function 'string.from_chars'
+  --> /tmp/dojo-string-reverse-0.almd:4:21
+  in call to string.from_chars()
+  here: string.from_chars(reversed)
+  hint: Did you mean `string.from_bytes`?
+  try:
+      string.from_bytes
   |
-1 | fn reverse(s: String) -> String {
-  |                                 ^
+4 |   string.from_chars(reversed)
+  |                     ^^^^^^^^
 
 1 error(s) found
 FAILED: /tmp/dojo-string-reverse-0.almd
@@ -41,11 +44,10 @@ compile failed
 ### Attempt 2 (FAIL)
 
 ```almide
-fn reverse(s: String) -> String = {
-  let chars = string.chars(s);
-  let reversed = list.reverse(chars);
+fn reverse(s: String) -> String = 
+  let chars = string.chars(s)
+  let reversed = list.reverse(chars)
   string.from_chars(reversed)
-}
 ```
 
 **Diagnostic:**
@@ -74,11 +76,10 @@ compile failed
 ### Attempt 3 (FAIL)
 
 ```almide
-fn reverse(s: String) -> String = {
-  let chars = string.chars(s);
-  let reversed = list.reverse(chars);
+fn reverse(s: String) -> String = 
+  let chars = string.chars(s)
+  let reversed = list.reverse(chars)
   string.from_chars(reversed)
-}
 ```
 
 **Diagnostic:**
@@ -107,11 +108,10 @@ compile failed
 ### Attempt 4 (FAIL)
 
 ```almide
-fn reverse(s: String) -> String = {
-  let chars = string.chars(s);
-  let reversed = list.reverse(chars);
+fn reverse(s: String) -> String = 
+  let chars = string.chars(s)
+  let reversed = list.reverse(chars)
   string.from_chars(reversed)
-}
 ```
 
 **Diagnostic:**

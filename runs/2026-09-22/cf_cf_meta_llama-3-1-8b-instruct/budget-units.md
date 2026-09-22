@@ -1,9 +1,11 @@
 # budget-units
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
+- **state**: `measured`
 - **success**: no
 - **retries**: 3
-- **category**: parse-error
+- **category**: compile-error
+- **diagnostic code**: `E029`
 
 ## Attempts
 
@@ -11,12 +13,9 @@
 
 ```almide
 effect fn run_with_budget(ms: Int, us: Int, n: Int) -> Int = {
-  let budget = compute.ms(ms) + compute.us(us)
-  let result = fan.bounded(count_to(n), budget)
-  match result {
-    Some(x) => x
-    None => -1
-  }
+  var budget = compute.ms(ms) + compute.us(us)
+  var result = count_to(n)
+  if budget.exhausted() then -1 else result
 }
 
 fn count_to(n: Int) -> Int = {
@@ -30,23 +29,16 @@ fn count_to(n: Int) -> Int = {
 **Diagnostic:**
 
 ```
-error: fan.bounded takes a BLOCK, not a thunk argument, at line 3:39
-  --> /tmp/dojo-budget-units-0.almd:3:39
-  here: let result = fan.bounded(count_to(n), budget)
-  hint: fan.bounded(compute.ms(100)) { work(x) } — drop the `() =>` wrapper; the braces are the region
+error[E002]: undefined method 'exhausted' on Compute
+  --> /tmp/dojo-budget-units-0.almd:4:6
+  in method call .exhausted()
+  here: if budget.exhausted() then -1 else result
+  hint: No function `exhausted` takes a Compute receiver: UFCS resolves `x.exhausted(…)` to `exhausted(x, …)`. Define `fn exhausted(Compute, …)`, or call the intended module function directly.
   |
-3 |   let result = fan.bounded(count_to(n), budget)
-  |                                       ^
-error[E003]: undefined variable 'result'
-  --> /tmp/dojo-budget-units-0.almd:4:9
-  in variable result
-  here: match result {
-  hint: Check the variable name
-  |
-4 |   match result {
-  |         ^^^^^^
+4 |   if budget.exhausted() then -1 else result
+  |      ^^^^^^
 
-2 error(s) found
+1 error(s) found
 FAILED: /tmp/dojo-budget-units-0.almd
 Compile error for /tmp/dojo-budget-units-0.almd:
 compile failed
@@ -59,70 +51,36 @@ compile failed
 
 ```almide
 effect fn run_with_budget(ms: Int, us: Int, n: Int) -> Int = {
-  let budget = compute.ms(ms) + compute.us(us)
-  let result = fan.bounded(
-    (n) => {
-      let i = 0
-      let acc = 0
-      while i < n { acc = acc + i; i = i + 1 }
-      acc
-    },
-    budget
-  )
-  match result {
-    Some(x) => x
-    None => -1
-  }
+  var budget = compute.ms(ms) + compute.us(us)
+  var result = count_to(n)
+  if budget.exhausted() then -1 else result
+}
+
+fn count_to(n: Int) -> Int = {
+  var i = 0
+  var acc = 0
+  while i < n { acc = acc + i; i = i + 1 }
+  acc
+}
+
+fn exhausted(budget: Compute) -> Bool = {
+  budget.exhausted()
 }
 ```
 
 **Diagnostic:**
 
 ```
-error: Expected expression at line 3:28 (got Newline '')
-  --> /tmp/dojo-budget-units-1.almd:3:28
-  here: let result = fan.bounded(
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-  |
-3 |   let result = fan.bounded(
-  |                            ^
-error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 9:6 (got Comma ',')
-  --> /tmp/dojo-budget-units-1.almd:9:6
-  here: },
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-  |
-9 |     },
-  |      ^
-error[E009]: cannot reassign immutable binding 'acc'
-  --> /tmp/dojo-budget-units-1.almd:7:33
-  in acc = ...
-  here: while i < n { acc = acc + i; i = i + 1 }
-  hint: Use 'var acc = ...' instead of 'let acc = ...' to declare a mutable variable
-  try:
-      // let acc = ...  →  var acc = ...
-      var acc = <initial value>
-  |
-6 |       let acc = 0
-  |       ------------------- 'acc' declared here
-...
-7 |       while i < n { acc = acc + i; i = i + 1 }
-  |                                 ^
-error[E009]: cannot reassign immutable binding 'i'
-  --> /tmp/dojo-budget-units-1.almd:7:44
-  in i = ...
-  here: while i < n { acc = acc + i; i = i + 1 }
-  hint: Use 'var i = ...' instead of 'let i = ...' to declare a mutable variable
-  try:
-      // let i = ...  →  var i = ...
-      var i = <initial value>
-  |
-5 |       let i = 0
-  |       ----------------- 'i' declared here
-...
-7 |       while i < n { acc = acc + i; i = i + 1 }
-  |                                            ^
+error[E029]: unknown type 'Compute'
+  at line 11
+  in parameter 'budget'
+  here: acc
+  hint: no `type Compute` is declared (or imported) in this program — declare it, or check the spelling
+   |
+11 |   acc
+   |   ^^^^^^^^^^^^^^^^^^
 
-4 error(s) found
+1 error(s) found
 FAILED: /tmp/dojo-budget-units-1.almd
 Compile error for /tmp/dojo-budget-units-1.almd:
 compile failed
@@ -135,20 +93,9 @@ compile failed
 
 ```almide
 effect fn run_with_budget(ms: Int, us: Int, n: Int) -> Int = {
-  let budget = compute.ms(ms) + compute.us(us)
-  let result = fan.bounded(
-    (n) => {
-      var i = 0
-      var acc = 0
-      while i < n { acc = acc + i; i = i + 1 }
-      acc
-    },
-    budget
-  )
-  match result {
-    Some(x) => x
-    None => -1
-  }
+  var budget = compute.ms(ms) + compute.us(us)
+  var result = count_to(n)
+  if budget.exhausted() then -1 else result
 }
 
 fn count_to(n: Int) -> Int = {
@@ -157,27 +104,28 @@ fn count_to(n: Int) -> Int = {
   while i < n { acc = acc + i; i = i + 1 }
   acc
 }
+
+fn exhausted(budget: Int) -> Bool = {
+  budget == 0
+}
 ```
 
 **Diagnostic:**
 
 ```
-error: Expected expression at line 3:28 (got Newline '')
-  --> /tmp/dojo-budget-units-2.almd:3:28
-  here: let result = fan.bounded(
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-  |
-3 |   let result = fan.bounded(
-  |                            ^
-error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 9:6 (got Comma ',')
-  --> /tmp/dojo-budget-units-2.almd:9:6
-  here: },
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-  |
-9 |     },
-  |      ^
+error[E005]: argument 'budget' expects Int but got Compute
+  --> /tmp/dojo-budget-units-2.almd:4:6
+  in call to exhausted()
+  here: if budget.exhausted() then -1 else result
+  hint: Fix the argument type
+   |
+14 | fn exhausted(budget: Int) -> Bool = {
+   | --------------------------- fn exhausted() defined here
+...
+4 |   if budget.exhausted() then -1 else result
+  |      ^^^^^^
 
-2 error(s) found
+1 error(s) found
 FAILED: /tmp/dojo-budget-units-2.almd
 Compile error for /tmp/dojo-budget-units-2.almd:
 compile failed
@@ -190,20 +138,9 @@ compile failed
 
 ```almide
 effect fn run_with_budget(ms: Int, us: Int, n: Int) -> Int = {
-  let budget = compute.ms(ms) + compute.us(us)
-  let result = fan.bounded(
-    (n) => {
-      var i = 0
-      var acc = 0
-      while i < n { acc = acc + i; i = i + 1 }
-      acc
-    },
-    budget
-  )
-  match result {
-    Some(x) => x
-    None => -1
-  }
+  var budget = compute.ms(ms) + compute.us(us)
+  var result = count_to(n)
+  if budget.exhausted() then -1 else result
 }
 
 fn count_to(n: Int) -> Int = {
@@ -212,27 +149,25 @@ fn count_to(n: Int) -> Int = {
   while i < n { acc = acc + i; i = i + 1 }
   acc
 }
+
+fn exhausted(budget: Compute) -> Bool = {
+  budget.exhausted()
+}
 ```
 
 **Diagnostic:**
 
 ```
-error: Expected expression at line 3:28 (got Newline '')
-  --> /tmp/dojo-budget-units-3.almd:3:28
-  here: let result = fan.bounded(
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-  |
-3 |   let result = fan.bounded(
-  |                            ^
-error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 9:6 (got Comma ',')
-  --> /tmp/dojo-budget-units-3.almd:9:6
-  here: },
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-  |
-9 |     },
-  |      ^
+error[E029]: unknown type 'Compute'
+  at line 11
+  in parameter 'budget'
+  here: acc
+  hint: no `type Compute` is declared (or imported) in this program — declare it, or check the spelling
+   |
+11 |   acc
+   |   ^^^^^^^^^^^^^^^^^^
 
-2 error(s) found
+1 error(s) found
 FAILED: /tmp/dojo-budget-units-3.almd
 Compile error for /tmp/dojo-budget-units-3.almd:
 compile failed

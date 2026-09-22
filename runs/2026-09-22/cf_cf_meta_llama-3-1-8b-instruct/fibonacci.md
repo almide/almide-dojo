@@ -1,6 +1,7 @@
 # fibonacci
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
+- **state**: `measured`
 - **success**: yes
 - **retries**: 0
 - **category**: pass-1shot
@@ -11,7 +12,7 @@
 
 ```almide
 fn fibonacci(n: Int) -> Int = 
-  if n == 0 then 0 
-  else if n == 1 then 1 
+  if n == 0 then 0
+  else if n == 1 then 1
   else fibonacci(n - 1) + fibonacci(n - 2)
 ```

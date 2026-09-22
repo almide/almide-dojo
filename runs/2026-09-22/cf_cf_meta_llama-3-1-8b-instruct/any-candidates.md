@@ -1,6 +1,7 @@
 # any-candidates
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
+- **state**: `measured`
 - **success**: yes
 - **retries**: 1
 - **category**: pass-retry

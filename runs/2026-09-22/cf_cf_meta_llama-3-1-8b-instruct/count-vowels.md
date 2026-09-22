@@ -1,6 +1,7 @@
 # count-vowels
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
+- **state**: `measured`
 - **success**: yes
 - **retries**: 0
 - **category**: pass-1shot
@@ -10,8 +11,6 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn count_vowels(s: String) -> Int = {
-  let chars = string.chars(s)
-  list.count(chars, (c: String) => list.contains(string.chars("aeiou"), c))
-}
+fn count_vowels(s: String) -> Int = 
+  list.len(list.filter(string.chars(s), (c) => list.contains(["a", "e", "i", "o", "u"], c)))
 ```

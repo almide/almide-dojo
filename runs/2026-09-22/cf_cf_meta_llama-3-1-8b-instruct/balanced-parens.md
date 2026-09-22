@@ -1,6 +1,7 @@
 # balanced-parens
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
+- **state**: `measured`
 - **success**: no
 - **retries**: 3
 - **category**: parse-error
@@ -10,50 +11,70 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn is_balanced(s: String) -> Bool {
+fn is_balanced(s: String) -> Bool = 
   let stack = list.new[String]()
-  for c in string.chars(s) {
+  for c in string.chars(s) do
     match c {
-      '(' => list.push(stack, ")"),
-      '[' => list.push(stack, "]"),
-      '{' => list.push(stack, "}"),
-      ')' => {
-        if list.is_empty(stack) || list.last(stack) != ")" {
-          return false
-        }
-        list.drop_end(stack, 1)
-      },
-      ']' => {
-        if list.is_empty(stack) || list.last(stack) != "]" {
-          return false
-        }
-        list.drop_end(stack, 1)
-      },
-      '}' => {
-        if list.is_empty(stack) || list.last(stack) != "}" {
-          return false
-        }
-        list.drop_end(stack, 1)
-      },
-      _ => {}
+      '(' => list.push(stack, ")")
+      '[' => list.push(stack, "]")
+      '{' => list.push(stack, "}")
+      ')' => if list.is_empty(stack) then false else list.pop(stack) == ")" && true
+      ']' => if list.is_empty(stack) then false else list.pop(stack) == "]" && true
+      '}' => if list.is_empty(stack) then false else list.pop(stack) == "}" && true
+      _ => true
     }
   }
   list.is_empty(stack)
-}
 ```
 
 **Diagnostic:**
 
 ```
-error: Missing '=' before function body at line 1:35
-  --> /tmp/dojo-balanced-parens-0.almd:1:35
-  here: fn is_balanced(s: String) -> Bool {
-  hint: Almide requires '=' before the body. Write: fn is_balanced(...) -> Type = { ... }
+error: Expected LBrace at line 3:28 (got Ident 'do')
+  --> /tmp/dojo-balanced-parens-0.almd:3:28
+  here: for c in string.chars(s) do
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
   |
-1 | fn is_balanced(s: String) -> Bool {
-  |                                   ^
+3 |   for c in string.chars(s) do
+  |                            ^
+error: '&&' is not valid in Almide at line 8:77
+  --> /tmp/dojo-balanced-parens-0.almd:8:77
+  here: ')' => if list.is_empty(stack) then false else list.pop(stack) == ")" && true
+  hint: Use 'and' for logical AND. Example: if a and b then ...
+  |
+8 |       ')' => if list.is_empty(stack) then false else list.pop(stack) == ")" && true
+  |                                                                             ^
+error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 12:5 (got RBrace '}')
+  --> /tmp/dojo-balanced-parens-0.almd:12:5
+  here: }
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+   |
+12 |     }
+   |     ^
+error[E002]: undefined function 'list.new'
+  --> /tmp/dojo-balanced-parens-0.almd:2:23
+  in call to list.new()
+  here: let stack = list.new[String]()
+  hint: Did you mean `[] (empty list literal)`?
+  |
+2 |   let stack = list.new[String]()
+  |                       ^
+error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
+  --> /tmp/dojo-balanced-parens-0.almd:2:23
+  in fn 'is_balanced'
+  here: let stack = list.new[String]()
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Bool:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type Bool
+  |
+2 |   let stack = list.new[String]()
+  |                       ^
 
-1 error(s) found
+5 error(s) found
 FAILED: /tmp/dojo-balanced-parens-0.almd
 Compile error for /tmp/dojo-balanced-parens-0.almd:
 compile failed
@@ -65,55 +86,46 @@ compile failed
 ### Attempt 2 (FAIL)
 
 ```almide
-fn is_balanced(s: String) -> Bool = {
+fn is_balanced(s: String) -> Bool = 
   let stack = list.new[String]()
-  for c in string.chars(s) {
+  for c in string.chars(s) do
     match c {
-      '(' => list.push(stack, ")"),
-      '[' => list.push(stack, "]"),
-      '{' => list.push(stack, "}"),
-      ')' => {
-        if list.is_empty(stack) || list.last(stack) != ")" {
-          return false
-        }
-        list.drop_end(stack, 1)
-      },
-      ']' => {
-        if list.is_empty(stack) || list.last(stack) != "]" {
-          return false
-        }
-        list.drop_end(stack, 1)
-      },
-      '}' => {
-        if list.is_empty(stack) || list.last(stack) != "}" {
-          return false
-        }
-        list.drop_end(stack, 1)
-      },
-      _ => {}
+      '(' => list.push(stack, ")")
+      '[' => list.push(stack, "]")
+      '{' => list.push(stack, "}")
+      ')' => if list.is_empty(stack) then false else list.pop(stack) == ")" && true
+      ']' => if list.is_empty(stack) then false else list.pop(stack) == "]" && true
+      '}' => if list.is_empty(stack) then false else list.pop(stack) == "}" && true
+      _ => true
     }
   }
   list.is_empty(stack)
-}
 ```
 
 **Diagnostic:**
 
 ```
-error: '||' is not valid in Almide at line 9:33
-  --> /tmp/dojo-balanced-parens-1.almd:9:33
-  here: if list.is_empty(stack) || list.last(stack) != ")" {
-  hint: Use 'or' for logical OR. Example: if a or b then ...
+error: Expected LBrace at line 3:28 (got Ident 'do')
+  --> /tmp/dojo-balanced-parens-1.almd:3:28
+  here: for c in string.chars(s) do
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
   |
-9 |         if list.is_empty(stack) || list.last(stack) != ")" {
-  |                                 ^
-error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 13:8 (got Comma ',')
-  --> /tmp/dojo-balanced-parens-1.almd:13:8
-  here: },
+3 |   for c in string.chars(s) do
+  |                            ^
+error: '&&' is not valid in Almide at line 8:77
+  --> /tmp/dojo-balanced-parens-1.almd:8:77
+  here: ')' => if list.is_empty(stack) then false else list.pop(stack) == ")" && true
+  hint: Use 'and' for logical AND. Example: if a and b then ...
+  |
+8 |       ')' => if list.is_empty(stack) then false else list.pop(stack) == ")" && true
+  |                                                                             ^
+error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 12:5 (got RBrace '}')
+  --> /tmp/dojo-balanced-parens-1.almd:12:5
+  here: }
   hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
    |
-13 |       },
-   |        ^
+12 |     }
+   |     ^
 error[E002]: undefined function 'list.new'
   --> /tmp/dojo-balanced-parens-1.almd:2:23
   in call to list.new()
@@ -137,7 +149,7 @@ error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
 2 |   let stack = list.new[String]()
   |                       ^
 
-4 error(s) found
+5 error(s) found
 FAILED: /tmp/dojo-balanced-parens-1.almd
 Compile error for /tmp/dojo-balanced-parens-1.almd:
 compile failed
@@ -149,55 +161,46 @@ compile failed
 ### Attempt 3 (FAIL)
 
 ```almide
-fn is_balanced(s: String) -> Bool = {
+fn is_balanced(s: String) -> Bool = 
   let stack = []
-  for c in string.chars(s) {
+  for c in string.chars(s) do
     match c {
-      '(' => list.push(stack, ")"),
-      '[' => list.push(stack, "]"),
-      '{' => list.push(stack, "}"),
-      ')' => {
-        if list.is_empty(stack) || list.last(stack) != ")" {
-          return false
-        }
-        list.drop_end(stack, 1)
-      },
-      ']' => {
-        if list.is_empty(stack) || list.last(stack) != "]" {
-          return false
-        }
-        list.drop_end(stack, 1)
-      },
-      '}' => {
-        if list.is_empty(stack) || list.last(stack) != "}" {
-          return false
-        }
-        list.drop_end(stack, 1)
-      },
-      _ => {}
+      '(' => stack + [")"]
+      '[' => stack + ["]"]
+      '{' => stack + ["}"]
+      ')' => if list.is_empty(stack) then false else list.pop(stack) == ")" && true
+      ']' => if list.is_empty(stack) then false else list.pop(stack) == "]" && true
+      '}' => if list.is_empty(stack) then false else list.pop(stack) == "}" && true
+      _ => true
     }
   }
   list.is_empty(stack)
-}
 ```
 
 **Diagnostic:**
 
 ```
-error: '||' is not valid in Almide at line 9:33
-  --> /tmp/dojo-balanced-parens-2.almd:9:33
-  here: if list.is_empty(stack) || list.last(stack) != ")" {
-  hint: Use 'or' for logical OR. Example: if a or b then ...
+error: Expected LBrace at line 3:28 (got Ident 'do')
+  --> /tmp/dojo-balanced-parens-2.almd:3:28
+  here: for c in string.chars(s) do
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
   |
-9 |         if list.is_empty(stack) || list.last(stack) != ")" {
-  |                                 ^
-error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 13:8 (got Comma ',')
-  --> /tmp/dojo-balanced-parens-2.almd:13:8
-  here: },
+3 |   for c in string.chars(s) do
+  |                            ^
+error: '&&' is not valid in Almide at line 8:77
+  --> /tmp/dojo-balanced-parens-2.almd:8:77
+  here: ')' => if list.is_empty(stack) then false else list.pop(stack) == ")" && true
+  hint: Use 'and' for logical AND. Example: if a and b then ...
+  |
+8 |       ')' => if list.is_empty(stack) then false else list.pop(stack) == ")" && true
+  |                                                                             ^
+error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 12:5 (got RBrace '}')
+  --> /tmp/dojo-balanced-parens-2.almd:12:5
+  here: }
   hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
    |
-13 |       },
-   |        ^
+12 |     }
+   |     ^
 error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
   --> /tmp/dojo-balanced-parens-2.almd:2:15
   in fn 'is_balanced'
@@ -233,7 +236,7 @@ error[E025]: cannot infer a concrete type for binding 'stack' (type List[?0])
 2 |   let stack = []
   |               ^
 
-5 error(s) found
+6 error(s) found
 FAILED: /tmp/dojo-balanced-parens-2.almd
 Compile error for /tmp/dojo-balanced-parens-2.almd:
 compile failed
@@ -245,64 +248,46 @@ compile failed
 ### Attempt 4 (FAIL)
 
 ```almide
-fn is_balanced(s: String) -> Bool = {
+fn is_balanced(s: String) -> Bool = 
   let stack: List[String] = []
-  for c in string.chars(s) {
+  for c in string.chars(s) do
     match c {
-      '(' => list.push(stack, ")"),
-      '[' => list.push(stack, "]"),
-      '{' => list.push(stack, "}"),
-      ')' => {
-        if list.is_empty(stack) {
-          return false
-        }
-        if list.last(stack) != ")" {
-          return false
-        }
-        list.drop_end(stack, 1)
-      },
-      ']' => {
-        if list.is_empty(stack) {
-          return false
-        }
-        if list.last(stack) != "]" {
-          return false
-        }
-        list.drop_end(stack, 1)
-      },
-      '}' => {
-        if list.is_empty(stack) {
-          return false
-        }
-        if list.last(stack) != "}" {
-          return false
-        }
-        list.drop_end(stack, 1)
-      },
-      _ => {}
+      '(' => stack + ["`"]
+      '[' => stack + ["`"]
+      '{' => stack + ["`"]
+      ')' => if list.is_empty(stack) then false else list.pop(stack) == "}" && true
+      ']' => if list.is_empty(stack) then false else list.pop(stack) == "}" && true
+      '}' => if list.is_empty(stack) then false else list.pop(stack) == "]" && true
+      _ => true
     }
   }
   list.is_empty(stack)
-}
 ```
 
 **Diagnostic:**
 
 ```
-error: Expected Then at line 9:33 (got LBrace '{')
-  --> /tmp/dojo-balanced-parens-3.almd:9:33
-  here: if list.is_empty(stack) {
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+error: Expected LBrace at line 3:28 (got Ident 'do')
+  --> /tmp/dojo-balanced-parens-3.almd:3:28
+  here: for c in string.chars(s) do
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
   |
-9 |         if list.is_empty(stack) {
-  |                                 ^
-error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 15:9 (got Ident 'list')
-  --> /tmp/dojo-balanced-parens-3.almd:15:9
-  here: list.drop_end(stack, 1)
+3 |   for c in string.chars(s) do
+  |                            ^
+error: '&&' is not valid in Almide at line 8:77
+  --> /tmp/dojo-balanced-parens-3.almd:8:77
+  here: ')' => if list.is_empty(stack) then false else list.pop(stack) == "}" && true
+  hint: Use 'and' for logical AND. Example: if a and b then ...
+  |
+8 |       ')' => if list.is_empty(stack) then false else list.pop(stack) == "}" && true
+  |                                                                             ^
+error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 12:5 (got RBrace '}')
+  --> /tmp/dojo-balanced-parens-3.almd:12:5
+  here: }
   hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
    |
-15 |         list.drop_end(stack, 1)
-   |         ^
+12 |     }
+   |     ^
 error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
   --> /tmp/dojo-balanced-parens-3.almd:2:29
   in fn 'is_balanced'
@@ -318,7 +303,7 @@ error[E001]: type mismatch in fn 'is_balanced': expected Bool but got Unit
 2 |   let stack: List[String] = []
   |                             ^
 
-3 error(s) found
+4 error(s) found
 FAILED: /tmp/dojo-balanced-parens-3.almd
 Compile error for /tmp/dojo-balanced-parens-3.almd:
 compile failed

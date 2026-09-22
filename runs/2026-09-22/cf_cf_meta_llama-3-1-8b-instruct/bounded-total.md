@@ -1,6 +1,7 @@
 # bounded-total
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
+- **state**: `measured`
 - **success**: no
 - **retries**: 3
 - **category**: parse-error
@@ -10,55 +11,50 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-effect fn safe_total(xs: List[Int]) -> Int =
-  let sum = fn (xs: List[Int]) -> Int =
-    let rec (xs: List[Int], acc: Int) -> Int =
-      match xs {
-        [] => acc
-        x :: xs => rec (xs, acc + x)
-      }
-    rec (xs, 0)
-  in
-  fan.bounded (compute.ms(100)) { sum (xs) } ?? -1
+effect fn safe_total(xs: List[Int]) -> Int = {
+  fn sum(xs: List[Int]) -> Int = {
+    match xs {
+      | [] => 0
+      | x :: xs => x + sum(xs)
+    }
+  }
+
+  fan.bounded(compute.ms(100)) {
+    sum(xs)
+  } ?? -1
+}
 ```
 
 **Diagnostic:**
 
 ```
-error: Expected expression at line 2:13 (got Fn 'fn')
-  --> /tmp/dojo-bounded-total-0.almd:2:13
-  here: let sum = fn (xs: List[Int]) -> Int =
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-  |
-2 |   let sum = fn (xs: List[Int]) -> Int =
-  |             ^
-error: `let rec` is OCaml/SML syntax; Almide functions are recursive by default
-  --> /tmp/dojo-bounded-total-0.almd:3:9
-  in let rec
-  here: let rec (xs: List[Int], acc: Int) -> Int =
-  hint: Define recursive functions at top level: `fn name(args) -> ReturnType = body`. Almide has no `let rec` — call the fn directly, including from its own body.
+error: `fn` cannot be declared inside a function body
+  --> /tmp/dojo-bounded-total-0.almd:2:3
+  in nested fn
+  here: fn sum(xs: List[Int]) -> Int = {
+  hint: Move it to the top level (thread any captured locals as parameters), or bind a lambda: `let row = (label, ns) => ...`
   try:
-      fn fact(n: Int) -> Int =
-          if n == 0 then 1 else n * fact(n - 1)
+      fn row(label: String, ns: Int, total: Int) -> Unit =
+          println("${label}: ${ns / total}")
   |
-3 |     let rec (xs: List[Int], acc: Int) -> Int =
-  |         ^^^
-error: Expected FatArrow at line 6:11 (got Colon ':')
-  --> /tmp/dojo-bounded-total-0.almd:6:11
-  here: x :: xs => rec (xs, acc + x)
-  hint: `head :: tail` (cons pattern) is Haskell/OCaml/Elm syntax. Almide list patterns use [] / [a, b] literals only. For head/tail recursion, use `list.first(xs)` and `list.drop(xs, 1)` on the non-empty arm.
+2 |   fn sum(xs: List[Int]) -> Int = {
+  |   ^^
+error: Expected pattern at line 4:7 (got Pipe '|')
+  --> /tmp/dojo-bounded-total-0.almd:4:7
+  here: | [] => 0
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
   |
-6 |         x :: xs => rec (xs, acc + x)
-  |           ^
-error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 7:7 (got RBrace '}')
-  --> /tmp/dojo-bounded-total-0.almd:7:7
-  here: }
+4 |       | [] => 0
+  |       ^
+error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 9:3 (got Fan 'fan')
+  --> /tmp/dojo-bounded-total-0.almd:9:3
+  here: fan.bounded(compute.ms(100)) {
   hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
   |
-7 |       }
-  |       ^
+9 |   fan.bounded(compute.ms(100)) {
+  |   ^
 
-4 error(s) found
+3 error(s) found
 FAILED: /tmp/dojo-bounded-total-0.almd
 Compile error for /tmp/dojo-bounded-total-0.almd:
 compile failed
@@ -70,40 +66,51 @@ compile failed
 ### Attempt 2 (FAIL)
 
 ```almide
-effect fn safe_total(xs: List[Int]) -> Int =
-  let sum = fn (xs: List[Int]) -> Int =
-    fn rec (xs: List[Int], acc: Int) -> Int =
-      match xs {
-        [] => acc
-        _ => match list.first(xs) {
-          some(x) => rec (list.drop(xs, 1), acc + x)
-          none => acc
-        }
-      }
-    rec (xs, 0)
-  in
-  fan.bounded (compute.ms(100)) { sum (xs) } ?? -1
+effect fn safe_total(xs: List[Int]) -> Int = {
+  fn sum(xs: List[Int]) -> Int = {
+    match xs {
+      | [] => 0
+      | x :: xs => x + sum(xs)
+    }
+  }
+
+  let budget = compute.ms(100)
+  fan.bounded(budget) {
+    sum(xs)
+  } ?? -1
+}
 ```
 
 **Diagnostic:**
 
 ```
-error: Expected expression at line 2:13 (got Fn 'fn')
-  --> /tmp/dojo-bounded-total-1.almd:2:13
-  here: let sum = fn (xs: List[Int]) -> Int =
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+error: `fn` cannot be declared inside a function body
+  --> /tmp/dojo-bounded-total-1.almd:2:3
+  in nested fn
+  here: fn sum(xs: List[Int]) -> Int = {
+  hint: Move it to the top level (thread any captured locals as parameters), or bind a lambda: `let row = (label, ns) => ...`
+  try:
+      fn row(label: String, ns: Int, total: Int) -> Unit =
+          println("${label}: ${ns / total}")
   |
-2 |   let sum = fn (xs: List[Int]) -> Int =
-  |             ^
-error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 11:5 (got Ident 'rec')
-  --> /tmp/dojo-bounded-total-1.almd:11:5
-  here: rec (xs, 0)
+2 |   fn sum(xs: List[Int]) -> Int = {
+  |   ^^
+error: Expected pattern at line 4:7 (got Pipe '|')
+  --> /tmp/dojo-bounded-total-1.almd:4:7
+  here: | [] => 0
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+  |
+4 |       | [] => 0
+  |       ^
+error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 10:3 (got Fan 'fan')
+  --> /tmp/dojo-bounded-total-1.almd:10:3
+  here: fan.bounded(budget) {
   hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
    |
-11 |     rec (xs, 0)
-   |     ^
+10 |   fan.bounded(budget) {
+   |   ^
 
-2 error(s) found
+3 error(s) found
 FAILED: /tmp/dojo-bounded-total-1.almd
 Compile error for /tmp/dojo-bounded-total-1.almd:
 compile failed
@@ -115,70 +122,68 @@ compile failed
 ### Attempt 3 (FAIL)
 
 ```almide
-effect fn safe_total(xs: List[Int]) -> Int =
-  let sum = fn (xs: List[Int], acc: Int) -> Int =
+effect fn safe_total(xs: List[Int]) -> Int = {
+  fn sum(xs: List[Int]) -> Int = {
     match xs {
-      [] => acc
-      _ => match list.first(xs) {
-        some(x) => sum (list.drop(xs, 1), acc + x)
-        none => acc
-      }
+      | [] => 0
+      | x :: xs => x + sum(xs)
     }
-  in
-  fan.bounded (compute.ms(100)) { sum (xs, 0) } ?? -1
+  }
+
+  let budget = compute.ms(100)
+  let result = fan.bounded(budget) {
+    sum(xs)
+  }
+  result ?? -1
+}
 ```
 
 **Diagnostic:**
 
 ```
-error: Expected expression at line 2:13 (got Fn 'fn')
-  --> /tmp/dojo-bounded-total-2.almd:2:13
-  here: let sum = fn (xs: List[Int], acc: Int) -> Int =
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+error: `fn` cannot be declared inside a function body
+  --> /tmp/dojo-bounded-total-2.almd:2:3
+  in nested fn
+  here: fn sum(xs: List[Int]) -> Int = {
+  hint: Move it to the top level (thread any captured locals as parameters), or bind a lambda: `let row = (label, ns) => ...`
+  try:
+      fn row(label: String, ns: Int, total: Int) -> Unit =
+          println("${label}: ${ns / total}")
   |
-2 |   let sum = fn (xs: List[Int], acc: Int) -> Int =
-  |             ^
-error: Expected expression at line 10:3 (got In 'in')
-  --> /tmp/dojo-bounded-total-2.almd:10:3
-  here: in
+2 |   fn sum(xs: List[Int]) -> Int = {
+  |   ^^
+error: Expected pattern at line 4:7 (got Pipe '|')
+  --> /tmp/dojo-bounded-total-2.almd:4:7
+  here: | [] => 0
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+  |
+4 |       | [] => 0
+  |       ^
+error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 13:3 (got Ident 'result')
+  --> /tmp/dojo-bounded-total-2.almd:13:3
+  here: result ?? -1
   hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
    |
-10 |   in
+13 |   result ?? -1
    |   ^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-bounded-total-2.almd:4:13
-  in variable acc
-  here: [] => acc
+error[E007]: fan.bounded can only be used inside an effect fn
+  --> /tmp/dojo-bounded-total-2.almd:10:16
+  in fan.bounded
+  here: let result = fan.bounded(budget) {
+  hint: Mark the enclosing function as `effect fn`
+   |
+10 |   let result = fan.bounded(budget) {
+   |                ^^^
+error[E003]: undefined variable 'xs'
+  --> /tmp/dojo-bounded-total-2.almd:11:9
+  in variable xs
+  here: sum(xs)
   hint: Check the variable name
-  |
-4 |       [] => acc
-  |             ^^^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-bounded-total-2.almd:6:43
-  in variable acc
-  here: some(x) => sum (list.drop(xs, 1), acc + x)
-  hint: Check the variable name
-  |
-6 |         some(x) => sum (list.drop(xs, 1), acc + x)
-  |                                           ^^^
-error[E002]: undefined function 'sum'
-  --> /tmp/dojo-bounded-total-2.almd:6:49
-  in call to sum()
-  here: some(x) => sum (list.drop(xs, 1), acc + x)
-  hint: Check the function name
-  |
-6 |         some(x) => sum (list.drop(xs, 1), acc + x)
-  |                                                 ^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-bounded-total-2.almd:7:17
-  in variable acc
-  here: none => acc
-  hint: Check the variable name
-  |
-7 |         none => acc
-  |                 ^^^
+   |
+11 |     sum(xs)
+   |         ^^
 
-6 error(s) found
+5 error(s) found
 FAILED: /tmp/dojo-bounded-total-2.almd
 Compile error for /tmp/dojo-bounded-total-2.almd:
 compile failed
@@ -190,70 +195,63 @@ compile failed
 ### Attempt 4 (FAIL)
 
 ```almide
-effect fn safe_total(xs: List[Int]) -> Int =
-  let sum = fn (xs: List[Int], acc: Int) -> Int =
+effect fn safe_total(xs: List[Int]) -> Int = {
+  fn sum(xs: List[Int]) -> Int = {
     match xs {
-      [] => acc
-      _ => match list.first(xs) {
-        some(x) => sum (list.drop(xs, 1), acc + x)
-        none => acc
-      }
+      | [] => 0
+      | x :: xs => x + sum(xs)
     }
-  in
-  fan.bounded (compute.ms(100)) { sum (xs, 0) } ?? (-1)
+  }
+
+  let budget = compute.ms(100)
+  effect fn bounded_sum() -> Int = {
+    fan.bounded(budget) {
+      sum(xs)
+    } ?? -1
+  }
+
+  bounded_sum()
+}
 ```
 
 **Diagnostic:**
 
 ```
-error: Expected expression at line 2:13 (got Fn 'fn')
-  --> /tmp/dojo-bounded-total-3.almd:2:13
-  here: let sum = fn (xs: List[Int], acc: Int) -> Int =
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+error: `fn` cannot be declared inside a function body
+  --> /tmp/dojo-bounded-total-3.almd:2:3
+  in nested fn
+  here: fn sum(xs: List[Int]) -> Int = {
+  hint: Move it to the top level (thread any captured locals as parameters), or bind a lambda: `let row = (label, ns) => ...`
+  try:
+      fn row(label: String, ns: Int, total: Int) -> Unit =
+          println("${label}: ${ns / total}")
   |
-2 |   let sum = fn (xs: List[Int], acc: Int) -> Int =
-  |             ^
-error: Expected expression at line 10:3 (got In 'in')
-  --> /tmp/dojo-bounded-total-3.almd:10:3
-  here: in
+2 |   fn sum(xs: List[Int]) -> Int = {
+  |   ^^
+error: Expected pattern at line 4:7 (got Pipe '|')
+  --> /tmp/dojo-bounded-total-3.almd:4:7
+  here: | [] => 0
+  hint: Valid patterns: _, variable, Type(args), (a, b), [], [a, b], some(x), ok(x), err(x), none, true, false, 42, "text"
+  |
+4 |       | [] => 0
+  |       ^
+error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 16:3 (got Ident 'bounded_sum')
+  --> /tmp/dojo-bounded-total-3.almd:16:3
+  here: bounded_sum()
   hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
    |
-10 |   in
+16 |   bounded_sum()
    |   ^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-bounded-total-3.almd:4:13
-  in variable acc
-  here: [] => acc
+error[E003]: undefined variable 'xs'
+  --> /tmp/dojo-bounded-total-3.almd:12:11
+  in variable xs
+  here: sum(xs)
   hint: Check the variable name
-  |
-4 |       [] => acc
-  |             ^^^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-bounded-total-3.almd:6:43
-  in variable acc
-  here: some(x) => sum (list.drop(xs, 1), acc + x)
-  hint: Check the variable name
-  |
-6 |         some(x) => sum (list.drop(xs, 1), acc + x)
-  |                                           ^^^
-error[E002]: undefined function 'sum'
-  --> /tmp/dojo-bounded-total-3.almd:6:49
-  in call to sum()
-  here: some(x) => sum (list.drop(xs, 1), acc + x)
-  hint: Check the function name
-  |
-6 |         some(x) => sum (list.drop(xs, 1), acc + x)
-  |                                                 ^
-error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-bounded-total-3.almd:7:17
-  in variable acc
-  here: none => acc
-  hint: Check the variable name
-  |
-7 |         none => acc
-  |                 ^^^
+   |
+12 |       sum(xs)
+   |           ^^
 
-6 error(s) found
+4 error(s) found
 FAILED: /tmp/dojo-bounded-total-3.almd
 Compile error for /tmp/dojo-bounded-total-3.almd:
 compile failed

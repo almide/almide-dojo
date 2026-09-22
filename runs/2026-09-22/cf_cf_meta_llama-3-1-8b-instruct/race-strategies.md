@@ -1,10 +1,10 @@
 # race-strategies
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
+- **state**: `measured`
 - **success**: no
 - **retries**: 3
-- **category**: type-error
-- **diagnostic code**: `E001`
+- **category**: parse-error
 
 ## Attempts
 
@@ -12,30 +12,30 @@
 
 ```almide
 fn exact(n: Int) -> Int = {
-  let acc = 0
-  let i = 0
-  while i < n {
-    acc += i
-    i += 1
+  let mut sum = 0;
+  let i = n - 1;
+  while i >= 0 {
+    sum += i;
+    i -= 1;
   }
-  acc
+  sum
 }
 
-fn heuristic(n: Int) -> Int = n * (n - 1) / 2
+fn heuristic(n: Int) -> Int = {
+  n * (n - 1) / 2
+}
 
 effect fn best_effort(n: Int) -> Int = {
-  let (exact_time, exact_result) = fan.race(compute.ms(1)) {
-    exact(n)
-  }
-  let (heuristic_time, heuristic_result) = fan.race(compute.ms(1)) {
+  let start = env.now();
+  let result = fan.race(compute.ms(1)) {
+    exact(n);
     heuristic(n)
-  }
-  if exact_time < heuristic_time {
-    exact_result
-  } else if exact_time > heuristic_time {
-    heuristic_result
-  } else {
+  };
+  let end = env.now();
+  if result.is_none() {
     -1
+  } else {
+    result.unwrap()
   }
 }
 ```
@@ -43,63 +43,65 @@ effect fn best_effort(n: Int) -> Int = {
 **Diagnostic:**
 
 ```
+error: 'let mut' is not valid in Almide at line 2:7
+  --> /tmp/dojo-race-strategies-0.almd:2:7
+  here: let mut sum = 0;
+  hint: Use 'var' for mutable variables. Example: var x = 0
+  |
+2 |   let mut sum = 0;
+  |       ^
 error: Assignments return Unit and can't appear here
   --> /tmp/dojo-race-strategies-0.almd:5:10
   in assignment-in-expr
-  here: acc += i
+  here: sum += i;
   hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
   |
-5 |     acc += i
+5 |     sum += i;
   |          ^
 error: Assignments return Unit and can't appear here
   --> /tmp/dojo-race-strategies-0.almd:6:8
   in assignment-in-expr
-  here: i += 1
+  here: i -= 1;
   hint: Almide assignment `x = 5` is a statement, not an expression. Use separate statements: `x = 5; let r = x` — or pick the value directly: `let r = 5`.
   |
-6 |     i += 1
+6 |     i -= 1;
   |        ^
-error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 8:3 (got Ident 'acc')
+error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 8:3 (got Ident 'sum')
   --> /tmp/dojo-race-strategies-0.almd:8:3
-  here: acc
+  here: sum
   hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
   |
-8 |   acc
+8 |   sum
   |   ^
-error: Expected Then at line 20:34 (got LBrace '{')
-  --> /tmp/dojo-race-strategies-0.almd:20:34
-  here: if exact_time < heuristic_time {
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
+error: fan.race arms are separated by `,` or a newline, not `;`, at line 18:13
+  --> /tmp/dojo-race-strategies-0.almd:18:13
+  here: exact(n);
+  hint: arms run as parallel siblings — `;` is the sequencing separator and stays legal only INSIDE a block arm: { let x = f(); g(x) }
    |
-20 |   if exact_time < heuristic_time {
-   |                                  ^
-error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 22:5 (got Else 'else')
-  --> /tmp/dojo-race-strategies-0.almd:22:5
-  here: } else if exact_time > heuristic_time {
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+18 |     exact(n);
+   |             ^
+error: Semicolons are not used in Almide at line 20:4
+  --> /tmp/dojo-race-strategies-0.almd:20:4
+  here: };
+  hint: Remove the ';'. Almide uses newlines to separate statements.
    |
-22 |   } else if exact_time > heuristic_time {
-   |     ^
-error[E001]: tuple pattern requires a tuple value, got Result[Int, String]
-  --> /tmp/dojo-race-strategies-0.almd:15:11
-  in tuple destructure
-  here: exact(n)
-  hint: Destructure only tuples: `let (a, b) = pair`
+20 |   };
+   |    ^
+error[E003]: undefined variable 'env'
+  --> /tmp/dojo-race-strategies-0.almd:16:15
+  in variable env
+  here: let start = env.now();
+  hint: Add `import env` (stdlib: environment variables)
+Or run `almide fmt` to auto-add missing imports
+  try:
+      import env
    |
-15 |     exact(n)
-   |           ^
-error[E001]: tuple pattern requires a tuple value, got Result[Int, String]
-  --> /tmp/dojo-race-strategies-0.almd:18:15
-  in tuple destructure
-  here: heuristic(n)
-  hint: Destructure only tuples: `let (a, b) = pair`
-   |
-18 |     heuristic(n)
-   |               ^
+16 |   let start = env.now();
+   |               ^^^
 error[E001]: type mismatch in fn 'exact': expected Int but got Unit
-  --> /tmp/dojo-race-strategies-0.almd:3:11
+  --> /tmp/dojo-race-strategies-0.almd:3:15
   in fn 'exact'
-  here: let i = 0
+  here: let i = n - 1;
   hint: Fix the expression type or change the expected type
   try:
       // fn body ends with a statement (returns Unit); add a final expression that evaluates to Int:
@@ -108,10 +110,18 @@ error[E001]: type mismatch in fn 'exact': expected Int but got Unit
       // Or inline:
       //   <expression>                   // must have type Int
   |
-3 |   let i = 0
-  |           ^
+3 |   let i = n - 1;
+  |               ^
+error[E025]: cannot infer a concrete type for this expression (type ?0)
+  --> /tmp/dojo-race-strategies-0.almd:16:15
+  in this expression with an unconstrained type
+  here: let start = env.now();
+  hint: Bind the expression to an explicitly-typed `let`, e.g. `let r: Int = ...`, so the unconstrained slot is pinned. An unconstrained type slot cannot be inferred and is never silently defaulted (Almide follows Rust/Swift; cf. Rust E0282).
+   |
+16 |   let start = env.now();
+   |               ^^^^^^^^^
 
-8 error(s) found
+9 error(s) found
 FAILED: /tmp/dojo-race-strategies-0.almd
 Compile error for /tmp/dojo-race-strategies-0.almd:
 compile failed
@@ -124,28 +134,31 @@ compile failed
 
 ```almide
 fn exact(n: Int) -> Int = {
-  let acc = 0
-  let i = 0
-  while i < n {
-    let tmp = acc + i
-    acc = tmp
-    let tmp = i + 1
-    i = tmp
+  var sum = 0;
+  let i = n - 1;
+  while i >= 0 {
+    sum = sum + i;
+    i = i - 1;
   }
-  acc
+  sum
 }
 
-fn heuristic(n: Int) -> Int = n * (n - 1) / 2
+fn heuristic(n: Int) -> Int = {
+  n * (n - 1) / 2
+}
 
 effect fn best_effort(n: Int) -> Int = {
-  let (exact_time, exact_result) = fan.race(compute.ms(1)) { exact(n).unwrap() }
-  let (heuristic_time, heuristic_result) = fan.race(compute.ms(1)) { heuristic(n).unwrap() }
-  if exact_time < heuristic_time {
-    exact_result
-  } else if exact_time > heuristic_time {
-    heuristic_result
-  } else {
+  import env;
+  let start = env.now();
+  let result = fan.race(compute.ms(1)) {
+    exact(n);
+    heuristic(n)
+  };
+  let end = env.now();
+  if result.is_none() {
     -1
+  } else {
+    result.unwrap()
   }
 }
 ```
@@ -153,82 +166,62 @@ effect fn best_effort(n: Int) -> Int = {
 **Diagnostic:**
 
 ```
-error: Expected Then at line 18:34 (got LBrace '{')
-  --> /tmp/dojo-race-strategies-1.almd:18:34
-  here: if exact_time < heuristic_time {
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
-   |
-18 |   if exact_time < heuristic_time {
-   |                                  ^
-error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 20:5 (got Else 'else')
-  --> /tmp/dojo-race-strategies-1.almd:20:5
-  here: } else if exact_time > heuristic_time {
+error: Expected expression at line 16:3 (got Import 'import')
+  --> /tmp/dojo-race-strategies-1.almd:16:3
+  here: import env;
   hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
    |
-20 |   } else if exact_time > heuristic_time {
-   |     ^
-error[E009]: cannot reassign immutable binding 'acc'
-  --> /tmp/dojo-race-strategies-1.almd:6:11
-  in acc = ...
-  here: acc = tmp
-  hint: Use 'var acc = ...' instead of 'let acc = ...' to declare a mutable variable
-  try:
-      // let acc = ...  →  var acc = ...
-      var acc = <initial value>
-  |
-2 |   let acc = 0
-  |   ------------------- 'acc' declared here
-...
-6 |     acc = tmp
-  |           ^^^
+16 |   import env;
+   |   ^
+error: fan.race arms are separated by `,` or a newline, not `;`, at line 19:13
+  --> /tmp/dojo-race-strategies-1.almd:19:13
+  here: exact(n);
+  hint: arms run as parallel siblings — `;` is the sequencing separator and stays legal only INSIDE a block arm: { let x = f(); g(x) }
+   |
+19 |     exact(n);
+   |             ^
+error: Semicolons are not used in Almide at line 21:4
+  --> /tmp/dojo-race-strategies-1.almd:21:4
+  here: };
+  hint: Remove the ';'. Almide uses newlines to separate statements.
+   |
+21 |   };
+   |    ^
 error[E009]: cannot reassign immutable binding 'i'
-  --> /tmp/dojo-race-strategies-1.almd:8:9
+  --> /tmp/dojo-race-strategies-1.almd:6:13
   in i = ...
-  here: i = tmp
+  here: i = i - 1;
   hint: Use 'var i = ...' instead of 'let i = ...' to declare a mutable variable
   try:
       // let i = ...  →  var i = ...
       var i = <initial value>
   |
-3 |   let i = 0
+3 |   let i = n - 1;
   |   ----------------- 'i' declared here
 ...
-8 |     i = tmp
-  |         ^^^
-error[E002]: undefined method 'unwrap' on int
-  --> /tmp/dojo-race-strategies-1.almd:16:68
-  in method call .unwrap()
-  here: let (exact_time, exact_result) = fan.race(compute.ms(1)) { exact(n).unwrap() }
-  hint: Almide doesn't use method-call syntax. Write `int.<fn>(x)` (or `x |> int.<fn>`) — there is no method `unwrap` on `int`. Run `almide explain E002` for examples.
+6 |     i = i - 1;
+  |             ^
+error[E003]: undefined variable 'env'
+  --> /tmp/dojo-race-strategies-1.almd:17:15
+  in variable env
+  here: let start = env.now();
+  hint: Add `import env` (stdlib: environment variables)
+Or run `almide fmt` to auto-add missing imports
+  try:
+      import env
    |
-16 |   let (exact_time, exact_result) = fan.race(compute.ms(1)) { exact(n).unwrap() }
-   |                                                                    ^
-error[E001]: tuple pattern requires a tuple value, got Result[Unknown, String]
-  --> /tmp/dojo-race-strategies-1.almd:16:68
-  in tuple destructure
-  here: let (exact_time, exact_result) = fan.race(compute.ms(1)) { exact(n).unwrap() }
-  hint: Destructure only tuples: `let (a, b) = pair`
+17 |   let start = env.now();
+   |               ^^^
+error[E025]: cannot infer a concrete type for this expression (type ?0)
+  --> /tmp/dojo-race-strategies-1.almd:17:15
+  in this expression with an unconstrained type
+  here: let start = env.now();
+  hint: Bind the expression to an explicitly-typed `let`, e.g. `let r: Int = ...`, so the unconstrained slot is pinned. An unconstrained type slot cannot be inferred and is never silently defaulted (Almide follows Rust/Swift; cf. Rust E0282).
    |
-16 |   let (exact_time, exact_result) = fan.race(compute.ms(1)) { exact(n).unwrap() }
-   |                                                                    ^
-error[E002]: undefined method 'unwrap' on int
-  --> /tmp/dojo-race-strategies-1.almd:17:80
-  in method call .unwrap()
-  here: let (heuristic_time, heuristic_result) = fan.race(compute.ms(1)) { heuristic(n).unwrap() }
-  hint: Almide doesn't use method-call syntax. Write `int.<fn>(x)` (or `x |> int.<fn>`) — there is no method `unwrap` on `int`. Run `almide explain E002` for examples.
-   |
-17 |   let (heuristic_time, heuristic_result) = fan.race(compute.ms(1)) { heuristic(n).unwrap() }
-   |                                                                                ^
-error[E001]: tuple pattern requires a tuple value, got Result[Unknown, String]
-  --> /tmp/dojo-race-strategies-1.almd:17:80
-  in tuple destructure
-  here: let (heuristic_time, heuristic_result) = fan.race(compute.ms(1)) { heuristic(n).unwrap() }
-  hint: Destructure only tuples: `let (a, b) = pair`
-   |
-17 |   let (heuristic_time, heuristic_result) = fan.race(compute.ms(1)) { heuristic(n).unwrap() }
-   |                                                                                ^
+17 |   let start = env.now();
+   |               ^^^^^^^^^
 
-8 error(s) found
+6 error(s) found
 FAILED: /tmp/dojo-race-strategies-1.almd
 Compile error for /tmp/dojo-race-strategies-1.almd:
 compile failed
@@ -241,30 +234,31 @@ compile failed
 
 ```almide
 fn exact(n: Int) -> Int = {
-  var acc = 0
-  var i = 0
-  while i < n {
-    var tmp = acc + i
-    acc = tmp
-    var tmp = i + 1
-    i = tmp
+  var sum = 0;
+  var i = n - 1;
+  while i >= 0 {
+    sum = sum + i;
+    i = i - 1;
   }
-  acc
+  sum
 }
 
-fn heuristic(n: Int) -> Int = n * (n - 1) / 2
+fn heuristic(n: Int) -> Int = {
+  n * (n - 1) / 2
+}
 
 effect fn best_effort(n: Int) -> Int = {
-  let exact_result = exact(n)
-  let heuristic_result = heuristic(n)
-  let (exact_time, _) = compute.ms(1) { exact(n) }
-  let (heuristic_time, _) = compute.ms(1) { heuristic(n) }
-  if exact_time < heuristic_time {
-    exact_result
-  } else if exact_time > heuristic_time {
-    heuristic_result
-  } else {
+  import env;
+  let start = env.now();
+  let result = fan.race(compute.ms(1)) {
+    exact(n);
+    heuristic(n)
+  };
+  let end = env.now();
+  if result.is_none() {
     -1
+  } else {
+    result.unwrap()
   }
 }
 ```
@@ -272,38 +266,48 @@ effect fn best_effort(n: Int) -> Int = {
 **Diagnostic:**
 
 ```
-error: Expected Then at line 20:34 (got LBrace '{')
-  --> /tmp/dojo-race-strategies-2.almd:20:34
-  here: if exact_time < heuristic_time {
-  hint: if requires 'then', not '{'. Write: if x > 0 then "positive" else "negative"
-   |
-20 |   if exact_time < heuristic_time {
-   |                                  ^
-error: Expected top-level declaration (fn, effect fn, type, let, var, protocol, test) at line 22:5 (got Else 'else')
-  --> /tmp/dojo-race-strategies-2.almd:22:5
-  here: } else if exact_time > heuristic_time {
+error: Expected expression at line 16:3 (got Import 'import')
+  --> /tmp/dojo-race-strategies-2.almd:16:3
+  here: import env;
   hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
    |
-22 |   } else if exact_time > heuristic_time {
-   |     ^
-error[E001]: tuple pattern requires a tuple value, got Compute
-  --> /tmp/dojo-race-strategies-2.almd:18:36
-  in tuple destructure
-  here: let (exact_time, _) = compute.ms(1) { exact(n) }
-  hint: Destructure only tuples: `let (a, b) = pair`
+16 |   import env;
+   |   ^
+error: fan.race arms are separated by `,` or a newline, not `;`, at line 19:13
+  --> /tmp/dojo-race-strategies-2.almd:19:13
+  here: exact(n);
+  hint: arms run as parallel siblings — `;` is the sequencing separator and stays legal only INSIDE a block arm: { let x = f(); g(x) }
    |
-18 |   let (exact_time, _) = compute.ms(1) { exact(n) }
-   |                                    ^
-error[E001]: tuple pattern requires a tuple value, got Compute
-  --> /tmp/dojo-race-strategies-2.almd:19:40
-  in tuple destructure
-  here: let (heuristic_time, _) = compute.ms(1) { heuristic(n) }
-  hint: Destructure only tuples: `let (a, b) = pair`
+19 |     exact(n);
+   |             ^
+error: Semicolons are not used in Almide at line 21:4
+  --> /tmp/dojo-race-strategies-2.almd:21:4
+  here: };
+  hint: Remove the ';'. Almide uses newlines to separate statements.
    |
-19 |   let (heuristic_time, _) = compute.ms(1) { heuristic(n) }
-   |                                        ^
+21 |   };
+   |    ^
+error[E003]: undefined variable 'env'
+  --> /tmp/dojo-race-strategies-2.almd:17:15
+  in variable env
+  here: let start = env.now();
+  hint: Add `import env` (stdlib: environment variables)
+Or run `almide fmt` to auto-add missing imports
+  try:
+      import env
+   |
+17 |   let start = env.now();
+   |               ^^^
+error[E025]: cannot infer a concrete type for this expression (type ?0)
+  --> /tmp/dojo-race-strategies-2.almd:17:15
+  in this expression with an unconstrained type
+  here: let start = env.now();
+  hint: Bind the expression to an explicitly-typed `let`, e.g. `let r: Int = ...`, so the unconstrained slot is pinned. An unconstrained type slot cannot be inferred and is never silently defaulted (Almide follows Rust/Swift; cf. Rust E0282).
+   |
+17 |   let start = env.now();
+   |               ^^^^^^^^^
 
-4 error(s) found
+5 error(s) found
 FAILED: /tmp/dojo-race-strategies-2.almd
 Compile error for /tmp/dojo-race-strategies-2.almd:
 compile failed
@@ -316,47 +320,80 @@ compile failed
 
 ```almide
 fn exact(n: Int) -> Int = {
-  var acc = 0
-  var i = 0
-  while i < n {
-    var tmp = acc + i
-    acc = tmp
-    var tmp = i + 1
-    i = tmp
+  var sum = 0;
+  var i = n - 1;
+  while i >= 0 {
+    sum = sum + i;
+    i = i - 1;
   }
-  acc
+  sum
 }
 
-fn heuristic(n: Int) -> Int = n * (n - 1) / 2
+fn heuristic(n: Int) -> Int = {
+  n * (n - 1) / 2
+}
 
 effect fn best_effort(n: Int) -> Int = {
-  let (exact_time, _) = compute.ms(1) { exact(n) }
-  let (heuristic_time, _) = compute.ms(1) { heuristic(n) }
-  if exact_time < heuristic_time then exact(n) else if exact_time > heuristic_time then heuristic(n) else -1
+  import env;
+  let start = env.now();
+  let result = fan.race(compute.ms(1)) {
+    exact(n);
+    heuristic(n)
+  };
+  let end = env.now();
+  if result.is_none() {
+    -1
+  } else {
+    result.unwrap()
+  }
 }
 ```
 
 **Diagnostic:**
 
 ```
-error[E001]: tuple pattern requires a tuple value, got Compute
-  --> /tmp/dojo-race-strategies-3.almd:16:36
-  in tuple destructure
-  here: let (exact_time, _) = compute.ms(1) { exact(n) }
-  hint: Destructure only tuples: `let (a, b) = pair`
+error: Expected expression at line 16:3 (got Import 'import')
+  --> /tmp/dojo-race-strategies-3.almd:16:3
+  here: import env;
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
    |
-16 |   let (exact_time, _) = compute.ms(1) { exact(n) }
-   |                                    ^
-error[E001]: tuple pattern requires a tuple value, got Compute
-  --> /tmp/dojo-race-strategies-3.almd:17:40
-  in tuple destructure
-  here: let (heuristic_time, _) = compute.ms(1) { heuristic(n) }
-  hint: Destructure only tuples: `let (a, b) = pair`
+16 |   import env;
+   |   ^
+error: fan.race arms are separated by `,` or a newline, not `;`, at line 19:13
+  --> /tmp/dojo-race-strategies-3.almd:19:13
+  here: exact(n);
+  hint: arms run as parallel siblings — `;` is the sequencing separator and stays legal only INSIDE a block arm: { let x = f(); g(x) }
    |
-17 |   let (heuristic_time, _) = compute.ms(1) { heuristic(n) }
-   |                                        ^
+19 |     exact(n);
+   |             ^
+error: Semicolons are not used in Almide at line 21:4
+  --> /tmp/dojo-race-strategies-3.almd:21:4
+  here: };
+  hint: Remove the ';'. Almide uses newlines to separate statements.
+   |
+21 |   };
+   |    ^
+error[E003]: undefined variable 'env'
+  --> /tmp/dojo-race-strategies-3.almd:17:15
+  in variable env
+  here: let start = env.now();
+  hint: Add `import env` (stdlib: environment variables)
+Or run `almide fmt` to auto-add missing imports
+  try:
+      import env
+   |
+17 |   let start = env.now();
+   |               ^^^
+error[E025]: cannot infer a concrete type for this expression (type ?0)
+  --> /tmp/dojo-race-strategies-3.almd:17:15
+  in this expression with an unconstrained type
+  here: let start = env.now();
+  hint: Bind the expression to an explicitly-typed `let`, e.g. `let r: Int = ...`, so the unconstrained slot is pinned. An unconstrained type slot cannot be inferred and is never silently defaulted (Almide follows Rust/Swift; cf. Rust E0282).
+   |
+17 |   let start = env.now();
+   |               ^^^^^^^^^
 
-2 error(s) found
+5 error(s) found
 FAILED: /tmp/dojo-race-strategies-3.almd
 Compile error for /tmp/dojo-race-strategies-3.almd:
 compile failed

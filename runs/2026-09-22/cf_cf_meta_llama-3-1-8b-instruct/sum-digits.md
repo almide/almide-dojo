@@ -1,46 +1,62 @@
 # sum-digits
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
+- **state**: `measured`
 - **success**: no
 - **retries**: 3
-- **category**: type-error
-- **diagnostic code**: `E002`
+- **category**: unknown
 
 ## Attempts
 
 ### Attempt 1 (FAIL)
 
 ```almide
-fn sum_digits(n: Int) -> Int = {
-  let abs_n = int.abs(n)
-  let sum = list.fold(list.range(0, int.len(abs_n)), 0, (acc, i) => acc + int.get(abs_n, i) % 10)
-  sum
-}
+fn sum_digits(n: Int) -> Int = 
+  let sum = 
+    if n == 0 then 0 
+    else 
+      let digit = n % 10 
+      digit + sum_digits(n / 10) 
+  in 
+    sum
 ```
 
 **Diagnostic:**
 
 ```
-error[E002]: undefined function 'int.len'
-  --> /tmp/dojo-sum-digits-0.almd:3:45
-  in call to int.len()
-  here: let sum = list.fold(list.range(0, int.len(abs_n)), 0, (acc, i) => acc + int.get(abs_n, i) % 10)
-  hint: Did you mean `int.min`?
-  try:
-      int.min
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-sum-digits-0.almd:5:7
+  in let-in
+  here: let digit = n % 10
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-3 |   let sum = list.fold(list.range(0, int.len(abs_n)), 0, (acc, i) => acc + int.get(abs_n, i) % 10)
-  |                                             ^^^^^
-error[E002]: undefined function 'int.get'
-  --> /tmp/dojo-sum-digits-0.almd:3:90
-  in call to int.get()
-  here: let sum = list.fold(list.range(0, int.len(abs_n)), 0, (acc, i) => acc + int.get(abs_n, i) % 10)
-  hint: No function 'get' in module 'int'. See docs/CHEATSHEET.md for available functions
+5 |       let digit = n % 10
+  |       ^^^
+error: Expected expression at line 7:3 (got In 'in')
+  --> /tmp/dojo-sum-digits-0.almd:7:3
+  here: in
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
   |
-3 |   let sum = list.fold(list.range(0, int.len(abs_n)), 0, (acc, i) => acc + int.get(abs_n, i) % 10)
-  |                                                                                          ^
+7 |   in
+  |   ^
+error[E003]: undefined variable 'digit'
+  --> /tmp/dojo-sum-digits-0.almd:6:7
+  in variable digit
+  here: digit + sum_digits(n / 10)
+  hint: Check the variable name
+  |
+6 |       digit + sum_digits(n / 10)
+  |       ^^^^^
+error[E003]: undefined variable 'sum'
+  --> /tmp/dojo-sum-digits-0.almd:8:5
+  in variable sum
+  here: sum
+  hint: Check the variable name
+  |
+8 |     sum
+  |     ^^^
 
-2 error(s) found
+4 error(s) found
 FAILED: /tmp/dojo-sum-digits-0.almd
 Compile error for /tmp/dojo-sum-digits-0.almd:
 compile failed
@@ -52,76 +68,33 @@ compile failed
 ### Attempt 2 (FAIL)
 
 ```almide
-fn sum_digits(n: Int) -> Int = {
-  let abs_n = int.abs(n)
-  let sum = list.fold(list.range(0, int.len(to_string(abs_n))), 0, (acc, i) => acc + int.parse(to_string(int.get(to_string(abs_n), i))) % 10)
-  sum
-}
+fn sum_digits(n: Int) -> Int = 
+  if n == 0 then 0 
+  else 
+    let digit = n % 10 
+    digit + sum_digits(int.abs(n) / 10)
 ```
 
 **Diagnostic:**
 
 ```
-error[E002]: undefined function 'to_string'
-  --> /tmp/dojo-sum-digits-1.almd:3:55
-  in call to to_string()
-  here: let sum = list.fold(list.range(0, int.len(to_string(abs_n))), 0, (acc, i) => acc + int.parse(to_string(int.get(to_string(abs_n), i))) % 10)
-  hint: Check the function name
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-sum-digits-1.almd:4:5
+  in let-in
+  here: let digit = n % 10
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-3 |   let sum = list.fold(list.range(0, int.len(to_string(abs_n))), 0, (acc, i) => acc + int.parse(to_string(int.get(to_string(abs_n), i))) % 10)
-  |                                                       ^^^^^
-error[E002]: undefined function 'int.len'
-  --> /tmp/dojo-sum-digits-1.almd:3:55
-  in call to int.len()
-  here: let sum = list.fold(list.range(0, int.len(to_string(abs_n))), 0, (acc, i) => acc + int.parse(to_string(int.get(to_string(abs_n), i))) % 10)
-  hint: Did you mean `int.min`?
-  try:
-      int.min
+4 |     let digit = n % 10
+  |     ^^^
+error: 'let' is not an expression in Almide at line 4:5
+  --> /tmp/dojo-sum-digits-1.almd:4:5
+  here: let digit = n % 10
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
   |
-3 |   let sum = list.fold(list.range(0, int.len(to_string(abs_n))), 0, (acc, i) => acc + int.parse(to_string(int.get(to_string(abs_n), i))) % 10)
-  |                                                       ^^^^^
-error[E002]: undefined function 'to_string'
-  --> /tmp/dojo-sum-digits-1.almd:3:124
-  in call to to_string()
-  here: let sum = list.fold(list.range(0, int.len(to_string(abs_n))), 0, (acc, i) => acc + int.parse(to_string(int.get(to_string(abs_n), i))) % 10)
-  hint: Check the function name
-  |
-3 |   let sum = list.fold(list.range(0, int.len(to_string(abs_n))), 0, (acc, i) => acc + int.parse(to_string(int.get(to_string(abs_n), i))) % 10)
-  |                                                                                                                            ^^^^^
-error[E002]: undefined function 'int.get'
-  --> /tmp/dojo-sum-digits-1.almd:3:132
-  in call to int.get()
-  here: let sum = list.fold(list.range(0, int.len(to_string(abs_n))), 0, (acc, i) => acc + int.parse(to_string(int.get(to_string(abs_n), i))) % 10)
-  hint: No function 'get' in module 'int'. See docs/CHEATSHEET.md for available functions
-  |
-3 |   let sum = list.fold(list.range(0, int.len(to_string(abs_n))), 0, (acc, i) => acc + int.parse(to_string(int.get(to_string(abs_n), i))) % 10)
-  |                                                                                                                                    ^
-error[E002]: undefined function 'to_string'
-  --> /tmp/dojo-sum-digits-1.almd:3:132
-  in call to to_string()
-  here: let sum = list.fold(list.range(0, int.len(to_string(abs_n))), 0, (acc, i) => acc + int.parse(to_string(int.get(to_string(abs_n), i))) % 10)
-  hint: Check the function name
-  |
-3 |   let sum = list.fold(list.range(0, int.len(to_string(abs_n))), 0, (acc, i) => acc + int.parse(to_string(int.get(to_string(abs_n), i))) % 10)
-  |                                                                                                                                    ^
-error: operator '%' requires numeric types but got Result[Int, String] and Int
-  --> /tmp/dojo-sum-digits-1.almd:3:139
-  in operator %
-  here: let sum = list.fold(list.range(0, int.len(to_string(abs_n))), 0, (acc, i) => acc + int.parse(to_string(int.get(to_string(abs_n), i))) % 10)
-  hint: Unwrap the Result operand first: `!` propagates the error (effect fn body), `?? fallback` supplies a default, or `match` handles ok/err
-  |
-3 |   let sum = list.fold(list.range(0, int.len(to_string(abs_n))), 0, (acc, i) => acc + int.parse(to_string(int.get(to_string(abs_n), i))) % 10)
-  |                                                                                                                                           ^^
-error: operator '+' requires numeric, String, or List types but got Int and Result[Int, String]
-  --> /tmp/dojo-sum-digits-1.almd:3:139
-  in operator +
-  here: let sum = list.fold(list.range(0, int.len(to_string(abs_n))), 0, (acc, i) => acc + int.parse(to_string(int.get(to_string(abs_n), i))) % 10)
-  hint: Unwrap the Result operand first: `!` propagates the error (effect fn body), `?? fallback` supplies a default, or `match` handles ok/err
-  |
-3 |   let sum = list.fold(list.range(0, int.len(to_string(abs_n))), 0, (acc, i) => acc + int.parse(to_string(int.get(to_string(abs_n), i))) % 10)
-  |                                                                                                                                           ^^
+4 |     let digit = n % 10
+  |     ^
 
-7 error(s) found
+2 error(s) found
 FAILED: /tmp/dojo-sum-digits-1.almd
 Compile error for /tmp/dojo-sum-digits-1.almd:
 compile failed
@@ -133,51 +106,33 @@ compile failed
 ### Attempt 3 (FAIL)
 
 ```almide
-fn sum_digits(n: Int) -> Int = {
-  let abs_n = int.abs(n)
-  let str_n = string.to_string(abs_n)
-  let sum = list.fold(list.range(0, string.len(str_n)), 0, (acc, i) => acc + int.parse(string.get(str_n, i)) % 10)
-  sum
-}
+fn sum_digits(n: Int) -> Int = 
+  if n == 0 then 0 
+  else 
+    let digit = n % 10 
+    digit + sum_digits(int.abs(n) / 10)
 ```
 
 **Diagnostic:**
 
 ```
-error[E002]: undefined function 'string.to_string'
-  --> /tmp/dojo-sum-digits-2.almd:3:32
-  in call to string.to_string()
-  here: let str_n = string.to_string(abs_n)
-  hint: No function 'to_string' in module 'string'. See docs/CHEATSHEET.md for available functions
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-sum-digits-2.almd:4:5
+  in let-in
+  here: let digit = n % 10
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-3 |   let str_n = string.to_string(abs_n)
-  |                                ^^^^^
-error[E005]: argument 's' expects String but got Option[String]
-  --> /tmp/dojo-sum-digits-2.almd:4:88
-  in call to int.parse()
-  here: let sum = list.fold(list.range(0, string.len(str_n)), 0, (acc, i) => acc + int.parse(string.get(str_n, i)) % 10)
-  hint: the argument is an Option[String] — unwrap it first: `?? fallback` supplies a default, or `match` handles the none case
-...
-4 |   let sum = list.fold(list.range(0, string.len(str_n)), 0, (acc, i) => acc + int.parse(string.get(str_n, i)) % 10)
-  |                                                                                        ^^^^^^^^^^^^^^^^^^^^
-error: operator '%' requires numeric types but got Result[Int, String] and Int
-  --> /tmp/dojo-sum-digits-2.almd:4:112
-  in operator %
-  here: let sum = list.fold(list.range(0, string.len(str_n)), 0, (acc, i) => acc + int.parse(string.get(str_n, i)) % 10)
-  hint: Unwrap the Result operand first: `!` propagates the error (effect fn body), `?? fallback` supplies a default, or `match` handles ok/err
+4 |     let digit = n % 10
+  |     ^^^
+error: 'let' is not an expression in Almide at line 4:5
+  --> /tmp/dojo-sum-digits-2.almd:4:5
+  here: let digit = n % 10
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
   |
-4 |   let sum = list.fold(list.range(0, string.len(str_n)), 0, (acc, i) => acc + int.parse(string.get(str_n, i)) % 10)
-  |                                                                                                                ^^
-error: operator '+' requires numeric, String, or List types but got Int and Result[Int, String]
-  --> /tmp/dojo-sum-digits-2.almd:4:112
-  in operator +
-  here: let sum = list.fold(list.range(0, string.len(str_n)), 0, (acc, i) => acc + int.parse(string.get(str_n, i)) % 10)
-  hint: Unwrap the Result operand first: `!` propagates the error (effect fn body), `?? fallback` supplies a default, or `match` handles ok/err
-  |
-4 |   let sum = list.fold(list.range(0, string.len(str_n)), 0, (acc, i) => acc + int.parse(string.get(str_n, i)) % 10)
-  |                                                                                                                ^^
+4 |     let digit = n % 10
+  |     ^
 
-4 error(s) found
+2 error(s) found
 FAILED: /tmp/dojo-sum-digits-2.almd
 Compile error for /tmp/dojo-sum-digits-2.almd:
 compile failed
@@ -189,36 +144,31 @@ compile failed
 ### Attempt 4 (FAIL)
 
 ```almide
-fn sum_digits(n: Int) -> Int = {
-  let abs_n = int.abs(n)
-  let str_n = string.to_string(abs_n)
-  let sum = list.fold(list.range(0, string.len(str_n)), 0, (acc, i) => {
-    let digit = int.parse(string.get(str_n, i)) ?? 0
-    acc + digit
-  })
-  sum
-}
+fn sum_digits(n: Int) -> Int = 
+  if n == 0 then 0 
+  else 
+    let digit = n % 10 
+    digit + sum_digits(int.abs(n) / 10)
 ```
 
 **Diagnostic:**
 
 ```
-error[E002]: undefined function 'string.to_string'
-  --> /tmp/dojo-sum-digits-3.almd:3:32
-  in call to string.to_string()
-  here: let str_n = string.to_string(abs_n)
-  hint: No function 'to_string' in module 'string'. See docs/CHEATSHEET.md for available functions
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-sum-digits-3.almd:4:5
+  in let-in
+  here: let digit = n % 10
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-3 |   let str_n = string.to_string(abs_n)
-  |                                ^^^^^
-error[E005]: argument 's' expects String but got Option[String]
-  --> /tmp/dojo-sum-digits-3.almd:5:27
-  in call to int.parse()
-  here: let digit = int.parse(string.get(str_n, i)) ?? 0
-  hint: the argument is an Option[String] — unwrap it first: `?? fallback` supplies a default, or `match` handles the none case
-...
-5 |     let digit = int.parse(string.get(str_n, i)) ?? 0
-  |                           ^^^^^^^^^^^^^^^^^^^^
+4 |     let digit = n % 10
+  |     ^^^
+error: 'let' is not an expression in Almide at line 4:5
+  --> /tmp/dojo-sum-digits-3.almd:4:5
+  here: let digit = n % 10
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  |
+4 |     let digit = n % 10
+  |     ^
 
 2 error(s) found
 FAILED: /tmp/dojo-sum-digits-3.almd

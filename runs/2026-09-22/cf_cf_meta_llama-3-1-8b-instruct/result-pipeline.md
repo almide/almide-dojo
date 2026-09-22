@@ -1,9 +1,10 @@
 # result-pipeline
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
+- **state**: `measured`
 - **success**: no
 - **retries**: 3
-- **category**: parse-error
+- **category**: unknown
 
 ## Attempts
 
@@ -11,59 +12,45 @@
 
 ```almide
 fn parse_int(s: String) -> Result[Int, String] = 
-  int.parse(s).map_err(fn(e) => s + ": " + e)
+  int.parse(s).map_err(|_| "not a number: " ++ s)
 
 fn validate_positive(n: Int) -> Result[Int, String] = 
-  if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
+  if n > 0 then ok(n) else err("must be positive: " ++ int.to_string(n))
 
 fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = 
-  if n >= lo && n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+  if lo <= n && n <= hi then ok(n) else err("out of range: " ++ int.to_string(n))
 
 fn process(input: String) -> Result[String, String] = 
   parse_int(input)
-  |> result.flat_map(fn(n) => validate_positive(n))
+  |> result.flat_map(validate_positive)
   |> result.flat_map(fn(n) => validate_range(n, 1, 100))
-  |> result.map(fn(n) => "valid: " + int.to_string(n))
+  |> result.map(fn(n) => "valid: " ++ int.to_string(n))
 ```
 
 **Diagnostic:**
 
 ```
-error: Expected expression at line 2:24 (got Fn 'fn')
+error: '|x|' closure syntax is not valid in Almide at line 2:24
   --> /tmp/dojo-result-pipeline-0.almd:2:24
-  here: int.parse(s).map_err(fn(e) => s + ": " + e)
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  here: int.parse(s).map_err(|_| "not a number: " ++ s)
+  hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
   |
-2 |   int.parse(s).map_err(fn(e) => s + ": " + e)
+2 |   int.parse(s).map_err(|_| "not a number: " ++ s)
   |                        ^
-error: Expected function name at line 2:26 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-0.almd:2:26
-  here: int.parse(s).map_err(fn(e) => s + ": " + e)
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-  |
-2 |   int.parse(s).map_err(fn(e) => s + ": " + e)
-  |                          ^
 error: '&&' is not valid in Almide at line 8:14
   --> /tmp/dojo-result-pipeline-0.almd:8:14
-  here: if n >= lo && n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+  here: if lo <= n && n <= hi then ok(n) else err("out of range: " ++ int.to_string(n))
   hint: Use 'and' for logical AND. Example: if a and b then ...
   |
-8 |   if n >= lo && n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+8 |   if lo <= n && n <= hi then ok(n) else err("out of range: " ++ int.to_string(n))
   |              ^
-error: Expected expression at line 12:22 (got Fn 'fn')
-  --> /tmp/dojo-result-pipeline-0.almd:12:22
-  here: |> result.flat_map(fn(n) => validate_positive(n))
+error: Expected expression at line 13:22 (got Fn 'fn')
+  --> /tmp/dojo-result-pipeline-0.almd:13:22
+  here: |> result.flat_map(fn(n) => validate_range(n, 1, 100))
   hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
    |
-12 |   |> result.flat_map(fn(n) => validate_positive(n))
+13 |   |> result.flat_map(fn(n) => validate_range(n, 1, 100))
    |                      ^
-error: Expected function name at line 12:24 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-0.almd:12:24
-  here: |> result.flat_map(fn(n) => validate_positive(n))
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-12 |   |> result.flat_map(fn(n) => validate_positive(n))
-   |                        ^
 error: Expected function name at line 13:24 (got LParen '(')
   --> /tmp/dojo-result-pipeline-0.almd:13:24
   here: |> result.flat_map(fn(n) => validate_range(n, 1, 100))
@@ -73,13 +60,21 @@ error: Expected function name at line 13:24 (got LParen '(')
    |                        ^
 error: Expected function name at line 14:19 (got LParen '(')
   --> /tmp/dojo-result-pipeline-0.almd:14:19
-  here: |> result.map(fn(n) => "valid: " + int.to_string(n))
+  here: |> result.map(fn(n) => "valid: " ++ int.to_string(n))
   hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
    |
-14 |   |> result.map(fn(n) => "valid: " + int.to_string(n))
+14 |   |> result.map(fn(n) => "valid: " ++ int.to_string(n))
    |                   ^
+error: operator '++' has been removed. Use '+' for concatenation
+  --> /tmp/dojo-result-pipeline-0.almd:5:70
+  in operator ++
+  here: if n > 0 then ok(n) else err("must be positive: " ++ int.to_string(n))
+  hint: Replace ++ with +
+  |
+5 |   if n > 0 then ok(n) else err("must be positive: " ++ int.to_string(n))
+  |                                                                      ^
 
-7 error(s) found
+6 error(s) found
 FAILED: /tmp/dojo-result-pipeline-0.almd
 Compile error for /tmp/dojo-result-pipeline-0.almd:
 compile failed
@@ -92,82 +87,33 @@ compile failed
 
 ```almide
 fn parse_int(s: String) -> Result[Int, String] = 
-  int.parse(s).map_err(fn(e) => s + ": " + e)
+  int.parse(s).map_err(|e| "not a number: " + e)
 
 fn validate_positive(n: Int) -> Result[Int, String] = 
   if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
 
 fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = 
-  if n >= lo and n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+  if lo <= n and n <= hi then ok(n) else err("out of range: " + int.to_string(n))
 
 fn process(input: String) -> Result[String, String] = 
   parse_int(input)
-  |> result.flat_map(fn(r) => result.flat_map(r, fn(n) => validate_positive(n)))
-  |> result.flat_map(fn(r) => result.flat_map(r, fn(n) => validate_range(n, 1, 100)))
-  |> result.map(fn(n) => "valid: " + int.to_string(n))
+  |> result.flat_map(validate_positive)
+  |> result.flat_map((n) => validate_range(n, 1, 100))
+  |> result.map((n) => "valid: " + int.to_string(n))
 ```
 
 **Diagnostic:**
 
 ```
-error: Expected expression at line 2:24 (got Fn 'fn')
+error: '|x|' closure syntax is not valid in Almide at line 2:24
   --> /tmp/dojo-result-pipeline-1.almd:2:24
-  here: int.parse(s).map_err(fn(e) => s + ": " + e)
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  here: int.parse(s).map_err(|e| "not a number: " + e)
+  hint: Use '(x) => expr' for lambdas. Example: list.map(xs, (x) => x + 1)
   |
-2 |   int.parse(s).map_err(fn(e) => s + ": " + e)
+2 |   int.parse(s).map_err(|e| "not a number: " + e)
   |                        ^
-error: Expected function name at line 2:26 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-1.almd:2:26
-  here: int.parse(s).map_err(fn(e) => s + ": " + e)
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-  |
-2 |   int.parse(s).map_err(fn(e) => s + ": " + e)
-  |                          ^
-error: Expected expression at line 12:22 (got Fn 'fn')
-  --> /tmp/dojo-result-pipeline-1.almd:12:22
-  here: |> result.flat_map(fn(r) => result.flat_map(r, fn(n) => validate_positive(n)))
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-12 |   |> result.flat_map(fn(r) => result.flat_map(r, fn(n) => validate_positive(n)))
-   |                      ^
-error: Expected function name at line 12:24 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-1.almd:12:24
-  here: |> result.flat_map(fn(r) => result.flat_map(r, fn(n) => validate_positive(n)))
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-12 |   |> result.flat_map(fn(r) => result.flat_map(r, fn(n) => validate_positive(n)))
-   |                        ^
-error: Expected function name at line 12:52 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-1.almd:12:52
-  here: |> result.flat_map(fn(r) => result.flat_map(r, fn(n) => validate_positive(n)))
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-12 |   |> result.flat_map(fn(r) => result.flat_map(r, fn(n) => validate_positive(n)))
-   |                                                    ^
-error: Expected function name at line 13:24 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-1.almd:13:24
-  here: |> result.flat_map(fn(r) => result.flat_map(r, fn(n) => validate_range(n, 1, 100)))
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-13 |   |> result.flat_map(fn(r) => result.flat_map(r, fn(n) => validate_range(n, 1, 100)))
-   |                        ^
-error: Expected function name at line 13:52 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-1.almd:13:52
-  here: |> result.flat_map(fn(r) => result.flat_map(r, fn(n) => validate_range(n, 1, 100)))
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-13 |   |> result.flat_map(fn(r) => result.flat_map(r, fn(n) => validate_range(n, 1, 100)))
-   |                                                    ^
-error: Expected function name at line 14:19 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-1.almd:14:19
-  here: |> result.map(fn(n) => "valid: " + int.to_string(n))
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-14 |   |> result.map(fn(n) => "valid: " + int.to_string(n))
-   |                   ^
 
-8 error(s) found
+1 error(s) found
 FAILED: /tmp/dojo-result-pipeline-1.almd
 Compile error for /tmp/dojo-result-pipeline-1.almd:
 compile failed
@@ -180,79 +126,33 @@ compile failed
 
 ```almide
 fn parse_int(s: String) -> Result[Int, String] = 
-  int.parse(s).map_err(fn(e) => s + ": " + e)
+  int.parse(s).map_err((e) => "not a number: " + e)
 
 fn validate_positive(n: Int) -> Result[Int, String] = 
   if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
 
 fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = 
-  if n >= lo and n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+  if lo <= n and n <= hi then ok(n) else err("out of range: " + int.to_string(n))
 
 fn process(input: String) -> Result[String, String] = 
   parse_int(input)
-  |> result.flat_map(fn(r) => r)
-  |> result.flat_map(fn(r) => validate_positive(r))
-  |> result.flat_map(fn(r) => validate_range(r, 1, 100))
-  |> result.map(fn(n) => "valid: " + int.to_string(n))
+  |> result.flat_map(validate_positive)
+  |> result.flat_map((n) => validate_range(n, 1, 100))
+  |> result.map((n) => "valid: " + int.to_string(n))
 ```
 
 **Diagnostic:**
 
 ```
-error: Expected expression at line 2:24 (got Fn 'fn')
-  --> /tmp/dojo-result-pipeline-2.almd:2:24
-  here: int.parse(s).map_err(fn(e) => s + ": " + e)
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-  |
-2 |   int.parse(s).map_err(fn(e) => s + ": " + e)
-  |                        ^
-error: Expected function name at line 2:26 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-2.almd:2:26
-  here: int.parse(s).map_err(fn(e) => s + ": " + e)
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-  |
-2 |   int.parse(s).map_err(fn(e) => s + ": " + e)
-  |                          ^
-error: Expected expression at line 12:22 (got Fn 'fn')
-  --> /tmp/dojo-result-pipeline-2.almd:12:22
-  here: |> result.flat_map(fn(r) => r)
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-12 |   |> result.flat_map(fn(r) => r)
-   |                      ^
-error: Expected function name at line 12:24 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-2.almd:12:24
-  here: |> result.flat_map(fn(r) => r)
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-12 |   |> result.flat_map(fn(r) => r)
-   |                        ^
-error: Expected function name at line 13:24 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-2.almd:13:24
-  here: |> result.flat_map(fn(r) => validate_positive(r))
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-13 |   |> result.flat_map(fn(r) => validate_positive(r))
-   |                        ^
-error: Expected function name at line 14:24 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-2.almd:14:24
-  here: |> result.flat_map(fn(r) => validate_range(r, 1, 100))
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-14 |   |> result.flat_map(fn(r) => validate_range(r, 1, 100))
-   |                        ^
-error: Expected function name at line 15:19 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-2.almd:15:19
-  here: |> result.map(fn(n) => "valid: " + int.to_string(n))
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-15 |   |> result.map(fn(n) => "valid: " + int.to_string(n))
-   |                   ^
-
-7 error(s) found
 FAILED: /tmp/dojo-result-pipeline-2.almd
-Compile error for /tmp/dojo-result-pipeline-2.almd:
-compile failed
+  test: parse_int invalid
+  at:   /tmp/dojo-result-pipeline-2.almd:18
+  expected: Err("not a number: abc")
+  found:    Err("not a number: invalid digit found in string")
+  test: process invalid parse
+  at:   /tmp/dojo-result-pipeline-2.almd:26
+  expected: Err("not a number: abc")
+  found:    Err("not a number: invalid digit found in string")
 
 0 via WASM, 0 via native fallback, 1 failed (of 1 files)
 
@@ -262,86 +162,33 @@ compile failed
 
 ```almide
 fn parse_int(s: String) -> Result[Int, String] = 
-  int.parse(s).map_err(fn(e) => s + ": " + e)
+  int.parse(s).map_err((e) => "not a number: " + e)
 
 fn validate_positive(n: Int) -> Result[Int, String] = 
   if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
 
 fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] = 
-  if n >= lo and n <= hi then ok(n) else err("out of range: " + int.to_string(n))
+  if lo <= n and n <= hi then ok(n) else err("out of range: " + int.to_string(n))
 
 fn process(input: String) -> Result[String, String] = 
   parse_int(input)
-  |> result.flat_map(fn(r) => r.map_err(fn(e) => e))
-  |> result.flat_map(fn(r) => validate_positive(r))
-  |> result.flat_map(fn(r) => validate_range(r, 1, 100))
-  |> result.map(fn(n) => "valid: " + int.to_string(n))
+  |> result.flat_map(validate_positive)
+  |> result.flat_map((n) => validate_range(n, 1, 100))
+  |> result.map((n) => "valid: " + int.to_string(n))
 ```
 
 **Diagnostic:**
 
 ```
-error: Expected expression at line 2:24 (got Fn 'fn')
-  --> /tmp/dojo-result-pipeline-3.almd:2:24
-  here: int.parse(s).map_err(fn(e) => s + ": " + e)
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-  |
-2 |   int.parse(s).map_err(fn(e) => s + ": " + e)
-  |                        ^
-error: Expected function name at line 2:26 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-3.almd:2:26
-  here: int.parse(s).map_err(fn(e) => s + ": " + e)
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-  |
-2 |   int.parse(s).map_err(fn(e) => s + ": " + e)
-  |                          ^
-error: Expected expression at line 12:22 (got Fn 'fn')
-  --> /tmp/dojo-result-pipeline-3.almd:12:22
-  here: |> result.flat_map(fn(r) => r.map_err(fn(e) => e))
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-12 |   |> result.flat_map(fn(r) => r.map_err(fn(e) => e))
-   |                      ^
-error: Expected function name at line 12:24 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-3.almd:12:24
-  here: |> result.flat_map(fn(r) => r.map_err(fn(e) => e))
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-12 |   |> result.flat_map(fn(r) => r.map_err(fn(e) => e))
-   |                        ^
-error: Expected function name at line 12:43 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-3.almd:12:43
-  here: |> result.flat_map(fn(r) => r.map_err(fn(e) => e))
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-12 |   |> result.flat_map(fn(r) => r.map_err(fn(e) => e))
-   |                                           ^
-error: Expected function name at line 13:24 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-3.almd:13:24
-  here: |> result.flat_map(fn(r) => validate_positive(r))
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-13 |   |> result.flat_map(fn(r) => validate_positive(r))
-   |                        ^
-error: Expected function name at line 14:24 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-3.almd:14:24
-  here: |> result.flat_map(fn(r) => validate_range(r, 1, 100))
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-14 |   |> result.flat_map(fn(r) => validate_range(r, 1, 100))
-   |                        ^
-error: Expected function name at line 15:19 (got LParen '(')
-  --> /tmp/dojo-result-pipeline-3.almd:15:19
-  here: |> result.map(fn(n) => "valid: " + int.to_string(n))
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-15 |   |> result.map(fn(n) => "valid: " + int.to_string(n))
-   |                   ^
-
-8 error(s) found
 FAILED: /tmp/dojo-result-pipeline-3.almd
-Compile error for /tmp/dojo-result-pipeline-3.almd:
-compile failed
+  test: parse_int invalid
+  at:   /tmp/dojo-result-pipeline-3.almd:18
+  expected: Err("not a number: abc")
+  found:    Err("not a number: invalid digit found in string")
+  test: process invalid parse
+  at:   /tmp/dojo-result-pipeline-3.almd:26
+  expected: Err("not a number: abc")
+  found:    Err("not a number: invalid digit found in string")
 
 0 via WASM, 0 via native fallback, 1 failed (of 1 files)
 

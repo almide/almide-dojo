@@ -1,6 +1,7 @@
 # remove-duplicates
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
+- **state**: `measured`
 - **success**: yes
 - **retries**: 0
 - **category**: pass-1shot
@@ -11,5 +12,5 @@
 
 ```almide
 fn remove_duplicates(xs: List[Int]) -> List[Int] = 
-    list.unique(xs)
+  list.unique(xs)
 ```

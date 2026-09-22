@@ -1,6 +1,7 @@
 # deadline-guard
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
+- **state**: `measured`
 - **success**: no
 - **retries**: 3
 - **category**: unknown
@@ -12,12 +13,13 @@
 ```almide
 effect fn within_deadline(n: Int) -> Int = {
   fan.timeout(duration.s(2)) {
-    let result = square_plus_one(n)
-    result
+    n_squared_plus_one(n)
   } ?? 0
 }
 
-fn square_plus_one(n: Int) -> Int = n * n + 1
+fn n_squared_plus_one(n: Int) -> Int = {
+  n * n + 1
+}
 ```
 
 **Diagnostic:**
@@ -36,16 +38,12 @@ fan.bounded / fan.race / fan.timeout tests run on the WASM test leg (the native 
 ```almide
 effect fn within_deadline(n: Int) -> Int = {
   fan.timeout(duration.s(2)) {
-    let result = square_plus_one(n)
-    result
+    n_squared_plus_one(n)
   } ?? 0
 }
 
-fn square_plus_one(n: Int) -> Int = {
-  let square = int.to_float(n) * int.to_float(n)
-  let one = int.to_float(1)
-  let result = float.to_int(square + one)
-  result
+fn n_squared_plus_one(n: Int) -> Int = {
+  n * n + 1
 }
 ```
 
@@ -65,12 +63,11 @@ fan.bounded / fan.race / fan.timeout tests run on the WASM test leg (the native 
 ```almide
 effect fn within_deadline(n: Int) -> Int = {
   fan.timeout(duration.s(2)) {
-    let result = square_plus_one(n)
-    result
+    n_squared_plus_one(n)
   } ?? 0
 }
 
-fn square_plus_one(n: Int) -> Int = {
+fn n_squared_plus_one(n: Int) -> Int = {
   n * n + 1
 }
 ```
@@ -91,12 +88,11 @@ fan.bounded / fan.race / fan.timeout tests run on the WASM test leg (the native 
 ```almide
 effect fn within_deadline(n: Int) -> Int = {
   fan.timeout(duration.s(2)) {
-    let result = square_plus_one(n)
-    result
+    n_squared_plus_one(n)
   } ?? 0
 }
 
-fn square_plus_one(n: Int) -> Int = {
+fn n_squared_plus_one(n: Int) -> Int = {
   n * n + 1
 }
 ```

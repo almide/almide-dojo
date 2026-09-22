@@ -1,6 +1,7 @@
 # list-sum
 
 - **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
+- **state**: `measured`
 - **success**: yes
 - **retries**: 0
 - **category**: pass-1shot
@@ -10,6 +11,5 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn list_sum(xs: List[Int]) -> Int = 
-  list.fold(xs, 0, (acc, x) => acc + x)
+fn list_sum(xs: List[Int]) -> Int = list.sum(xs)
 ```
