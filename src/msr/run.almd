@@ -32,6 +32,8 @@ import path
 import process
 import datetime
 import self.llm
+import self.cellstate.{Verdict}
+import self.cellstate
 import self.msr.spec.{PTask, Case, Val, VInt, VBool, VStr, VList, VCall, Ty, TInt, TBool, TStr, TList, Step}
 import self.msr.spec
 import self.msr.plugins.{Plugin}
@@ -303,71 +305,35 @@ effect fn run_language(pr: Probe, tasks: List[PTask], model: String, raw_dir: St
 // for. The four partition the grid: measured + not-run + harness-limitation
 // + inconclusive-saturated = planned cells, always.
 //
-//   measured               the model answered and the language's own
-//                          toolchain judged it (pass or fail), in a run where
-//                          at least one measured cell FAILED. Only such a
-//                          cell carries discriminating information.
-//   inconclusive-saturated judged exactly like `measured`, and passed — but
-//                          every language in the run reached SATURATION_PCT
-//                          or better of the cells it measured. The task bank
-//                          is at its ceiling, so the cell separates nothing
-//                          (almide/almide#1963: the lang-bench MiniGit
-//                          snapshot is 20/20 for every language). A pass here
-//                          is not evidence.
-//   not-run                the cell was planned and the model was never
-//                          answered for it: an HTTP timeout, an empty
-//                          completion, a missing credential. Not a failure
-//                          and not a zero.
-//   harness-limitation     the cell cannot be measured in this configuration
-//                          at all: the language's toolchain is not on the
-//                          machine. Not a failure and not a zero.
-//
-// The consequence for every rate in the table: the denominator is the
-// PLANNED task count, never the subset a language happened to reach. A
-// percentage computed over the reached subset reads as comparable with one
-// computed over the whole set, and it is not.
-let ST_MEASURED = "measured"
-let ST_SATURATED = "inconclusive-saturated"
-let ST_NOT_RUN = "not-run"
-let ST_HARNESS = "harness-limitation"
-let CELL_STATES = [ST_MEASURED, ST_SATURATED, ST_NOT_RUN, ST_HARNESS]
-
-// A run's verdict. `comparable` is the certification: every language whose
-// toolchain was present saw the SAME, COMPLETE task set, so the rows are
-// rates over one denominator. `conclusive` says the bank discriminated at
-// all — at least one measured cell failed.
-type Verdict = { id: String, comparable: Bool, conclusive: Bool, reasons: List[String] }
+// The vocabulary itself, the saturation threshold, the interval rate and the
+// verdict decision table live in src/cellstate.almd, because the daily lane
+// speaks the SAME four states over its own `tasks x one model` grid
+// (almide-dojo#17) and two copies of a vocabulary is how two lanes stop
+// meaning the same thing by it. What stays here is this lane's own shape —
+// an LResult is a (language, task) cell — and this lane's own verdict prose.
+let ST_MEASURED = cellstate.ST_MEASURED
+let ST_SATURATED = cellstate.ST_SATURATED
+let ST_NOT_RUN = cellstate.ST_NOT_RUN
+let ST_HARNESS = cellstate.ST_HARNESS
+let CELL_STATES = cellstate.CELL_STATES
+let SATURATION_PCT = cellstate.SATURATION_PCT
 
 fn reached(results: List[LResult]) -> List[LResult] =
   results |> list.filter((r) => not list.is_empty(r.attempts))
 
-// almide-dojo#3's ratified rule, in its own words: "if every language
-// reaches >= 98% on the stratum a comparative claim is made for, the run
-// returns INCONCLUSIVE_BANK_SATURATED: valid as a regression suite, invalid
-// as ranking evidence". The rate is over the cells a language MEASURED — a
-// `not-run` cell says nothing about how hard the bank is.
-//
-// At the 21-task size the threshold reads "no measured cell failed anywhere"
-// (20/21 is 95.2%, below it), which is exactly today's shape; it is written
-// as the threshold rather than as `failures == 0` so it still means the right
-// thing when the bank grows to #3's 400 clusters and a 99% run is the one
-// that has to be caught.
-let SATURATION_PCT = 98
-
+// This lane's stratum for almide-dojo#3's saturation rule is a language: the
+// run is at the bank's ceiling when EVERY language is.
 fn is_saturated(results: List[LResult]) -> Bool = {
   let got = reached(results)
   let langs = got |> list.map((r) => r.language) |> list.unique
   not list.is_empty(got) and list.all(langs, (l) => {
     let mine = got |> list.filter((r) => r.language == l)
-    list.count(mine, (r) => r.success) * 100 >= list.len(mine) * SATURATION_PCT
+    cellstate.saturated_series(list.count(mine, (r) => r.success), list.len(mine))
   })
 }
 
 fn state_of(available: Bool, r: LResult, saturated: Bool) -> String =
-  if not available then ST_HARNESS
-  else if list.is_empty(r.attempts) then ST_NOT_RUN
-  else if saturated then ST_SATURATED
-  else ST_MEASURED
+  cellstate.state_of(available, not list.is_empty(r.attempts), saturated)
 
 fn count_state(cells: List[LResult], probes: List[Probe], saturated: Bool, want: String) -> Int =
   list.count(cells, (r) => state_of(probe_available(probes, r.language), r, saturated) == want)
@@ -412,17 +378,18 @@ fn verdict_core(attempted: List[(String, String)], planned: Int, results: List[L
     else some(display + " " + int.to_string(n) + "/" + int.to_string(planned))
   })
   let sat = if saturated then [SATURATED_REASON] else []
-  if list.is_empty(reached(results)) then
-    Verdict { id: "nothing-measured", comparable: false, conclusive: false,
-      reasons: ["no cell reached the model: nothing was measured"] }
-  else if not list.is_empty(short) then
-    Verdict { id: "not-comparable", comparable: false, conclusive: not saturated,
-      reasons: ["the languages saw different task counts, so their rates share no denominator and this run is not a comparison: " +
-        string.join(short, ", ") + " of " + int.to_string(planned) + " planned"] + sat }
-  else if saturated then
-    Verdict { id: ST_SATURATED, comparable: true, conclusive: false, reasons: sat }
-  else
-    Verdict { id: "comparable", comparable: true, conclusive: true, reasons: [] }
+  let any_reached = not list.is_empty(reached(results))
+  let complete = list.is_empty(short)
+  // The decision table is shared with the daily lane; the reasons are this
+  // lane's own words, because "the languages saw different task counts" and
+  // "three planned tasks were never asked" are different sentences.
+  let reasons =
+    if not any_reached then ["no cell reached the model: nothing was measured"]
+    else if not complete then
+      ["the languages saw different task counts, so their rates share no denominator and this run is not a comparison: " +
+        string.join(short, ", ") + " of " + int.to_string(planned) + " planned"] + sat
+    else sat
+  cellstate.verdict(any_reached, complete, saturated, reasons)
 }
 
 fn verdict_of(probes: List[Probe], tasks: List[PTask], results: List[LResult]) -> Verdict =
@@ -437,11 +404,7 @@ fn verdict_headline(v: Verdict) -> String = match v.id {
   _ => "no cell reached the model",
 }
 
-fn verdict_block(v: Verdict) -> String =
-  "> **Verdict: `" + v.id + "` — " + verdict_headline(v) + "**\n>\n" +
-  "> - certified as a comparison: **" + (if v.comparable then "yes" else "no") + "**\n" +
-  "> - the bank discriminated: **" + (if v.conclusive then "yes" else "no") + "**\n" +
-  (v.reasons |> list.map((r) => "> - " + r + "\n") |> string.join("")) + "\n"
+fn verdict_block(v: Verdict) -> String = cellstate.verdict_block(v, verdict_headline(v))
 
 fn verdict_json(v: Verdict, planned: Int, cells: List[LResult], probes: List[Probe]) -> Value = {
   let saturated = is_saturated(cells)
@@ -580,21 +543,10 @@ fn result_json(r: LResult, state: String) -> Value =
     ])))),
   ])
 
-fn pct(n: Int, d: Int) -> String =
-  if d == 0 then "—" else int.to_string(n * 100 / d) + "%"
-
-// The rate a row publishes. The denominator is ALWAYS the planned task count.
-// When some cells are `not-run` the true rate is not a point: it lies between
-// "every absent cell would have failed" and "every absent cell would have
-// passed", so the row prints that interval and the incompleteness is IN the
-// number, not in a parenthetical a reader drops on the way to the headline.
-// A complete row's interval collapses to a point, which is exactly when it is
-// comparable with another complete row.
+// The rate a row publishes, and its denominator, are the shared ones: the
+// planned task count always, and an interval whenever a cell is absent.
 fn rate(passed: Int, absent: Int, planned: Int) -> String =
-  if planned == 0 then "—"
-  else if absent == 0 then int.to_string(passed) + "/" + int.to_string(planned) + " (" + pct(passed, planned) + ")"
-  else int.to_string(passed) + "/" + int.to_string(planned) + " (" +
-    pct(passed, planned) + "–" + pct(passed + absent, planned) + ")"
+  cellstate.rate(passed, absent, planned)
 
 fn language_row(pr: Probe, tasks: List[PTask], results: List[LResult]) -> String = {
   let planned = list.len(tasks)
