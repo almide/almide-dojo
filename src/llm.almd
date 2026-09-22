@@ -1,0 +1,92 @@
+// Model access shared by the daily lane (main.almd) and the cross-language
+// lane (msr/run.almd).
+//
+// Model specs are `provider:model`:
+//   cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast   Cloudflare Workers AI
+//   anthropic:claude-sonnet-5                      Anthropic Messages API
+//   openrouter:meta-llama/llama-3.3-70b-instruct   OpenRouter
+//   openai:<model>                                 OpenAI API
+//   cli:claude                                     Claude Code CLI (`claude -p`, no API key)
+// An unprefixed `claude-*` is the Anthropic Messages API (ANTHROPIC_API_KEY),
+// NOT the Claude CLI; any other unprefixed name is OpenAI.
+
+import almai
+
+fn strip_code_fences(s: String) -> String =
+  s
+    |> string.split("\n")
+    |> list.filter((line) => not string.starts_with(string.trim(line), "```"))
+    |> string.join("\n")
+
+fn to_almai_spec(model: String) -> String = {
+  // "cf:@cf/meta/..." → "cf/@cf/meta/..."
+  // "anthropic:claude-..." → "anthropic/claude-..."
+  // "cli:claude" → "cli/claude"
+  // "claude-sonnet-5" (no prefix) → "anthropic/claude-sonnet-5"
+  let colon = string.index_of(model, ":")
+  match colon {
+    some(i) => string.take(model, i) + "/" + string.drop(model, i + 1)
+    none => if string.starts_with(model, "claude") then "anthropic/" + model
+      else "openai/" + model
+  }
+}
+
+// The provider half of a spec, as almai dispatches on it.
+fn provider_of(model: String) -> String = {
+  let spec = to_almai_spec(model)
+  match string.index_of(spec, "/") {
+    some(i) => string.take(spec, i)
+    none => "openai"
+  }
+}
+
+// Whether almai (at the commit in almide.lock) puts `temperature` on the
+// wire for this provider. The OpenAI-compatible providers send it; the
+// Anthropic and Cloudflare providers build their request body without it,
+// and the CLI providers cannot set it — for those the provider's default
+// applies. The cross-language manifest records this next to the requested
+// value so a reader knows which one the numbers were sampled at.
+fn temperature_sent(provider: String) -> Bool = match provider {
+  "openai" | "openrouter" | "groq" => true,
+  _ => false,
+}
+
+effect fn call(model: String, system: String, user_prompt: String, temperature: Float, max_attempts: Int) -> Result[String, String] = {
+  let spec = to_almai_spec(model)
+  let opts = almai.defaults() |> almai.with_system(system) |> almai.with_temperature(temperature)
+  let msgs = [almai.user(user_prompt)]
+  match almai.call_retry(spec, msgs, opts, max_attempts) {
+    err(e) => err(e)
+    ok(r) => ok(strip_code_fences(r.content))
+  }
+}
+
+test "strip_code_fences removes triple backtick lines" {
+  let raw = "```almide\nfn f() = 1\n```"
+  assert_eq(strip_code_fences(raw), "fn f() = 1")
+}
+
+test "strip_code_fences leaves non-fenced text alone" {
+  assert_eq(strip_code_fences("plain text"), "plain text")
+}
+
+test "to_almai_spec routes Sonnet 5 to the Anthropic provider with or without prefix" {
+  assert_eq(to_almai_spec("anthropic:claude-sonnet-5"), "anthropic/claude-sonnet-5")
+  assert_eq(to_almai_spec("claude-sonnet-5"), "anthropic/claude-sonnet-5")
+  assert_eq(to_almai_spec("cf:@cf/meta/llama-3.1-8b-instruct"), "cf/@cf/meta/llama-3.1-8b-instruct")
+}
+
+test "the Claude CLI is spelled cli:claude, not a bare claude-* name" {
+  assert_eq(to_almai_spec("cli:claude"), "cli/claude")
+  assert_eq(provider_of("cli:claude"), "cli")
+  assert_eq(provider_of("claude-sonnet-5"), "anthropic")
+  assert_eq(provider_of("cf:@cf/meta/llama-3.1-8b-instruct"), "cf")
+}
+
+test "temperature reaches the wire only for the OpenAI-compatible providers" {
+  assert(temperature_sent("openai"))
+  assert(temperature_sent("openrouter"))
+  assert(not temperature_sent("anthropic"))
+  assert(not temperature_sent("cf"))
+  assert(not temperature_sent("cli"))
+}
