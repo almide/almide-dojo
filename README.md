@@ -140,7 +140,9 @@ runs/msr/<date>/<model-slug>/
 
 Other entry points: `make msr-probe` (which languages this machine can
 measure), `make msr-verify` (the reference solutions through every available
-plugin, no model and no key — CI's gate), and narrower runs:
+plugin, no model and no key — CI's gate; a language named in `LANGUAGES=`
+whose toolchain is missing fails the gate rather than being skipped), and
+narrower runs:
 `make msr TASKS=gcd,fizzbuzz LANGUAGES=almide,rust LABEL=smoke`. A run
 labelled `smoke` is for proving the pipeline; it is not a number.
 
@@ -162,7 +164,12 @@ prose.` followed by that language's notes — a sentence or two for the
 mainstream languages, and for Almide the daily lane's full system prompt
 (`src/prompts.almd`), so the two lanes ask for Almide identically. The
 manifest records each language's `notes_bytes` and prompt hashes so the
-asymmetry is visible. No plugin runs an auto-fixer (`almide fix` is the daily
+asymmetry is visible — and it is a real one: Almide's notes are a stdlib
+cheatsheet (~13 KB) where the others get ~120 bytes of file-shape rules,
+because a model has read the others' documentation and not ours. One of its
+lines names `string.run_length_encode`, which is one task in the set. Whether
+that stays, shrinks, or is mirrored by a cheatsheet per language is the
+maintainer's call before any number is published. No plugin runs an auto-fixer (`almide fix` is the daily
 lane's convenience; here every language is judged on the model's file as
 written) and no diagnostic hints are appended to the retry prompt. The retry
 prompt is the same text for every language.
