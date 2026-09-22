@@ -22,6 +22,19 @@ env:
   # `anthropic:` = Anthropic Messages API, `openai:` = OpenAI.
   DAILY_MODELS: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast,cf:@cf/meta/llama-3.1-8b-instruct'
 
+  # The HTTP read timeout, derived in msr-cross.yml — same number here on
+  # purpose: one deadline, one derivation, no drift between the lanes. The
+  # compiler's default is 30 s, which is a deadline on the whole completion
+  # (this transport is non-streaming), and a reasoning model exceeds it. The
+  # daily lane is the more exposed of the two: `call_model` passes
+  # max_attempts=1, so there is no transport retry to absorb a slow answer,
+  # and src/main.almd records a transport failure as a RunResult with
+  # success=false — a scored zero for a task the model was never asked
+  # (almide-dojo#17). Until that is typed the way the cross-language lane types
+  # it, the timeout is what keeps the daily number from silently absorbing the
+  # network.
+  ALMIDE_HTTP_TIMEOUT_SECS: '140'
+
 jobs:
   plan:
     runs-on: ubuntu-latest
