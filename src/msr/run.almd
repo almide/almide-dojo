@@ -308,7 +308,8 @@ effect fn run_language(pr: Probe, tasks: List[PTask], model: String, raw_dir: St
 //                          at least one measured cell FAILED. Only such a
 //                          cell carries discriminating information.
 //   inconclusive-saturated judged exactly like `measured`, and passed — but
-//                          no cell anywhere in the run failed. The task bank
+//                          every language in the run reached SATURATION_PCT
+//                          or better of the cells it measured. The task bank
 //                          is at its ceiling, so the cell separates nothing
 //                          (almide/almide#1963: the lang-bench MiniGit
 //                          snapshot is 20/20 for every language). A pass here
