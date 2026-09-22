@@ -105,6 +105,21 @@ git commit -m "Record the $(date -u +%Y-%m-%d) full-bank MSR run for Sonnet 5 ag
 The committed `summary.md` carries the model, the `compiler` stamp, the task
 count and the pass counts; the README row then cites `almide-dojo@<that sha>`.
 
+The [Cross-language MSR Run](.github/workflows/msr-cross.yml) is the second
+scheduled lane: **weekly** (Mondays 05:00 UTC) and on `workflow_dispatch`, on
+the same Cloudflare models, committing `runs/msr/<date>/<model-slug>/` to
+`main`. It is weekly rather than daily because one cross-language run is ~500
+model calls and seven toolchain installs against the daily lane's 21 calls,
+and the number it feeds — the almide README scorecard — is gated at 90 days
+by almide/almide's `scripts/check-readme-numbers.sh`; weekly re-measures it
+twelve times inside that window. Dispatching it with an `anthropic:` or
+`openai:` spec is refused in the `plan` job, by name, before anything runs.
+Each language's toolchain install is `continue-on-error`, so a broken setup
+action downgrades that language to `not measured: <tool> missing` instead of
+deleting the whole table; the job then asserts #2146's victory condition
+(Almide first, at least five languages measured under one manifest, at least
+one task that actually reached the model).
+
 ### Cross-language lane: `git clone && make msr`
 
 The second lane (almide/almide#2146) asks the same model the same tasks in
@@ -115,8 +130,20 @@ writes one manifest per run. A third party reproduces the table with:
 
 ```bash
 git clone https://github.com/almide/almide-dojo && cd almide-dojo
-ANTHROPIC_API_KEY=... make msr          # or CF_*/CLOUDFLARE_* ; or MODEL=cli:claude with a logged-in claude CLI
+CF_ACCOUNT_ID=... CLOUDFLARE_API_KEY=... CLOUDFLARE_EMAIL=... make msr   # Cloudflare Workers AI
+# or  ANTHROPIC_API_KEY=... make msr
+# or  MODEL=cli:claude make msr    with a logged-in `claude` CLI, no key at all
 ```
+
+**No Anthropic key is required**, by ruling and by construction: the lane
+that produces the published number runs on CI, on the Cloudflare models
+(below). Cloudflare's Global API Key auth needs all three variables — a
+partial set is refused by name before any task runs, because Cloudflare
+answers a bad credential with HTTP 200 and a body carrying no completion,
+and an empty completion scored against the oracle looks exactly like a model
+that cannot write the language. `src/llm.almd` refuses an empty completion
+outright: it becomes a harness error, which is recorded as `unreached` and
+rolled up as "not measured", never as a 0%.
 
 `make msr` installs the compiler named in `almide-pin.toml` (refusing any
 other version), puts a pinned `tsc` on PATH when there is none, picks the

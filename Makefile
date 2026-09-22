@@ -6,11 +6,12 @@
 #   make msr-probe      which languages this machine can measure
 #   make test           the harness's own test blocks
 #
-# `make msr` needs one provider key in the environment (see README, "Running
-# the harness"); MODEL picks the spec, LANGUAGES / TASKS narrow the run:
+# `make msr` needs one provider's credentials in the environment (see README,
+# "Running the harness") — no Anthropic key is required; MODEL picks the spec,
+# LANGUAGES / TASKS narrow the run:
 #
-#   ANTHROPIC_API_KEY=... make msr MODEL=anthropic:claude-sonnet-5
 #   CF_ACCOUNT_ID=... CLOUDFLARE_API_KEY=... CLOUDFLARE_EMAIL=... make msr
+#   ANTHROPIC_API_KEY=... make msr MODEL=anthropic:claude-sonnet-5
 #   make msr MODEL=cli:claude TASKS=gcd,fizzbuzz LABEL=smoke
 
 MODEL ?=
