@@ -1,0 +1,16 @@
+fn mat_add(a: List[List[Int]], b: List[List[Int]]) -> List[List[Int]] =
+  list.zip_with(a, b, (ra, rb) => list.zip_with(ra, rb, (x, y) => x + y))
+
+fn mat_transpose(m: List[List[Int]]) -> List[List[Int]] = {
+  let ncols = match list.first(m) {
+    some(row) => list.len(row),
+    none => 0,
+  }
+  list.range(0, ncols) |> list.map((j) => m |> list.map((row) => list.get(row, j) ?? 0))
+}
+
+fn mat_scale(m: List[List[Int]], s: Int) -> List[List[Int]] =
+  m |> list.map((row) => row |> list.map((x) => x * s))
+
+fn mat_dot_row(row_a: List[Int], col_b: List[Int]) -> Int =
+  list.zip_with(row_a, col_b, (x, y) => x * y) |> list.fold(0, (acc, x) => acc + x)

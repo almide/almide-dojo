@@ -1,0 +1,6 @@
+- `encrypt` shifts each lowercase letter (`a`-`z`) forward by `shift` positions, wrapping around
+- `decrypt` reverses the encryption (shifts backward by `shift`)
+- Non-lowercase characters are left unchanged
+- `shift` can be any non-negative integer (including values >= 26)
+- `encrypt("abc", 1)` must return `"bcd"`
+- `decrypt("bcd", 1)` must return `"abc"`

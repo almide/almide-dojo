@@ -1,0 +1,4 @@
+- Return `true` if `a` and `b` are anagrams (same characters, same counts, different order allowed)
+- Comparison is case-insensitive: `"Listen"` and `"Silent"` are anagrams
+- Spaces are ignored: `"a b"` and `"ba"` are anagrams
+- `is_anagram("", "")` returns `true`

@@ -1,0 +1,5 @@
+- Capitalize the first character of each word in `s`
+- A word is a maximal sequence of non-space characters, separated by single spaces
+- `title_case("")` must return `""`
+- `title_case("hello world")` must return `"Hello World"`
+- Characters after the first in each word are lowercased: `title_case("hELLO")` returns `"Hello"`

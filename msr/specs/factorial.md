@@ -1,0 +1,3 @@
+- Return `n!` (the factorial of `n`)
+- `factorial(0)` must return `1`
+- Assume `n >= 0`

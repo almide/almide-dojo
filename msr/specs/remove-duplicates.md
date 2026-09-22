@@ -1,0 +1,4 @@
+- Return a new list with duplicate elements removed
+- Preserve the order of first occurrence
+- `remove_duplicates([])` must return `[]`
+- `remove_duplicates([1, 2, 2, 3, 1])` must return `[1, 2, 3]`

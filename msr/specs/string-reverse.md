@@ -1,0 +1,4 @@
+- Return `s` with its characters reversed
+- `reverse("hello")` must return `"olleh"`
+- `reverse("")` must return `""`
+- Single-character strings should be returned unchanged

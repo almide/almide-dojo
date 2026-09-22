@@ -1,0 +1,4 @@
+fn fib_go(n: Int, a: Int, b: Int) -> Int =
+  if n == 0 then a else fib_go(n - 1, b, a + b)
+
+fn fibonacci(n: Int) -> Int = fib_go(n, 0, 1)
