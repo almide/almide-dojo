@@ -6,30 +6,67 @@ on:
   workflow_dispatch:
     inputs:
       models:
-        description: 'Comma-separated model specs'
+        description: 'Comma-separated model specs (empty = the daily set below)'
         required: false
-        default: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast'
+        default: ''
 
 permissions:
   contents: write
 
+env:
+  # The daily set. Two Cloudflare Workers AI models keep the non-Anthropic
+  # column populated; Sonnet 5 is the current Anthropic model (#1617 asks the
+  # README scorecard to cite it). Specs are what src/main.almd parses:
+  # `cf:` = Cloudflare, `anthropic:` = Anthropic Messages API, `openai:`.
+  DAILY_MODELS: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast,cf:@cf/meta/llama-3.1-8b-instruct,anthropic:claude-sonnet-5'
+
 jobs:
-  run-msr:
+  plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        model:
-          - 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast'
-          - 'cf:@cf/meta/llama-3.1-8b-instruct'
+    outputs:
+      models: ${{ steps.matrix.outputs.models }}
+      pin: ${{ steps.pin.outputs.ref }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Almide v0.14.8
+      - name: Read the compiler pin
+        id: pin
         run: |
-          cargo install --git https://github.com/almide/almide --tag v0.14.8 --bin almide --locked --force
-          almide --version  # expect `almide 0.14.6` (v0.14.7 has almai dispatch regression — see almide issue)
+          REF=$(sed -nE 's/^ref *= *"([^"]+)".*/\1/p' almide-pin.toml)
+          test -n "$REF" || { echo "almide-pin.toml has no [compiler] ref"; exit 1; }
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "compiler pin: $REF"
+
+      - name: Build the model matrix
+        id: matrix
+        run: |
+          MODELS="${{ github.event.inputs.models }}"
+          if [ -z "$MODELS" ]; then MODELS="$DAILY_MODELS"; fi
+          JSON=$(printf '%s' "$MODELS" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | jq -R . | jq -cs .)
+          test "$(printf '%s' "$JSON" | jq length)" -gt 0 || { echo "empty model list"; exit 1; }
+          echo "models=$JSON" >> "$GITHUB_OUTPUT"
+          echo "models: $JSON"
+
+  run-msr:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        model: ${{ fromJSON(needs.plan.outputs.models) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the pinned Almide (${{ needs.plan.outputs.pin }})
+        run: |
+          PIN="${{ needs.plan.outputs.pin }}"
+          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "$PIN"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          GOT=$("$HOME/.local/bin/almide" --version)
+          echo "installed: $GOT (pin $PIN)"
+          # The pin is the measurement's identity: refuse to measure with anything else.
+          test "$GOT" = "almide ${PIN#v}" || { echo "::error::almide-pin.toml says $PIN but the installed binary is '$GOT'"; exit 1; }
 
       - name: Run all tasks
         env:
@@ -48,23 +85,55 @@ jobs:
           # is silently overwritten by stale checked-out copies.
           rm -rf runs/
           echo "Running MSR with model: $MODEL"
-          almide run src/main.almd -- all "$MODEL" || true
+          # The harness exits 1 both for a harness failure (no summary written)
+          # and for "some tasks failed" (summary written — that is a
+          # measurement, not an error). The job verdict is the summary:
+          # a run that measured zero tasks is red, whatever the exit code.
+          set +e
+          almide run src/main.almd -- all "$MODEL"
+          RC=$?
+          set -e
+          echo "harness exit code: $RC"
+          SUMMARY=$(find runs -name summary.md 2>/dev/null | head -n1 || true)
+          if [ -z "$SUMMARY" ]; then
+            echo "::error::the harness wrote no runs/*/*/summary.md (exit $RC) — nothing was measured"
+            exit 1
+          fi
+          TASKS=$(sed -nE 's/^- \*\*tasks\*\*: ([0-9]+).*/\1/p' "$SUMMARY")
+          if [ "${TASKS:-0}" -eq 0 ]; then
+            echo "::error::$SUMMARY reports 0 tasks"
+            exit 1
+          fi
+          {
+            echo "## MSR run — \`$MODEL\`"
+            echo
+            echo "- summary: \`$SUMMARY\`"
+            echo "- compiler pin: \`${{ needs.plan.outputs.pin }}\` (\`$(almide --version)\`)"
+            echo "- harness exit code: $RC (1 = some tasks failed; the measurement is still recorded)"
+            echo
+            sed -n '1,/^## Per-task/p' "$SUMMARY" | grep '^- ' || true
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
           name: runs-${{ strategy.job-index }}
           path: runs/
+          if-no-files-found: error
 
   commit-results:
-    needs: run-msr
+    needs: [plan, run-msr]
+    # Run as long as the matrix was not cancelled: commit whatever models did
+    # produce a summary even when another model's job is red (the workflow as
+    # a whole still fails on that job).
+    if: ${{ !cancelled() && needs.plan.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Almide
+      - name: Install the pinned Almide (${{ needs.plan.outputs.pin }})
         run: |
-          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh
+          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "${{ needs.plan.outputs.pin }}"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Download all results
@@ -76,14 +145,27 @@ jobs:
 
       - name: Regenerate dashboard
         run: |
-          almide run dashboards/build.almd || true
-          cp -f dashboards/index.html docs/index.html 2>/dev/null || true
+          almide run dashboards/build.almd
+          cp -f dashboards/index.html docs/index.html
 
       - name: Commit results and dashboard
+        # Only the main branch carries the trend line. A dispatch on any other
+        # ref (e.g. to test this workflow from a PR) leaves its results in the
+        # run's artifacts and the job summary, and commits nothing.
+        if: github.ref == 'refs/heads/main'
         run: |
           DATE=$(date -u +%Y-%m-%d)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add runs/ docs/index.html dashboards/index.html
-          git diff --cached --quiet || git commit -m "Daily MSR run $DATE (multi-model)"
-          git push || true
+          if git diff --cached --quiet; then
+            echo "::error::nothing to commit — the run-msr jobs produced no new files under runs/"
+            exit 1
+          fi
+          git commit -m "Daily MSR run $DATE (${{ needs.plan.outputs.pin }}, multi-model)"
+          git push
+
+      - name: Results were not committed (not main)
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "ref is ${{ github.ref }}: results stay in the artifacts (runs-*) and the job summaries; nothing was pushed." | tee -a "$GITHUB_STEP_SUMMARY"
