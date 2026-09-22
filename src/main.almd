@@ -533,6 +533,14 @@ effect fn list_all_tasks() -> Result[List[String], String] = {
   else ok(all)
 }
 
+// The compiler that judged this run, as `almide --version` prints it.
+// Recorded in summary.md so a scorecard row can cite the exact version.
+effect fn compiler_version() -> String =
+  match process.exec("almide", ["--version"]) {
+    ok(v) => string.trim(v)
+    err(_) => ""
+  }
+
 effect fn write_summary(date: String, model: String, results: List[RunResult]) -> Result[String, String] = {
   let slug = model_slug(model)
   let dir = "runs/" + date + "/" + slug
@@ -540,7 +548,8 @@ effect fn write_summary(date: String, model: String, results: List[RunResult]) -
     err(_) => err("failed to create " + dir)
     ok(_) => {
       let path = dir + "/summary.md"
-      match fs.write(path, render.render_summary(date, model, results)) {
+      let compiler = compiler_version() ?? ""
+      match fs.write(path, render.render_summary(date, model, compiler, results)) {
         err(_) => err("failed to write " + path)
         ok(_) => ok(path)
       }
@@ -678,4 +687,23 @@ test "model_slug sanitizes provider string" {
   assert_eq(model_slug("cf:@cf/meta/llama-3.3-70b"), "cf_cf_meta_llama-3-3-70b")
   assert_eq(model_slug("claude-sonnet-4-6"), "claude-sonnet-4-6")
   assert_eq(model_slug("anthropic/claude-sonnet-4-6"), "anthropic_claude-sonnet-4-6")
+}
+
+test "render_summary stamps the compiler version the run was judged with" {
+  let r = RunResult {
+    task: "fizzbuzz", model: "anthropic:claude-sonnet-5", success: true, retries: 0,
+    final_diagnostic: "", final_code: "", attempts: [],
+  }
+  let out = render.render_summary("2026-09-22", "anthropic:claude-sonnet-5", "almide 0.62.0", [r])
+  assert(string.contains(out, "- **compiler**: `almide 0.62.0`\n"))
+  assert(string.contains(out, "- **tasks**: 1\n"))
+  // A backfill does not know the compiler: no line rather than an empty one.
+  let bare = render.render_summary("2026-09-22", "anthropic:claude-sonnet-5", "", [r])
+  assert(not string.contains(bare, "**compiler**"))
+}
+
+test "to_almai_spec routes Sonnet 5 to the Anthropic provider with or without prefix" {
+  assert_eq(to_almai_spec("anthropic:claude-sonnet-5"), "anthropic/claude-sonnet-5")
+  assert_eq(to_almai_spec("claude-sonnet-5"), "anthropic/claude-sonnet-5")
+  assert_eq(to_almai_spec("cf:@cf/meta/llama-3.1-8b-instruct"), "cf/@cf/meta/llama-3.1-8b-instruct")
 }
