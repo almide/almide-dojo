@@ -40,12 +40,15 @@ The signal we care about:
 
 ```
 almide.toml          Package manifest (the harness itself is an Almide package)
-src/main.almd        Harness — written in Almide, of course
+src/main.almd        Harness — written in Almide, of course (the daily Almide lane)
+src/msr/             The cross-language lane: neutral task model, language plugins, runner
+msr/                 Its task set (task-set.json), behavior texts, reference solutions
 tasks/               Task bank (prompts + tests + metadata)
-runs/                Per-day results, committed to git
+runs/                Per-day results, committed to git (runs/msr/ for the cross-language lane)
 dashboards/          Static site for visualizing trends (GitHub Pages)
 almide-pin.toml      Which Almide compiler commit we evaluate against
 malicious-hints.md   Incident log of hint texts that misled models
+Makefile             `make msr`, `make msr-verify`, `make msr-probe`, `make test`
 ```
 
 The harness is deliberately written in Almide itself — Dojo is the first place that dogfoods Almide for a non-trivial I/O-heavy program (HTTP, fs, process, json). Every line of the harness is another data point for the language it tests.
@@ -63,8 +66,11 @@ almide --version   # must print the pin
 ```
 
 Model specs are `provider:model`; the provider's key comes from the environment
-(`CF_ACCOUNT_ID` + `CLOUDFLARE_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
-`OPENROUTER_API_KEY`; see the header of `src/main.almd`):
+(`CF_ACCOUNT_ID` + `CLOUDFLARE_API_KEY` + `CLOUDFLARE_EMAIL`, `ANTHROPIC_API_KEY`,
+`OPENAI_API_KEY`, `OPENROUTER_API_KEY`; see the header of `src/main.almd`). An
+unprefixed `claude-*` is the Anthropic Messages API, not the CLI; the Claude
+Code CLI is `cli:claude` (`claude -p`, no API key, the CLI's own model and
+sampling — a convenience for smoke runs, not a scorecard provider):
 
 ```bash
 # single task
@@ -98,6 +104,77 @@ git commit -m "Record the $(date -u +%Y-%m-%d) full-bank MSR run for Sonnet 5 ag
 
 The committed `summary.md` carries the model, the `compiler` stamp, the task
 count and the pass counts; the README row then cites `almide-dojo@<that sha>`.
+
+### Cross-language lane: `git clone && make msr`
+
+The second lane (almide/almide#2146) asks the same model the same tasks in
+seven languages — **Almide first**, then Rust, Go, TypeScript, Zig, Gleam,
+MoonBit — with the same prompt modulo the language name and its syntax
+notes, the same retry budget, judged by each language's own toolchain, and
+writes one manifest per run. A third party reproduces the table with:
+
+```bash
+git clone https://github.com/almide/almide-dojo && cd almide-dojo
+ANTHROPIC_API_KEY=... make msr          # or CF_*/CLOUDFLARE_* ; or MODEL=cli:claude with a logged-in claude CLI
+```
+
+`make msr` installs the compiler named in `almide-pin.toml` (refusing any
+other version), puts a pinned `tsc` on PATH when there is none, picks the
+model from whichever provider key the environment holds (`MODEL=` overrides;
+OpenAI / OpenRouter keys need an explicit `MODEL=`), runs every language
+whose toolchain is on PATH, and prints the table. It installs no language
+toolchain: a language whose compiler is missing is a row that says
+`not measured: <tool> missing` — never dropped, never counted as a failure —
+so the table is a function of the machine, stated in the manifest.
+
+```
+runs/msr/<date>/<model-slug>/
+  manifest.json   model, provider, temperature (and whether the provider received it),
+                  seed (none: the transport has no seed option), retries, task-set revision
+                  + sha256, per-language toolchain versions and prompt hashes, compiler
+                  pin + version, harness commit, the condition (see below)
+  results.json    per language x task: pass/fail, retries, the kind of each failed attempt
+  table.md        the multi-language table (summary + per-task grid)
+  raw/            every attempt's sources and logs (gitignored)
+```
+
+Other entry points: `make msr-probe` (which languages this machine can
+measure), `make msr-verify` (the reference solutions through every available
+plugin, no model and no key — CI's gate), and narrower runs:
+`make msr TASKS=gcd,fizzbuzz LANGUAGES=almide,rust LABEL=smoke`. A run
+labelled `smoke` is for proving the pipeline; it is not a number.
+
+**The task subset.** `msr/task-set.json` names the 21 bank tasks whose
+functions are pure over `Int`, `Bool`, `String` and lists of those, with an
+`assert_eq(call, literal)` oracle — the types every plugin language spells
+one way, so nothing but syntax differs between languages. The other 17 bank
+tasks are listed there with the reason each is out (`Option`/`Map`/`Result`
+returns, function arguments, user-defined ADTs, and the Almide-only effect
+tasks). The oracle cases are read from each task's own `tests.almd` — the
+same cases the daily lane scores — and the behavior text is
+`msr/specs/<task>.md`, the prompt's Behavior section without the Almide
+stdlib notes. `scripts/check-task-set.sh` (CI) keeps every bank task decided
+one way or the other, with a spec and a reference solution per language.
+
+**What "same conditions" means here, exactly.** One system prompt per
+language: `You are writing <Language>. Output ONLY source code, no fences or
+prose.` followed by that language's notes — a sentence or two for the
+mainstream languages, and for Almide the daily lane's full system prompt
+(`src/prompts.almd`), so the two lanes ask for Almide identically. The
+manifest records each language's `notes_bytes` and prompt hashes so the
+asymmetry is visible. No plugin runs an auto-fixer (`almide fix` is the daily
+lane's convenience; here every language is judged on the model's file as
+written) and no diagnostic hints are appended to the retry prompt. The retry
+prompt is the same text for every language.
+
+**The effect-declaration condition (almide-dojo#2).** The manifest carries
+`condition.effects`, the slot for the with/without-effects A/B. Only
+`shipped` exists: the B condition — effect enforcement relaxed to warnings,
+or the effect tasks rewritten without annotations — has neither a compiler
+switch in the pinned release nor a design ruling, and the cross-language
+subset contains no effect-bearing task (they are Almide-only by nature), so
+the A/B is an Almide-lane run over the effect tasks, not a column here.
+`--condition <other>` is refused with that explanation.
 
 ## Task bank (31 tasks)
 

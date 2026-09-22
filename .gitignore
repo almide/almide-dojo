@@ -8,3 +8,6 @@ target/
 .env.*
 .almide/cache/
 almai
+
+# cross-language lane: a pinned tsc installed by scripts/msr.sh
+.msr-tools/
