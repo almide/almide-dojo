@@ -1,0 +1,250 @@
+name: Cross-language MSR Run
+
+# The cross-language lane (almide/almide#2146) on CI, on the Cloudflare
+# Workers AI models — the only provider credentials this repo holds. The
+# maintainer's ruling (2026-09-22) is that ANTHROPIC_API_KEY is NOT a
+# requirement of this measurement: an `anthropic:` / `openai:` spec is
+# refused here with a message, not attempted.
+#
+# Weekly, not daily. One cross-language run is 21 tasks x up to 7 languages x
+# up to 4 attempts (~500 model calls) plus seven toolchain installs, against
+# the daily lane's 21 calls; and the number it feeds — the almide README
+# scorecard — is gated at 90 days of freshness by
+# almide/almide scripts/check-readme-numbers.sh. Weekly re-measures it twelve
+# times inside that window, so the cadence is headroom, not a constraint.
+# Monday 05:00 UTC keeps it clear of the 03:00 UTC daily lane, which commits
+# to the same branch.
+
+on:
+  schedule:
+    - cron: '0 5 * * 1'  # Mondays 05:00 UTC (14:00 JST)
+  workflow_dispatch:
+    inputs:
+      models:
+        description: 'Comma-separated model specs (empty = the Cloudflare set below). An anthropic:/openai: spec is REFUSED: this repo holds Cloudflare credentials and nothing else.'
+        required: false
+        default: ''
+      languages:
+        description: 'Comma-separated plugin names (empty = every plugin whose toolchain is on the runner)'
+        required: false
+        default: ''
+      tasks:
+        description: 'Comma-separated task names (empty = every task in msr/task-set.json)'
+        required: false
+        default: ''
+      label:
+        description: 'Free-text label stamped into the manifest. "smoke" marks a run as a pipeline proof, not a number.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+env:
+  # The Cloudflare Workers AI models only — same set and same reasoning as
+  # daily.yml. `cf:` = Cloudflare; src/msr/run.almd parses the spec.
+  CROSS_MODELS: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast,cf:@cf/meta/llama-3.1-8b-instruct'
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      models: ${{ steps.matrix.outputs.models }}
+      pin: ${{ steps.pin.outputs.ref }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the compiler pin
+        id: pin
+        run: |
+          REF=$(sed -nE 's/^ref *= *"([^"]+)".*/\1/p' almide-pin.toml)
+          test -n "$REF" || { echo "almide-pin.toml has no [compiler] ref"; exit 1; }
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "compiler pin: $REF"
+
+      - name: Build the model matrix
+        id: matrix
+        env:
+          INPUT_MODELS: ${{ github.event.inputs.models }}
+        run: |
+          MODELS="$INPUT_MODELS"
+          if [ -z "$MODELS" ]; then MODELS="$CROSS_MODELS"; fi
+          # Refuse a keyed provider up front, with the reason, instead of
+          # letting ~500 model calls fail one at a time. The harness would
+          # also refuse (a missing key is a harness error, and every task
+          # would be recorded as unreached), but a plan-step refusal names
+          # the offending spec.
+          BAD=$(printf '%s' "$MODELS" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -E '^(anthropic:|openai:|claude-)' || true)
+          if [ -n "$BAD" ]; then
+            echo "::error::this repo holds Cloudflare Workers AI credentials and nothing else (maintainer ruling: no Anthropic or OpenAI key in CI). Refused spec(s): $(printf '%s' "$BAD" | tr '\n' ' ')"
+            echo "Anthropic / OpenAI rows are measured locally and committed by hand; see README, \"Nightly vs. by hand\"."
+            exit 1
+          fi
+          JSON=$(printf '%s' "$MODELS" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | jq -R . | jq -cs .)
+          test "$(printf '%s' "$JSON" | jq length)" -gt 0 || { echo "empty model list"; exit 1; }
+          echo "models=$JSON" >> "$GITHUB_OUTPUT"
+          echo "models: $JSON"
+
+  run-msr:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        model: ${{ fromJSON(needs.plan.outputs.models) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Every toolchain step is continue-on-error: a language whose install
+      # breaks must come out of the run as "not measured: <tool> missing"
+      # (#2146 item 3), which is what the runner's probe writes when the
+      # compiler is off PATH. Killing the whole measurement because Gleam's
+      # setup action had a bad day would turn one absent row into zero rows.
+      - uses: actions/setup-go@v5
+        continue-on-error: true
+        with:
+          go-version: stable
+
+      - uses: mlugg/setup-zig@v2
+        continue-on-error: true
+        with:
+          version: 0.16.0
+
+      - uses: erlef/setup-beam@v1
+        continue-on-error: true
+        with:
+          otp-version: "27"
+          gleam-version: "1.18.1"
+
+      - name: Install MoonBit
+        continue-on-error: true
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      # rustc, node and npm come with the runner image; scripts/msr.sh
+      # installs the pinned tsc when TypeScript has none.
+      - name: Install the pinned Almide (${{ needs.plan.outputs.pin }})
+        run: |
+          PIN="${{ needs.plan.outputs.pin }}"
+          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "$PIN"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          GOT=$("$HOME/.local/bin/almide" --version)
+          echo "installed: $GOT (pin $PIN)"
+          # The pin is the measurement's identity: refuse to measure with anything else.
+          test "$GOT" = "almide ${PIN#v}" || { echo "::error::almide-pin.toml says $PIN but the installed binary is '$GOT'"; exit 1; }
+
+      - name: Probe the runner
+        run: |
+          make msr-probe | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Run the cross-language lane
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
+          CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
+          INPUT_LANGUAGES: ${{ github.event.inputs.languages }}
+          INPUT_TASKS: ${{ github.event.inputs.tasks }}
+          INPUT_LABEL: ${{ github.event.inputs.label }}
+        run: |
+          MODEL="${{ matrix.model }}"
+          # Clear runs/ so this job's artifact carries ONLY this job's fresh
+          # output. Without it each matrix job uploads the checked-out
+          # history too, and the merge in commit-results races: the artifact
+          # applied last wins and the other model's fresh data is silently
+          # overwritten by a stale copy. (Same reasoning as daily.yml.)
+          rm -rf runs/
+          echo "Running the cross-language lane with model: $MODEL"
+          # Exit codes of the lane: 0 every measured task passed, 1 some
+          # failed (the table IS the measurement), 2 nothing was measured.
+          # Only 2 is a harness failure.
+          set +e
+          make msr MODEL="$MODEL" LANGUAGES="$INPUT_LANGUAGES" TASKS="$INPUT_TASKS" LABEL="$INPUT_LABEL"
+          RC=$?
+          set -e
+          echo "lane exit code: $RC"
+          if [ "$RC" -ge 2 ]; then
+            echo "::error::the cross-language lane exited $RC: nothing reached the model (credentials, quota or network). No table was written."
+            exit 1
+          fi
+
+      - name: Check the run against #2146's victory condition
+        run: |
+          MANIFEST=$(find runs/msr -name manifest.json 2>/dev/null | sort | tail -n1 || true)
+          TABLE=$(dirname "${MANIFEST:-.}")/table.md
+          if [ -z "$MANIFEST" ] || [ ! -f "$TABLE" ]; then
+            echo "::error::the lane wrote no runs/msr/*/*/manifest.json — nothing was measured"
+            exit 1
+          fi
+          MEASURED=$(jq '[.languages[] | select(.measured)] | length' "$MANIFEST")
+          FIRST=$(jq -r '.languages[0].name' "$MANIFEST")
+          FIRST_MEASURED=$(jq -r '.languages[0].measured' "$MANIFEST")
+          ABSENT=$(jq -r '[.languages[] | select(.measured | not) | .name + " (" + .reason + ")"] | join(", ")' "$MANIFEST")
+          echo "measured languages: $MEASURED; first: $FIRST (measured=$FIRST_MEASURED)"
+          echo "not measured: ${ABSENT:-none}"
+          # #2146: "a table with >=5 languages measured under one manifest,
+          # Almide first". A language the runner could not measure is a row
+          # that says so; it is never dropped and never counted as a zero.
+          [ "$FIRST" = "almide" ] && [ "$FIRST_MEASURED" = "true" ] || { echo "::error::Almide is not the first measured language in the manifest"; exit 1; }
+          [ "$MEASURED" -ge 5 ] || { echo "::error::only $MEASURED language(s) measured; #2146 needs at least 5 under one manifest. Not measured: ${ABSENT:-none}"; exit 1; }
+          # A row whose tasks all failed to reach the model is not a 0%: the
+          # lane records those as `unreached`, and a table made entirely of
+          # them is not a measurement.
+          REACHED=$(jq '[.results[] | select(.attempts | length > 0)] | length' "$(dirname "$MANIFEST")/results.json")
+          [ "$REACHED" -gt 0 ] || { echo "::error::no task reached the model"; exit 1; }
+          {
+            echo "## Cross-language MSR — \`${{ matrix.model }}\`"
+            echo
+            echo "- manifest: \`$MANIFEST\`"
+            echo "- compiler pin: \`${{ needs.plan.outputs.pin }}\`"
+            echo "- languages measured: **$MEASURED**; not measured: ${ABSENT:-none}"
+            echo
+            cat "$TABLE"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: msr-runs-${{ strategy.job-index }}
+          path: runs/
+          if-no-files-found: error
+
+  commit-results:
+    needs: [plan, run-msr]
+    # Commit whatever models did produce a table even when another model's
+    # job is red; the workflow as a whole still fails on that job.
+    if: ${{ !cancelled() && needs.plan.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: msr-runs-*
+          merge-multiple: true
+          path: runs/
+
+      - name: Commit the cross-language runs
+        # Only main carries the record. A dispatch on any other ref (e.g. to
+        # test this workflow from a branch) leaves its results in the run's
+        # artifacts and the job summaries, and commits nothing.
+        if: github.ref == 'refs/heads/main'
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add runs/msr/
+          if git diff --cached --quiet; then
+            echo "::error::nothing to commit — the run-msr jobs produced no new files under runs/msr/"
+            exit 1
+          fi
+          git commit -m "Cross-language MSR run $DATE (${{ needs.plan.outputs.pin }}, Cloudflare models)"
+          git push
+
+      - name: Results were not committed (not main)
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "ref is ${{ github.ref }}: results stay in the artifacts (msr-runs-*) and the job summaries; nothing was pushed." | tee -a "$GITHUB_STEP_SUMMARY"
