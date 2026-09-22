@@ -20,10 +20,9 @@ type Plugin = {
   display: String,
   // The file extension a reference solution uses under msr/reference/<name>/.
   ext: String,
-  // Executables the plugin needs on PATH; the first missing one makes the
-  // language "not measured".
-  tools: List[String],
-  // (label, command) pairs whose output is the toolchain version stamp.
+  // (label, command) pairs: the toolchain the plugin needs on PATH and the
+  // version line each prints. The first command that cannot run makes the
+  // language "not measured: <label> missing".
   versions: List[(String, List[String])],
   notes: String,
   // The indented signature lines the prompt shows.
@@ -33,13 +32,13 @@ type Plugin = {
 }
 
 fn all() -> List[Plugin] = [
-  Plugin { name: "almide", display: "Almide", ext: "almd", tools: almide.tools(), versions: almide.versions(), notes: almide.notes(), signatures: almide.signatures, files: almide.files, steps: almide.steps() },
-  Plugin { name: "rust", display: "Rust", ext: "rs", tools: rust.tools(), versions: rust.versions(), notes: rust.notes(), signatures: rust.signatures, files: rust.files, steps: rust.steps() },
-  Plugin { name: "go", display: "Go", ext: "go", tools: go.tools(), versions: go.versions(), notes: go.notes(), signatures: go.signatures, files: go.files, steps: go.steps() },
-  Plugin { name: "typescript", display: "TypeScript", ext: "ts", tools: typescript.tools(), versions: typescript.versions(), notes: typescript.notes(), signatures: typescript.signatures, files: typescript.files, steps: typescript.steps() },
-  Plugin { name: "zig", display: "Zig", ext: "zig", tools: zig.tools(), versions: zig.versions(), notes: zig.notes(), signatures: zig.signatures, files: zig.files, steps: zig.steps() },
-  Plugin { name: "gleam", display: "Gleam", ext: "gleam", tools: gleam.tools(), versions: gleam.versions(), notes: gleam.notes(), signatures: gleam.signatures, files: gleam.files, steps: gleam.steps() },
-  Plugin { name: "moonbit", display: "MoonBit", ext: "mbt", tools: moonbit.tools(), versions: moonbit.versions(), notes: moonbit.notes(), signatures: moonbit.signatures, files: moonbit.files, steps: moonbit.steps() },
+  Plugin { name: "almide", display: "Almide", ext: "almd", versions: almide.versions(), notes: almide.notes(), signatures: almide.signatures, files: almide.files, steps: almide.steps() },
+  Plugin { name: "rust", display: "Rust", ext: "rs", versions: rust.versions(), notes: rust.notes(), signatures: rust.signatures, files: rust.files, steps: rust.steps() },
+  Plugin { name: "go", display: "Go", ext: "go", versions: go.versions(), notes: go.notes(), signatures: go.signatures, files: go.files, steps: go.steps() },
+  Plugin { name: "typescript", display: "TypeScript", ext: "ts", versions: typescript.versions(), notes: typescript.notes(), signatures: typescript.signatures, files: typescript.files, steps: typescript.steps() },
+  Plugin { name: "zig", display: "Zig", ext: "zig", versions: zig.versions(), notes: zig.notes(), signatures: zig.signatures, files: zig.files, steps: zig.steps() },
+  Plugin { name: "gleam", display: "Gleam", ext: "gleam", versions: gleam.versions(), notes: gleam.notes(), signatures: gleam.signatures, files: gleam.files, steps: gleam.steps() },
+  Plugin { name: "moonbit", display: "MoonBit", ext: "mbt", versions: moonbit.versions(), notes: moonbit.notes(), signatures: moonbit.signatures, files: moonbit.files, steps: moonbit.steps() },
 ]
 
 fn names() -> List[String] = all() |> list.map((p) => p.name)
@@ -49,5 +48,5 @@ fn find(name: String) -> Plugin? = list.find(all(), (p) => p.name == name)
 test "Almide is the first plugin and every plugin has a driver" {
   assert_eq(list.first(names()), some("almide"))
   assert_eq(list.len(all()), 7)
-  assert(list.all(all(), (p) => not list.is_empty(p.steps) and not list.is_empty(p.tools)))
+  assert(list.all(all(), (p) => not list.is_empty(p.steps) and not list.is_empty(p.versions)))
 }

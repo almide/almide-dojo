@@ -5,8 +5,6 @@
 import self.msr.spec.{Ty, TInt, TBool, TStr, TList, Val, VInt, VBool, VStr, VList, VCall, Sig, Param, PTask, Case, Step}
 import self.msr.spec
 
-fn tools() -> List[String] = ["gleam", "node"]
-
 fn versions() -> List[(String, List[String])] = [("gleam", ["gleam", "--version"]), ("node", ["node", "--version"])]
 
 fn notes() -> String =

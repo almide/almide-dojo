@@ -5,8 +5,6 @@
 import self.msr.spec.{Ty, TInt, TBool, TStr, TList, Val, VInt, VBool, VStr, VList, VCall, Sig, Param, PTask, Case, Step}
 import self.msr.spec
 
-fn tools() -> List[String] = ["moon"]
-
 fn versions() -> List[(String, List[String])] = [("moon", ["moon", "version"])]
 
 fn notes() -> String =

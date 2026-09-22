@@ -8,8 +8,6 @@ import self.msr.spec.{Ty, TInt, TBool, TStr, TList, Val, VInt, VBool, VStr, VLis
 import self.msr.spec
 import self.prompts
 
-fn tools() -> List[String] = ["almide"]
-
 fn versions() -> List[(String, List[String])] = [("almide", ["almide", "--version"])]
 
 // The daily system prompt minus its first line: that line is the
