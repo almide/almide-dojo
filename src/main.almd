@@ -573,8 +573,18 @@ effect fn run_all(model: String) -> Unit = {
           process.exit(1)
         }
         ok(results) => {
-          let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
-          run_all_finish(date, model, results)
+          // A per-task harness error (no API key, network down) is recorded
+          // as a failed task so one flaky task cannot abort a run — but when
+          // EVERY task failed before its first attempt, nothing was measured:
+          // no summary (a 0/N row with zero model calls would poison the
+          // trend line) and exit 2 so a CI job goes red.
+          if list.all(results, (r) => list.is_empty(r.attempts)) then {
+            println("Harness error: no task reached the model (" + int.to_string(list.len(results)) + " tasks, 0 attempts); no summary written")
+            process.exit(2)
+          } else {
+            let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
+            run_all_finish(date, model, results)
+          }
         }
       }
     }
