@@ -204,6 +204,21 @@ jobs:
           set -e
           echo "make exit code: $RC (2 = any recipe failure, including the lane's 1 = some tasks failed; the table decides)"
 
+          # The manifest THIS job wrote, resolved from the working tree.
+          #
+          # It used to be `find runs/msr -name manifest.json | sort | tail -n1`,
+          # which is the lexicographically last manifest in the whole REPO —
+          # every past run is committed here, so on any day with two models the
+          # steps below judged whichever model slug sorted last, not the one
+          # this job ran. The run directory now carries `--label`, which sorts
+          # after the unlabelled measurement, so a labelled run would have been
+          # judged in a measurement's place. Asking git what this job changed
+          # cannot pick up somebody else's run.
+          MSR_MANIFEST=$(git status --porcelain --untracked-files=all -- runs/msr \
+            | sed 's/^...//' | grep -E '/manifest\.json$' | head -n1 || true)
+          echo "MSR_MANIFEST=$MSR_MANIFEST" >> "$GITHUB_ENV"
+          echo "this job's manifest: ${MSR_MANIFEST:-<none>}"
+
       # The evidence is published BEFORE anything judges it. A verdict step
       # that exits on its first failed assertion never reaches its own
       # summary write, so the one run that most needs reading — the refused
@@ -211,9 +226,9 @@ jobs:
       - name: Publish the table to the job summary
         if: ${{ !cancelled() }}
         run: |
-          MANIFEST=$(find runs/msr -name manifest.json 2>/dev/null | sort | tail -n1 || true)
+          MANIFEST="${MSR_MANIFEST:-}"
           if [ -z "$MANIFEST" ]; then
-            echo "the lane wrote no runs/msr/*/*/manifest.json" | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "this job wrote no manifest under runs/msr/" | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           DIR=$(dirname "$MANIFEST")
@@ -232,10 +247,10 @@ jobs:
         # not trustworthy (see its comment) and this one's verdict is.
         if: ${{ !cancelled() }}
         run: |
-          MANIFEST=$(find runs/msr -name manifest.json 2>/dev/null | sort | tail -n1 || true)
+          MANIFEST="${MSR_MANIFEST:-}"
           TABLE=$(dirname "${MANIFEST:-.}")/table.md
           if [ -z "$MANIFEST" ] || [ ! -f "$TABLE" ]; then
-            echo "::error::the lane wrote no runs/msr/*/*/manifest.json — nothing was measured"
+            echo "::error::this job wrote no manifest under runs/msr/ — nothing was measured"
             exit 1
           fi
           DIR=$(dirname "$MANIFEST")

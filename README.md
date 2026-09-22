@@ -158,7 +158,7 @@ support. A `not-comparable` run is not a scorecard row at all.
 
 The [Cross-language MSR Run](.github/workflows/msr-cross.yml) is the second
 scheduled lane: **weekly** (Mondays 05:00 UTC) and on `workflow_dispatch`, on
-the same Cloudflare models, committing `runs/msr/<date>/<model-slug>/` to
+the same Cloudflare models, committing `runs/msr/<date>/<model-slug>[-<label>]/` to
 `main`. It is weekly rather than daily because one cross-language run is ~500
 model calls and seven toolchain installs against the daily lane's 21 calls,
 and the number it feeds — the almide README scorecard — is gated at 90 days
@@ -206,7 +206,7 @@ toolchain: a language whose compiler is missing is a row that says
 so the table is a function of the machine, stated in the manifest.
 
 ```
-runs/msr/<date>/<model-slug>/
+runs/msr/<date>/<model-slug>[-<label>]/
   manifest.json   the verdict (below), model, provider, temperature (and whether the
                   provider received it), seed (none: the transport has no seed option),
                   the HTTP read timeout the run ran under, retries, task-set revision
