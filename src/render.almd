@@ -38,7 +38,11 @@ fn render_report(result: RunResult) -> String = {
   render_attempts(result.attempts)
 }
 
-fn render_summary(date: String, model: String, results: List[RunResult]) -> String = {
+// `compiler` is the `almide --version` line the run was measured with
+// ("" when unknown, e.g. a backfill): the README scorecard cites it, so a
+// summary without it cannot be quoted.
+fn render_summary(date: String, model: String, compiler: String, results: List[RunResult]) -> String = {
+  let compiler_line = if compiler == "" then "" else "- **compiler**: `" + compiler + "`\n"
   let total = list.len(results)
   let passed = list.count(results, (r) => r.success)
   let one_shot = list.count(results, (r) => r.success and r.retries == 0)
@@ -103,6 +107,7 @@ fn render_summary(date: String, model: String, results: List[RunResult]) -> Stri
 
   "# MSR run " + date + "\n\n" +
   "- **model**: `" + model + "`\n" +
+  compiler_line +
   "- **tasks**: " + int.to_string(total) + "\n" +
   "- **passed**: " + int.to_string(passed) + " / " + int.to_string(total) + "\n" +
   "- **1-shot passes**: " + int.to_string(one_shot) + " / " + int.to_string(total) + "\n" +
