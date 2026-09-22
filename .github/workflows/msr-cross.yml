@@ -45,6 +45,37 @@ env:
   # daily.yml. `cf:` = Cloudflare; src/msr/run.almd parses the spec.
   CROSS_MODELS: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast,cf:@cf/meta/llama-3.1-8b-instruct'
 
+  # The HTTP read timeout the lane runs under (almide's runtime reads this;
+  # `crates/almide-rt-core/src/http_client_core.rs`, `0` = no timeout). The
+  # compiler's default for this client shape is 30 s, and 30 s is a deadline
+  # on the WHOLE completion, not on the first byte: this transport is
+  # non-streaming, so the socket stays silent until the model has finished
+  # generating. A reasoning model like GLM 5.3 Flash writes a
+  # `reasoning_content` scratchpad first and routinely needs longer, and in
+  # run 35783112036 that cost 14 of 147 cells — cells the table then printed
+  # as a 100% over a shrunken denominator.
+  #
+  # 140 s is the top of the window two measurements leave:
+  #
+  #   floor 94 s — nothing the model can do takes longer than generating
+  #     `max_tokens` (4096) tokens, because the transport is non-streaming and
+  #     the token budget caps the work. The slowest full-budget generation
+  #     measured on this endpoint is 94 s (run 35789724076, the five
+  #     completions that exhausted the budget: 63, 66, 74, 79, 94 s). Below
+  #     this the lane keeps discarding answers the model did produce.
+  #   ceiling 142 s — a cell that never answers costs
+  #     TRANSPORT_ATTEMPTS (3) x this value before it is recorded `not-run`.
+  #     Run 35783112036 did 35 min of real work and lost 14 of its 147 cells;
+  #     holding that loss rate and leaving a quarter of the 180-minute job cap
+  #     spare gives 3 x T x 14 + 35 min <= 135 min, i.e. T <= 142 s.
+  #
+  # Inside that window a larger value strictly converts `not-run` cells into
+  # measured ones, so it takes the top of it, rounded down to something a
+  # reader can hold. The same number is in daily.yml on purpose: one deadline,
+  # one derivation, and no drift between the two lanes. The manifest records
+  # it per run, because a cell is `not-run` BECAUSE of this deadline.
+  ALMIDE_HTTP_TIMEOUT_SECS: '140'
+
 jobs:
   plan:
     runs-on: ubuntu-latest
@@ -173,15 +204,69 @@ jobs:
           set -e
           echo "make exit code: $RC (2 = any recipe failure, including the lane's 1 = some tasks failed; the table decides)"
 
-      - name: Check the run against #2146's victory condition
-        # Runs even if the step above went red, because that step's verdict is
-        # not trustworthy (see its comment) and this one's is.
+      # The evidence is published BEFORE anything judges it. A verdict step
+      # that exits on its first failed assertion never reaches its own
+      # summary write, so the one run that most needs reading — the refused
+      # one — was the only run whose table nobody could see.
+      - name: Publish the table to the job summary
+        if: ${{ !cancelled() }}
+        run: |
+          MANIFEST=$(find runs/msr -name manifest.json 2>/dev/null | sort | tail -n1 || true)
+          if [ -z "$MANIFEST" ]; then
+            echo "the lane wrote no runs/msr/*/*/manifest.json" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          DIR=$(dirname "$MANIFEST")
+          {
+            echo "## Cross-language MSR — \`${{ matrix.model }}\`"
+            echo
+            echo "- manifest: \`$MANIFEST\`"
+            echo "- compiler pin: \`${{ needs.plan.outputs.pin }}\`"
+            echo "- HTTP read timeout: \`${ALMIDE_HTTP_TIMEOUT_SECS:-compiler default}\` s"
+            echo
+            cat "$DIR/table.md" 2>/dev/null || echo "_(the lane wrote no table.md)_"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Certify the run
+        # Runs even if the lane step went red, because that step's exit code is
+        # not trustworthy (see its comment) and this one's verdict is.
         if: ${{ !cancelled() }}
         run: |
           MANIFEST=$(find runs/msr -name manifest.json 2>/dev/null | sort | tail -n1 || true)
           TABLE=$(dirname "${MANIFEST:-.}")/table.md
           if [ -z "$MANIFEST" ] || [ ! -f "$TABLE" ]; then
             echo "::error::the lane wrote no runs/msr/*/*/manifest.json — nothing was measured"
+            exit 1
+          fi
+          DIR=$(dirname "$MANIFEST")
+          # The comparability refusal, re-derived from the run's OWN artifacts
+          # rather than trusted from its stamp: exit 1 = the languages saw
+          # different task counts, so the rows share no denominator and the
+          # table is not a comparison. It is a hard failure and not a note in
+          # the manifest, because the manifest note is read by whoever already
+          # opened the manifest, and the whole failure mode here is a number
+          # travelling away from its condition. The results are still
+          # committed (commit-results runs on !cancelled), carrying their own
+          # refusal — a refused run is evidence, it is just not a comparison.
+          #
+          # `inconclusive-saturated` (every measured cell passed) exits 0 on
+          # purpose: it is a true statement about the task bank, not a harness
+          # failure, and it will hold every week until almide/almide#1963
+          # delivers a discriminating bank. A gate that is red by design on
+          # every single run stops being read, and would mask the
+          # not-comparable failure above. It is carried in the table's first
+          # lines and in manifest.verdict instead.
+          set +e
+          almide run src/msr/run.almd -- verdict "$DIR" | tee /tmp/verdict.md
+          VRC=${PIPESTATUS[0]}
+          set -e
+          cat /tmp/verdict.md >> "$GITHUB_STEP_SUMMARY"
+          VERDICT=$(jq -r '.verdict.id // "unstamped"' "$MANIFEST")
+          if [ "$VERDICT" = "inconclusive-saturated" ]; then
+            echo "::warning::every measured cell passed: this run is a valid comparison that separates nothing (almide/almide#1963). Do not quote it as evidence."
+          fi
+          if [ "$VRC" -ne 0 ]; then
+            echo "::error::verdict \`$VERDICT\`: this run is not certified as a comparison and must not be published as one (exit $VRC)"
             exit 1
           fi
           MEASURED=$(jq '[.languages[] | select(.measured)] | length' "$MANIFEST")
@@ -193,22 +278,12 @@ jobs:
           # #2146: "a table with >=5 languages measured under one manifest,
           # Almide first". A language the runner could not measure is a row
           # that says so; it is never dropped and never counted as a zero.
+          # These two stay here rather than in the harness: they are this
+          # lane's publication threshold, not a property of a measurement, and
+          # a third party running `make msr` with two toolchains must not be
+          # told their run is broken.
           [ "$FIRST" = "almide" ] && [ "$FIRST_MEASURED" = "true" ] || { echo "::error::Almide is not the first measured language in the manifest"; exit 1; }
           [ "$MEASURED" -ge 5 ] || { echo "::error::only $MEASURED language(s) measured; #2146 needs at least 5 under one manifest. Not measured: ${ABSENT:-none}"; exit 1; }
-          # A row whose tasks all failed to reach the model is not a 0%: the
-          # lane records those as `unreached`, and a table made entirely of
-          # them is not a measurement.
-          REACHED=$(jq '[.results[] | select(.attempts | length > 0)] | length' "$(dirname "$MANIFEST")/results.json")
-          [ "$REACHED" -gt 0 ] || { echo "::error::no task reached the model"; exit 1; }
-          {
-            echo "## Cross-language MSR — \`${{ matrix.model }}\`"
-            echo
-            echo "- manifest: \`$MANIFEST\`"
-            echo "- compiler pin: \`${{ needs.plan.outputs.pin }}\`"
-            echo "- languages measured: **$MEASURED**; not measured: ${ABSENT:-none}"
-            echo
-            cat "$TABLE"
-          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload results
         if: ${{ !cancelled() }}
