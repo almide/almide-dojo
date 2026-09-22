@@ -299,6 +299,25 @@ jobs:
           # told their run is broken.
           [ "$FIRST" = "almide" ] && [ "$FIRST_MEASURED" = "true" ] || { echo "::error::Almide is not the first measured language in the manifest"; exit 1; }
           [ "$MEASURED" -ge 5 ] || { echo "::error::only $MEASURED language(s) measured; #2146 needs at least 5 under one manifest. Not measured: ${ABSENT:-none}"; exit 1; }
+          # #2146's third clause: "third-party reproducible". Until today this
+          # lane could not tell a pinned run from an unpinned one — the
+          # manifest carried a hand-written table about what the provider
+          # sends instead of the provider's own report, and a run that WAS
+          # pinned published itself as unpinned. The manifest now records
+          # what went on the wire, measured by a preflight call with the
+          # run's own options, so this threshold can be CHECKED instead of
+          # assumed.
+          #
+          # `seed_sent` is what decides it: a fixed temperature alone still
+          # leaves the sampler free. Note what `*_sent` claims and does not:
+          # the field was written into the request body. Whether the model
+          # HONOURED it is a separate, empirical question — re-run the same
+          # (model, seed, task set) and compare — because no text-generation
+          # API reports back which sampling controls it applied.
+          SEED_SENT=$(jq -r '.model.seed_sent // false' "$MANIFEST")
+          TEMP_SENT=$(jq -r '.model.temperature_sent // false' "$MANIFEST")
+          echo "sampling on the wire: seed_sent=$SEED_SENT (seed=$(jq -r '.model.seed // "null"' "$MANIFEST")), temperature_sent=$TEMP_SENT"
+          [ "$SEED_SENT" = "true" ] && [ "$TEMP_SENT" = "true" ] || { echo "::error::this run's own manifest reports unpinned sampling (seed_sent=$SEED_SENT, temperature_sent=$TEMP_SENT) — a third party cannot re-run it, so it is not publishable under #2146"; exit 1; }
 
       - name: Upload results
         if: ${{ !cancelled() }}
