@@ -23,13 +23,25 @@ effect fn backfill_dir(date: String, dir: String) -> Unit = {
           })
       if list.is_empty(results) then
         println("  skip (no task reports): " + dir)
+      // The same refusal `almide run src/main.almd -- all` makes: a directory
+      // whose every report says the model was never answered is not a run, and
+      // a 0/N summary built from it would put a 0% point on the trend line.
+      // The live harness writes those reports and then exits 2 without a
+      // summary, so a backfill must not manufacture the summary it withheld.
+      else if list.all(results, (r) => not r.reached) then
+        println("  skip (no task reached the model): " + dir)
       else {
         let model = list.get(results, 0)
           |> option.map((r) => r.model)
           |> option.unwrap_or("unknown")
         let path = dir + "/summary.md"
-        // A backfill cannot know which compiler judged the original run.
-        match fs.write(path, render.render_summary(date, model, "", results)) {
+        // A backfill cannot know which compiler judged the original run, nor
+        // the HTTP read timeout it ran under: no line rather than a guessed
+        // one. It also sees only the tasks that left a report behind, so its
+        // denominator is those tasks — a run from before the harness wrote a
+        // report for a `not-run` cell has no record of its absences anywhere,
+        // and inventing one here would be worse than the gap.
+        match fs.write(path, render.render_summary(date, model, "", "", results)) {
           ok(_) => println("  wrote " + path + " (" + int.to_string(list.len(results)) + " tasks)")
           err(e) => println("  failed " + path + ": " + e)
         }
