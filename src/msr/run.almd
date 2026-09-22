@@ -15,11 +15,14 @@
 //   --languages a,b   plugins to run (default: all seven, in table order)
 //   --tasks x,y       tasks to run (default: every task in msr/task-set.json)
 //   --out DIR         where results go (default: runs/msr)
-//   --label TEXT      free-text label stamped into the manifest ("smoke" keeps a run out of the record)
+//   --label TEXT      free-text label. It is stamped into the manifest AND
+//                     appended to the run directory, so a labelled run ("smoke")
+//                     can never replace the unlabelled measurement for the same
+//                     model on the same day.
 //   --retries N       fix-loop retries per task (default 3)
 //   --condition NAME  the effect-declaration condition (almide-dojo#2); only "shipped" exists
 //
-// Output of `run`: <out>/<date>/<model-slug>/{manifest.json, results.json, table.md}
+// Output of `run`: <out>/<date>/<model-slug>[-<label>]/{manifest.json, results.json, table.md}
 // plus raw/ (per-attempt sources and logs; gitignored).
 // Exit codes: 0 every measured task passed, 1 some failed (the table is
 // still written — that is the measurement), 2 nothing was measured.
@@ -655,7 +658,7 @@ effect fn cmd_run(o: Opts) -> Unit! = {
   // single task has been scored 0 against an empty completion.
   let sampling = llm.probe_sampling(o.model, TEMPERATURE)!
   let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
-  let dir = o.out + "/" + date + "/" + model_slug(o.model)
+  let dir = run_dir(o.out, date, o.model, o.label)
   let raw_dir = dir + "/raw"
   fs.mkdir_p(raw_dir)!
   println("")
@@ -759,6 +762,31 @@ fn model_slug(model: String) -> String =
     |> string.replace(":", "_")
     |> string.replace("@", "")
     |> string.replace(".", "-")
+
+// A LABELLED RUN NEVER SITS WHERE THE MEASUREMENT GOES.
+//
+// The run directory used to be `<out>/<date>/<model-slug>` and nothing else,
+// so two runs of the same model on the same day wrote to the same path and
+// the second silently replaced the first. On 2026-09-22 a one-task smoke,
+// dispatched to prove the sampling preflight worked, replaced that day's
+// 21-task cross-language run — the very table the lane exists to produce.
+//
+// `--label` already MEANT this: the workflow's own input describes "smoke"
+// as marking a run "a pipeline proof, not a number". It was a word in a
+// description, enforced by nothing. Putting it in the path is what makes it
+// true: an unlabelled run — the measurement — keeps the canonical directory,
+// and everything else is beside it, not on top of it.
+fn label_slug(label: String) -> String =
+  label
+    |> string.to_lower
+    |> string.replace(" ", "-")
+    |> string.replace(",", "")
+    |> string.replace("/", "-")
+    |> string.replace(":", "-")
+
+fn run_dir(out: String, date: String, model: String, label: String) -> String =
+  out + "/" + date + "/" + model_slug(model) +
+  (if string.trim(label) == "" then "" else "-" + label_slug(string.trim(label)))
 
 // ── verify: the references through every available plugin, no model ──
 //
@@ -876,6 +904,35 @@ effect fn main() -> Unit = {
 }
 
 // ── Tests ──
+
+// The incident this encodes: on 2026-09-22 a one-task smoke run and that
+// day's 21-task cross-language run resolved to the SAME directory, and the
+// smoke won because it ran second. Both were real runs of the same model on
+// the same day; only one of them was a measurement.
+test "a labelled run cannot occupy the measurement's directory" {
+  let measured = run_dir("runs/msr", "2026-09-22", "cf:@cf/meta/llama-3.3-70b", "")
+  let smoke = run_dir("runs/msr", "2026-09-22", "cf:@cf/meta/llama-3.3-70b", "smoke")
+  assert(measured != smoke, "a labelled run must not share the unlabelled run's path")
+  assert(measured == "runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b", "the measurement keeps the canonical path")
+  assert(smoke == "runs/msr/2026-09-22/cf_cf_meta_llama-3-3-70b-smoke", "a label lands beside it, not on top of it")
+}
+
+// Two DIFFERENT labels must also not collide, or the second experiment eats
+// the first for the same reason one directory down.
+test "two labels are two directories, and a label is path-safe" {
+  let a = run_dir("runs/msr", "2026-09-22", "cf:m", "pinned sampling, certified")
+  let b = run_dir("runs/msr", "2026-09-22", "cf:m", "smoke")
+  assert(a != b, "distinct labels must not collide")
+  assert(not string.contains(a, " "), "a label with spaces must not reach the path")
+  assert(not string.contains(a, ","), "a label with punctuation must not reach the path")
+  assert(a == "runs/msr/2026-09-22/cf_m-pinned-sampling-certified", "expected the slugged label")
+}
+
+// Whitespace is not a label. `--label " "` must leave the measurement path
+// alone rather than create a directory ending in a dash.
+test "a blank label is no label" {
+  assert(run_dir("o", "d", "cf:m", "   ") == run_dir("o", "d", "cf:m", ""), "a blank label is no label")
+}
 
 test "parse_opts reads every option and keeps positionals in order" {
   let o = parse_opts(["run", "cf:x", "--languages", "almide, rust", "--tasks", "gcd", "--retries", "2", "--label", "smoke"], default_opts())
