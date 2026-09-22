@@ -26,38 +26,50 @@ jobs:
       - name: Test blocks
         run: almide test src/
 
-      - name: Every task is either in or out of the cross-language set
+      - name: Every bank task is decided by the cross-language task set
         run: bash scripts/check-task-set.sh
 
   msr-verify:
-    name: Cross-language lane, reference solutions through every plugin
+    # One job per language: the reference solution of every task in the
+    # cross-language set must pass through that language's plugin, and the
+    # same reference with a perturbed expectation must fail at the run step.
+    # No model and no API key — this is the offline gate on the plugins.
+    name: verify ${{ matrix.language }}
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [almide, rust, go, typescript, zig, gleam, moonbit]
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
+        if: matrix.language == 'go'
         with:
           go-version: stable
 
       - uses: mlugg/setup-zig@v2
+        if: matrix.language == 'zig'
         with:
           version: 0.16.0
 
       - uses: erlef/setup-beam@v1
+        if: matrix.language == 'gleam'
         with:
           otp-version: "27"
           gleam-version: "1.18.1"
 
       - name: Install MoonBit
+        if: matrix.language == 'moonbit'
         run: |
           curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
 
-      # rustc, node and npm are on the runner image; scripts/msr.sh installs
-      # the pinned compiler and the pinned tsc, then probes every plugin.
+      # rustc, node and npm come with the runner image; scripts/msr.sh
+      # installs the pinned compiler and, for TypeScript, the pinned tsc.
       - name: Probe
         run: make msr-probe
 
-      - name: Verify (the reference must pass and a perturbed oracle must fail, per language)
-        run: make msr-verify
+      - name: Verify
+        run: make msr-verify LANGUAGES=${{ matrix.language }}
