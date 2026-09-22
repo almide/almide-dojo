@@ -1,0 +1,5 @@
+- Return `"FizzBuzz"` if `n` is divisible by 15
+- Return `"Fizz"` if `n` is divisible by 3 (but not 15)
+- Return `"Buzz"` if `n` is divisible by 5 (but not 15)
+- Otherwise return the decimal string of `n`
+- Assume `n >= 1`

@@ -1,0 +1,5 @@
+fn cap_word(w: String) -> String =
+  string.to_upper(string.take(w, 1)) + string.to_lower(string.drop(w, 1))
+
+fn title_case(s: String) -> String =
+  string.split(s, " ") |> list.map(cap_word) |> string.join(" ")

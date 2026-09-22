@@ -1,0 +1,5 @@
+pub fn clamp(value: i64, low: i64, high: i64) i64 {
+    if (value < low) return low;
+    if (value > high) return high;
+    return value;
+}

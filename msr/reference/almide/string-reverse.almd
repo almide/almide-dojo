@@ -1,0 +1,2 @@
+fn reverse(s: String) -> String =
+  string.chars(s) |> list.reverse |> string.join("")

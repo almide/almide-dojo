@@ -1,0 +1,11 @@
+let ROMAN = [(1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"),
+  (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")]
+
+fn roman_go(n: Int, i: Int) -> String =
+  if n == 0 then ""
+  else match list.get(ROMAN, i) {
+    some((v, sym)) => if n >= v then sym + roman_go(n - v, i) else roman_go(n, i + 1),
+    none => "",
+  }
+
+fn to_roman(n: Int) -> String = roman_go(n, 0)
