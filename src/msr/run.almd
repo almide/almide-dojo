@@ -1,0 +1,683 @@
+// msr — the cross-language MSR lane (almide/almide#2146).
+//
+// The same tasks, the same model, the same prompts modulo the language name
+// and its syntax notes, the same retry budget, judged by each language's
+// own toolchain, under one manifest. Almide first.
+//
+// Usage:
+//   almide run src/msr/run.almd -- run <provider:model> [options]
+//   almide run src/msr/run.almd -- verify [options]      reference solutions through every available plugin (no model)
+//   almide run src/msr/run.almd -- probe                  which plugins this machine can measure
+//   almide run src/msr/run.almd -- prompt <language> <task>
+//
+// Options:
+//   --languages a,b   plugins to run (default: all seven, in table order)
+//   --tasks x,y       tasks to run (default: every task in msr/task-set.json)
+//   --out DIR         where results go (default: runs/msr)
+//   --label TEXT      free-text label stamped into the manifest ("smoke" keeps a run out of the record)
+//   --retries N       fix-loop retries per task (default 3)
+//   --condition NAME  the effect-declaration condition (almide-dojo#2); only "shipped" exists
+//
+// Output of `run`: <out>/<date>/<model-slug>/{manifest.json, results.json, table.md}
+// plus raw/ (per-attempt sources and logs; gitignored).
+// Exit codes: 0 every measured task passed, 1 some failed (the table is
+// still written — that is the measurement), 2 nothing was measured.
+
+import env
+import fs
+import hash
+import json
+import path
+import process
+import datetime
+import self.llm
+import self.msr.spec.{PTask, Case, Val, VInt, VBool, VStr, VList, VCall, Ty, TInt, TBool, TStr, TList, Step}
+import self.msr.spec
+import self.msr.plugins.{Plugin}
+import self.msr.plugins
+
+let TASK_SET = "msr/task-set.json"
+let DEFAULT_OUT = "runs/msr"
+let DEFAULT_RETRIES = 3
+let TEMPERATURE = 0.0
+let TRANSPORT_ATTEMPTS = 3
+let DIAG_LIMIT = 6000
+let CONDITIONS = ["shipped"]
+
+// ── Options ──
+
+type Opts = {
+  command: String,
+  model: String,
+  languages: List[String],
+  tasks: List[String],
+  out: String,
+  label: String,
+  retries: Int,
+  condition: String,
+  rest: List[String],
+}
+
+fn default_opts() -> Opts = Opts {
+  command: "", model: "", languages: [], tasks: [], out: DEFAULT_OUT,
+  label: "", retries: DEFAULT_RETRIES, condition: "shipped", rest: [],
+}
+
+fn split_list(s: String) -> List[String] =
+  string.split(s, ",") |> list.map(string.trim) |> list.filter((x) => x != "")
+
+fn parse_opts(args: List[String], acc: Opts) -> Opts! = match args {
+  [] => ok(acc),
+  ["--languages", v, ..rest] => parse_opts(rest, { ...acc, languages: split_list(v) }),
+  ["--tasks", v, ..rest] => parse_opts(rest, { ...acc, tasks: split_list(v) }),
+  ["--out", v, ..rest] => parse_opts(rest, { ...acc, out: v }),
+  ["--label", v, ..rest] => parse_opts(rest, { ...acc, label: v }),
+  ["--retries", v, ..rest] => match int.parse(v) {
+    ok(n) => parse_opts(rest, { ...acc, retries: n }),
+    err(_) => err("--retries needs a number, got `" + v + "`"),
+  },
+  ["--condition", v, ..rest] =>
+    if list.contains(CONDITIONS, v) then parse_opts(rest, { ...acc, condition: v })
+    else err("unknown condition `" + v + "` (known: " + string.join(CONDITIONS, ", ") + "); the effect-declaration A/B (almide-dojo#2) has no measurable B condition yet"),
+  [a, ..rest] =>
+    if string.starts_with(a, "--") then err("unknown option " + a)
+    else parse_opts(rest, { ...acc, rest: acc.rest + [a] }),
+}
+
+// ── Tasks ──
+
+effect fn find_task_dir(name: String) -> String! = {
+  let dirs = ["basic", "intermediate", "advanced"] |> list.map((d) => "tasks/" + d + "/" + name)
+  match list.find(dirs, (d) => fs.exists(d + "/prompt.md")) {
+    some(d) => ok(d),
+    none => err("task not found under tasks/: " + name),
+  }
+}
+
+effect fn load_task(name: String) -> PTask! = {
+  let dir = find_task_dir(name)!
+  let prompt = fs.read_text(dir + "/prompt.md")!
+  let tests = fs.read_text(dir + "/tests.almd")!
+  let spec_path = "msr/specs/" + name + ".md"
+  guard fs.exists(spec_path) else err(spec_path + " is missing (the language-neutral behavior text of " + name + ")")
+  let behavior = string.trim(fs.read_text(spec_path)!)
+  let t = PTask {
+    name: name, dir: dir,
+    sigs: spec.parse_sigs(prompt)!,
+    behavior: behavior,
+    cases: spec.parse_cases(tests)!,
+  }
+  spec.check_task(t)!
+  ok(t)
+}
+
+effect fn task_set_names() -> List[String]! = {
+  let raw = fs.read_text(TASK_SET)!
+  let v = json.parse(raw)!
+  let items = json.get_array(v, "include") ?? []
+  let names = items |> list.filter_map((it) => json.get_string(it, "task"))
+  guard not list.is_empty(names) else err(TASK_SET + " has no include list")
+  ok(names)
+}
+
+effect fn task_set_revision() -> String = {
+  let raw = fs.read_text(TASK_SET) ?? ""
+  match json.parse(raw) {
+    ok(v) => json.get_string(v, "revision") ?? "",
+    err(_) => "",
+  }
+}
+
+effect fn load_tasks(selected: List[String]) -> List[PTask]! = {
+  let all = task_set_names()!
+  let names = if list.is_empty(selected) then all else selected
+  let unknown = names |> list.filter((n) => not list.contains(all, n))
+  guard list.is_empty(unknown) else err("not in " + TASK_SET + ": " + string.join(unknown, ", "))
+  ok((names |> list.map((n) => load_task(n)!))!)
+}
+
+// ── Prompts ──
+
+fn system_prompt(p: Plugin) -> String =
+  "You are writing " + p.display + ". Output ONLY source code, no fences or prose.\n\n" + p.notes
+
+fn signatures(p: Plugin, t: PTask) -> String = p.signatures(t)
+
+fn user_prompt(p: Plugin, t: PTask) -> String = {
+  let one = list.len(t.sigs) == 1
+  let head = if one then "Write a function in " + p.display + " with this exact signature:"
+    else "Write these functions in " + p.display + " with these exact signatures:"
+  head + "\n\n" + signatures(p, t) + "\n\nBehavior:\n\n" + t.behavior + "\n\n" +
+  "Return ONLY the " + p.display + " source: no markdown fences, no explanation, no tests, no entry point."
+}
+
+fn retry_prompt(display: String, original: String, prev_code: String, diag: String) -> String =
+  "Original task:\n\n" + original + "\n\n" +
+  "You previously wrote this code:\n\n" + prev_code + "\n\n" +
+  "It failed to compile or test. Diagnostic output:\n\n" + diag + "\n\n" +
+  "Fix the code and return ONLY the corrected " + display + " source. No markdown fences, no explanation."
+
+fn clip(s: String) -> String =
+  if string.len(s) <= DIAG_LIMIT then s
+  else string.take(s, DIAG_LIMIT) + "\n... [diagnostic truncated at " + int.to_string(DIAG_LIMIT) + " characters]"
+
+// ── Toolchain probe ──
+
+type Probe = { plugin: Plugin, available: Bool, missing: String, versions: List[(String, String)] }
+
+effect fn probe_one(p: Plugin) -> Probe = {
+  let found = p.versions |> list.map(((label, cmd)) => {
+    let exe = list.first(cmd) ?? label
+    let args = list.drop(cmd, 1)
+    match process.exec_status(exe, args) {
+      ok(st) => if st.code == 0 then (label, (string.trim(st.stdout + st.stderr) |> string.split("\n") |> list.first) ?? "")
+        else (label, ""),
+      err(_) => (label, ""),
+    }
+  })
+  match list.find(found, ((_, v)) => v == "") {
+    some((label, _)) => Probe { plugin: p, available: false, missing: label, versions: [] },
+    none => Probe { plugin: p, available: true, missing: "", versions: found },
+  }
+}
+
+effect fn probe_all(names: List[String]) -> List[Probe]! = {
+  let known = plugins.names()
+  let unknown = names |> list.filter((n) => not list.contains(known, n))
+  guard list.is_empty(unknown) else err("unknown language(s): " + string.join(unknown, ", ") + " (known: " + string.join(known, ", ") + ")")
+  let chosen = plugins.all() |> list.filter((p) => list.is_empty(names) or list.contains(names, p.name))
+  ok((chosen |> list.map((p) => probe_one(p)!))!)
+}
+
+fn toolchain_line(pr: Probe) -> String =
+  if pr.available then pr.versions |> list.map(((_, v)) => v) |> string.join("; ")
+  else "not measured: " + pr.missing + " missing"
+
+// ── One attempt: write the files, run the steps ──
+
+type StepOut = { kind: String, code: Int, output: String }
+
+type LAttempt = { code: String, kind: String, diagnostic: String, passed: Bool }
+
+type LResult = { language: String, task: String, success: Bool, retries: Int, attempts: List[LAttempt] }
+
+effect fn write_files(dir: String, files: List[(String, String)]) -> Unit! = {
+  let _written = (files |> list.map(((rel, content)) => {
+    let full = dir + "/" + rel
+    fs.mkdir_p(path.dirname(full))!
+    fs.write(full, content)!
+  }))!
+  ok(())
+}
+
+effect fn run_step(dir: String, st: Step) -> StepOut = {
+  // `sh -c 'cd "$0" && exec "$@"' <dir> <cmd> <args...>`: the step runs in
+  // the attempt's directory; exec_status_timeout has no cwd parameter.
+  let args = ["-c", "cd \"$0\" && exec \"$@\"", dir, st.cmd] + st.args
+  match process.exec_status_timeout("sh", args, st.timeout_ms) {
+    ok(r) => StepOut { kind: st.kind, code: r.code, output: r.stdout + r.stderr },
+    err(e) => StepOut { kind: st.kind, code: -1, output: e },
+  }
+}
+
+effect fn run_steps(dir: String, steps: List[Step]) -> StepOut = match steps {
+  [] => StepOut { kind: "", code: 0, output: "" },
+  [st, ..rest] => {
+    let out = run_step(dir, st)!
+    if out.code != 0 then out else if list.is_empty(rest) then out else run_steps(dir, rest)
+  },
+}
+
+// The verdict: every step exits 0 AND the driver printed its sentinel.
+effect fn judge(p: Plugin, t: PTask, dir: String, code: String) -> LAttempt! = {
+  write_files(dir, p.files(t, code))!
+  let out = run_steps(dir, p.steps)!
+  let n = list.len(t.cases)
+  if out.code != 0 then
+    ok(LAttempt { code: code, kind: out.kind, diagnostic: out.output, passed: false })
+  else if string.contains(out.output, spec.sentinel(n)) then
+    ok(LAttempt { code: code, kind: "", diagnostic: "", passed: true })
+  else
+    ok(LAttempt { code: code, kind: "driver", diagnostic: "the driver exited 0 without reporting its cases:\n" + out.output, passed: false })
+}
+
+effect fn write_log(dir: String, a: LAttempt) -> Unit =
+  match fs.write(dir + "/attempt.log", (if a.passed then "PASS\n" else "FAIL (" + a.kind + ")\n") + a.diagnostic) {
+    ok(_) => (),
+    err(_) => (),
+  }
+
+// ── Fix loop ──
+
+effect fn fix_loop(p: Plugin, t: PTask, model: String, raw_dir: String, retries: Int, attempt: Int, last: LAttempt, acc: List[LAttempt]) -> LResult! = {
+  if attempt > retries then
+    ok(LResult { language: p.name, task: t.name, success: false, retries: retries, attempts: acc })
+  else {
+    let original = user_prompt(p, t)
+    let prompt = if attempt == 0 then original else retry_prompt(p.display, original, last.code, clip(last.diagnostic))
+    let code = llm.call(model, system_prompt(p), prompt, TEMPERATURE, TRANSPORT_ATTEMPTS)!
+    let dir = raw_dir + "/" + p.name + "/" + t.name + "/" + int.to_string(attempt)
+    fs.mkdir_p(dir)!
+    let a = judge(p, t, dir, code)!
+    write_log(dir, a)!
+    let acc2 = acc + [a]
+    println("    " + p.name + " / " + t.name + " attempt " + int.to_string(attempt) + ": " + (if a.passed then "pass" else "FAIL (" + a.kind + ")"))
+    if a.passed then ok(LResult { language: p.name, task: t.name, success: true, retries: attempt, attempts: acc2 })
+    else fix_loop(p, t, model, raw_dir, retries, attempt + 1, a, acc2)
+  }
+}
+
+effect fn run_language(pr: Probe, tasks: List[PTask], model: String, raw_dir: String, retries: Int) -> List[LResult] =
+  tasks |> list.map((t) => {
+    let empty = LAttempt { code: "", kind: "", diagnostic: "", passed: false }
+    match fix_loop(pr.plugin, t, model, raw_dir, retries, 0, empty, []) {
+      ok(r) => r,
+      err(e) => {
+        // A harness failure (no key, network) is a result with no attempts:
+        // it counts as unmeasured, never as a model failure.
+        println("    " + pr.plugin.name + " / " + t.name + ": harness error: " + e)
+        LResult { language: pr.plugin.name, task: t.name, success: false, retries: 0, attempts: [] }
+      },
+    }
+  })
+
+// ── Manifest ──
+
+effect fn git_head() -> String =
+  match process.exec("git", ["rev-parse", "HEAD"]) {
+    ok(s) => string.trim(s),
+    err(_) => "",
+  }
+
+effect fn git_dirty() -> Bool =
+  match process.exec("git", ["status", "--porcelain", "--", "src", "msr", "tasks"]) {
+    ok(s) => string.trim(s) != "",
+    err(_) => false,
+  }
+
+effect fn compiler_pin() -> String = {
+  let raw = fs.read_text("almide-pin.toml") ?? ""
+  string.split(raw, "\n")
+    |> list.filter_map((l) => {
+      let t = string.trim(l)
+      if string.starts_with(t, "ref") then
+        match string.index_of(t, "\"") {
+          some(i) => {
+            let after = string.drop(t, i + 1)
+            match string.index_of(after, "\"") {
+              some(j) => some(string.take(after, j)),
+              none => none,
+            }
+          },
+          none => none,
+        }
+      else none
+    })
+    |> list.first
+    |> option.unwrap_or_else(() => "")
+}
+
+fn prompt_hashes(pr: Probe, tasks: List[PTask]) -> Value = {
+  let sys = system_prompt(pr.plugin)
+  let all = tasks |> list.map((t) => user_prompt(pr.plugin, t)) |> string.join("\n--\n")
+  value.object([
+    ("system_sha256", value.str(hash.sha256_hex(sys))),
+    ("prompts_sha256", value.str(hash.sha256_hex(sys + "\n--\n" + all))),
+    ("notes_bytes", value.int(string.len(pr.plugin.notes))),
+  ])
+}
+
+fn language_entry(pr: Probe, tasks: List[PTask]) -> Value = {
+  let base = [("name", value.str(pr.plugin.name)), ("measured", value.bool(pr.available))]
+  if pr.available then
+    value.object(base + [
+      ("toolchain", value.object(pr.versions |> list.map(((k, v)) => (k, value.str(v))))),
+      ("prompts", prompt_hashes(pr, tasks)),
+      ("steps", value.array(pr.plugin.steps |> list.map((s) => value.str(s.cmd + " " + string.join(s.args, " "))))),
+    ])
+  else value.object(base + [("reason", value.str(pr.missing + " missing"))])
+}
+
+effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask], task_set_sha: String) -> Value = {
+  let provider = llm.provider_of(o.model)
+  value.object([
+    ("lane", value.str("cross-language")),
+    ("label", value.str(o.label)),
+    ("date", value.str(date)),
+    ("harness", value.object([
+      ("repo", value.str("almide/almide-dojo")),
+      ("commit", value.str(git_head()!)),
+      ("dirty", value.bool(git_dirty()!)),
+    ])),
+    ("compiler", value.object([
+      ("pin", value.str(compiler_pin()!)),
+      ("version", value.str(match process.exec("almide", ["--version"]) { ok(v) => string.trim(v), err(_) => "" })),
+    ])),
+    ("model", value.object([
+      ("spec", value.str(o.model)),
+      ("provider", value.str(provider)),
+      ("temperature", value.float(TEMPERATURE)),
+      // Whether almai puts the temperature on the wire for this provider;
+      // when false the provider's default sampling applied.
+      ("temperature_sent", value.bool(llm.temperature_sent(provider))),
+      // almai has no seed option, so no provider receives one.
+      ("seed", value.null()),
+      ("seed_sent", value.bool(false)),
+      ("max_tokens", value.int(4096)),
+      ("transport_attempts", value.int(TRANSPORT_ATTEMPTS)),
+    ])),
+    ("retries", value.int(o.retries)),
+    ("condition", value.object([("effects", value.str(o.condition))])),
+    ("task_set", value.object([
+      ("path", value.str(TASK_SET)),
+      ("revision", value.str(task_set_revision()!)),
+      ("sha256", value.str(task_set_sha)),
+      ("tasks", value.array(tasks |> list.map((t) => value.str(t.name)))),
+    ])),
+    ("retry_template_sha256", value.str(hash.sha256_hex(retry_prompt("<Language>", "", "", "")))),
+    ("languages", value.array(probes |> list.map((pr) => language_entry(pr, tasks)))),
+  ])
+}
+
+// ── Results and table ──
+
+fn result_json(r: LResult) -> Value =
+  value.object([
+    ("language", value.str(r.language)),
+    ("task", value.str(r.task)),
+    ("success", value.bool(r.success)),
+    ("retries", value.int(r.retries)),
+    ("attempts", value.array(r.attempts |> list.map((a) => value.object([
+      ("passed", value.bool(a.passed)),
+      ("kind", value.str(a.kind)),
+      ("diagnostic_head", value.str(string.take(a.diagnostic, 200))),
+    ])))),
+  ])
+
+fn pct(n: Int, d: Int) -> String =
+  if d == 0 then "—" else int.to_string(n * 100 / d) + "%"
+
+fn language_row(pr: Probe, results: List[LResult]) -> String = {
+  let mine = results |> list.filter((r) => r.language == pr.plugin.name)
+  if not pr.available then
+    "| " + pr.plugin.display + " | — | — | not measured: " + pr.missing + " missing | | |"
+  else {
+    let measured = mine |> list.filter((r) => not list.is_empty(r.attempts))
+    let total = list.len(measured)
+    let passed = list.count(measured, (r) => r.success)
+    let one_shot = list.count(measured, (r) => r.success and r.retries == 0)
+    let retries = measured |> list.map((r) => r.retries) |> list.sum
+    let unreached = list.len(mine) - total
+    let note = if unreached > 0 then " (" + int.to_string(unreached) + " task(s) never reached the model)" else ""
+    "| " + pr.plugin.display + " | " + toolchain_line(pr) + " | " + int.to_string(total) + " | " +
+      int.to_string(passed) + "/" + int.to_string(total) + " (" + pct(passed, total) + ")" + note + " | " +
+      int.to_string(one_shot) + "/" + int.to_string(total) + " | " + int.to_string(retries) + " |"
+  }
+}
+
+fn task_row(t: PTask, probes: List[Probe], results: List[LResult]) -> String = {
+  let cells = probes |> list.map((pr) =>
+    if not pr.available then "n/m"
+    else match list.find(results, (r) => r.language == pr.plugin.name and r.task == t.name) {
+      none => "—",
+      some(r) =>
+        if list.is_empty(r.attempts) then "unreached"
+        else if r.success then (if r.retries == 0 then "pass" else "pass@" + int.to_string(r.retries))
+        else "FAIL",
+    })
+  "| `" + t.name + "` | " + string.join(cells, " | ") + " |"
+}
+
+fn render_table(o: Opts, date: String, revision: String, probes: List[Probe], tasks: List[PTask], results: List[LResult]) -> String = {
+  let label = if o.label == "" then "" else " [" + o.label + "]"
+  let head = "# MSR cross-language run " + date + label + "\n\n" +
+    "- **model**: `" + o.model + "`\n" +
+    "- **tasks**: " + int.to_string(list.len(tasks)) + " (msr/task-set.json rev " + revision + ")\n" +
+    "- **retries**: " + int.to_string(o.retries) + "\n" +
+    "- **condition**: effects=" + o.condition + "\n" +
+    "- **manifest**: manifest.json next to this file\n\n"
+  let summary = "| language | toolchain | tasks | final pass | 1-shot pass | retries |\n|---|---|---|---|---|---|\n" +
+    (probes |> list.map((pr) => language_row(pr, results)) |> string.join("\n")) + "\n"
+  let per_task = "\n## Per task\n\n| task | " + (probes |> list.map((pr) => pr.plugin.display) |> string.join(" | ")) + " |\n" +
+    "|---|" + (probes |> list.map((_) => "---|") |> string.join("")) + "\n" +
+    (tasks |> list.map((t) => task_row(t, probes, results)) |> string.join("\n")) + "\n\n" +
+    "`pass@N` = passed after N retries; `n/m` = language not measured; `unreached` = the model was never called (harness error).\n"
+  head + summary + per_task
+}
+
+// ── Commands ──
+
+effect fn cmd_probe(o: Opts) -> Unit! = {
+  let probes = probe_all(o.languages)!
+  println("| language | toolchain |\n|---|---|")
+  probes |> list.map((pr) => println("| " + pr.plugin.display + " | " + toolchain_line(pr) + " |"))
+  ok(())
+}
+
+effect fn cmd_prompt(o: Opts) -> Unit! = {
+  let lang = list.get(o.rest, 1) ?? ""
+  let task = list.get(o.rest, 2) ?? ""
+  match plugins.find(lang) {
+    none => {
+      println("unknown language: " + lang)
+      process.exit(1)
+    },
+    some(p) => {
+      let t = load_task(task)!
+      println("=== system ===\n" + system_prompt(p) + "\n\n=== user ===\n" + user_prompt(p, t))
+      ok(())
+    },
+  }
+}
+
+effect fn cmd_run(o: Opts) -> Unit! = {
+  guard o.model != "" else {
+    println("usage: almide run src/msr/run.almd -- run <provider:model> [options]")
+    process.exit(2)
+  }
+  let tasks = load_tasks(o.tasks)!
+  let probes = probe_all(o.languages)!
+  let available = probes |> list.filter((pr) => pr.available)
+  probes |> list.map((pr) => println((if pr.available then "measuring " else "skipping  ") + pr.plugin.display + ": " + toolchain_line(pr)))
+  guard not list.is_empty(available) else {
+    println("no plugin has its toolchain: nothing to measure")
+    process.exit(2)
+  }
+  let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
+  let dir = o.out + "/" + date + "/" + model_slug(o.model)
+  let raw_dir = dir + "/raw"
+  fs.mkdir_p(raw_dir)!
+  println("")
+  println("Running " + int.to_string(list.len(tasks)) + " task(s) x " + int.to_string(list.len(available)) + " language(s) against " + o.model)
+  let results = (available |> list.flat_map((pr) => {
+    println("== " + pr.plugin.display + " ==")
+    run_language(pr, tasks, o.model, raw_dir, o.retries)!
+  }))!
+  let measured = results |> list.filter((r) => not list.is_empty(r.attempts))
+  guard not list.is_empty(measured) else {
+    println("Harness error: no task reached the model; nothing written")
+    process.exit(2)
+  }
+  let task_set_sha = hash.sha256_hex(fs.read_text(TASK_SET) ?? "")
+  let m = manifest(o, date, probes, tasks, task_set_sha)!
+  fs.write(dir + "/manifest.json", json.stringify_pretty(m) + "\n")!
+  fs.write(dir + "/results.json", json.stringify_pretty(value.object([("results", value.array(results |> list.map(result_json)))])) + "\n")!
+  let table = render_table(o, date, task_set_revision()!, probes, tasks, results)
+  fs.write(dir + "/table.md", table)!
+  println("")
+  println(table)
+  println("Written: " + dir + "/{manifest.json, results.json, table.md}")
+  let failed = list.count(measured, (r) => not r.success)
+  if failed > 0 then process.exit(1) else ok(())
+}
+
+fn model_slug(model: String) -> String =
+  model
+    |> string.replace("/", "_")
+    |> string.replace(":", "_")
+    |> string.replace("@", "")
+    |> string.replace(".", "-")
+
+// ── verify: the references through every available plugin, no model ──
+//
+// Every task must have a reference solution in every language, the
+// reference must pass, and the driver must catch a wrong answer (the first
+// case's expectation is perturbed and the same reference must then FAIL at
+// the run step). This is the offline gate on the task set and the plugins.
+
+fn zero_of(ty: Ty) -> Val = match ty {
+  TInt => spec.vint(0),
+  TBool => spec.vbool(false),
+  TStr => spec.vstr(""),
+  TList(_) => spec.vlist([]),
+}
+
+fn items(v: Val) -> List[Val] = match v {
+  VList(xs) => xs |> list.map((x) => x),
+  _ => [],
+}
+
+// A well-typed value of type `ty` that differs from `v`: a list gains an
+// element when empty and has its first element perturbed otherwise.
+fn perturb(v: Val, ty: Ty) -> Val = match v {
+  VInt(n) => spec.vint(n + 1),
+  VBool(b) => spec.vbool(not b),
+  VStr(s) => spec.vstr(s + "x"),
+  // (`items` copies the payload out first: almide 0.62.0 passes the boxed
+  // payload to an owning stdlib call as `Box<Vec<_>>`, which does not compile)
+  VList(_) => {
+    let xs = items(v)
+    if list.is_empty(xs) then spec.vlist([zero_of(spec.elem(ty))])
+    else spec.vlist(list.enumerate(xs) |> list.map(((i, x)) => if i == 0 then perturb(x, spec.elem(ty)) else x))
+  },
+  VCall(_, _) => v,
+}
+
+fn with_perturbed_first_case(t: PTask) -> PTask = match t.cases {
+  [c, ..rest] => { ...t, cases: [{ ...c, expected: perturb(c.expected, spec.case_ty(t.sigs, c)) }] + rest },
+  [] => t,
+}
+
+effect fn verify_one(pr: Probe, t: PTask, raw_dir: String) -> List[String] = {
+  let p = pr.plugin
+  let ref_path = "msr/reference/" + p.name + "/" + t.name + "." + p.ext
+  match fs.read_text(ref_path) {
+    err(_) => [p.name + "/" + t.name + ": no reference at " + ref_path],
+    ok(code) => {
+      let dir = raw_dir + "/" + p.name + "/" + t.name
+      let pos = match (fs.mkdir_p(dir + "/pass"), judge(p, t, dir + "/pass", code)) {
+        (ok(_), ok(a)) => if a.passed then [] else [p.name + "/" + t.name + ": reference FAILED (" + a.kind + "):\n" + clip(a.diagnostic)],
+        (_, err(e)) => [p.name + "/" + t.name + ": harness error: " + e],
+        (err(e), _) => [p.name + "/" + t.name + ": harness error: " + e],
+      }
+      let neg = match (fs.mkdir_p(dir + "/neg"), judge(p, with_perturbed_first_case(t), dir + "/neg", code)) {
+        (ok(_), ok(a)) =>
+          if a.passed then [p.name + "/" + t.name + ": the driver did not catch a wrong expectation"]
+          else if a.kind != "run" then [p.name + "/" + t.name + ": the perturbed oracle failed at `" + a.kind + "`, not at the run step:\n" + clip(a.diagnostic)]
+          else [],
+        (_, err(e)) => [p.name + "/" + t.name + ": harness error: " + e],
+        (err(e), _) => [p.name + "/" + t.name + ": harness error: " + e],
+      }
+      let problems = pos + neg
+      println("  " + p.name + " / " + t.name + ": " + (if list.is_empty(problems) then "ok" else "PROBLEM"))
+      problems
+    },
+  }
+}
+
+effect fn cmd_verify(o: Opts) -> Unit! = {
+  let tasks = load_tasks(o.tasks)!
+  let probes = probe_all(o.languages)!
+  probes |> list.map((pr) => println((if pr.available then "verifying " else "skipping  ") + pr.plugin.display + ": " + toolchain_line(pr)))
+  let available = probes |> list.filter((pr) => pr.available)
+  let raw_dir = o.out + "/verify/raw"
+  fs.mkdir_p(raw_dir)!
+  let problems = (available |> list.flat_map((pr) => (tasks |> list.flat_map((t) => verify_one(pr, t, raw_dir)!))!))!
+  println("")
+  if list.is_empty(problems) then {
+    println("verify: " + int.to_string(list.len(tasks)) + " task(s) x " + int.to_string(list.len(available)) + " language(s) ok" +
+      (if list.len(available) < list.len(probes) then " (" + int.to_string(list.len(probes) - list.len(available)) + " language(s) skipped: toolchain missing)" else ""))
+    ok(())
+  } else {
+    problems |> list.map((p) => println("PROBLEM " + p))
+    println("verify: " + int.to_string(list.len(problems)) + " problem(s)")
+    process.exit(1)
+  }
+}
+
+effect fn dispatch(o: Opts) -> Unit! = match o.command {
+  "run" => ok(cmd_run(o)!),
+  "verify" => ok(cmd_verify(o)!),
+  "probe" => ok(cmd_probe(o)!),
+  "prompt" => ok(cmd_prompt(o)!),
+  _ => err("usage: almide run src/msr/run.almd -- run <provider:model> | verify | probe | prompt <language> <task>"),
+}
+
+effect fn main() -> Unit = {
+  let args = env.args()
+  match parse_opts(args, default_opts()) {
+    err(e) => {
+      println("error: " + e)
+      process.exit(2)
+    },
+    ok(o0) => {
+      let command = list.get(o0.rest, 0) ?? ""
+      let o = { ...o0, command: command, model: if command == "run" then list.get(o0.rest, 1) ?? "" else "" }
+      match dispatch(o) {
+        ok(_) => (),
+        err(e) => {
+          println("Harness error: " + e)
+          process.exit(2)
+        },
+      }
+    },
+  }
+}
+
+// ── Tests ──
+
+test "parse_opts reads every option and keeps positionals in order" {
+  let o = parse_opts(["run", "cf:x", "--languages", "almide, rust", "--tasks", "gcd", "--retries", "2", "--label", "smoke"], default_opts())
+  assert_eq(o |> result.map((o) => o.rest), ok(["run", "cf:x"]))
+  assert_eq(o |> result.map((o) => o.languages), ok(["almide", "rust"]))
+  assert_eq(o |> result.map((o) => o.retries), ok(2))
+  assert_eq(o |> result.map((o) => o.label), ok("smoke"))
+  assert(result.is_err(parse_opts(["--condition", "relaxed"], default_opts())))
+  assert(result.is_err(parse_opts(["--bogus"], default_opts())))
+}
+
+test "perturb changes every literal kind and stays well-typed" {
+  assert_eq(perturb(spec.vint(1), TInt), spec.vint(2))
+  assert_eq(perturb(spec.vbool(true), TBool), spec.vbool(false))
+  assert_eq(perturb(spec.vstr("a"), TStr), spec.vstr("ax"))
+  assert_eq(perturb(spec.vlist([]), spec.tlist(TInt)), spec.vlist([spec.vint(0)]))
+  assert_eq(perturb(spec.vlist([spec.vint(4), spec.vint(5)]), spec.tlist(TInt)), spec.vlist([spec.vint(5), spec.vint(5)]))
+  assert_eq(perturb(spec.vlist([]), spec.tlist(spec.tlist(TInt))), spec.vlist([spec.vlist([])]))
+  assert_eq(perturb(spec.vlist([spec.vlist([spec.vint(1)])]), spec.tlist(spec.tlist(TInt))), spec.vlist([spec.vlist([spec.vint(2)])]))
+}
+
+test "the user prompt names the language and carries every signature" {
+  let t = PTask {
+    name: "gcd", dir: "tasks/basic/gcd",
+    sigs: [spec.parse_sig("fn gcd(a: Int, b: Int) -> Int")!],
+    behavior: "- Return the greatest common divisor",
+    cases: [],
+  }
+  let rust = plugins.find("rust")!
+  let up = user_prompt(rust, t)
+  assert(string.contains(up, "in Rust with this exact signature"))
+  assert(string.contains(up, "fn gcd(a: i64, b: i64) -> i64"))
+  assert(string.contains(up, "Return the greatest common divisor"))
+  assert(string.starts_with(system_prompt(rust), "You are writing Rust."))
+  let alm = plugins.find("almide")!
+  assert(string.contains(user_prompt(alm, t), "fn gcd(a: Int, b: Int) -> Int"))
+  assert(string.starts_with(system_prompt(alm), "You are writing Almide. Output ONLY source code, no fences or prose.\n\n## Prefer stdlib helpers"))
+}
+
+test "an unavailable language renders as not measured, never as a failure" {
+  let zig = plugins.find("zig")!
+  let pr = Probe { plugin: zig, available: false, missing: "zig", versions: [] }
+  let row = language_row(pr, [LResult { language: "zig", task: "gcd", success: false, retries: 0, attempts: [] }])
+  assert(string.contains(row, "not measured: zig missing"))
+  assert(not string.contains(row, "0/1"))
+}
