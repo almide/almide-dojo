@@ -20,7 +20,7 @@ env:
   # measured locally and committed by hand; see README "Running the harness".
   # Specs are what src/main.almd parses: `cf:` = Cloudflare,
   # `anthropic:` = Anthropic Messages API, `openai:` = OpenAI.
-  DAILY_MODELS: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast,cf:@cf/meta/llama-3.1-8b-instruct'
+  DAILY_MODELS: 'cf:@cf/zai-org/glm-5.3-flash,cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast,cf:@cf/meta/llama-3.1-8b-instruct'
 
 jobs:
   plan:
