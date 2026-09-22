@@ -27,12 +27,13 @@ env:
   # compiler's default is 30 s, which is a deadline on the whole completion
   # (this transport is non-streaming), and a reasoning model exceeds it. The
   # daily lane is the more exposed of the two: `call_model` passes
-  # max_attempts=1, so there is no transport retry to absorb a slow answer,
-  # and src/main.almd records a transport failure as a RunResult with
-  # success=false — a scored zero for a task the model was never asked
-  # (almide-dojo#17). Until that is typed the way the cross-language lane types
-  # it, the timeout is what keeps the daily number from silently absorbing the
-  # network.
+  # max_attempts=1, so there is no transport retry to absorb a slow answer.
+  #
+  # A task this deadline costs is now `not-run` in summary.md rather than a
+  # scored zero (almide-dojo#17), and summary.md records the number below, so
+  # a reader knows which deadline produced the absence. The timeout still
+  # matters: inside the window it strictly converts `not-run` cells into
+  # measured ones.
   ALMIDE_HTTP_TIMEOUT_SECS: '140'
 
 jobs:
@@ -113,10 +114,12 @@ jobs:
           # is silently overwritten by stale checked-out copies.
           rm -rf runs/
           echo "Running MSR with model: $MODEL"
-          # The harness exits 1 both for a harness failure (no summary written)
-          # and for "some tasks failed" (summary written — that is a
-          # measurement, not an error). The job verdict is the summary:
-          # a run that measured zero tasks is red, whatever the exit code.
+          # Harness exit codes: 0 all planned tasks passed, 1 some measured
+          # task failed (that is the measurement), 2 nothing reached the model
+          # (no summary written), 3 the run is `not-comparable` — some planned
+          # task was never answered, so the rate is an interval. The job
+          # verdict is the summary, not the exit code: a run that measured
+          # zero tasks is red whatever the code says.
           set +e
           almide run src/main.almd -- all "$MODEL"
           RC=$?
@@ -132,15 +135,45 @@ jobs:
             echo "::error::$SUMMARY reports 0 tasks"
             exit 1
           fi
+          # The evidence is published BEFORE anything judges it (the shape
+          # almide-dojo#19 arrived at for the cross lane): a refusal that
+          # exits before writing its own summary hides the one run that most
+          # needs reading.
           {
             echo "## MSR run — \`$MODEL\`"
             echo
             echo "- summary: \`$SUMMARY\`"
             echo "- compiler pin: \`${{ needs.plan.outputs.pin }}\` (\`$(almide --version)\`)"
-            echo "- harness exit code: $RC (1 = some tasks failed; the measurement is still recorded)"
+            echo "- harness exit code: $RC (1 = some tasks failed, 3 = some tasks were never asked; the measurement is still recorded)"
             echo
-            sed -n '1,/^## Per-task/p' "$SUMMARY" | grep '^- ' || true
+            sed -n '1,/^## Per-task/p' "$SUMMARY" | grep -E '^(> |- )' || true
+            echo
+            sed -n '/^## Never asked/,/^## By category/p' "$SUMMARY" | grep -E '^\|' || true
           } >> "$GITHUB_STEP_SUMMARY"
+          # Re-derive the refusal from the summary's OWN numbers rather than
+          # trusting the banner it printed: `reached` < `tasks` is the whole
+          # condition, and a run cannot certify itself.
+          REACHED=$(sed -nE 's/^- \*\*reached\*\*: ([0-9]+) \/ [0-9]+.*/\1/p' "$SUMMARY")
+          VERDICT=$(sed -nE 's/^> \*\*Verdict: `([a-z-]+)`.*/\1/p' "$SUMMARY" | head -n1)
+          echo "reached $REACHED of $TASKS planned; stamped verdict: ${VERDICT:-unstamped}"
+          if [ "${REACHED:-0}" -lt "$TASKS" ]; then
+            if [ "$VERDICT" != "not-comparable" ]; then
+              echo "::error::$SUMMARY reached $REACHED of $TASKS planned tasks but is stamped \`${VERDICT:-unstamped}\` — the summary contradicts its own numbers"
+              exit 1
+            fi
+            # A number that travelled away from its condition is the whole
+            # defect class, so an incomplete run fails the job — after the
+            # table is published and while the results still get committed
+            # (commit-results runs on `!cancelled()`). A refused run is
+            # evidence; it is just not a scorecard number.
+            echo "::error::verdict \`not-comparable\`: $((TASKS - REACHED)) of $TASKS planned tasks never reached the model, so this run's rate is an interval and must not be published as a point (almide-dojo#17)"
+            exit 1
+          fi
+          # True about the task bank rather than a harness fault, so it warns
+          # and does not fail: a gate that is red by design stops being read.
+          if [ "$VERDICT" = "inconclusive-saturated" ]; then
+            echo "::warning::every task this model was asked passed: a complete run that separates nothing (almide/almide#1963). Do not quote it as evidence about the model."
+          fi
 
       - name: Upload results
         uses: actions/upload-artifact@v4
