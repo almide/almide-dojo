@@ -1,6 +1,7 @@
 # is-palindrome
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **state**: `measured`
 - **success**: yes
 - **retries**: 0
 - **category**: pass-1shot
@@ -11,5 +12,5 @@
 
 ```almide
 fn is_palindrome(s: String) -> Bool = 
-    s == string.reverse(s)
+  string.reverse(s) == s
 ```

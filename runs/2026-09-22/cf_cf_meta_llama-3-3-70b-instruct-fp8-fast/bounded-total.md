@@ -1,6 +1,7 @@
 # bounded-total
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **state**: `measured`
 - **success**: no
 - **retries**: 3
 - **category**: unknown
@@ -12,10 +13,10 @@
 ```almide
 effect fn safe_total(xs: List[Int]) -> Int = 
   fan.bounded(compute.ms(100)) { 
-    fn sum_list(index: Int, xs: List[Int], acc: Int) -> Int = 
-      if index == list.len(xs) then acc
-      else sum_list(index + 1, xs, acc + list.get_or(xs, index, 0))
-    sum_list(0, xs, 0)
+    fn sum_list(xs: List[Int], acc: Int, i: Int) -> Int = 
+      if i >= list.len(xs) then acc 
+      else sum_list(xs, acc + list.get_or(xs, i, 0), i + 1)
+    sum_list(xs, 0, 0) 
   } ?? -1
 ```
 
@@ -25,13 +26,13 @@ effect fn safe_total(xs: List[Int]) -> Int =
 error: `fn` cannot be declared inside a function body
   --> /tmp/dojo-bounded-total-0.almd:3:5
   in nested fn
-  here: fn sum_list(index: Int, xs: List[Int], acc: Int) -> Int =
+  here: fn sum_list(xs: List[Int], acc: Int, i: Int) -> Int =
   hint: Move it to the top level (thread any captured locals as parameters), or bind a lambda: `let row = (label, ns) => ...`
   try:
       fn row(label: String, ns: Int, total: Int) -> Unit =
           println("${label}: ${ns / total}")
   |
-3 |     fn sum_list(index: Int, xs: List[Int], acc: Int) -> Int =
+3 |     fn sum_list(xs: List[Int], acc: Int, i: Int) -> Int =
   |     ^^
 
 1 error(s) found
@@ -48,12 +49,12 @@ compile failed
 ```almide
 effect fn safe_total(xs: List[Int]) -> Int = 
   fan.bounded(compute.ms(100)) { 
-    sum_list(0, xs, 0)
+    sum_list(xs, 0, 0) 
   } ?? -1
 
-fn sum_list(index: Int, xs: List[Int], acc: Int) -> Int = 
-  if index == list.len(xs) then acc
-  else sum_list(index + 1, xs, acc + list.get_or(xs, index, 0))
+fn sum_list(xs: List[Int], acc: Int, i: Int) -> Int = 
+  if i >= list.len(xs) then acc 
+  else sum_list(xs, acc + list.get_or(xs, i, 0), i + 1)
 ```
 
 **Diagnostic:**
@@ -72,12 +73,11 @@ fan.bounded / fan.race / fan.timeout tests run on the WASM test leg (the native 
 ```almide
 effect fn safe_total(xs: List[Int]) -> Int = 
   fan.bounded(compute.ms(100)) { 
-    sum_list(0, xs, 0)
+    sum_list(xs) 
   } ?? -1
 
-fn sum_list(index: Int, xs: List[Int], acc: Int) -> Int = 
-  if index >= list.len(xs) then acc
-  else sum_list(index + 1, xs, acc + list.get_or(xs, index, 0))
+fn sum_list(xs: List[Int]) -> Int = 
+  list.fold(xs, 0, (acc, x) => acc + x)
 ```
 
 **Diagnostic:**
@@ -96,12 +96,11 @@ fan.bounded / fan.race / fan.timeout tests run on the WASM test leg (the native 
 ```almide
 effect fn safe_total(xs: List[Int]) -> Int = 
   fan.bounded(compute.ms(100)) { 
-    sum_list(0, xs, 0)
+    sum_list(xs) 
   } ?? -1
 
-fn sum_list(index: Int, xs: List[Int], acc: Int) -> Int = 
-  if index >= list.len(xs) then acc
-  else sum_list(index + 1, xs, acc + option.unwrap_or(list.get(xs, index), 0))
+fn sum_list(xs: List[Int]) -> Int = 
+  list.fold(xs, 0, (acc, x) => acc + x)
 ```
 
 **Diagnostic:**

@@ -1,6 +1,7 @@
 # repeat-string
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **state**: `measured`
 - **success**: yes
 - **retries**: 0
 - **category**: pass-1shot
@@ -10,6 +11,5 @@
 ### Attempt 1 (PASS)
 
 ```almide
-fn repeat(s: String, n: Int) -> String = 
-    string.repeat(s, n)
+fn repeat(s: String, n: Int) -> String = string.repeat(s, n)
 ```

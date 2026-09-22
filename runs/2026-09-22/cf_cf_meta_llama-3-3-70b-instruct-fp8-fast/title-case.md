@@ -1,6 +1,7 @@
 # title-case
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **state**: `measured`
 - **success**: yes
 - **retries**: 0
 - **category**: pass-1shot
@@ -13,9 +14,9 @@
 fn title_case(s: String) -> String = 
     string.join(
         list.map(
-            string.split(s, " "),
+            string.split(s, " "), 
             (word) => string.capitalize(string.to_lower(word))
-        ),
+        ), 
         " "
     )
 ```

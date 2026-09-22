@@ -1,6 +1,7 @@
 # run-length-encoding
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **state**: `measured`
 - **success**: no
 - **retries**: 3
 - **category**: type-error
@@ -12,43 +13,78 @@
 
 ```almide
 fn rle_encode(s: String) -> String = 
-  let encoded = list.fold(string.run_length_encode(s), "", (acc, (char, count)) => 
-    acc + int.to_string(count) + char)
-  in encoded
+  let encoded = string.run_length_encode(s) 
+  in list.map(encoded, (x, n) => int.to_string(n) + x)
+  |> list.join(_, "")
 
 fn rle_decode(s: String) -> String = 
-  if string.is_empty(s) then 
-    ""
+  if string.is_empty(s) then ""
   else 
     let chars = string.chars(s)
-    let pairs = list.chunk(chars, 2)
-    let decoded = list.fold(pairs, "", (acc, pair) => 
-      let count = int.parse(pair.0).unwrap_or(1)
-      let char = pair.1
-      in acc + string.repeat(char, count))
-    in decoded
+    in list.fold(chars, "", (acc, c) => 
+      if string.is_digit(c) then 
+        let count = int.parse(c) |> result.unwrap_or(0)
+        in acc + string.repeat(string.get(chars, list.len(acc) + 1) |> option.unwrap_or(""), count)
+      else acc)
 ```
 
 **Diagnostic:**
 
 ```
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-run-length-encoding-0.almd:10:5
+  --> /tmp/dojo-run-length-encoding-0.almd:9:5
   in let-in
   here: let chars = string.chars(s)
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
-   |
-10 |     let chars = string.chars(s)
-   |     ^^^
-error: 'let' is not an expression in Almide at line 10:5
-  --> /tmp/dojo-run-length-encoding-0.almd:10:5
+  |
+9 |     let chars = string.chars(s)
+  |     ^^^
+error: 'let' is not an expression in Almide at line 9:5
+  --> /tmp/dojo-run-length-encoding-0.almd:9:5
   here: let chars = string.chars(s)
   hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-10 |     let chars = string.chars(s)
-   |     ^
+  |
+9 |     let chars = string.chars(s)
+  |     ^
+error[E046]: placeholder `_` is not valid in a call argument (argument 1 of list.join())
+  --> /tmp/dojo-run-length-encoding-0.almd:4:16
+  in call argument
+  here: |> list.join(_, "")
+  hint: `_` here is a hole with no value — it does NOT partially apply the call. Name the missing value with a lambda instead.
+  try:
+      (x) => list.join(x, /* the other arguments */)
+  |
+4 |   |> list.join(_, "")
+  |                ^
+error: operator '+' requires numeric, String, or List types but got String and (String, Int)
+  --> /tmp/dojo-run-length-encoding-0.almd:3:50
+  in operator +
+  here: list.map(encoded, (x, n) => int.to_string(n) + x)
+  hint: Use + with numeric types, String, or List
+  |
+3 |   list.map(encoded, (x, n) => int.to_string(n) + x)
+  |                                                  ^
+error[E005]: argument 'f' expects fn((String, Int)) -> B but got fn((String, Int), Int) -> String
+  --> /tmp/dojo-run-length-encoding-0.almd:3:21
+  in call to list.map()
+  here: list.map(encoded, (x, n) => int.to_string(n) + x)
+  hint: Fix the argument type
+...
+3 |   list.map(encoded, (x, n) => int.to_string(n) + x)
+  |                     ^
+error[E004]: list.join() expects 2 argument(s) but got 3
+  --> /tmp/dojo-run-length-encoding-0.almd:4:19
+  in call to list.join()
+  here: |> list.join(_, "")
+  hint: Check the number of arguments
+  try:
+      // list.join() takes 2 arg(s) — you passed 3
+      list.join(<xs: List[String]>, <sep: String>)
+  |
+4 |   |> list.join(_, "")
+  |                   ^^
 
-2 error(s) found
+6 error(s) found
 FAILED: /tmp/dojo-run-length-encoding-0.almd
 Compile error for /tmp/dojo-run-length-encoding-0.almd:
 compile failed
@@ -61,18 +97,19 @@ compile failed
 
 ```almide
 fn rle_encode(s: String) -> String = 
-  list.fold(string.run_length_encode(s), "", (acc, (char, count)) => 
-    acc + int.to_string(count) + char)
+  let encoded = string.run_length_encode(s) 
+  in list.map(encoded, (x, n) => int.to_string(n) + x)
+  |> (xs) => list.join(xs, "")
 
 fn rle_decode(s: String) -> String = 
-  if string.is_empty(s) then 
-    ""
+  if string.is_empty(s) then ""
   else 
-    let pairs = list.chunk(string.chars(s), 2)
-    in list.fold(pairs, "", (acc, pair) => 
-      let count = int.parse(pair.0).unwrap_or(1)
-      let char = pair.1
-      in acc + string.repeat(char, count))
+    let chars = string.chars(s)
+    in list.fold(chars, "", (acc, c) => 
+      if string.is_digit(c) then 
+        let count = int.parse(c) |> result.unwrap_or(0)
+        in acc + string.repeat(string.get(chars, list.len(acc) + 1) |> option.unwrap_or(""), count)
+      else acc)
 ```
 
 **Diagnostic:**
@@ -81,20 +118,36 @@ fn rle_decode(s: String) -> String =
 error: 'let' is not an expression in Almide
   --> /tmp/dojo-run-length-encoding-1.almd:9:5
   in let-in
-  here: let pairs = list.chunk(string.chars(s), 2)
+  here: let chars = string.chars(s)
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-9 |     let pairs = list.chunk(string.chars(s), 2)
+9 |     let chars = string.chars(s)
   |     ^^^
 error: 'let' is not an expression in Almide at line 9:5
   --> /tmp/dojo-run-length-encoding-1.almd:9:5
-  here: let pairs = list.chunk(string.chars(s), 2)
+  here: let chars = string.chars(s)
   hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
   |
-9 |     let pairs = list.chunk(string.chars(s), 2)
+9 |     let chars = string.chars(s)
   |     ^
+error: operator '+' requires numeric, String, or List types but got String and (String, Int)
+  --> /tmp/dojo-run-length-encoding-1.almd:3:50
+  in operator +
+  here: list.map(encoded, (x, n) => int.to_string(n) + x)
+  hint: Use + with numeric types, String, or List
+  |
+3 |   list.map(encoded, (x, n) => int.to_string(n) + x)
+  |                                                  ^
+error[E005]: argument 'f' expects fn((String, Int)) -> B but got fn((String, Int), Int) -> String
+  --> /tmp/dojo-run-length-encoding-1.almd:3:21
+  in call to list.map()
+  here: list.map(encoded, (x, n) => int.to_string(n) + x)
+  hint: Fix the argument type
+...
+3 |   list.map(encoded, (x, n) => int.to_string(n) + x)
+  |                     ^
 
-2 error(s) found
+4 error(s) found
 FAILED: /tmp/dojo-run-length-encoding-1.almd
 Compile error for /tmp/dojo-run-length-encoding-1.almd:
 compile failed
@@ -107,38 +160,78 @@ compile failed
 
 ```almide
 fn rle_encode(s: String) -> String = 
-  list.fold(string.run_length_encode(s), "", (acc, (char, count)) => 
-    acc + int.to_string(count) + char)
+  string.run_length_encode(s) 
+  |> list.map((x, n) => int.to_string(n) + x)
+  |> list.join(_, "")
 
 fn rle_decode(s: String) -> String = 
-  if string.is_empty(s) then 
-    ""
+  if string.is_empty(s) then ""
   else 
-    list.fold(list.chunk(string.chars(s), 2), "", (acc, pair) => 
-      acc + string.repeat(pair.1, int.parse(pair.0).unwrap_or(1)))
+    let chars = string.chars(s)
+    in list.fold(chars, "", (acc, c) => 
+      if string.is_digit(c) then 
+        let count = int.parse(c) |> result.unwrap_or(0)
+        in acc + string.repeat(string.get(chars, list.len(acc) + 1) |> option.unwrap_or(""), count)
+      else acc)
 ```
 
 **Diagnostic:**
 
 ```
-error[E045]: tuple index .1 on non-tuple type List[String]
-  --> /tmp/dojo-run-length-encoding-2.almd:10:27
-  in tuple index
-  here: acc + string.repeat(pair.1, int.parse(pair.0).unwrap_or(1)))
-  hint: only tuple values support positional .k access
-   |
-10 |       acc + string.repeat(pair.1, int.parse(pair.0).unwrap_or(1)))
-   |                           ^^^^
-error[E045]: tuple index .0 on non-tuple type List[String]
-  --> /tmp/dojo-run-length-encoding-2.almd:10:45
-  in tuple index
-  here: acc + string.repeat(pair.1, int.parse(pair.0).unwrap_or(1)))
-  hint: only tuple values support positional .k access
-   |
-10 |       acc + string.repeat(pair.1, int.parse(pair.0).unwrap_or(1)))
-   |                                             ^^^^
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-run-length-encoding-2.almd:9:5
+  in let-in
+  here: let chars = string.chars(s)
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+  |
+9 |     let chars = string.chars(s)
+  |     ^^^
+error: 'let' is not an expression in Almide at line 9:5
+  --> /tmp/dojo-run-length-encoding-2.almd:9:5
+  here: let chars = string.chars(s)
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  |
+9 |     let chars = string.chars(s)
+  |     ^
+error[E046]: placeholder `_` is not valid in a call argument (argument 1 of list.join())
+  --> /tmp/dojo-run-length-encoding-2.almd:4:16
+  in call argument
+  here: |> list.join(_, "")
+  hint: `_` here is a hole with no value — it does NOT partially apply the call. Name the missing value with a lambda instead.
+  try:
+      (x) => list.join(x, /* the other arguments */)
+  |
+4 |   |> list.join(_, "")
+  |                ^
+error: operator '+' requires numeric, String, or List types but got String and (String, Int)
+  --> /tmp/dojo-run-length-encoding-2.almd:3:44
+  in operator +
+  here: |> list.map((x, n) => int.to_string(n) + x)
+  hint: Use + with numeric types, String, or List
+  |
+3 |   |> list.map((x, n) => int.to_string(n) + x)
+  |                                            ^
+error[E005]: argument 'f' expects fn((String, Int)) -> B but got fn((String, Int), Int) -> String
+  --> /tmp/dojo-run-length-encoding-2.almd:3:44
+  in call to list.map()
+  here: |> list.map((x, n) => int.to_string(n) + x)
+  hint: Fix the argument type
+...
+3 |   |> list.map((x, n) => int.to_string(n) + x)
+  |                                            ^
+error[E004]: list.join() expects 2 argument(s) but got 3
+  --> /tmp/dojo-run-length-encoding-2.almd:4:19
+  in call to list.join()
+  here: |> list.join(_, "")
+  hint: Check the number of arguments
+  try:
+      // list.join() takes 2 arg(s) — you passed 3
+      list.join(<xs: List[String]>, <sep: String>)
+  |
+4 |   |> list.join(_, "")
+  |                   ^^
 
-2 error(s) found
+6 error(s) found
 FAILED: /tmp/dojo-run-length-encoding-2.almd
 Compile error for /tmp/dojo-run-length-encoding-2.almd:
 compile failed
@@ -151,31 +244,57 @@ compile failed
 
 ```almide
 fn rle_encode(s: String) -> String = 
-  list.fold(string.run_length_encode(s), "", (acc, (char, count)) => 
-    acc + int.to_string(count) + char)
+  string.run_length_encode(s) 
+  |> list.map((x, n) => int.to_string(n) + x)
+  |> (xs) => list.join(xs, "")
 
 fn rle_decode(s: String) -> String = 
-  if string.is_empty(s) then 
-    ""
+  if string.is_empty(s) then ""
   else 
-    list.fold(list.chunk(string.chars(s), 2), "", (acc, pair) => 
-      acc + string.repeat(list.first(pair |> list.map((x) => x)), 
-                          int.parse(list.last(pair |> list.map((x) => x)).unwrap_or("1")).unwrap_or(1)))
+    let chars = string.chars(s)
+    in list.fold(chars, "", (acc, c) => 
+      if string.is_digit(c) then 
+        let count = int.parse(c) |> result.unwrap_or(0)
+        in acc + string.repeat(string.get(chars, list.len(acc) + 1) |> option.unwrap_or(""), count)
+      else acc)
 ```
 
 **Diagnostic:**
 
 ```
-error[E005]: argument 's' expects String but got Option[String]
-  --> /tmp/dojo-run-length-encoding-3.almd:10:27
-  in call to string.repeat()
-  here: acc + string.repeat(list.first(pair |> list.map((x) => x)),
-  hint: the argument is an Option[String] — unwrap it first: `?? fallback` supplies a default, or `match` handles the none case
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-run-length-encoding-3.almd:9:5
+  in let-in
+  here: let chars = string.chars(s)
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+  |
+9 |     let chars = string.chars(s)
+  |     ^^^
+error: 'let' is not an expression in Almide at line 9:5
+  --> /tmp/dojo-run-length-encoding-3.almd:9:5
+  here: let chars = string.chars(s)
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  |
+9 |     let chars = string.chars(s)
+  |     ^
+error: operator '+' requires numeric, String, or List types but got String and (String, Int)
+  --> /tmp/dojo-run-length-encoding-3.almd:3:44
+  in operator +
+  here: |> list.map((x, n) => int.to_string(n) + x)
+  hint: Use + with numeric types, String, or List
+  |
+3 |   |> list.map((x, n) => int.to_string(n) + x)
+  |                                            ^
+error[E005]: argument 'f' expects fn((String, Int)) -> B but got fn((String, Int), Int) -> String
+  --> /tmp/dojo-run-length-encoding-3.almd:3:44
+  in call to list.map()
+  here: |> list.map((x, n) => int.to_string(n) + x)
+  hint: Fix the argument type
 ...
-10 |       acc + string.repeat(list.first(pair |> list.map((x) => x)),
-   |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+3 |   |> list.map((x, n) => int.to_string(n) + x)
+  |                                            ^
 
-1 error(s) found
+4 error(s) found
 FAILED: /tmp/dojo-run-length-encoding-3.almd
 Compile error for /tmp/dojo-run-length-encoding-3.almd:
 compile failed

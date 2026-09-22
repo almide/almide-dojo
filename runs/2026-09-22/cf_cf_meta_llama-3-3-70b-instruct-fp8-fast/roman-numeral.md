@@ -1,9 +1,10 @@
 # roman-numeral
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
-- **success**: yes
+- **state**: `measured`
+- **success**: no
 - **retries**: 3
-- **category**: pass-retry
+- **category**: parse-error
 
 ## Attempts
 
@@ -14,106 +15,62 @@ fn to_roman(n: Int) -> String =
   let values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
   let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
   let pairs = list.zip(values, symbols)
-  let rec loop(n: Int, pairs: List[(Int, String)], acc: String) -> String = 
-    if list.is_empty(pairs) then acc
-    else 
-      let (value, symbol) = list.first(pairs) |> option.unwrap_or((0, ""))
-      let count = int.clamp(n / value, 0, n / value)
-      let rest = n - count * value
-      let rest_pairs = list.drop(pairs, 1)
-      loop(rest, rest_pairs, acc + string.repeat(symbol, count))
-  in loop(n, pairs, "")
+  in
+  list.fold(pairs, "", (acc, (value, symbol)) => 
+    let count = int.clamp(n / value, 0, n / value)
+    in
+    acc + string.repeat(symbol, count)
+  ) |> string.trim
 ```
 
 **Diagnostic:**
 
 ```
-error: `let rec` is OCaml/SML syntax; Almide functions are recursive by default
-  --> /tmp/dojo-roman-numeral-0.almd:5:7
-  in let rec
-  here: let rec loop(n: Int, pairs: List[(Int, String)], acc: String) -> String =
-  hint: Define recursive functions at top level: `fn name(args) -> ReturnType = body`. Almide has no `let rec` — call the fn directly, including from its own body.
-  try:
-      fn fact(n: Int) -> Int =
-          if n == 0 then 1 else n * fact(n - 1)
-  |
-5 |   let rec loop(n: Int, pairs: List[(Int, String)], acc: String) -> String =
-  |       ^^^
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-roman-numeral-0.almd:8:7
+  --> /tmp/dojo-roman-numeral-0.almd:7:5
   in let-in
-  here: let (value, symbol) = list.first(pairs) |> option.unwrap_or((0, ""))
+  here: let count = int.clamp(n / value, 0, n / value)
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-8 |       let (value, symbol) = list.first(pairs) |> option.unwrap_or((0, ""))
-  |       ^^^
-error: Expected expression at line 13:3 (got In 'in')
-  --> /tmp/dojo-roman-numeral-0.almd:13:3
-  here: in loop(n, pairs, "")
+7 |     let count = int.clamp(n / value, 0, n / value)
+  |     ^^^
+error: Expected expression at line 10:3 (got RParen ')')
+  --> /tmp/dojo-roman-numeral-0.almd:10:3
+  here: ) |> string.trim
   hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
    |
-13 |   in loop(n, pairs, "")
+10 |   ) |> string.trim
    |   ^
-error[E003]: undefined variable 'value'
-  --> /tmp/dojo-roman-numeral-0.almd:9:33
-  in variable value
-  here: let count = int.clamp(n / value, 0, n / value)
-  hint: Did you mean `values`?
-  try:
-      values
-  |
-9 |       let count = int.clamp(n / value, 0, n / value)
-  |                                 ^^^^^
-error[E003]: undefined variable 'value'
-  --> /tmp/dojo-roman-numeral-0.almd:9:47
-  in variable value
-  here: let count = int.clamp(n / value, 0, n / value)
-  hint: Did you mean `values`?
-  try:
-      values
-  |
-9 |       let count = int.clamp(n / value, 0, n / value)
-  |                                               ^^^^^
-error[E003]: undefined variable 'value'
-  --> /tmp/dojo-roman-numeral-0.almd:10:30
-  in variable value
-  here: let rest = n - count * value
-  hint: Did you mean `values`?
-  try:
-      values
-   |
-10 |       let rest = n - count * value
-   |                              ^^^^^
 error[E003]: undefined variable 'acc'
-  --> /tmp/dojo-roman-numeral-0.almd:12:30
+  --> /tmp/dojo-roman-numeral-0.almd:9:5
   in variable acc
-  here: loop(rest, rest_pairs, acc + string.repeat(symbol, count))
+  here: acc + string.repeat(symbol, count)
   hint: Check the variable name
-   |
-12 |       loop(rest, rest_pairs, acc + string.repeat(symbol, count))
-   |                              ^^^
+  |
+9 |     acc + string.repeat(symbol, count)
+  |     ^^^
 error[E003]: undefined variable 'symbol'
-  --> /tmp/dojo-roman-numeral-0.almd:12:50
+  --> /tmp/dojo-roman-numeral-0.almd:9:25
   in variable symbol
-  here: loop(rest, rest_pairs, acc + string.repeat(symbol, count))
+  here: acc + string.repeat(symbol, count)
   hint: Did you mean `symbols`?
   try:
       symbols
-   |
-12 |       loop(rest, rest_pairs, acc + string.repeat(symbol, count))
-   |                                                  ^^^^^^
-error[E002]: undefined function 'loop'
-  --> /tmp/dojo-roman-numeral-0.almd:12:58
-  in call to loop()
-  here: loop(rest, rest_pairs, acc + string.repeat(symbol, count))
-  hint: Check the function name
-   |
-12 |       loop(rest, rest_pairs, acc + string.repeat(symbol, count))
-   |                                                          ^^^^^
+  |
+9 |     acc + string.repeat(symbol, count)
+  |                         ^^^^^^
+error[E003]: undefined variable 'count'
+  --> /tmp/dojo-roman-numeral-0.almd:9:33
+  in variable count
+  here: acc + string.repeat(symbol, count)
+  hint: Check the variable name
+  |
+9 |     acc + string.repeat(symbol, count)
+  |                                 ^^^^^
 error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
-  --> /tmp/dojo-roman-numeral-0.almd:12:58
+  --> /tmp/dojo-roman-numeral-0.almd:9:33
   in fn 'to_roman'
-  here: loop(rest, rest_pairs, acc + string.repeat(symbol, count))
+  here: acc + string.repeat(symbol, count)
   hint: Fix the expression type or change the expected type
   try:
       // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
@@ -121,11 +78,11 @@ error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
       //   tmp                            // <-- the returned value
       // Or inline:
       //   <expression>                   // must have type String
-   |
-12 |       loop(rest, rest_pairs, acc + string.repeat(symbol, count))
-   |                                                          ^^^^^
+  |
+9 |     acc + string.repeat(symbol, count)
+  |                                 ^^^^^
 
-10 error(s) found
+6 error(s) found
 FAILED: /tmp/dojo-roman-numeral-0.almd
 Compile error for /tmp/dojo-roman-numeral-0.almd:
 compile failed
@@ -141,53 +98,70 @@ fn to_roman(n: Int) -> String =
   let values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
   let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
   let pairs = list.zip(values, symbols)
-  fn loop(n: Int, pairs: List[(Int, String)], acc: String) -> String = 
-    if list.is_empty(pairs) then acc
-    else 
-      let (value, symbol) = list.first(pairs) |> option.unwrap_or((0, ""))
-      let count = int.clamp(n / value, 0, n / value)
-      let rest = n - count * value
-      let rest_pairs = list.drop(pairs, 1)
-      loop(rest, rest_pairs, acc + string.repeat(symbol, count))
-  in loop(n, pairs, "")
+  in
+  list.fold(pairs, "", (acc, (value, symbol)) => 
+    let count = n / value
+    in
+    acc + string.repeat(symbol, count)
+  ) 
+  |> (result) => 
+    result
 ```
 
 **Diagnostic:**
 
 ```
 error: 'let' is not an expression in Almide
-  --> /tmp/dojo-roman-numeral-1.almd:8:7
+  --> /tmp/dojo-roman-numeral-1.almd:7:5
   in let-in
-  here: let (value, symbol) = list.first(pairs) |> option.unwrap_or((0, ""))
+  here: let count = n / value
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-8 |       let (value, symbol) = list.first(pairs) |> option.unwrap_or((0, ""))
-  |       ^^^
-error: 'let' is not an expression in Almide at line 8:7
-  --> /tmp/dojo-roman-numeral-1.almd:8:7
-  here: let (value, symbol) = list.first(pairs) |> option.unwrap_or((0, ""))
+7 |     let count = n / value
+  |     ^^^
+error: Expected expression at line 10:3 (got RParen ')')
+  --> /tmp/dojo-roman-numeral-1.almd:10:3
+  here: )
   hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+   |
+10 |   )
+   |   ^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-roman-numeral-1.almd:9:5
+  in variable acc
+  here: acc + string.repeat(symbol, count)
+  hint: Check the variable name
   |
-8 |       let (value, symbol) = list.first(pairs) |> option.unwrap_or((0, ""))
-  |       ^
-error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
-  --> /tmp/dojo-roman-numeral-1.almd:4:32
-  in fn 'to_roman'
-  here: let pairs = list.zip(values, symbols)
-  hint: Fix the expression type or change the expected type
+9 |     acc + string.repeat(symbol, count)
+  |     ^^^
+error[E003]: undefined variable 'symbol'
+  --> /tmp/dojo-roman-numeral-1.almd:9:25
+  in variable symbol
+  here: acc + string.repeat(symbol, count)
+  hint: Did you mean `symbols`?
   try:
-      // fn body ends with `let pairs = ...` (a statement, returns Unit).
-      // Add `pairs` as the trailing expression so the fn returns String:
-      //
-      //   let pairs = <computation>
-      //   pairs                         // <-- add this line
-      //
-      // Or inline the computation as the tail expression directly.
+      symbols
   |
-4 |   let pairs = list.zip(values, symbols)
-  |                                ^^^^^^^
+9 |     acc + string.repeat(symbol, count)
+  |                         ^^^^^^
+error[E003]: undefined variable 'count'
+  --> /tmp/dojo-roman-numeral-1.almd:9:33
+  in variable count
+  here: acc + string.repeat(symbol, count)
+  hint: Check the variable name
+  |
+9 |     acc + string.repeat(symbol, count)
+  |                                 ^^^^^
+error[E003]: undefined variable 'result'
+  --> /tmp/dojo-roman-numeral-1.almd:12:5
+  in variable result
+  here: result
+  hint: Check the variable name
+   |
+12 |     result
+   |     ^^^^^^
 
-3 error(s) found
+6 error(s) found
 FAILED: /tmp/dojo-roman-numeral-1.almd
 Compile error for /tmp/dojo-roman-numeral-1.almd:
 compile failed
@@ -203,38 +177,85 @@ fn to_roman(n: Int) -> String =
   let values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
   let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
   let pairs = list.zip(values, symbols)
-  {
-    fn loop(n: Int, pairs: List[(Int, String)], acc: String) -> String = 
-      if list.is_empty(pairs) then acc
-      else 
-        {
-          let first_pair = list.first(pairs) |> option.unwrap_or((0, ""))
-          let (value, symbol) = first_pair
-          let count = int.clamp(n / value, 0, n / value)
-          let rest = n - count * value
-          let rest_pairs = list.drop(pairs, 1)
-          loop(rest, rest_pairs, acc + string.repeat(symbol, count))
-        }
-    loop(n, pairs, "")
-  }
+  in
+  list.fold(pairs, "", (acc, pair) => 
+    let value = pair.0
+    let symbol = pair.1
+    let count = n / value
+    let new_n = n - count * value
+    in
+    acc + string.repeat(symbol, count)
+  ) 
+  |> (result) => 
+    result
 ```
 
 **Diagnostic:**
 
 ```
-error: `fn` cannot be declared inside a function body
-  --> /tmp/dojo-roman-numeral-2.almd:6:5
-  in nested fn
-  here: fn loop(n: Int, pairs: List[(Int, String)], acc: String) -> String =
-  hint: Move it to the top level (thread any captured locals as parameters), or bind a lambda: `let row = (label, ns) => ...`
-  try:
-      fn row(label: String, ns: Int, total: Int) -> Unit =
-          println("${label}: ${ns / total}")
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-roman-numeral-2.almd:7:5
+  in let-in
+  here: let value = pair.0
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-6 |     fn loop(n: Int, pairs: List[(Int, String)], acc: String) -> String =
-  |     ^^
+7 |     let value = pair.0
+  |     ^^^
+error: Expected expression at line 13:3 (got RParen ')')
+  --> /tmp/dojo-roman-numeral-2.almd:13:3
+  here: )
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+   |
+13 |   )
+   |   ^
+error[E003]: undefined variable 'pair'
+  --> /tmp/dojo-roman-numeral-2.almd:8:18
+  in variable pair
+  here: let symbol = pair.1
+  hint: Did you mean `pairs`?
+  try:
+      pairs
+  |
+8 |     let symbol = pair.1
+  |                  ^^^^
+error[E003]: undefined variable 'value'
+  --> /tmp/dojo-roman-numeral-2.almd:9:21
+  in variable value
+  here: let count = n / value
+  hint: Did you mean `values`?
+  try:
+      values
+  |
+9 |     let count = n / value
+  |                     ^^^^^
+error[E003]: undefined variable 'value'
+  --> /tmp/dojo-roman-numeral-2.almd:10:29
+  in variable value
+  here: let new_n = n - count * value
+  hint: Did you mean `values`?
+  try:
+      values
+   |
+10 |     let new_n = n - count * value
+   |                             ^^^^^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-roman-numeral-2.almd:12:5
+  in variable acc
+  here: acc + string.repeat(symbol, count)
+  hint: Check the variable name
+   |
+12 |     acc + string.repeat(symbol, count)
+   |     ^^^
+error[E003]: undefined variable 'result'
+  --> /tmp/dojo-roman-numeral-2.almd:15:5
+  in variable result
+  here: result
+  hint: Check the variable name
+   |
+15 |     result
+   |     ^^^^^^
 
-1 error(s) found
+7 error(s) found
 FAILED: /tmp/dojo-roman-numeral-2.almd
 Compile error for /tmp/dojo-roman-numeral-2.almd:
 compile failed
@@ -243,24 +264,105 @@ compile failed
 
 ```
 
-### Attempt 4 (PASS)
+### Attempt 4 (FAIL)
 
 ```almide
-fn loop(n: Int, pairs: List[(Int, String)], acc: String) -> String = 
-  if list.is_empty(pairs) then acc
-  else 
-    {
-      let first_pair = list.first(pairs) |> option.unwrap_or((0, ""))
-      let (value, symbol) = first_pair
-      let count = int.clamp(n / value, 0, n / value)
-      let rest = n - count * value
-      let rest_pairs = list.drop(pairs, 1)
-      loop(rest, rest_pairs, acc + string.repeat(symbol, count))
-    }
-
 fn to_roman(n: Int) -> String = 
   let values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1]
   let symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"]
   let pairs = list.zip(values, symbols)
-  loop(n, pairs, "")
+  in
+  list.fold(pairs, "", (acc, (value, symbol)) => 
+    let count = n / value
+    let new_n = n - count * value
+    in
+    acc + string.repeat(symbol, count)
+  ) 
+  |> ((result, _) => result)
+```
+
+**Diagnostic:**
+
+```
+error: 'let' is not an expression in Almide
+  --> /tmp/dojo-roman-numeral-3.almd:7:5
+  in let-in
+  here: let count = n / value
+  hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
+  |
+7 |     let count = n / value
+  |     ^^^
+error: Expected expression at line 11:3 (got RParen ')')
+  --> /tmp/dojo-roman-numeral-3.almd:11:3
+  here: )
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+   |
+11 |   )
+   |   ^
+error[E003]: undefined variable 'count'
+  --> /tmp/dojo-roman-numeral-3.almd:8:21
+  in variable count
+  here: let new_n = n - count * value
+  hint: Check the variable name
+  |
+8 |     let new_n = n - count * value
+  |                     ^^^^^
+error[E003]: undefined variable 'value'
+  --> /tmp/dojo-roman-numeral-3.almd:8:29
+  in variable value
+  here: let new_n = n - count * value
+  hint: Did you mean `values`?
+  try:
+      values
+  |
+8 |     let new_n = n - count * value
+  |                             ^^^^^
+error[E003]: undefined variable 'acc'
+  --> /tmp/dojo-roman-numeral-3.almd:10:5
+  in variable acc
+  here: acc + string.repeat(symbol, count)
+  hint: Check the variable name
+   |
+10 |     acc + string.repeat(symbol, count)
+   |     ^^^
+error[E003]: undefined variable 'symbol'
+  --> /tmp/dojo-roman-numeral-3.almd:10:25
+  in variable symbol
+  here: acc + string.repeat(symbol, count)
+  hint: Did you mean `symbols`?
+  try:
+      symbols
+   |
+10 |     acc + string.repeat(symbol, count)
+   |                         ^^^^^^
+error[E003]: undefined variable 'count'
+  --> /tmp/dojo-roman-numeral-3.almd:10:33
+  in variable count
+  here: acc + string.repeat(symbol, count)
+  hint: Check the variable name
+   |
+10 |     acc + string.repeat(symbol, count)
+   |                                 ^^^^^
+error[E001]: type mismatch in fn 'to_roman': expected String but got Unit
+  --> /tmp/dojo-roman-numeral-3.almd:10:33
+  in fn 'to_roman'
+  here: acc + string.repeat(symbol, count)
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to String:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type String
+   |
+10 |     acc + string.repeat(symbol, count)
+   |                                 ^^^^^
+
+8 error(s) found
+FAILED: /tmp/dojo-roman-numeral-3.almd
+Compile error for /tmp/dojo-roman-numeral-3.almd:
+compile failed
+
+0 via WASM, 0 via native fallback, 1 failed (of 1 files)
+
 ```

@@ -1,6 +1,7 @@
 # budget-units
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **state**: `measured`
 - **success**: no
 - **retries**: 3
 - **category**: unknown

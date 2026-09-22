@@ -1,6 +1,7 @@
 # max-of-list
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **state**: `measured`
 - **success**: yes
 - **retries**: 2
 - **category**: pass-retry
@@ -10,42 +11,42 @@
 ### Attempt 1 (FAIL)
 
 ```almide
-fn max_of_list(xs: List[Int]) -> Option[Int] =
-  if list.is_empty(xs) then
+fn max_of_list(xs: List[Int]) -> Option[Int] = 
+  if list.is_empty(xs) then 
     none
-  else
-    some(list.reduce(xs, (x) => x, (max, x) => if max > x then max else x))
+  else 
+    some(list.reduce(xs, (x) => x, (max, x) => if x > max then x else max))
 ```
 
 **Diagnostic:**
 
 ```
 error[E004]: list.reduce() expects 2 argument(s) but got 3
-  --> /tmp/dojo-max-of-list-0.almd:5:73
+  --> /tmp/dojo-max-of-list-0.almd:5:71
   in call to list.reduce()
-  here: some(list.reduce(xs, (x) => x, (max, x) => if max > x then max else x))
+  here: some(list.reduce(xs, (x) => x, (max, x) => if x > max then x else max))
   hint: Check the number of arguments
   try:
       // list.reduce() takes 2 arg(s) — you passed 3
       list.reduce(<xs: List[A]>, <f: fn(A, A) -> A>)
   |
-5 |     some(list.reduce(xs, (x) => x, (max, x) => if max > x then max else x))
-  |                                                                         ^
+5 |     some(list.reduce(xs, (x) => x, (max, x) => if x > max then x else max))
+  |                                                                       ^^^
 error[E005]: argument 'f' expects fn(Int, Int) -> Int but got fn(Int) -> Int
   --> /tmp/dojo-max-of-list-0.almd:5:26
   in call to list.reduce()
-  here: some(list.reduce(xs, (x) => x, (max, x) => if max > x then max else x))
+  here: some(list.reduce(xs, (x) => x, (max, x) => if x > max then x else max))
   hint: Fix the argument type
 ...
-5 |     some(list.reduce(xs, (x) => x, (max, x) => if max > x then max else x))
+5 |     some(list.reduce(xs, (x) => x, (max, x) => if x > max then x else max))
   |                          ^
 error[E001]: type mismatch in fn 'max_of_list': expected Option[Int] but got Option[Option[Int]]
   --> /tmp/dojo-max-of-list-0.almd:5:26
   in fn 'max_of_list'
-  here: some(list.reduce(xs, (x) => x, (max, x) => if max > x then max else x))
+  here: some(list.reduce(xs, (x) => x, (max, x) => if x > max then x else max))
   hint: Fix the expression type or change the expected type
   |
-5 |     some(list.reduce(xs, (x) => x, (max, x) => if max > x then max else x))
+5 |     some(list.reduce(xs, (x) => x, (max, x) => if x > max then x else max))
   |                          ^
 
 3 error(s) found
@@ -60,24 +61,24 @@ compile failed
 ### Attempt 2 (FAIL)
 
 ```almide
-fn max_of_list(xs: List[Int]) -> Option[Int] =
-  if list.is_empty(xs) then
+fn max_of_list(xs: List[Int]) -> Option[Int] = 
+  if list.is_empty(xs) then 
     none
-  else
-    some(list.reduce(xs, (max, x) => if max > x then max else x))
+  else 
+    some(list.reduce(xs, (max, x) => if x > max then x else max))
 ```
 
 **Diagnostic:**
 
 ```
 error[E001]: type mismatch in fn 'max_of_list': expected Option[Int] but got Option[Option[Int]]
-  --> /tmp/dojo-max-of-list-1.almd:5:63
+  --> /tmp/dojo-max-of-list-1.almd:5:61
   in fn 'max_of_list'
-  here: some(list.reduce(xs, (max, x) => if max > x then max else x))
+  here: some(list.reduce(xs, (max, x) => if x > max then x else max))
   hint: Fix the expression type or change the expected type
   |
-5 |     some(list.reduce(xs, (max, x) => if max > x then max else x))
-  |                                                               ^
+5 |     some(list.reduce(xs, (max, x) => if x > max then x else max))
+  |                                                             ^^^
 
 1 error(s) found
 FAILED: /tmp/dojo-max-of-list-1.almd
@@ -91,9 +92,9 @@ compile failed
 ### Attempt 3 (PASS)
 
 ```almide
-fn max_of_list(xs: List[Int]) -> Option[Int] =
-  if list.is_empty(xs) then
+fn max_of_list(xs: List[Int]) -> Option[Int] = 
+  if list.is_empty(xs) then 
     none
-  else
-    list.reduce(xs, (max, x) => if max > x then max else x)
+  else 
+    list.reduce(xs, (max, x) => if x > max then x else max)
 ```

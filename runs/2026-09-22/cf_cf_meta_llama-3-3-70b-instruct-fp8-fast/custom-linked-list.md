@@ -1,9 +1,10 @@
 # custom-linked-list
 
 - **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **state**: `measured`
 - **success**: no
 - **retries**: 3
-- **category**: parse-error
+- **category**: unknown
 
 ## Attempts
 
@@ -45,24 +46,42 @@ fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
         my_filter(tail, pred)
   }
 
-fn my_reverse(ml: MyList)
+fn my_reverse(ml: MyList) -> MyList = 
+  match ml {
+    Nil => Nil
+    Cons(head, tail) => my_reverse(tail) |> (x) => Cons(head, x)
+  }
 ```
 
 **Diagnostic:**
 
 ```
-error: Expected Arrow at line 36:26 (got Newline '')
-  --> /tmp/dojo-custom-linked-list-0.almd:36:26
-  here: fn my_reverse(ml: MyList)
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-36 | fn my_reverse(ml: MyList)
-   |                          ^
-
-1 error(s) found
 FAILED: /tmp/dojo-custom-linked-list-0.almd
-Compile error for /tmp/dojo-custom-linked-list-0.almd:
-compile failed
+  test: from_list to_list roundtrip
+  at:   /tmp/dojo-custom-linked-list-0.almd:42
+  hint: item 0 differs
+  diff: -expected +found
+    - 1
+    - 2
+      3
+    + 2
+    + 1
+  test: my_map double
+  at:   /tmp/dojo-custom-linked-list-0.almd:46
+  hint: item 0 differs
+  diff: -expected +found
+    - 2
+    - 4
+      6
+    + 4
+    + 2
+  test: my_filter evens
+  at:   /tmp/dojo-custom-linked-list-0.almd:48
+  hint: item 0 differs
+  diff: -expected +found
+    - 2
+      4
+    + 2
 
 0 via WASM, 0 via native fallback, 1 failed (of 1 files)
 
@@ -106,24 +125,42 @@ fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
         my_filter(tail, pred)
   }
 
-fn my_reverse(ml: MyList) -> MyList =
+fn my_reverse(ml: MyList) -> MyList = 
+  match ml {
+    Nil => Nil
+    Cons(head, tail) => my_reverse(tail) |> (x) => Cons(head, x)
+  }
 ```
 
 **Diagnostic:**
 
 ```
-error: Expected expression at line 38:1 (got Test 'test')
-  --> /tmp/dojo-custom-linked-list-1.almd:38:1
-  here: test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-38 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
-   | ^
-
-1 error(s) found
 FAILED: /tmp/dojo-custom-linked-list-1.almd
-Compile error for /tmp/dojo-custom-linked-list-1.almd:
-compile failed
+  test: from_list to_list roundtrip
+  at:   /tmp/dojo-custom-linked-list-1.almd:42
+  hint: item 0 differs
+  diff: -expected +found
+    - 1
+    - 2
+      3
+    + 2
+    + 1
+  test: my_map double
+  at:   /tmp/dojo-custom-linked-list-1.almd:46
+  hint: item 0 differs
+  diff: -expected +found
+    - 2
+    - 4
+      6
+    + 4
+    + 2
+  test: my_filter evens
+  at:   /tmp/dojo-custom-linked-list-1.almd:48
+  hint: item 0 differs
+  diff: -expected +found
+    - 2
+      4
+    + 2
 
 0 via WASM, 0 via native fallback, 1 failed (of 1 files)
 
@@ -167,24 +204,42 @@ fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
         my_filter(tail, pred)
   }
 
-fn my_reverse(ml: MyList) -> MyList =
+fn my_reverse(ml: MyList) -> MyList = 
+  match ml {
+    Nil => Nil
+    Cons(head, tail) => my_reverse(tail) |> (x) => Cons(head, x)
+  }
 ```
 
 **Diagnostic:**
 
 ```
-error: Expected expression at line 38:1 (got Test 'test')
-  --> /tmp/dojo-custom-linked-list-2.almd:38:1
-  here: test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-38 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
-   | ^
-
-1 error(s) found
 FAILED: /tmp/dojo-custom-linked-list-2.almd
-Compile error for /tmp/dojo-custom-linked-list-2.almd:
-compile failed
+  test: from_list to_list roundtrip
+  at:   /tmp/dojo-custom-linked-list-2.almd:42
+  hint: item 0 differs
+  diff: -expected +found
+    - 1
+    - 2
+      3
+    + 2
+    + 1
+  test: my_map double
+  at:   /tmp/dojo-custom-linked-list-2.almd:46
+  hint: item 0 differs
+  diff: -expected +found
+    - 2
+    - 4
+      6
+    + 4
+    + 2
+  test: my_filter evens
+  at:   /tmp/dojo-custom-linked-list-2.almd:48
+  hint: item 0 differs
+  diff: -expected +found
+    - 2
+      4
+    + 2
 
 0 via WASM, 0 via native fallback, 1 failed (of 1 files)
 
@@ -228,24 +283,42 @@ fn my_filter(ml: MyList, pred: (Int) -> Bool) -> MyList =
         my_filter(tail, pred)
   }
 
-fn my_reverse(ml: MyList) -> MyList =
+fn my_reverse(ml: MyList) -> MyList = 
+  match ml {
+    Nil => Nil
+    Cons(head, tail) => my_reverse(tail) |> (x) => Cons(head, x)
+  }
 ```
 
 **Diagnostic:**
 
 ```
-error: Expected expression at line 38:1 (got Test 'test')
-  --> /tmp/dojo-custom-linked-list-3.almd:38:1
-  here: test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
-   |
-38 | test "from_list to_list roundtrip" { assert_eq(to_list(from_list([1, 2, 3])), [1, 2, 3]) }
-   | ^
-
-1 error(s) found
 FAILED: /tmp/dojo-custom-linked-list-3.almd
-Compile error for /tmp/dojo-custom-linked-list-3.almd:
-compile failed
+  test: from_list to_list roundtrip
+  at:   /tmp/dojo-custom-linked-list-3.almd:42
+  hint: item 0 differs
+  diff: -expected +found
+    - 1
+    - 2
+      3
+    + 2
+    + 1
+  test: my_map double
+  at:   /tmp/dojo-custom-linked-list-3.almd:46
+  hint: item 0 differs
+  diff: -expected +found
+    - 2
+    - 4
+      6
+    + 4
+    + 2
+  test: my_filter evens
+  at:   /tmp/dojo-custom-linked-list-3.almd:48
+  hint: item 0 differs
+  diff: -expected +found
+    - 2
+      4
+    + 2
 
 0 via WASM, 0 via native fallback, 1 failed (of 1 files)
 
