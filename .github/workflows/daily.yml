@@ -41,9 +41,22 @@ jobs:
 
       - name: Build the model matrix
         id: matrix
+        env:
+          INPUT_MODELS: ${{ github.event.inputs.models }}
         run: |
-          MODELS="${{ github.event.inputs.models }}"
+          MODELS="$INPUT_MODELS"
           if [ -z "$MODELS" ]; then MODELS="$DAILY_MODELS"; fi
+          # The input's description has said an anthropic:/openai: spec is red
+          # since this lane was written, but it was red only as a consequence:
+          # the key is absent, every task fails to reach the model, and the
+          # summary guard fires with "the harness wrote no summary". Say the
+          # actual reason, before 38 tasks are attempted.
+          BAD=$(printf '%s' "$MODELS" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -E '^(anthropic:|openai:|claude-)' || true)
+          if [ -n "$BAD" ]; then
+            echo "::error::this repo holds Cloudflare Workers AI credentials and nothing else (maintainer ruling: no Anthropic or OpenAI key in CI). Refused spec(s): $(printf '%s' "$BAD" | tr '\n' ' ')"
+            echo "Anthropic / OpenAI rows are measured locally and committed by hand; see README, \"Nightly vs. by hand\"."
+            exit 1
+          fi
           JSON=$(printf '%s' "$MODELS" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | jq -R . | jq -cs .)
           test "$(printf '%s' "$JSON" | jq length)" -gt 0 || { echo "empty model list"; exit 1; }
           echo "models=$JSON" >> "$GITHUB_OUTPUT"
@@ -75,8 +88,8 @@ jobs:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
           CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          # No ANTHROPIC_API_KEY / OPENAI_API_KEY here on purpose: neither
+          # secret exists, and naming them read as if CI might hold one.
         run: |
           MODEL="${{ matrix.model }}"
           # Clear runs/ so this job's artifact contains ONLY this model's fresh
