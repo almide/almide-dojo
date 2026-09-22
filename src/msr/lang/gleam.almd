@@ -1,0 +1,89 @@
+// Gleam plugin: a small Gleam project (gleam_stdlib only) whose `solution`
+// module is the model's file and whose `msr` module is the generated driver,
+// built and run on the JavaScript target so no Erlang install is needed.
+
+import self.msr.spec.{Ty, TInt, TBool, TStr, TList, Val, VInt, VBool, VStr, VList, VCall, Sig, Param, PTask, Case, Step}
+import self.msr.spec
+
+fn tools() -> List[String] = ["gleam", "node"]
+
+fn versions() -> List[(String, List[String])] = [("gleam", ["gleam", "--version"]), ("node", ["node", "--version"])]
+
+fn notes() -> String =
+  "Gleam 1.x on the JavaScript target: no Erlang FFI, no `@external`. Your file is the module `solution`; mark every required function `pub`. Only `gleam_stdlib` is available (`gleam/int`, `gleam/list`, `gleam/string`, ...). Do not write a `main`."
+
+fn ty(t: Ty) -> String = match t {
+  TInt => "Int",
+  TBool => "Bool",
+  TStr => "String",
+  TList(e) => "List(" + ty(e) + ")",
+}
+
+fn sig(s: Sig) -> String =
+  "pub fn " + s.name + "(" + (s.params |> list.map((p) => p.name + ": " + ty(p.ty)) |> string.join(", ")) + ") -> " + ty(s.ret)
+
+fn signatures(t: PTask) -> String =
+  t.sigs |> list.map((s) => "    " + sig(s)) |> string.join("
+")
+
+fn lit(v: Val) -> String = match v {
+  VInt(n) => int.to_string(n),
+  VBool(b) => if b then "True" else "False",
+  VStr(s) => spec.c_quote(s),
+  VList(xs) => "[" + (xs |> list.map(lit) |> string.join(", ")) + "]",
+  VCall(name, args) => "solution." + name + "(" + (args |> list.map(lit) |> string.join(", ")) + ")",
+}
+
+fn driver(t: PTask) -> String = {
+  let n = list.len(t.cases)
+  let checks = t.cases
+    |> list.map((c) => "  let failed = msr_check(failed, " + spec.c_quote(spec.case_label(c)) + ", " + lit(c.call) + ", " + lit(c.expected) + ")")
+    |> string.join("\n")
+  """
+    // ── msr driver (generated) ──
+    import gleam/int
+    import gleam/io
+    import gleam/string
+    import solution
+
+    fn msr_check(failed: Int, label: String, got: a, want: a) -> Int {
+      case got == want {
+        True -> failed
+        False -> {
+          io.println_error(
+            "FAIL " <> label <> ": expected " <> string.inspect(want) <> ", got " <> string.inspect(got),
+          )
+          failed + 1
+        }
+      }
+    }
+
+    pub fn main() -> Nil {
+      let failed = 0
+    ${checks}
+      case failed > 0 {
+        True -> panic as { "msr: " <> int.to_string(failed) <> " of ${int.to_string(n)} cases failed" }
+        False -> io.println("${spec.sentinel(n)}")
+      }
+    }
+    """
+}
+
+fn project_toml() -> String = """
+  name = "msr"
+  version = "0.1.0"
+  target = "javascript"
+
+  [dependencies]
+  gleam_stdlib = ">= 0.44.0 and < 2.0.0"
+  """
+
+fn files(t: PTask, solution: String) -> List[(String, String)] =
+  [("gleam.toml", project_toml()), ("src/solution.gleam", solution), ("src/msr.gleam", driver(t))]
+
+// `gleam build` downloads gleam_stdlib into the project (from the local
+// package cache after the first run); the run step then needs no network.
+fn steps() -> List[Step] = [
+  Step { kind: "compile", cmd: "gleam", args: ["build"], timeout_ms: spec.COMPILE_TIMEOUT_MS },
+  Step { kind: "run", cmd: "gleam", args: ["run", "-m", "msr"], timeout_ms: spec.RUN_TIMEOUT_MS },
+]
