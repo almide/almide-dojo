@@ -46,8 +46,18 @@ fi
 [ -d /opt/homebrew/bin ] && export PATH="/opt/homebrew/bin:$PATH"
 
 # ── The model: MODEL, else whichever provider key the environment holds ──
+# Cloudflare's Global API Key auth needs all three variables. A partial set
+# used to select the cf: spec anyway and fail at the wire; name the missing
+# one here instead, because a Cloudflare auth failure comes back as HTTP 200
+# with no completion (see src/llm.almd).
+cf_missing=""
+for v in CF_ACCOUNT_ID CLOUDFLARE_API_KEY CLOUDFLARE_EMAIL; do
+  eval "val=\${$v:-}"
+  [ -n "$val" ] || cf_missing="$cf_missing $v"
+done
 if [ "$cmd" = "run" ] && [ -z "$model" ]; then
-  if [ -n "${CLOUDFLARE_API_KEY:-}" ]; then
+  if [ -n "${CLOUDFLARE_API_KEY:-}" ] || [ -n "${CF_ACCOUNT_ID:-}" ]; then
+    [ -z "$cf_missing" ] || { echo "cloudflare: missing$cf_missing (Global API Key auth needs CF_ACCOUNT_ID, CLOUDFLARE_API_KEY and CLOUDFLARE_EMAIL)" >&2; exit 2; }
     model="cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast"
   elif [ -n "${ANTHROPIC_API_KEY:-}" ]; then
     model="anthropic:claude-sonnet-5"
@@ -65,6 +75,13 @@ EOF
   fi
   echo "model: $model (from the environment; pass MODEL= to choose)" >&2
 fi
+
+# An explicit cf:/cloudflare: MODEL gets the same completeness check.
+case "$model" in
+  cf:*|cloudflare:*)
+    [ -z "$cf_missing" ] || { echo "cloudflare: MODEL=$model but missing$cf_missing (Global API Key auth needs CF_ACCOUNT_ID, CLOUDFLARE_API_KEY and CLOUDFLARE_EMAIL)" >&2; exit 2; }
+    ;;
+esac
 
 args=()
 case "$cmd" in
