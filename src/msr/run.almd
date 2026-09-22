@@ -1086,6 +1086,32 @@ test "a run that reached nothing is refused, and the verdict travels into the ta
   assert(string.contains(block, "the bank discriminated: **no**"))
 }
 
+test "the rendered table states the verdict above the numbers, not under them" {
+  let alm = plugins.find("almide")!
+  let rust = plugins.find("rust")!
+  let probes = [
+    Probe { plugin: alm, available: true, missing: "", versions: [("almide", "almide 0.62.0")] },
+    Probe { plugin: rust, available: true, missing: "", versions: [("rustc", "rustc 1.98.1")] },
+  ]
+  let tasks = ["a", "b"] |> list.map(t_task)
+  // The 2026-09-22 GLM shape in miniature: Almide reached one of two tasks,
+  // Rust reached both, and everything that ran passed.
+  let cells = [t_cell("almide", "a", true, true), t_cell("almide", "b", false, false),
+               t_cell("rust", "a", true, true), t_cell("rust", "b", true, true)]
+  let v = verdict_of(probes, tasks, cells)
+  let o = { ...default_opts(), model: "cf:m", label: "" }
+  let tbl = render_table(o, "2026-09-22", "rev", probes, tasks, cells, v)
+  let banner = string.index_of(tbl, "Verdict: `not-comparable`")
+  let header = string.index_of(tbl, "| language | toolchain |")
+  assert(option.is_some(banner))
+  assert((banner ?? 0) < (header ?? 0))
+  // The two rows can no longer be read as equal: one is an interval.
+  assert(string.contains(tbl, "1/2 (50%–100%)"))
+  assert(string.contains(tbl, "2/2 (100%)"))
+  // ...and the absent cell is named, not blank and not a zero.
+  assert(string.contains(tbl, "| `b` | not-run | pass |"))
+}
+
 test "the full grid names every planned cell, including a language with no toolchain" {
   let alm = plugins.find("almide")!
   let zig = plugins.find("zig")!
