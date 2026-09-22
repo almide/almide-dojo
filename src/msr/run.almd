@@ -9,6 +9,7 @@
 //   almide run src/msr/run.almd -- verify [options]      reference solutions through every available plugin (no model)
 //   almide run src/msr/run.almd -- probe                  which plugins this machine can measure
 //   almide run src/msr/run.almd -- prompt <language> <task>
+//   almide run src/msr/run.almd -- verdict <run-dir>      re-derive a written run's verdict and refuse a non-comparison
 //
 // Options:
 //   --languages a,b   plugins to run (default: all seven, in table order)
@@ -208,7 +209,11 @@ type StepOut = { kind: String, code: Int, output: String }
 
 type LAttempt = { code: String, kind: String, diagnostic: String, passed: Bool }
 
-type LResult = { language: String, task: String, success: Bool, retries: Int, attempts: List[LAttempt] }
+// One cell of the planned (task x language) grid. `attempts` empty means the
+// model was never answered for this cell, and `reason` then says why — a
+// cell with no attempts is NEVER a zero, it is a typed absence (see the cell
+// vocabulary below).
+type LResult = { language: String, task: String, success: Bool, retries: Int, attempts: List[LAttempt], reason: String }
 
 effect fn write_files(dir: String, files: List[(String, String)]) -> Unit! = {
   let _written = (files |> list.map(((rel, content)) => {
@@ -260,7 +265,7 @@ effect fn write_log(dir: String, a: LAttempt) -> Unit =
 
 effect fn fix_loop(p: Plugin, t: PTask, model: String, raw_dir: String, retries: Int, attempt: Int, last: LAttempt, acc: List[LAttempt]) -> LResult! = {
   if attempt > retries then
-    ok(LResult { language: p.name, task: t.name, success: false, retries: retries, attempts: acc })
+    ok(LResult { language: p.name, task: t.name, success: false, retries: retries, attempts: acc, reason: "" })
   else {
     let original = user_prompt(p, t)
     let prompt = if attempt == 0 then original else retry_prompt(p.display, original, last.code, clip(last.diagnostic))
@@ -271,7 +276,7 @@ effect fn fix_loop(p: Plugin, t: PTask, model: String, raw_dir: String, retries:
     write_log(dir, a)!
     let acc2 = acc + [a]
     println("    " + p.name + " / " + t.name + " attempt " + int.to_string(attempt) + ": " + (if a.passed then "pass" else "FAIL (" + a.kind + ")"))
-    if a.passed then ok(LResult { language: p.name, task: t.name, success: true, retries: attempt, attempts: acc2 })
+    if a.passed then ok(LResult { language: p.name, task: t.name, success: true, retries: attempt, attempts: acc2, reason: "" })
     else fix_loop(p, t, model, raw_dir, retries, attempt + 1, a, acc2)
   }
 }
@@ -283,12 +288,173 @@ effect fn run_language(pr: Probe, tasks: List[PTask], model: String, raw_dir: St
       ok(r) => r,
       err(e) => {
         // A harness failure (no key, network) is a result with no attempts:
-        // it counts as unmeasured, never as a model failure.
+        // the cell is `not-run`, never a model failure and never a zero. The
+        // reason travels with the cell so the grid says WHY it is absent.
         println("    " + pr.plugin.name + " / " + t.name + ": harness error: " + e)
-        LResult { language: pr.plugin.name, task: t.name, success: false, retries: 0, attempts: [] }
+        LResult { language: pr.plugin.name, task: t.name, success: false, retries: 0, attempts: [], reason: e }
       },
     }
   })
+
+// ── Cell states and the run verdict ──
+//
+// The planned grid is `tasks x languages`, and EVERY cell of it carries
+// exactly one of four states — the vocabulary almide/almide#1963 item 4 asks
+// for. The four partition the grid: measured + not-run + harness-limitation
+// + inconclusive-saturated = planned cells, always.
+//
+//   measured               the model answered and the language's own
+//                          toolchain judged it (pass or fail), in a run where
+//                          at least one measured cell FAILED. Only such a
+//                          cell carries discriminating information.
+//   inconclusive-saturated judged exactly like `measured`, and passed — but
+//                          no cell anywhere in the run failed. The task bank
+//                          is at its ceiling, so the cell separates nothing
+//                          (almide/almide#1963: the lang-bench MiniGit
+//                          snapshot is 20/20 for every language). A pass here
+//                          is not evidence.
+//   not-run                the cell was planned and the model was never
+//                          answered for it: an HTTP timeout, an empty
+//                          completion, a missing credential. Not a failure
+//                          and not a zero.
+//   harness-limitation     the cell cannot be measured in this configuration
+//                          at all: the language's toolchain is not on the
+//                          machine. Not a failure and not a zero.
+//
+// The consequence for every rate in the table: the denominator is the
+// PLANNED task count, never the subset a language happened to reach. A
+// percentage computed over the reached subset reads as comparable with one
+// computed over the whole set, and it is not.
+let ST_MEASURED = "measured"
+let ST_SATURATED = "inconclusive-saturated"
+let ST_NOT_RUN = "not-run"
+let ST_HARNESS = "harness-limitation"
+let CELL_STATES = [ST_MEASURED, ST_SATURATED, ST_NOT_RUN, ST_HARNESS]
+
+// A run's verdict. `comparable` is the certification: every language whose
+// toolchain was present saw the SAME, COMPLETE task set, so the rows are
+// rates over one denominator. `conclusive` says the bank discriminated at
+// all — at least one measured cell failed.
+type Verdict = { id: String, comparable: Bool, conclusive: Bool, reasons: List[String] }
+
+fn reached(results: List[LResult]) -> List[LResult] =
+  results |> list.filter((r) => not list.is_empty(r.attempts))
+
+// almide-dojo#3's ratified rule, in its own words: "if every language
+// reaches >= 98% on the stratum a comparative claim is made for, the run
+// returns INCONCLUSIVE_BANK_SATURATED: valid as a regression suite, invalid
+// as ranking evidence". The rate is over the cells a language MEASURED — a
+// `not-run` cell says nothing about how hard the bank is.
+//
+// At the 21-task size the threshold reads "no measured cell failed anywhere"
+// (20/21 is 95.2%, below it), which is exactly today's shape; it is written
+// as the threshold rather than as `failures == 0` so it still means the right
+// thing when the bank grows to #3's 400 clusters and a 99% run is the one
+// that has to be caught.
+let SATURATION_PCT = 98
+
+fn is_saturated(results: List[LResult]) -> Bool = {
+  let got = reached(results)
+  let langs = got |> list.map((r) => r.language) |> list.unique
+  not list.is_empty(got) and list.all(langs, (l) => {
+    let mine = got |> list.filter((r) => r.language == l)
+    list.count(mine, (r) => r.success) * 100 >= list.len(mine) * SATURATION_PCT
+  })
+}
+
+fn state_of(available: Bool, r: LResult, saturated: Bool) -> String =
+  if not available then ST_HARNESS
+  else if list.is_empty(r.attempts) then ST_NOT_RUN
+  else if saturated then ST_SATURATED
+  else ST_MEASURED
+
+fn count_state(cells: List[LResult], probes: List[Probe], saturated: Bool, want: String) -> Int =
+  list.count(cells, (r) => state_of(probe_available(probes, r.language), r, saturated) == want)
+
+fn probe_available(probes: List[Probe], name: String) -> Bool =
+  match list.find(probes, (pr) => pr.plugin.name == name) {
+    some(pr) => pr.available,
+    none => false,
+  }
+
+// The complete grid: one LResult per (language, task), synthesising the cells
+// the run never produced — a language with no toolchain has no results at
+// all, and leaving its row out of results.json is the same silence as
+// printing a 0.
+fn full_grid(probes: List[Probe], tasks: List[PTask], results: List[LResult]) -> List[LResult] =
+  probes |> list.flat_map((pr) => tasks |> list.map((t) =>
+    match list.find(results, (r) => r.language == pr.plugin.name and r.task == t.name) {
+      some(r) => r,
+      none => LResult {
+        language: pr.plugin.name, task: t.name, success: false, retries: 0, attempts: [],
+        reason: if pr.available then "the lane recorded no result for this cell"
+          else pr.missing + " is not on this machine",
+      },
+    }))
+
+fn reached_by(name: String, results: List[LResult]) -> Int =
+  list.count(results, (r) => r.language == name and not list.is_empty(r.attempts))
+
+let SATURATED_REASON =
+  "every language reached " + int.to_string(SATURATION_PCT) + "% or better of the cells it measured, so no cell " +
+  "separates one language from another and the table is not evidence of anything about the languages " +
+  "(INCONCLUSIVE_BANK_SATURATED, almide-dojo#3 / almide/almide#1963 — the bank is at its ceiling; " +
+  "rebuilding it is that issue's work, saying so is this one's)"
+
+// `attempted` is (name, display) for the languages whose toolchain was on the
+// machine — the only rows that are part of the comparison at all.
+fn verdict_core(attempted: List[(String, String)], planned: Int, results: List[LResult]) -> Verdict = {
+  let saturated = is_saturated(results)
+  let short = attempted |> list.filter_map(((name, display)) => {
+    let n = reached_by(name, results)
+    if n == planned then none
+    else some(display + " " + int.to_string(n) + "/" + int.to_string(planned))
+  })
+  let sat = if saturated then [SATURATED_REASON] else []
+  if list.is_empty(reached(results)) then
+    Verdict { id: "nothing-measured", comparable: false, conclusive: false,
+      reasons: ["no cell reached the model: nothing was measured"] }
+  else if not list.is_empty(short) then
+    Verdict { id: "not-comparable", comparable: false, conclusive: not saturated,
+      reasons: ["the languages saw different task counts, so their rates share no denominator and this run is not a comparison: " +
+        string.join(short, ", ") + " of " + int.to_string(planned) + " planned"] + sat }
+  else if saturated then
+    Verdict { id: ST_SATURATED, comparable: true, conclusive: false, reasons: sat }
+  else
+    Verdict { id: "comparable", comparable: true, conclusive: true, reasons: [] }
+}
+
+fn verdict_of(probes: List[Probe], tasks: List[PTask], results: List[LResult]) -> Verdict =
+  verdict_core(
+    probes |> list.filter((pr) => pr.available) |> list.map((pr) => (pr.plugin.name, pr.plugin.display)),
+    list.len(tasks), results)
+
+fn verdict_headline(v: Verdict) -> String = match v.id {
+  "comparable" => "every language saw the same complete task set, and the bank discriminated",
+  "inconclusive-saturated" => "a valid comparison that separates nothing: do not quote this table as evidence",
+  "not-comparable" => "this run is not a comparison and must not be quoted as one",
+  _ => "no cell reached the model",
+}
+
+fn verdict_block(v: Verdict) -> String =
+  "> **Verdict: `" + v.id + "` — " + verdict_headline(v) + "**\n>\n" +
+  "> - certified as a comparison: **" + (if v.comparable then "yes" else "no") + "**\n" +
+  "> - the bank discriminated: **" + (if v.conclusive then "yes" else "no") + "**\n" +
+  (v.reasons |> list.map((r) => "> - " + r + "\n") |> string.join("")) + "\n"
+
+fn verdict_json(v: Verdict, planned: Int, cells: List[LResult], probes: List[Probe]) -> Value = {
+  let saturated = is_saturated(cells)
+  value.object([
+    ("id", value.str(v.id)),
+    ("comparable", value.bool(v.comparable)),
+    ("conclusive", value.bool(v.conclusive)),
+    ("planned_tasks", value.int(planned)),
+    ("planned_cells", value.int(list.len(cells))),
+    // The four states partition the planned cells; a reader can add them up.
+    ("cells", value.object(CELL_STATES |> list.map((s) => (s, value.int(count_state(cells, probes, saturated, s)))))),
+    ("reasons", value.array(v.reasons |> list.map(value.str))),
+  ])
+}
 
 // ── Manifest ──
 
@@ -347,9 +513,15 @@ fn language_entry(pr: Probe, tasks: List[PTask]) -> Value = {
   else value.object(base + [("reason", value.str(pr.missing + " missing"))])
 }
 
-effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask], task_set_sha: String) -> Value = {
+// The HTTP read timeout this process ran under, as the manifest must state
+// it: a cell is `not-run` BECAUSE some deadline expired, so the deadline is
+// part of the run's identity. "" = the compiler's own default.
+effect fn http_timeout_secs() -> String = env.get("ALMIDE_HTTP_TIMEOUT_SECS") ?? ""
+
+effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask], task_set_sha: String, v: Verdict, cells: List[LResult]) -> Value = {
   let provider = llm.provider_of(o.model)
   value.object([
+    ("verdict", verdict_json(v, list.len(tasks), cells, probes)),
     ("lane", value.str("cross-language")),
     ("label", value.str(o.label)),
     ("date", value.str(date)),
@@ -374,6 +546,7 @@ effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask
       ("seed_sent", value.bool(false)),
       ("max_tokens", value.int(4096)),
       ("transport_attempts", value.int(TRANSPORT_ATTEMPTS)),
+      ("http_timeout_secs", value.str(http_timeout_secs()!)),
     ])),
     ("retries", value.int(o.retries)),
     ("condition", value.object([("effects", value.str(o.condition))])),
@@ -391,12 +564,14 @@ effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask
 
 // ── Results and table ──
 
-fn result_json(r: LResult) -> Value =
+fn result_json(r: LResult, state: String) -> Value =
   value.object([
     ("language", value.str(r.language)),
     ("task", value.str(r.task)),
+    ("state", value.str(state)),
     ("success", value.bool(r.success)),
     ("retries", value.int(r.retries)),
+    ("reason", value.str(r.reason)),
     ("attempts", value.array(r.attempts |> list.map((a) => value.object([
       ("passed", value.bool(a.passed)),
       ("kind", value.str(a.kind)),
@@ -407,51 +582,77 @@ fn result_json(r: LResult) -> Value =
 fn pct(n: Int, d: Int) -> String =
   if d == 0 then "—" else int.to_string(n * 100 / d) + "%"
 
-fn language_row(pr: Probe, results: List[LResult]) -> String = {
+// The rate a row publishes. The denominator is ALWAYS the planned task count.
+// When some cells are `not-run` the true rate is not a point: it lies between
+// "every absent cell would have failed" and "every absent cell would have
+// passed", so the row prints that interval and the incompleteness is IN the
+// number, not in a parenthetical a reader drops on the way to the headline.
+// A complete row's interval collapses to a point, which is exactly when it is
+// comparable with another complete row.
+fn rate(passed: Int, absent: Int, planned: Int) -> String =
+  if planned == 0 then "—"
+  else if absent == 0 then int.to_string(passed) + "/" + int.to_string(planned) + " (" + pct(passed, planned) + ")"
+  else int.to_string(passed) + "/" + int.to_string(planned) + " (" +
+    pct(passed, planned) + "–" + pct(passed + absent, planned) + ")"
+
+fn language_row(pr: Probe, tasks: List[PTask], results: List[LResult]) -> String = {
+  let planned = list.len(tasks)
   let mine = results |> list.filter((r) => r.language == pr.plugin.name)
+  let dash = int.to_string(planned)
   if not pr.available then
-    "| " + pr.plugin.display + " | — | — | not measured: " + pr.missing + " missing | | |"
+    "| " + pr.plugin.display + " | — | 0/" + dash + " | " + dash + " harness-limitation | " +
+      "not measured: " + pr.missing + " missing | — | — |"
   else {
-    let measured = mine |> list.filter((r) => not list.is_empty(r.attempts))
-    let total = list.len(measured)
-    let passed = list.count(measured, (r) => r.success)
-    let one_shot = list.count(measured, (r) => r.success and r.retries == 0)
-    let retries = measured |> list.map((r) => r.retries) |> list.sum
-    let unreached = list.len(mine) - total
-    let note = if unreached > 0 then " (" + int.to_string(unreached) + " task(s) never reached the model)" else ""
-    "| " + pr.plugin.display + " | " + toolchain_line(pr) + " | " + int.to_string(total) + " | " +
-      int.to_string(passed) + "/" + int.to_string(total) + " (" + pct(passed, total) + ")" + note + " | " +
-      int.to_string(one_shot) + "/" + int.to_string(total) + " | " + int.to_string(retries) + " |"
+    let got = mine |> list.filter((r) => not list.is_empty(r.attempts))
+    let total = list.len(got)
+    let absent = planned - total
+    let passed = list.count(got, (r) => r.success)
+    let one_shot = list.count(got, (r) => r.success and r.retries == 0)
+    let retries = got |> list.map((r) => r.retries) |> list.sum
+    "| " + pr.plugin.display + " | " + toolchain_line(pr) + " | " +
+      int.to_string(total) + "/" + dash + " | " +
+      (if absent == 0 then "0" else int.to_string(absent) + " not-run") + " | " +
+      rate(passed, absent, planned) + " | " +
+      rate(one_shot, absent, planned) + " | " + int.to_string(retries) + " |"
   }
 }
 
-fn task_row(t: PTask, probes: List[Probe], results: List[LResult]) -> String = {
+fn task_row(t: PTask, probes: List[Probe], results: List[LResult], saturated: Bool) -> String = {
   let cells = probes |> list.map((pr) =>
-    if not pr.available then "n/m"
-    else match list.find(results, (r) => r.language == pr.plugin.name and r.task == t.name) {
-      none => "—",
-      some(r) =>
-        if list.is_empty(r.attempts) then "unreached"
-        else if r.success then (if r.retries == 0 then "pass" else "pass@" + int.to_string(r.retries))
-        else "FAIL",
+    match list.find(results, (r) => r.language == pr.plugin.name and r.task == t.name) {
+      none => ST_NOT_RUN,
+      some(r) => match state_of(pr.available, r, saturated) {
+        "harness-limitation" => "n/t",
+        "not-run" => ST_NOT_RUN,
+        _ => if r.success then (if r.retries == 0 then "pass" else "pass@" + int.to_string(r.retries)) else "FAIL",
+      },
     })
   "| `" + t.name + "` | " + string.join(cells, " | ") + " |"
 }
 
-fn render_table(o: Opts, date: String, revision: String, probes: List[Probe], tasks: List[PTask], results: List[LResult]) -> String = {
+fn render_table(o: Opts, date: String, revision: String, probes: List[Probe], tasks: List[PTask], results: List[LResult], v: Verdict) -> String = {
   let label = if o.label == "" then "" else " [" + o.label + "]"
+  let planned = int.to_string(list.len(tasks))
+  let saturated = is_saturated(results)
+  // The verdict comes FIRST, above the numbers: what a reader carries away
+  // from a table is the number, so a caveat below it does not travel.
   let head = "# MSR cross-language run " + date + label + "\n\n" +
+    verdict_block(v) +
     "- **model**: `" + o.model + "`\n" +
-    "- **tasks**: " + int.to_string(list.len(tasks)) + " (msr/task-set.json rev " + revision + ")\n" +
+    "- **planned tasks**: " + planned + " (msr/task-set.json rev " + revision + ") — every rate below has this as its denominator\n" +
     "- **retries**: " + int.to_string(o.retries) + "\n" +
     "- **condition**: effects=" + o.condition + "\n" +
-    "- **manifest**: manifest.json next to this file\n\n"
-  let summary = "| language | toolchain | tasks | final pass | 1-shot pass | retries |\n|---|---|---|---|---|---|\n" +
-    (probes |> list.map((pr) => language_row(pr, results)) |> string.join("\n")) + "\n"
+    "- **manifest**: manifest.json next to this file (`verdict`, and the per-cell states in results.json)\n\n"
+  let summary = "| language | toolchain | reached | absent | final pass (of " + planned + ") | 1-shot (of " + planned + ") | retries |\n|---|---|---|---|---|---|---|\n" +
+    (probes |> list.map((pr) => language_row(pr, tasks, results)) |> string.join("\n")) + "\n"
   let per_task = "\n## Per task\n\n| task | " + (probes |> list.map((pr) => pr.plugin.display) |> string.join(" | ")) + " |\n" +
     "|---|" + (probes |> list.map((_) => "---|") |> string.join("")) + "\n" +
-    (tasks |> list.map((t) => task_row(t, probes, results)) |> string.join("\n")) + "\n\n" +
-    "`pass@N` = passed after N retries; `n/m` = language not measured; `unreached` = the model was never called (harness error).\n"
+    (tasks |> list.map((t) => task_row(t, probes, results, saturated)) |> string.join("\n")) + "\n\n" +
+    "Cell states (almide/almide#1963): `pass` / `pass@N` / `FAIL` = `" +
+    (if saturated then ST_SATURATED + "` (every measured cell in this run passed, so no cell discriminates)" else ST_MEASURED + "`") +
+    "; `not-run` = planned, but the model was never answered (see `reason` in results.json); " +
+    "`n/t` = `harness-limitation`, the toolchain is not on this machine. " +
+    "A rate printed as `a–b%` has `not-run` cells: the true rate is somewhere in that interval, and the row is not comparable with a complete one.\n"
   head + summary + per_task
 }
 
@@ -509,16 +710,87 @@ effect fn cmd_run(o: Opts) -> Unit! = {
     process.exit(2)
   }
   let task_set_sha = hash.sha256_hex(fs.read_text(TASK_SET) ?? "")
-  let m = manifest(o, date, probes, tasks, task_set_sha)!
+  // The full planned grid, not just the cells the run produced: a language
+  // with no toolchain has no results at all, and omitting its row is the same
+  // silence as printing a 0.
+  let cells = full_grid(probes, tasks, results)
+  let saturated = is_saturated(cells)
+  let v = verdict_of(probes, tasks, cells)
+  let m = manifest(o, date, probes, tasks, task_set_sha, v, cells)!
   fs.write(dir + "/manifest.json", json.stringify_pretty(m) + "\n")!
-  fs.write(dir + "/results.json", json.stringify_pretty(value.object([("results", value.array(results |> list.map(result_json)))])) + "\n")!
-  let table = render_table(o, date, task_set_revision()!, probes, tasks, results)
+  fs.write(dir + "/results.json", json.stringify_pretty(value.object([
+    ("results", value.array(cells |> list.map((r) => result_json(r, state_of(probe_available(probes, r.language), r, saturated))))),
+  ])) + "\n")!
+  let table = render_table(o, date, task_set_revision()!, probes, tasks, cells, v)
   fs.write(dir + "/table.md", table)!
   println("")
   println(table)
   println("Written: " + dir + "/{manifest.json, results.json, table.md}")
   let failed = list.count(measured, (r) => not r.success)
   if failed > 0 then process.exit(1) else ok(())
+}
+
+// ── verdict: re-derive a written run's verdict from its own artifacts ──
+//
+// The lane stamps the verdict when it writes the run; this re-derives it from
+// manifest.json + results.json and refuses a run that is not a comparison.
+// Keeping it a separate command means the refusal can be re-run over any
+// committed run, forever, without a model call — and that a run written
+// before the verdict existed can still be judged.
+//
+// Exit: 0 comparable (certified), 1 not comparable, 2 unreadable or a stamped
+// verdict that disagrees with the re-derived one.
+// Only a cell's EMPTINESS and its outcome decide a verdict, so a re-read
+// keeps one stub per non-empty attempt list rather than re-materialising the
+// sources — results.json never carried them.
+fn attempt_stub() -> LAttempt = LAttempt { code: "", kind: "", diagnostic: "", passed: false }
+
+effect fn read_cells(dir: String) -> List[LResult]! = {
+  let v = json.parse(fs.read_text(dir + "/results.json")!)!
+  let items = json.get_array(v, "results") ?? []
+  ok(items |> list.map((it) => LResult {
+    language: json.get_string(it, "language") ?? "",
+    task: json.get_string(it, "task") ?? "",
+    success: json.get_bool(it, "success") ?? false,
+    retries: json.get_int(it, "retries") ?? 0,
+    attempts: if list.is_empty(json.get_array(it, "attempts") ?? []) then [] else [attempt_stub()],
+    reason: json.get_string(it, "reason") ?? "",
+  }))
+}
+
+effect fn cmd_verdict(o: Opts) -> Unit! = {
+  let dir = list.get(o.rest, 1) ?? ""
+  guard dir != "" else err("usage: almide run src/msr/run.almd -- verdict <run-dir>")
+  let m = json.parse(fs.read_text(dir + "/manifest.json")!)!
+  let attempted = (json.get_array(m, "languages") ?? [])
+    |> list.filter((l) => json.get_bool(l, "measured") ?? false)
+    |> list.map((l) => {
+      let n = json.get_string(l, "name") ?? ""
+      (n, match plugins.find(n) { some(p) => p.display, none => n })
+    })
+  let planned = match json.get_path(m, json.field(json.root(), "task_set")) {
+    some(ts) => list.len(json.get_array(ts, "tasks") ?? []),
+    none => 0,
+  }
+  let stamped = match json.get_path(m, json.field(json.root(), "verdict")) {
+    some(vd) => json.get_string(vd, "id") ?? "",
+    none => "",
+  }
+  let cells = read_cells(dir)!
+  let v = verdict_core(attempted, planned, cells)
+  println("## " + dir)
+  println("")
+  println(verdict_block(v))
+  // A stamped verdict that its own results contradict is worse than no
+  // verdict: the artifact would be certifying itself.
+  guard stamped == "" or stamped == v.id else {
+    println("the manifest is stamped `" + stamped + "` but its own results re-derive `" + v.id + "`")
+    process.exit(2)
+  }
+  if stamped == "" then
+    println("(no stamped verdict: this run predates the field, and the id above is re-derived from its results)")
+  else ()
+  if v.comparable then ok(()) else process.exit(1)
 }
 
 fn model_slug(model: String) -> String =
@@ -618,7 +890,8 @@ effect fn dispatch(o: Opts) -> Unit! = match o.command {
   "verify" => ok(cmd_verify(o)!),
   "probe" => ok(cmd_probe(o)!),
   "prompt" => ok(cmd_prompt(o)!),
-  _ => err("usage: almide run src/msr/run.almd -- run <provider:model> | verify | probe | prompt <language> <task>"),
+  "verdict" => ok(cmd_verdict(o)!),
+  _ => err("usage: almide run src/msr/run.almd -- run <provider:model> | verify | probe | prompt <language> <task> | verdict <run-dir>"),
 }
 
 effect fn main() -> Unit = {
@@ -687,10 +960,148 @@ test "the user prompt names the language and carries every signature" {
   assert(string.starts_with(system_prompt(alm), "You are writing Almide. Output ONLY source code, no fences or prose.\n\n## Prefer stdlib helpers"))
 }
 
-test "an unavailable language renders as not measured, never as a failure" {
+// ── The cell vocabulary and the verdict ──
+
+fn t_task(name: String) -> PTask =
+  PTask { name: name, dir: "", sigs: [], behavior: "", cases: [] }
+
+fn t_cell(lang: String, task: String, ok_: Bool, reached_: Bool) -> LResult = LResult {
+  language: lang, task: task, success: ok_, retries: 0,
+  attempts: if reached_ then [LAttempt { code: "", kind: "", diagnostic: "", passed: ok_ }] else [],
+  reason: if reached_ then "" else "read timed out waiting for the server",
+}
+
+test "an unavailable language renders as harness-limitation, never as a failure" {
   let zig = plugins.find("zig")!
   let pr = Probe { plugin: zig, available: false, missing: "zig", versions: [] }
-  let row = language_row(pr, [LResult { language: "zig", task: "gcd", success: false, retries: 0, attempts: [] }])
+  let row = language_row(pr, [t_task("gcd")], [t_cell("zig", "gcd", false, false)])
   assert(string.contains(row, "not measured: zig missing"))
-  assert(not string.contains(row, "0/1"))
+  assert(string.contains(row, "harness-limitation"))
+  // Never a rate: a language with no toolchain has no pass rate at all.
+  assert(not string.contains(row, "%"))
+}
+
+test "every rate's denominator is the planned task count, and an incomplete row says so in the number" {
+  let alm = plugins.find("almide")!
+  let pr = Probe { plugin: alm, available: true, missing: "", versions: [("almide", "almide 0.62.0")] }
+  let tasks = ["a", "b", "c", "d"] |> list.map(t_task)
+  // Three of four reached, all three passed: the old renderer printed
+  // "3/3 (100%)" beside another language's "4/4 (100%)".
+  let cells = [t_cell("almide", "a", true, true), t_cell("almide", "b", true, true),
+               t_cell("almide", "c", true, true), t_cell("almide", "d", false, false)]
+  let row = language_row(pr, tasks, cells)
+  assert(not string.contains(row, "3/3"))
+  assert(string.contains(row, "3/4 (75%–100%)"))
+  assert(string.contains(row, "1 not-run"))
+  // A complete row's interval collapses to the point that IS comparable.
+  let whole = [t_cell("almide", "a", true, true), t_cell("almide", "b", true, true),
+               t_cell("almide", "c", true, true), t_cell("almide", "d", true, true)]
+  assert(string.contains(language_row(pr, tasks, whole), "4/4 (100%)"))
+  assert(not string.contains(language_row(pr, tasks, whole), "–"))
+}
+
+test "the four cell states partition the planned grid" {
+  assert_eq(list.len(CELL_STATES), 4)
+  let reachedc = t_cell("almide", "a", true, true)
+  let absent = t_cell("almide", "b", false, false)
+  assert_eq(state_of(true, reachedc, false), ST_MEASURED)
+  assert_eq(state_of(true, reachedc, true), ST_SATURATED)
+  assert_eq(state_of(true, absent, false), ST_NOT_RUN)
+  // No toolchain outranks everything else: the cell was never measurable.
+  assert_eq(state_of(false, reachedc, false), ST_HARNESS)
+  assert_eq(state_of(false, absent, true), ST_HARNESS)
+}
+
+test "a run whose languages saw different task counts is refused as a comparison" {
+  let tasks4 = 4
+  let langs = [("almide", "Almide"), ("rust", "Rust")]
+  // Today's shape: Almide reached 3 of 4, Rust reached 4 of 4, everything passed.
+  let uneven = [t_cell("almide", "a", true, true), t_cell("almide", "b", true, true),
+                t_cell("almide", "c", true, true), t_cell("almide", "d", false, false),
+                t_cell("rust", "a", true, true), t_cell("rust", "b", true, true),
+                t_cell("rust", "c", true, true), t_cell("rust", "d", true, true)]
+  let v = verdict_core(langs, tasks4, uneven)
+  assert_eq(v.id, "not-comparable")
+  assert(not v.comparable)
+  assert(string.contains(string.join(v.reasons, " "), "Almide 3/4"))
+  // A language with no toolchain is NOT part of the comparison, so it cannot
+  // make a run non-comparable by being absent.
+  let complete = [t_cell("almide", "a", true, true), t_cell("almide", "b", true, true),
+                  t_cell("almide", "c", true, true), t_cell("almide", "d", true, true),
+                  t_cell("rust", "a", true, true), t_cell("rust", "b", true, true),
+                  t_cell("rust", "c", true, true), t_cell("rust", "d", true, true),
+                  t_cell("zig", "a", false, false), t_cell("zig", "b", false, false),
+                  t_cell("zig", "c", false, false), t_cell("zig", "d", false, false)]
+  assert(verdict_core(langs, tasks4, complete).comparable)
+}
+
+test "the saturation threshold is a rate, not a zero-failure count" {
+  // almide-dojo#3: >= 98% of the cells a language measured. At 21 tasks that
+  // is 21/21; at 100 it is 98/100, and the rule must catch the second too.
+  let mk = (lang: String, pass: Int, fail: Int) =>
+    (list.range(0, pass) |> list.map((i) => t_cell(lang, "p" + int.to_string(i), true, true))) +
+    (list.range(0, fail) |> list.map((i) => t_cell(lang, "f" + int.to_string(i), false, true)))
+  assert(is_saturated(mk("almide", 98, 2) + mk("rust", 100, 0)))
+  assert(not is_saturated(mk("almide", 97, 3) + mk("rust", 100, 0)))
+  // One language below the threshold is enough: the bank discriminated there.
+  assert(not is_saturated(mk("almide", 100, 0) + mk("rust", 90, 10)))
+  // 20/21 is 95.2%, so the 21-task bank saturates only at a clean sweep.
+  assert(not is_saturated(mk("almide", 20, 1)))
+  assert(is_saturated(mk("almide", 21, 0)))
+}
+
+test "a run in which every measured cell passes is inconclusive-saturated, and one failure is enough to clear it" {
+  let langs = [("almide", "Almide"), ("rust", "Rust")]
+  let all_pass = [t_cell("almide", "a", true, true), t_cell("almide", "b", true, true),
+                  t_cell("rust", "a", true, true), t_cell("rust", "b", true, true)]
+  let v = verdict_core(langs, 2, all_pass)
+  assert_eq(v.id, ST_SATURATED)
+  // Saturated is still a valid comparison — it is just not evidence.
+  assert(v.comparable)
+  assert(not v.conclusive)
+  // The negative control: a gate that fires on every run is the same as one
+  // that never fires, so ONE failing cell must clear the verdict.
+  let one_fail = [t_cell("almide", "a", true, true), t_cell("almide", "b", true, true),
+                  t_cell("rust", "a", true, true), t_cell("rust", "b", false, true)]
+  let v2 = verdict_core(langs, 2, one_fail)
+  assert_eq(v2.id, "comparable")
+  assert(v2.comparable)
+  assert(v2.conclusive)
+  assert(list.is_empty(v2.reasons))
+  // ...and the per-cell state follows the run, not the cell's own outcome.
+  assert_eq(state_of(true, t_cell("almide", "a", true, true), is_saturated(all_pass)), ST_SATURATED)
+  assert_eq(state_of(true, t_cell("almide", "a", true, true), is_saturated(one_fail)), ST_MEASURED)
+}
+
+test "a run that reached nothing is refused, and the verdict travels into the table" {
+  let langs = [("almide", "Almide")]
+  let none_reached = [t_cell("almide", "a", false, false), t_cell("almide", "b", false, false)]
+  let v = verdict_core(langs, 2, none_reached)
+  assert_eq(v.id, "nothing-measured")
+  assert(not v.comparable)
+  // The table carries the verdict above the numbers, not under them.
+  let block = verdict_block(verdict_core(langs, 2, [t_cell("almide", "a", true, true), t_cell("almide", "b", true, true)]))
+  assert(string.contains(block, "inconclusive-saturated"))
+  assert(string.contains(block, "certified as a comparison: **yes**"))
+  assert(string.contains(block, "the bank discriminated: **no**"))
+}
+
+test "the full grid names every planned cell, including a language with no toolchain" {
+  let alm = plugins.find("almide")!
+  let zig = plugins.find("zig")!
+  let probes = [
+    Probe { plugin: alm, available: true, missing: "", versions: [("almide", "almide 0.62.0")] },
+    Probe { plugin: zig, available: false, missing: "zig", versions: [] },
+  ]
+  let tasks = ["a", "b"] |> list.map(t_task)
+  let grid = full_grid(probes, tasks, [t_cell("almide", "a", true, true)])
+  assert_eq(list.len(grid), 4)
+  assert(list.any(grid, (r) => r.language == "zig" and r.task == "b"))
+  let sat = is_saturated(grid)
+  assert_eq(count_state(grid, probes, sat, ST_HARNESS), 2)
+  assert_eq(count_state(grid, probes, sat, ST_NOT_RUN), 1)
+  assert_eq(count_state(grid, probes, sat, ST_SATURATED), 1)
+  assert_eq(count_state(grid, probes, sat, ST_MEASURED), 0)
+  // The four states partition the grid exactly.
+  assert_eq(CELL_STATES |> list.map((s) => count_state(grid, probes, sat, s)) |> list.sum, list.len(grid))
 }
