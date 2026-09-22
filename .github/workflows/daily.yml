@@ -175,7 +175,15 @@ jobs:
             echo "::warning::every task this model was asked passed: a complete run that separates nothing (almide/almide#1963). Do not quote it as evidence about the model."
           fi
 
+      # Runs even when a step above went red. The refusal step exits non-zero
+      # on `not-comparable`, and that is EXACTLY the run whose evidence someone
+      # needs to read — without this condition the upload is skipped, so the
+      # refused run is the only one that leaves nothing behind. Measured
+      # 2026-09-22: a 38-task run refused for one unreached task produced no
+      # artifact and no committed results, while the run beside it that passed
+      # kept everything. A refused run is evidence; it is just not a number.
       - name: Upload results
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: runs-${{ strategy.job-index }}
@@ -224,7 +232,36 @@ jobs:
             exit 1
           fi
           git commit -m "Daily MSR run $DATE (${{ needs.plan.outputs.pin }}, multi-model)"
-          git push
+          # Push with a rebase-and-retry, because BOTH lanes commit to `main`
+          # and a scheduled run is not alone on the branch.
+          #
+          # This was a bare `git push`. On 2026-09-22 a cross-language run —
+          # seven toolchains, 21 tasks, ~500 model calls, and a `comparable`
+          # verdict that had already passed every publication threshold in the
+          # step above — was discarded because `main` had moved while it ran.
+          # The measurement is the expensive, unrepeatable part; the push is
+          # the cheap part, and it was the only part allowed to fail.
+          #
+          # A rebase is safe here: every lane writes under its own dated,
+          # model-named directory, so two runs never touch the same file. A
+          # conflict would mean two runs of the SAME model on the same day,
+          # which is the collision #22 addresses by putting `--label` in the
+          # path — and if one somehow happens, the loop exits non-zero rather
+          # than resolving it blind.
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              echo "pushed on attempt $attempt"
+              exit 0
+            fi
+            echo "push rejected (attempt $attempt) — another run reached main first; rebasing"
+            git pull --rebase --no-edit origin main || {
+              echo "::error::rebase onto main failed: two runs wrote the same files. The results are in the artifacts and the job summary; commit them by hand."
+              exit 1
+            }
+            sleep $((attempt * 5))
+          done
+          echo "::error::could not push the results after 5 attempts; they remain in the artifacts (see the upload step)"
+          exit 1
 
       - name: Results were not committed (not main)
         if: github.ref != 'refs/heads/main'
