@@ -1,0 +1,203 @@
+// The cell vocabulary both MSR lanes speak.
+//
+// A run measures a planned grid of cells — `tasks x languages` in the
+// cross-language lane (src/msr/run.almd), `tasks x one model` in the daily
+// lane (src/main.almd). EVERY cell of that grid carries exactly one of four
+// states, and the four partition the grid: measured + inconclusive-saturated
+// + not-run + harness-limitation = planned cells, always.
+//
+//   measured               the model answered and the judge ran (pass or
+//                          fail), in a run where at least one measured cell
+//                          FAILED. Only such a cell carries discriminating
+//                          information.
+//   inconclusive-saturated judged exactly like `measured`, and passed — but
+//                          every series in the run reached SATURATION_PCT or
+//                          better of the cells it measured. The task bank is
+//                          at its ceiling, so the cell separates nothing
+//                          (almide-dojo#3 / almide/almide#1963). A pass here
+//                          is not evidence.
+//   not-run                the cell was planned and the model was never
+//                          answered for it: an HTTP timeout, an empty
+//                          completion, a missing credential. NOT a failure
+//                          and NOT a zero — the whole point of this module.
+//   harness-limitation     the cell cannot be measured in this configuration
+//                          at all: the toolchain is not on the machine
+//                          (cross lane), or the task's own files are not
+//                          (daily lane). Not a failure and not a zero.
+//
+// The consequence for every rate either lane publishes: the denominator is
+// the PLANNED cell count, never the subset that answered. A percentage over
+// the subset reads exactly like one over the whole set — `15/15 (100%)` and
+// `21/21 (100%)` side by side are carried away as equal — and the caveat
+// beside it is not what travels. So the incompleteness goes IN the number:
+// `rate` prints an interval whenever a cell is absent.
+//
+// What lives here is the vocabulary and the arithmetic, which must be ONE
+// thing in both lanes (almide-dojo#17: "give the daily lane the same
+// vocabulary rather than a second one"). What stays in each lane is the shape
+// of its own cell record and the prose of its own verdict reasons — the cross
+// lane compares languages, the daily lane publishes one model's rate, and
+// those two sentences are not the same sentence.
+
+let ST_MEASURED = "measured"
+let ST_SATURATED = "inconclusive-saturated"
+let ST_NOT_RUN = "not-run"
+let ST_HARNESS = "harness-limitation"
+let CELL_STATES = [ST_MEASURED, ST_SATURATED, ST_NOT_RUN, ST_HARNESS]
+
+// A run's verdict id. `comparable` is the certification: every planned cell
+// answered, so the run's rates are points over one denominator and may be
+// quoted as such. The other three each name a way that is not true.
+let V_COMPARABLE = "comparable"
+let V_NOT_COMPARABLE = "not-comparable"
+let V_NOTHING = "nothing-measured"
+let VERDICT_IDS = [V_COMPARABLE, ST_SATURATED, V_NOT_COMPARABLE, V_NOTHING]
+
+// almide-dojo#3's ratified rule, in its own words: "if every language reaches
+// >= 98% on the stratum a comparative claim is made for, the run returns
+// INCONCLUSIVE_BANK_SATURATED: valid as a regression suite, invalid as
+// ranking evidence". The rate is over the cells a series MEASURED — a
+// `not-run` cell says nothing about how hard the bank is.
+//
+// It is written as a threshold rather than as `failures == 0` so it still
+// means the right thing when the bank grows to #3's 400 clusters and a 99%
+// run is the one that has to be caught. At today's sizes (21 cross-language
+// tasks, 38 daily tasks) the two coincide: 20/21 is 95.2% and 37/38 is 97.4%,
+// both below it, so only a clean sweep saturates.
+let SATURATION_PCT = 98
+
+// One series of cells — a language in the cross lane, the model in the daily
+// lane — at the bank's ceiling.
+fn saturated_series(passed: Int, measured: Int) -> Bool =
+  measured > 0 and passed * 100 >= measured * SATURATION_PCT
+
+// The state of one planned cell. `measurable` = this configuration could have
+// measured it at all; `reached` = the model answered for it; `saturated` = the
+// RUN's property, not the cell's, which is why a cell cannot type itself.
+fn state_of(measurable: Bool, reached: Bool, saturated: Bool) -> String =
+  if not measurable then ST_HARNESS
+  else if not reached then ST_NOT_RUN
+  else if saturated then ST_SATURATED
+  else ST_MEASURED
+
+fn pct(n: Int, d: Int) -> String =
+  if d == 0 then "—" else int.to_string(n * 100 / d) + "%"
+
+// The rate a row publishes. The denominator is ALWAYS the planned count.
+// When some cells are absent the true rate is not a point: it lies between
+// "every absent cell would have failed" and "every absent cell would have
+// passed", so the row prints that interval and the incompleteness is IN the
+// number, not in a parenthetical a reader drops on the way to the headline.
+// A complete row's interval collapses to a point, which is exactly when it is
+// comparable with another complete row.
+fn rate(passed: Int, absent: Int, planned: Int) -> String =
+  if planned == 0 then "—"
+  else if absent == 0 then int.to_string(passed) + "/" + int.to_string(planned) + " (" + pct(passed, planned) + ")"
+  else int.to_string(passed) + "/" + int.to_string(planned) + " (" +
+    pct(passed, planned) + "–" + pct(passed + absent, planned) + ")"
+
+// A run's verdict. `comparable` certifies the rates as points over one
+// denominator; `conclusive` says the bank discriminated at all.
+type Verdict = { id: String, comparable: Bool, conclusive: Bool, reasons: List[String] }
+
+// The decision table both lanes share. `any_reached` = at least one planned
+// cell answered; `complete` = EVERY planned cell of every series answered;
+// `saturated` = every series is at the bank's ceiling. The reasons are the
+// lane's own words, because "the languages saw different task counts" and
+// "3 planned tasks were never asked" are different sentences about the same
+// defect.
+fn verdict_id(any_reached: Bool, complete: Bool, saturated: Bool) -> String =
+  if not any_reached then V_NOTHING
+  else if not complete then V_NOT_COMPARABLE
+  else if saturated then ST_SATURATED
+  else V_COMPARABLE
+
+fn verdict(any_reached: Bool, complete: Bool, saturated: Bool, reasons: List[String]) -> Verdict = {
+  let id = verdict_id(any_reached, complete, saturated)
+  Verdict {
+    id: id,
+    comparable: id == V_COMPARABLE or id == ST_SATURATED,
+    conclusive: any_reached and not saturated,
+    reasons: reasons,
+  }
+}
+
+// The verdict goes FIRST, above the numbers: what a reader carries away from
+// a table is the number, so a caveat below it does not travel. The headline
+// is the lane's own, for the same reason the reasons are.
+fn verdict_block(v: Verdict, headline: String) -> String =
+  "> **Verdict: `" + v.id + "` — " + headline + "**\n>\n" +
+  "> - certified as a comparison: **" + (if v.comparable then "yes" else "no") + "**\n" +
+  "> - the bank discriminated: **" + (if v.conclusive then "yes" else "no") + "**\n" +
+  (v.reasons |> list.map((r) => "> - " + r + "\n") |> string.join("")) + "\n"
+
+// The transport class of an absent cell, for a breakdown column. The verbatim
+// reason is what a reader acts on and both lanes record it in full; this is
+// only the bucket it goes in. A class is derived from the reason rather than
+// stored beside it because the reason is the ONE thing the transport actually
+// said — a stored class can drift away from it, and this whole defect family
+// is a summary travelling away from its condition.
+fn absence_class(measurable: Bool, reason: String) -> String =
+  if not measurable then "task-files-missing"
+  else if string.contains(reason, "timed out") or string.contains(reason, "Timeout") then "timeout"
+  else if string.contains(reason, "empty completion") then "empty-completion"
+  else if string.contains(reason, "missing env") or string.contains(reason, "empty env") then "no-credential"
+  else "transport"
+
+test "the four states partition every cell, and no toolchain outranks everything" {
+  assert_eq(list.len(CELL_STATES), 4)
+  assert_eq(state_of(true, true, false), ST_MEASURED)
+  assert_eq(state_of(true, true, true), ST_SATURATED)
+  assert_eq(state_of(true, false, false), ST_NOT_RUN)
+  assert_eq(state_of(false, true, false), ST_HARNESS)
+  assert_eq(state_of(false, false, true), ST_HARNESS)
+}
+
+test "a rate carries its own incompleteness, and a complete one collapses to a point" {
+  // The exact shape almide-dojo#17 names: 26 passes of 38 planned with 12
+  // cells the model never answered, published as if it were 26/26.
+  assert_eq(rate(26, 12, 38), "26/38 (68%–100%)")
+  assert_eq(rate(26, 0, 38), "26/38 (68%)")
+  // ...and the interval is never printed when there is nothing to hide.
+  assert(not string.contains(rate(38, 0, 38), "–"))
+  assert_eq(rate(38, 0, 38), "38/38 (100%)")
+  assert_eq(rate(0, 0, 0), "—")
+}
+
+test "the saturation threshold is a rate, not a zero-failure count" {
+  assert(saturated_series(98, 100))
+  assert(not saturated_series(97, 100))
+  // Today's two bank sizes: only a clean sweep saturates.
+  assert(saturated_series(21, 21))
+  assert(not saturated_series(20, 21))
+  assert(saturated_series(38, 38))
+  assert(not saturated_series(37, 38))
+  // Nothing measured is not a ceiling.
+  assert(not saturated_series(0, 0))
+}
+
+test "the verdict decision table refuses an incomplete run and keeps a saturated one comparable" {
+  assert_eq(verdict_id(false, false, false), V_NOTHING)
+  assert_eq(verdict_id(false, true, true), V_NOTHING)
+  assert_eq(verdict_id(true, false, false), V_NOT_COMPARABLE)
+  // Incompleteness outranks saturation: an incomplete run is not a comparison
+  // whatever its measured cells did.
+  assert_eq(verdict_id(true, false, true), V_NOT_COMPARABLE)
+  assert_eq(verdict_id(true, true, true), ST_SATURATED)
+  assert_eq(verdict_id(true, true, false), V_COMPARABLE)
+  // Saturated is still a valid comparison — it is just not evidence.
+  assert(verdict(true, true, true, []).comparable)
+  assert(not verdict(true, true, true, []).conclusive)
+  assert(not verdict(true, false, false, []).comparable)
+  assert(verdict(true, true, false, []).conclusive)
+  assert(not verdict(false, true, false, []).conclusive)
+}
+
+test "an absent cell's class is derived from what the transport actually said" {
+  assert_eq(absence_class(true, "call_model: cloudflare: http: read timed out waiting for the server (raise ALMIDE_HTTP_TIMEOUT_SECS; 0 = no timeout)"), "timeout")
+  assert_eq(absence_class(true, "empty completion from provider 'cf' (spec 'cf:@cf/x')"), "empty-completion")
+  assert_eq(absence_class(true, "cloudflare: missing env: CLOUDFLARE_API_KEY"), "no-credential")
+  assert_eq(absence_class(true, "cloudflare: json: unexpected token"), "transport")
+  // Not measurable here at all outranks whatever the reason says.
+  assert_eq(absence_class(false, "read timed out"), "task-files-missing")
+}
