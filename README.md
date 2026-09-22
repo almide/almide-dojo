@@ -52,15 +52,52 @@ The harness is deliberately written in Almide itself — Dojo is the first place
 
 ## Running the harness
 
-Requires the [`claude` CLI](https://docs.claude.com/en/docs/claude-code) to be installed and authenticated. The harness calls it via `process.exec`, so no API key handling is needed in the harness itself.
+Install the compiler named in `almide-pin.toml` (the run's identity — every
+`summary.md` is stamped with `almide --version`, and a summary measured with
+another version is not comparable):
+
+```bash
+PIN=$(sed -nE 's/^ref *= *"([^"]+)".*/\1/p' almide-pin.toml)
+curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "$PIN"
+almide --version   # must print the pin
+```
+
+Model specs are `provider:model`; the provider's key comes from the environment
+(`CF_ACCOUNT_ID` + `CLOUDFLARE_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
+`OPENROUTER_API_KEY`; see the header of `src/main.almd`):
 
 ```bash
 # single task
-almide run src/main.almd -- fizzbuzz
+almide run src/main.almd -- fizzbuzz anthropic:claude-sonnet-5
 
-# all tasks, writes runs/YYYY-MM-DD/summary.md
-almide run src/main.almd -- all
+# all tasks, writes runs/YYYY-MM-DD/<model-slug>/summary.md (+ one .md per task)
+almide run src/main.almd -- all cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast
 ```
+
+Exit codes of `all`: 0 every task passed, 1 some tasks failed (the summary is
+still written — that is the measurement), 2 no task reached the model (no key,
+network down): nothing is written, because a 0/N row with zero attempts would
+poison the trend line.
+
+### Nightly vs. by hand
+
+The [Daily MSR Run](.github/workflows/daily.yml) measures the **Cloudflare
+models only** and commits `runs/<date>/…` to `main`; the repo holds Cloudflare
+credentials and nothing else — by decision, **no Anthropic or OpenAI key is in
+CI**, so an `anthropic:`/`openai:` spec passed to a `workflow_dispatch` is red.
+
+Anthropic / OpenAI rows (for example the Sonnet 5 row the almide README
+scorecard cites, almide/almide#1617) are measured **locally** with the pinned
+compiler and committed by hand:
+
+```bash
+ANTHROPIC_API_KEY=... almide run src/main.almd -- all anthropic:claude-sonnet-5
+git add runs/$(date -u +%Y-%m-%d)/anthropic_claude-sonnet-5/
+git commit -m "Record the $(date -u +%Y-%m-%d) full-bank MSR run for Sonnet 5 against $PIN"
+```
+
+The committed `summary.md` carries the model, the `compiler` stamp, the task
+count and the pass counts; the README row then cites `almide-dojo@<that sha>`.
 
 ## Task bank (31 tasks)
 

@@ -49,3 +49,5 @@ Each entry feeds back into `almide/almide`'s diagnostic improvement backlog.
 
 - Raw model outputs (full generated source, full diagnostics) go under `runs/YYYY-MM-DD/raw/` and are NOT committed (see `.gitignore`)
 - Summarized metrics (`summary.md`, per-task pass/fail + retry count) ARE committed so trends can be read from git history
+- Every run is measured with the compiler in `almide-pin.toml`; `summary.md` is stamped with `almide --version`, and a summary that was measured with another version is not committed
+- The nightly workflow measures the Cloudflare models only. **No Anthropic or OpenAI key goes into CI secrets** (maintainer ruling). An Anthropic / OpenAI row is measured locally — `ANTHROPIC_API_KEY=... almide run src/main.almd -- all anthropic:claude-sonnet-5` with the pinned compiler — and its `runs/<date>/<model-slug>/summary.md` is committed by hand (README: Running the harness)

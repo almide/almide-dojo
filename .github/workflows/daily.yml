@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       models:
-        description: 'Comma-separated model specs (empty = the daily set below)'
+        description: 'Comma-separated model specs (empty = the daily set below). An anthropic:/openai: spec needs ANTHROPIC_API_KEY / OPENAI_API_KEY, which this repo does NOT provide — such a job is red; measure those locally (README: Running the harness).'
         required: false
         default: ''
 
@@ -14,11 +14,13 @@ permissions:
   contents: write
 
 env:
-  # The daily set. Two Cloudflare Workers AI models keep the non-Anthropic
-  # column populated; Sonnet 5 is the current Anthropic model (#1617 asks the
-  # README scorecard to cite it). Specs are what src/main.almd parses:
-  # `cf:` = Cloudflare, `anthropic:` = Anthropic Messages API, `openai:`.
-  DAILY_MODELS: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast,cf:@cf/meta/llama-3.1-8b-instruct,anthropic:claude-sonnet-5'
+  # The nightly set: the Cloudflare Workers AI models only — the repo holds
+  # Cloudflare credentials and nothing else (maintainer ruling: no Anthropic
+  # or OpenAI key in CI). Anthropic / OpenAI rows for the README scorecard are
+  # measured locally and committed by hand; see README "Running the harness".
+  # Specs are what src/main.almd parses: `cf:` = Cloudflare,
+  # `anthropic:` = Anthropic Messages API, `openai:` = OpenAI.
+  DAILY_MODELS: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast,cf:@cf/meta/llama-3.1-8b-instruct'
 
 jobs:
   plan:
