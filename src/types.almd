@@ -15,6 +15,27 @@ type Attempt = {
   passed: Bool,
 }
 
+// One planned cell of the daily lane's `tasks x one model` grid.
+//
+// `reached` and `measurable` are what make a cell TYPED rather than scored
+// (almide-dojo#17, the vocabulary in src/cellstate.almd):
+//
+//   measurable=false             the task's own files are not on this machine:
+//                                `harness-limitation`. It was never measurable
+//                                here, so it is not a zero.
+//   measurable, reached=false    the task was planned and the model was never
+//                                answered for it — an HTTP read timeout, an
+//                                empty completion, a missing credential.
+//                                `not-run`: NOT a failure and NOT a zero.
+//                                `reason` carries what the transport said,
+//                                verbatim.
+//   measurable, reached          the model answered and `almide test` judged
+//                                it: `measured`, and `success` means something.
+//
+// `reached` is its own field rather than `not list.is_empty(attempts)`
+// because a 1-shot pass emits no diagnostic block, so the backfill parser
+// reconstructs it with an empty attempt list — deriving "the model never
+// answered" from that would score every backfilled 1-shot pass as an absence.
 type RunResult = {
   task: String,
   model: String,
@@ -23,6 +44,9 @@ type RunResult = {
   final_diagnostic: String,
   final_code: String,
   attempts: List[Attempt],
+  reached: Bool,
+  measurable: Bool,
+  reason: String,
 }
 
 type AttemptResult = {

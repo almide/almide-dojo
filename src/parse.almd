@@ -3,6 +3,7 @@
 // historical run files on disk.
 
 import self.types.{RunResult, Attempt}
+import self.cellstate
 
 fn parse_field_from_lines(lines: List[String], prefix: String) -> String =
   lines
@@ -76,6 +77,12 @@ fn parse_task_md(filename: String, content: String) -> RunResult = {
   let success = success_str == "yes"
   let all_diags = extract_all_diagnostics(content)
   let final_diag = if success then "" else extract_final_diagnostic(content)
+  // The cell state the report stamped. A report written before the states
+  // existed has no line, and it exists BECAUSE the model answered — the old
+  // harness wrote no per-task report at all for a cell it never reached — so
+  // the absence of the field reads as `measured`, which is what it was.
+  let state = parse_field_from_lines(lines, "**state**: ")
+  let reached = state != cellstate.ST_NOT_RUN and state != cellstate.ST_HARNESS
   // Reconstruct Attempt list: one Attempt per diagnostic block (passed=false,
   // since passing attempts don't emit a diagnostic). Code is empty in
   // backfill — we only kept diagnostics for the recoverable/unrecoverable
@@ -85,10 +92,32 @@ fn parse_task_md(filename: String, content: String) -> RunResult = {
   RunResult {
     task: task_name_from_filename(filename),
     model: model,
-    success: success,
+    success: success and reached,
     retries: retries,
     final_diagnostic: final_diag,
     final_code: "",
     attempts: attempts,
+    reached: reached,
+    measurable: state != cellstate.ST_HARNESS,
+    reason: parse_field_from_lines(lines, "**reason**: "),
   }
+}
+
+test "a backfilled report keeps a never-asked task typed, and a legacy report measured" {
+  // A report the new harness writes for a cell the model never answered.
+  let absent = parse_task_md("matrix-ops.md",
+    "# matrix-ops\n\n- **model**: `cf:m`\n- **state**: `not-run`\n" +
+    "- **reason**: call_model: cloudflare: http: read timed out waiting for the server\n" +
+    "- **category**: not-run\n")
+  assert(not absent.reached)
+  assert(not absent.success)
+  assert(string.contains(absent.reason, "read timed out"))
+  // A report from before the states existed: it exists because the model
+  // answered, and a 1-shot pass has no diagnostic block at all — deriving
+  // "never asked" from an empty attempt list would retype every one of them.
+  let legacy = parse_task_md("fizzbuzz.md",
+    "# fizzbuzz\n\n- **model**: `cf:m`\n- **success**: yes\n- **retries**: 0\n- **category**: pass-1shot\n")
+  assert(legacy.reached)
+  assert(legacy.success)
+  assert(list.is_empty(legacy.attempts))
 }

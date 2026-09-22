@@ -28,6 +28,7 @@ import fs
 import process
 import datetime
 import self.types.{Task, Attempt, RunResult, AttemptResult}
+import self.cellstate
 import self.classifier
 import self.hints
 import self.render
@@ -139,6 +140,7 @@ effect fn fix_loop_step(
       task: task.name, model: model, success: false,
       retries: max_retries, final_diagnostic: last_diag, final_code: last_code,
       attempts: acc,
+      reached: true, measurable: true, reason: "",
     })
   else {
     let user_prompt =
@@ -154,6 +156,7 @@ effect fn fix_loop_step(
             task: task.name, model: model, success: true,
             retries: attempt, final_diagnostic: "", final_code: result.code,
             attempts: new_acc,
+            reached: true, measurable: true, reason: "",
           })
         else
           fix_loop_step(task, model, max_retries, attempt + 1, result.code, result.diagnostic, new_acc)
@@ -219,39 +222,84 @@ effect fn print_result(result: RunResult) -> Unit = {
   println("── Result ──")
   println("  task:    " + result.task)
   println("  model:   " + result.model)
-  println("  success: " + bool_str(result.success))
-  println("  retries: " + int.to_string(result.retries))
-  if result.success then {
+  println("  state:   " + cellstate.state_of(result.measurable, result.reached, false))
+  if not result.reached then {
+    println("  reason:  " + result.reason)
     println("")
-    println("Task passed.")
+    println("The model was never answered for this task: it is not a failure and not a zero.")
   } else {
-    println("")
-    println("Final diagnostic:")
-    println(result.final_diagnostic)
+    println("  success: " + bool_str(result.success))
+    println("  retries: " + int.to_string(result.retries))
+    if result.success then {
+      println("")
+      println("Task passed.")
+    } else {
+      println("")
+      println("Final diagnostic:")
+      println(result.final_diagnostic)
+    }
   }
 }
 
-effect fn run_task(task_name: String, model: String) -> Result[RunResult, String] = {
+// A planned cell the model was never answered for. `measurable` is false only
+// when the task's own files are not on this machine.
+//
+// This — not `RunResult { success: false }` — is what a harness error becomes
+// (almide-dojo#17). The old code turned every `err` from the run into a
+// scored zero, so a read timeout and an empty completion were published in
+// `summary.md`'s `passed/total` line as if the model had answered wrongly.
+fn absent_cell(task_name: String, model: String, measurable: Bool, reason: String) -> RunResult =
+  RunResult {
+    task: task_name, model: model, success: false, retries: 0,
+    final_diagnostic: "", final_code: "", attempts: [],
+    reached: false, measurable: measurable, reason: reason,
+  }
+
+// One planned cell of the `tasks x one model` grid. It always yields a cell:
+// there is no outcome this lane can meet that is not one of the four states.
+effect fn run_cell(task_name: String, model: String) -> RunResult = {
   println("Loading task: " + task_name)
   match load_task(task_name) {
-    err(e) => err("load task: " + e)
+    // Not measurable in this configuration at all: `harness-limitation`.
+    err(e) => {
+      println("  harness limitation: load task: " + e)
+      absent_cell(task_name, model, false, "load task: " + e)
+    }
     ok(task) => {
       println("Model:    " + model)
       println("Retries:  " + int.to_string(DEFAULT_MAX_RETRIES))
       println("")
       match fix_loop(task, model, DEFAULT_MAX_RETRIES) {
-        err(e) => err("fix_loop: " + e)
-        ok(result) => {
-          print_result(result)!
-          match write_metrics(result) {
-            ok(path) => println("\nReport: " + path)
-            err(e) => println("\nWarning: failed to write report: " + e)
-          }
-          ok(result)
+        // The model was never answered — an HTTP read timeout, the empty
+        // completion `src/llm.almd` refuses, a missing credential. The fix
+        // loop discards the attempts it did get, so a run that answered twice
+        // and then timed out is `not-run` too: a truncated retry budget is
+        // not a measured outcome, and the verbatim reason names the attempt.
+        err(e) => {
+          println("  not run: " + e)
+          absent_cell(task_name, model, true, "fix_loop: " + e)
         }
+        ok(result) => result
       }
     }
   }
+}
+
+// Write the per-task report for any cell, absent or measured, and print it.
+// An absent cell gets a report too, so the run directory holds every planned
+// task and `backfill` can see the absences it used to have no file for.
+effect fn record_cell(result: RunResult) -> Unit = {
+  print_result(result)!
+  match write_metrics(result) {
+    ok(path) => println("\nReport: " + path)
+    err(e) => println("\nWarning: failed to write report: " + e)
+  }
+}
+
+effect fn run_task(task_name: String, model: String) -> RunResult = {
+  let result = run_cell(task_name, model)!
+  record_cell(result)!
+  result
 }
 
 // ── Run all tasks ──
@@ -285,6 +333,14 @@ effect fn compiler_version() -> String =
     err(_) => ""
   }
 
+// The HTTP read timeout this process ran under, as summary.md must state it:
+// a task is `not-run` BECAUSE some deadline expired, so the deadline is part
+// of the run's identity. "" = the compiler's own 30 s default, which — the
+// transport being non-streaming — is a deadline on the WHOLE completion.
+// The cross-language lane records the same number in its manifest
+// (almide-dojo#19); this lane has only summary.md to record it in.
+effect fn http_timeout_secs() -> String = env.get("ALMIDE_HTTP_TIMEOUT_SECS") ?? ""
+
 effect fn write_summary(date: String, model: String, results: List[RunResult]) -> Result[String, String] = {
   let slug = model_slug(model)
   let dir = "runs/" + date + "/" + slug
@@ -293,7 +349,8 @@ effect fn write_summary(date: String, model: String, results: List[RunResult]) -
     ok(_) => {
       let path = dir + "/summary.md"
       let compiler = compiler_version() ?? ""
-      match fs.write(path, render.render_summary(date, model, compiler, results)) {
+      let timeout = http_timeout_secs() ?? ""
+      match fs.write(path, render.render_summary(date, model, compiler, timeout, results)) {
         err(_) => err("failed to write " + path)
         ok(_) => ok(path)
       }
@@ -317,13 +374,13 @@ effect fn run_all(model: String) -> Unit = {
           process.exit(1)
         }
         ok(results) => {
-          // A per-task harness error (no API key, network down) is recorded
-          // as a failed task so one flaky task cannot abort a run — but when
-          // EVERY task failed before its first attempt, nothing was measured:
-          // no summary (a 0/N row with zero model calls would poison the
-          // trend line) and exit 2 so a CI job goes red.
-          if list.all(results, (r) => list.is_empty(r.attempts)) then {
-            println("Harness error: no task reached the model (" + int.to_string(list.len(results)) + " tasks, 0 attempts); no summary written")
+          // A cell the model never answered is `not-run`, so one flaky task
+          // cannot abort a run — but when NO task reached the model, nothing
+          // was measured: no summary (a 0/N row with zero model calls would
+          // poison the trend line) and exit 2 so a CI job goes red. This is
+          // the lane's one refusal to publish at all, and it is kept.
+          if list.all(results, (r) => not r.reached) then {
+            println("Harness error: no task reached the model (" + int.to_string(list.len(results)) + " tasks, 0 answered); no summary written")
             process.exit(2)
           } else {
             let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
@@ -335,15 +392,34 @@ effect fn run_all(model: String) -> Unit = {
   }
 }
 
+// Exit codes of `all`, in the order they are decided:
+//
+//   2  no task reached the model — nothing written (above).
+//   3  the run is `not-comparable`: some planned task was never answered, so
+//      the published rate is an INTERVAL and must not be quoted as a point.
+//      The summary IS written and committed, carrying its own refusal: a
+//      refused run is evidence, it is just not a scorecard number.
+//   1  some measured task failed. That is the measurement.
+//   0  every planned task reached the model and passed.
+//
+// 3 outranks 1 because a run that is missing tasks cannot be read as "N of M
+// failed" at all, whatever its measured cells did.
 effect fn run_all_finish(date: String, model: String, results: List[RunResult]) -> Unit = {
   match write_summary(date, model, results) {
     ok(path) => {
       println("")
       println("Summary: " + path)
-      let passed = list.count(results, (r) => r.success)
+      let v = render.daily_verdict(results)
       let total = list.len(results)
-      println(int.to_string(passed) + "/" + int.to_string(total) + " tasks passed")
-      if passed < total then process.exit(1) else {}
+      let reached = list.count(results, (r) => r.reached)
+      let passed = list.count(results, (r) => r.reached and r.success)
+      println("verdict: " + v.id)
+      v.reasons |> list.map((r) => println("  - " + r))
+      println(cellstate.rate(passed, total - reached, total) + " of the planned tasks passed" +
+        (if reached == total then "" else " (" + int.to_string(total - reached) + " never asked, so this is an interval)"))
+      if not v.comparable then process.exit(3)
+      else if passed < total then process.exit(1)
+      else {}
     }
     err(e) => {
       println("Warning: failed to write summary: " + e)
@@ -358,23 +434,11 @@ effect fn run_all_loop(tasks: List[String], model: String, acc: List[RunResult])
     let task_name = list.get(tasks, 0) |> option.unwrap_or("")
     let rest = list.drop(tasks, 1)
     println("=== " + task_name + " ===")
-    let next_acc = match run_task(task_name, model) {
-      ok(r) => acc + [r]
-      err(e) => {
-        println("  harness error: " + e)
-        acc + [RunResult {
-          task: task_name,
-          model: model,
-          success: false,
-          retries: 0,
-          final_diagnostic: e,
-          final_code: "",
-          attempts: [],
-        }]
-      }
-    }
+    // Every outcome is already a typed cell: there is no error path left here
+    // that could turn a network event into a model result.
+    let r = run_task(task_name, model)!
     println("")
-    run_all_loop(rest, model, next_acc)
+    run_all_loop(rest, model, acc + [r])
   }
 }
 
@@ -391,13 +455,13 @@ effect fn main() -> Unit = {
     else if first == "backfill" then
       backfill.backfill_all()!
     else {
-      match run_task(first, model) {
-        ok(r) => if not r.success then process.exit(1) else {}
-        err(e) => {
-          println("Harness error: " + e)
-          process.exit(1)
-        }
-      }
+      // Single task. A cell the model never answered exits 2, the same code
+      // `all` uses for "nothing was measured" — it is not a failing task, and
+      // exiting 1 for it is the single-task spelling of the same defect.
+      let r = run_task(first, model)!
+      if not r.reached then process.exit(2)
+      else if not r.success then process.exit(1)
+      else {}
     }
   }
 }
@@ -421,6 +485,7 @@ test "render_report contains task name and model" {
     final_diagnostic: "",
     final_code: "fn fizzbuzz(n: Int) -> String = \"1\"",
     attempts: [Attempt { code: "fn fizzbuzz(n: Int) -> String = \"1\"", diagnostic: "", passed: true }],
+    reached: true, measurable: true, reason: "",
   }
   let out = render.render_report(r)
   assert(string.contains(out, "fizzbuzz"))
@@ -434,15 +499,167 @@ test "model_slug sanitizes provider string" {
   assert_eq(model_slug("anthropic/claude-sonnet-4-6"), "anthropic_claude-sonnet-4-6")
 }
 
+// ── almide-dojo#17: a task the model was never asked is never a zero ──
+
+fn t_pass(task: String) -> RunResult = RunResult {
+  task: task, model: "cf:m", success: true, retries: 0,
+  final_diagnostic: "", final_code: "",
+  attempts: [Attempt { code: "fn f() = 1", diagnostic: "", passed: true }],
+  reached: true, measurable: true, reason: "",
+}
+
+fn t_fail(task: String) -> RunResult = RunResult {
+  task: task, model: "cf:m", success: false, retries: 3,
+  final_diagnostic: "error[E003]: undefined variable 'x'", final_code: "",
+  attempts: [Attempt { code: "fn f() = x", diagnostic: "error[E003]: undefined variable 'x'", passed: false }],
+  reached: true, measurable: true, reason: "",
+}
+
+// The shape run 35783112036 produced 14 times, and the one main.almd used to
+// publish as `success: false`.
+let TIMED_OUT_REASON =
+  "fix_loop: attempt 0: call_model: cloudflare: http: read timed out waiting for the server (raise ALMIDE_HTTP_TIMEOUT_SECS; 0 = no timeout)"
+
+fn t_timeout(task: String) -> RunResult = absent_cell(task, "cf:m", true, TIMED_OUT_REASON)
+
+test "a timed-out task is not-run in summary.md, with the transport's own words" {
+  let out = render.render_summary("2026-09-23", "cf:m", "almide 0.62.0", "140",
+    [t_pass("clamp"), t_fail("gcd"), t_timeout("matrix-ops")])
+  // The per-task row says `not-run`, not FAIL, and carries no retry count it
+  // never had.
+  assert(string.contains(out, "| `matrix-ops` | not-run | not-run | `timeout` | — |"))
+  assert(not string.contains(out, "| `matrix-ops` | FAIL"))
+  // The reason is in summary.md verbatim — requirement 1 of almide-dojo#17 is
+  // that it is visible here, not only somewhere a reader would have to open.
+  assert(string.contains(out, "## Never asked (the model was never answered)"))
+  assert(string.contains(out, "read timed out waiting for the server (raise ALMIDE_HTTP_TIMEOUT_SECS; 0 = no timeout)"))
+  // The deadline that produced it is part of the run's identity.
+  assert(string.contains(out, "- **http timeout (s)**: `140`\n"))
+  // ...and the four states add up to the planned task count.
+  assert(string.contains(out, "- **cells**: measured 2, inconclusive-saturated 0, not-run 1, harness-limitation 0\n"))
+}
+
+test "the headline rate carries its own incompleteness rather than a point over a subset" {
+  let done = [t_pass("a"), t_pass("b"), t_fail("c")]
+  let gone = [t_timeout("d")]
+  let out = render.render_summary("2026-09-23", "cf:m", "almide 0.62.0", "140", done + gone)
+  // 2 of 4 PLANNED tasks passed, and the true rate is somewhere in [50%,75%]
+  // because task `d` was never asked. The old renderer printed `2 / 4`, which
+  // reads as a point over the whole set, and `- **tasks**: 4` beside it.
+  assert(string.contains(out, "- **passed**: 2/4 (50%–75%)\n"))
+  assert(string.contains(out, "- **1-shot passes**: 2/4 (50%–75%)\n"))
+  assert(string.contains(out, "- **reached**: 3 / 4\n"))
+  assert(string.contains(out, "- **not-run**: 1\n"))
+  // The denominator is the planned count in every rate: never 3, the subset
+  // that answered.
+  assert(not string.contains(out, "2/3"))
+  assert(not string.contains(out, "2 / 3"))
+  // A complete run's interval collapses to the point that IS quotable.
+  let whole = render.render_summary("2026-09-23", "cf:m", "almide 0.62.0", "140", done + [t_pass("d")])
+  assert(string.contains(whole, "- **passed**: 3/4 (75%)\n"))
+  assert(not string.contains(whole, "–"))
+}
+
+test "the verdict is above the numbers, and an incomplete run refuses to be quoted" {
+  let out = render.render_summary("2026-09-23", "cf:m", "almide 0.62.0", "140",
+    [t_pass("a"), t_fail("b"), t_timeout("c")])
+  let banner = string.index_of(out, "Verdict: `not-comparable`")
+  let first_rate = string.index_of(out, "- **passed**:")
+  assert(option.is_some(banner))
+  // What a reader carries away is the number, so the refusal must be above it.
+  assert((banner ?? 0) < (first_rate ?? 0))
+  assert(string.contains(out, "must not be quoted as a point"))
+  assert(string.contains(out, "certified as a comparison: **no**"))
+  // ...and the run itself refuses: not-comparable is not comparable.
+  let v = render.daily_verdict([t_pass("a"), t_fail("b"), t_timeout("c")])
+  assert_eq(v.id, "not-comparable")
+  assert(not v.comparable)
+  // One failing measured cell is enough for the bank to have discriminated.
+  assert(v.conclusive)
+}
+
+test "a complete run is comparable, and a clean sweep is inconclusive-saturated" {
+  let mixed = [t_pass("a"), t_pass("b"), t_fail("c")]
+  let v = render.daily_verdict(mixed)
+  assert_eq(v.id, "comparable")
+  assert(v.comparable)
+  assert(v.conclusive)
+  assert(list.is_empty(v.reasons))
+  // The README scorecard's own shape: 100% over the whole bank. It is a
+  // complete run and still not evidence about the model — the bank is at its
+  // ceiling (almide-dojo#3 / almide/almide#1963).
+  let sweep = ["a", "b", "c"] |> list.map(t_pass)
+  let vs = render.daily_verdict(sweep)
+  assert_eq(vs.id, cellstate.ST_SATURATED)
+  assert(vs.comparable)
+  assert(not vs.conclusive)
+  let out = render.render_summary("2026-09-23", "cf:m", "almide 0.62.0", "140", sweep)
+  assert(string.contains(out, "do not quote this rate as evidence about the model"))
+  assert(string.contains(out, "- **cells**: measured 0, inconclusive-saturated 3, not-run 0, harness-limitation 0\n"))
+  // Saturation never invents an interval: the run is complete.
+  assert(string.contains(out, "- **passed**: 3/3 (100%)\n"))
+}
+
+test "a run that reached nothing is refused before a summary can be written" {
+  let none_reached = ["a", "b"] |> list.map(t_timeout)
+  let v = render.daily_verdict(none_reached)
+  assert_eq(v.id, "nothing-measured")
+  assert(not v.comparable)
+  assert(not v.conclusive)
+  // This is the condition run_all refuses to publish under at all: `all`
+  // exits 2 and writes no summary, because a 0/N row with zero model calls
+  // would poison the trend line.
+  assert(list.all(none_reached, (r) => not r.reached))
+}
+
+test "an unanswered task is in no failure bucket: not the retry distribution, not the code backlog" {
+  let out = render.render_summary("2026-09-23", "cf:m", "almide 0.62.0", "140",
+    [t_pass("a"), t_timeout("b")])
+  // `fail-0` is where a RunResult { success: false, retries: 0 } used to land,
+  // which is exactly what the old harness error became.
+  assert(string.contains(out, "- fail-0: 0\n"))
+  assert(string.contains(out, "- pass-0: 1\n"))
+  // ...and it is not read as a diagnostic the model could not act on.
+  assert(not string.contains(out, "Unrecoverable diagnostic codes"))
+  // The breakdown counts it as an absence, by name.
+  assert(string.contains(out, "- not-run: 1\n"))
+}
+
+test "a task whose files are missing is a harness limitation, not a model failure" {
+  let ghost = absent_cell("ghost", "cf:m", false, "load task: task not found: ghost")
+  let out = render.render_summary("2026-09-23", "cf:m", "almide 0.62.0", "", [t_pass("a"), t_fail("b"), ghost])
+  assert(string.contains(out, "| `ghost` | harness-limitation | harness-limitation | `task-files-missing` | — |"))
+  assert(string.contains(out, "- **cells**: measured 2, inconclusive-saturated 0, not-run 0, harness-limitation 1\n"))
+  // It still shrinks the denominator's certainty: the cell was planned.
+  assert(string.contains(out, "- **passed**: 1/3 (33%–66%)\n"))
+  // A run with no ALMIDE_HTTP_TIMEOUT_SECS states no line rather than an empty one.
+  assert(not string.contains(out, "**http timeout"))
+}
+
 test "render_summary stamps the compiler version the run was judged with" {
-  let r = RunResult {
-    task: "fizzbuzz", model: "anthropic:claude-sonnet-5", success: true, retries: 0,
-    final_diagnostic: "", final_code: "", attempts: [],
-  }
-  let out = render.render_summary("2026-09-22", "anthropic:claude-sonnet-5", "almide 0.62.0", [r])
+  let r = t_pass("fizzbuzz")
+  let out = render.render_summary("2026-09-22", "anthropic:claude-sonnet-5", "almide 0.62.0", "140", [r])
   assert(string.contains(out, "- **compiler**: `almide 0.62.0`\n"))
   assert(string.contains(out, "- **tasks**: 1\n"))
   // A backfill does not know the compiler: no line rather than an empty one.
-  let bare = render.render_summary("2026-09-22", "anthropic:claude-sonnet-5", "", [r])
+  let bare = render.render_summary("2026-09-22", "anthropic:claude-sonnet-5", "", "", [r])
   assert(not string.contains(bare, "**compiler**"))
+}
+
+test "the per-task report of an unanswered task carries no success line to be misread" {
+  let out = render.render_report(t_timeout("matrix-ops"))
+  assert(string.contains(out, "- **state**: `not-run`\n"))
+  assert(string.contains(out, "- **reason**: " + TIMED_OUT_REASON + "\n"))
+  // The transport class, and never labelled `diagnostic code`: there is no
+  // diagnostic, and naming one sends a reader after a compiler bug.
+  assert(string.contains(out, "- **class**: `timeout`\n"))
+  assert(not string.contains(out, "diagnostic code"))
+  // `- **success**: no` is the lie: there was no attempt to succeed at.
+  assert(not string.contains(out, "**success**"))
+  assert(string.contains(out, "not a failure, and not a zero"))
+  // A measured report still says what it always said, and now says which
+  // state it is.
+  let measured = render.render_report(t_fail("gcd"))
+  assert(string.contains(measured, "- **success**: no\n"))
+  assert(string.contains(measured, "- **state**: `measured`\n"))
 }
