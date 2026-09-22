@@ -41,6 +41,7 @@ The signal we care about:
 ```
 almide.toml          Package manifest (the harness itself is an Almide package)
 src/main.almd        Harness — written in Almide, of course (the daily Almide lane)
+src/cellstate.almd   The cell states, the rates and the verdicts BOTH lanes speak
 src/msr/             The cross-language lane: neutral task model, language plugins, runner
 msr/                 Its task set (task-set.json), behavior texts, reference solutions
 tasks/               Task bank (prompts + tests + metadata)
@@ -80,10 +81,56 @@ almide run src/main.almd -- fizzbuzz anthropic:claude-sonnet-5
 almide run src/main.almd -- all cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast
 ```
 
-Exit codes of `all`: 0 every task passed, 1 some tasks failed (the summary is
-still written — that is the measurement), 2 no task reached the model (no key,
-network down): nothing is written, because a 0/N row with zero attempts would
-poison the trend line.
+Exit codes of `all`, in the order they are decided: **2** no task reached the
+model (no key, network down) — nothing is written, because a 0/N row with zero
+attempts would poison the trend line; **3** the run is `not-comparable`, some
+planned task was never answered so the published rate is an interval (the
+summary *is* written and committed, carrying its own refusal); **1** some
+measured task failed — that is the measurement; **0** every planned task
+reached the model and passed. A single task exits 2 when the model was never
+answered for it, the same code `all` uses for "nothing was measured".
+
+### The denominator is the planned task count, and every task has a state
+
+The daily lane speaks **the same four cell states as the cross-language lane**
+(`src/cellstate.almd` is one module, imported by both) over its own
+`tasks × one model` grid — *measured*, *inconclusive-saturated*, *not-run*,
+*harness-limitation*, defined in the table [below](#the-denominator-is-the-planned-task-count-and-every-cell-has-a-state).
+A task the model was never answered for — an HTTP read timeout, the empty
+completion `src/llm.almd` refuses, a missing credential — is **`not-run`, not
+a zero** (almide-dojo#17). It used to be recorded as `RunResult { success:
+false }`, so a network event was published in `summary.md`'s `passed/total`
+line as a model result.
+
+Every rate in `summary.md` therefore has the **planned** task count as its
+denominator, and a run with `not-run` tasks prints its rate as an interval —
+`26/38 (68%–100%)` — because the true rate is bounded below by "every absent
+task would have failed" and above by "every one would have passed". A complete
+run's interval collapses to a point, which is exactly when it is quotable.
+`summary.md` carries, above the numbers:
+
+- the run's **verdict** (`comparable` / `inconclusive-saturated` /
+  `not-comparable` / `nothing-measured` — the same four ids the cross lane
+  stamps), and
+- a **Never asked** table naming every absent task with what the transport
+  actually said, verbatim, plus `- **cells**:` with the four counts and
+  `- **http timeout (s)**:`, the deadline the absences are absences *because*
+  of.
+
+The daily job publishes the summary to the job step summary first and then
+re-derives the refusal from the summary's own `reached` / `tasks` numbers: a
+`not-comparable` run **fails the job**, after its results are committed. A
+refused run is evidence; it is just not a scorecard number.
+`inconclusive-saturated` — this model passed ≥ 98 % of the tasks it was asked,
+so the bank is at its ceiling — is a `::warning::` and not a failure, for the
+same reason it is in the other lane.
+
+There is deliberately **no `verdict` subcommand here**, unlike the cross lane:
+that one re-derives a verdict from a `results.json` this lane does not write,
+and adding one would mean publishing a second artifact that a reader of
+`summary.md` would not open. What the cross lane gets from re-derivation, this
+lane gets from the workflow recomputing the refusal out of the published
+numbers rather than trusting the banner.
 
 ### Nightly vs. by hand
 
@@ -102,8 +149,12 @@ git add runs/$(date -u +%Y-%m-%d)/anthropic_claude-sonnet-5/
 git commit -m "Record the $(date -u +%Y-%m-%d) full-bank MSR run for Sonnet 5 against $PIN"
 ```
 
-The committed `summary.md` carries the model, the `compiler` stamp, the task
-count and the pass counts; the README row then cites `almide-dojo@<that sha>`.
+The committed `summary.md` carries the model, the `compiler` stamp, the HTTP
+read timeout, the planned task count, the four cell-state counts and the pass
+rate; the README row then cites `almide-dojo@<that sha>`. **Quote the rate as
+`summary.md` prints it**: if it is an interval, the interval is the number —
+some tasks were never asked and the point would be a claim the run cannot
+support. A `not-comparable` run is not a scorecard row at all.
 
 The [Cross-language MSR Run](.github/workflows/msr-cross.yml) is the second
 scheduled lane: **weekly** (Mondays 05:00 UTC) and on `workflow_dispatch`, on
@@ -177,7 +228,11 @@ denominator of every rate in the table is the **planned** task count, always,
 and every cell of the planned `tasks x languages` grid carries one of four
 states — the vocabulary [almide/almide#1963](https://github.com/almide/almide/issues/1963)
 item 4 asks for. The four partition the grid, and `manifest.verdict.cells`
-prints the four counts so a reader can add them up:
+prints the four counts so a reader can add them up. The states, the 98 %
+threshold, the interval rate and the four verdict ids live in
+`src/cellstate.almd` and are the **same four in the daily lane**, over its
+`tasks × one model` grid — one vocabulary, because two copies of one is how
+two lanes stop meaning the same thing by it:
 
 | state | means | in the table |
 |---|---|---|
