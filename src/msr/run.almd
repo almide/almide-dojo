@@ -143,13 +143,22 @@ fn system_prompt(p: Plugin) -> String =
 
 fn signatures(p: Plugin, t: PTask) -> String = p.signatures(t)
 
-fn user_prompt(p: Plugin, t: PTask) -> String = {
-  let one = list.len(t.sigs) == 1
-  let head = if one then "Write a function in " + p.display + " with this exact signature:"
-    else "Write these functions in " + p.display + " with these exact signatures:"
-  head + "\n\n" + signatures(p, t) + "\n\nBehavior:\n\n" + t.behavior + "\n\n" +
-  "Return ONLY the " + p.display + " source: no markdown fences, no explanation, no tests, no entry point."
+fn prompt_body(display: String, sigs: String, behavior: String, one: Bool) -> String = {
+  let head = if one then "Write a function in " + display + " with this exact signature:"
+    else "Write these functions in " + display + " with these exact signatures:"
+  head + "\n\n" + sigs + "\n\nBehavior:\n\n" + behavior + "\n\n" +
+  "Return ONLY the " + display + " source: no markdown fences, no explanation, no tests, no entry point."
 }
+
+fn user_prompt(p: Plugin, t: PTask) -> String =
+  prompt_body(p.display, signatures(p, t), t.behavior, list.len(t.sigs) == 1)
+
+// The language-independent half of a prompt: the same template, the same
+// behavior text and the neutral signature, with the language name left as a
+// placeholder. Hashing it pins what every language's prompt shares — a
+// changed behavior text moves this hash, a changed plugin does not.
+fn neutral_prompt(t: PTask) -> String =
+  prompt_body("<Language>", t.sigs |> list.map((sg) => "    " + spec.sig_neutral(sg)) |> string.join("\n"), t.behavior, list.len(t.sigs) == 1)
 
 fn retry_prompt(display: String, original: String, prev_code: String, diag: String) -> String =
   "Original task:\n\n" + original + "\n\n" +
@@ -373,6 +382,7 @@ effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask
       ("revision", value.str(task_set_revision()!)),
       ("sha256", value.str(task_set_sha)),
       ("tasks", value.array(tasks |> list.map((t) => value.str(t.name)))),
+      ("neutral_prompts_sha256", value.str(hash.sha256_hex(tasks |> list.map(neutral_prompt) |> string.join("\n--\n")))),
     ])),
     ("retry_template_sha256", value.str(hash.sha256_hex(retry_prompt("<Language>", "", "", "")))),
     ("languages", value.array(probes |> list.map((pr) => language_entry(pr, tasks)))),
@@ -532,24 +542,15 @@ fn zero_of(ty: Ty) -> Val = match ty {
   TList(_) => spec.vlist([]),
 }
 
-fn items(v: Val) -> List[Val] = match v {
-  VList(xs) => xs |> list.map((x) => x),
-  _ => [],
-}
-
 // A well-typed value of type `ty` that differs from `v`: a list gains an
 // element when empty and has its first element perturbed otherwise.
 fn perturb(v: Val, ty: Ty) -> Val = match v {
   VInt(n) => spec.vint(n + 1),
   VBool(b) => spec.vbool(not b),
   VStr(s) => spec.vstr(s + "x"),
-  // (`items` copies the payload out first: almide 0.62.0 passes the boxed
-  // payload to an owning stdlib call as `Box<Vec<_>>`, which does not compile)
-  VList(_) => {
-    let xs = items(v)
-    if list.is_empty(xs) then spec.vlist([zero_of(spec.elem(ty))])
-    else spec.vlist(list.enumerate(xs) |> list.map(((i, x)) => if i == 0 then perturb(x, spec.elem(ty)) else x))
-  },
+  // (spec.perturb_head does the walk: almide 0.62.0 cannot hand a variant's
+  // list payload to an owning stdlib call from another module)
+  VList(_) => spec.vlist(spec.list_of(v, zero_of(spec.elem(ty)), (x) => perturb(x, spec.elem(ty)))),
   VCall(_, _) => v,
 }
 
@@ -671,6 +672,11 @@ test "the user prompt names the language and carries every signature" {
   assert(string.starts_with(system_prompt(rust), "You are writing Rust."))
   let alm = plugins.find("almide")!
   assert(string.contains(user_prompt(alm, t), "fn gcd(a: Int, b: Int) -> Int"))
+  // Every language's prompt is the neutral one with the language name and
+  // the rendered signature substituted, and nothing else.
+  let np = neutral_prompt(t)
+  assert_eq(np |> string.replace("<Language>", "Rust") |> string.replace("fn gcd(a: Int, b: Int) -> Int", "fn gcd(a: i64, b: i64) -> i64"), up)
+  assert_eq(np |> string.replace("<Language>", "Almide"), user_prompt(alm, t))
   assert(string.starts_with(system_prompt(alm), "You are writing Almide. Output ONLY source code, no fences or prose.\n\n## Prefer stdlib helpers"))
 }
 

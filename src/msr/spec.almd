@@ -55,6 +55,17 @@ fn vstr(s: String) -> Val = VStr(s)
 fn vlist(xs: List[Val]) -> Val = VList(xs)
 fn tlist(e: Ty) -> Ty = TList(e)
 
+// The elements of a VList with its first element replaced by `f(first)`,
+// or `[fallback]` when the list is empty. It lives here, next to the type,
+// because a variant's list payload cannot cross a module boundary into an
+// owning call (almide 0.62.0 emits `Box<Vec<_>>` where `Vec<_>` is wanted).
+fn list_of(v: Val, fallback: Val, f: (Val) -> Val) -> List[Val] = match v {
+  VList(xs) =>
+    if list.is_empty(xs) then [fallback]
+    else list.enumerate(xs) |> list.map(((i, x)) => if i == 0 then f(x) else x),
+  _ => [fallback],
+}
+
 // ── Types ──
 
 fn parse_ty(raw: String) -> Ty! = {
@@ -336,6 +347,12 @@ test "val_fits checks a nested call against the signatures" {
   assert(not val_fits(sigs, VCall("decrypt", [VInt(1), VInt(1)]), TStr))
   assert(not val_fits(sigs, VCall("nope", []), TStr))
   assert(val_fits(sigs, VList([]), TList(TList(TInt))))
+}
+
+test "list_of replaces the head and falls back on an empty list" {
+  assert_eq(list_of(VList([VInt(1), VInt(2)]), VInt(9), (_) => VInt(7)), [VInt(7), VInt(2)])
+  assert_eq(list_of(VList([]), VInt(9), (_) => VInt(7)), [VInt(9)])
+  assert_eq(list_of(VInt(3), VInt(9), (_) => VInt(7)), [VInt(9)])
 }
 
 test "c_quote and neutral escape what a literal needs" {
