@@ -51,14 +51,40 @@ fn temperature_sent(provider: String) -> Bool = match provider {
   _ => false,
 }
 
+// A completion that is empty once the fences are stripped is NOT a
+// measurement, and must never reach the scorer.
+//
+// Cloudflare Workers AI answers a bad credential, an exhausted quota or an
+// unknown model name with HTTP 200 and a body that carries no `result`
+// ({"success":false,"errors":[...]}), which almai's cloudflare provider maps
+// to `ok(LLMResponse { content: "" })`. Handed to the judge, an empty source
+// file is a compile failure, so a whole run on a broken key publishes a
+// table of 0% as if the model had been measured — the failure mode is
+// silent and the number looks like evidence. Refuse it here: the caller
+// records a harness error, which both lanes count as "not measured".
+fn is_empty_completion(content: String) -> Bool = string.trim(strip_code_fences(content)) == ""
+
 effect fn call(model: String, system: String, user_prompt: String, temperature: Float, max_attempts: Int) -> Result[String, String] = {
   let spec = to_almai_spec(model)
   let opts = almai.defaults() |> almai.with_system(system) |> almai.with_temperature(temperature)
   let msgs = [almai.user(user_prompt)]
   match almai.call_retry(spec, msgs, opts, max_attempts) {
     err(e) => err(e)
-    ok(r) => ok(strip_code_fences(r.content))
+    ok(r) =>
+      if is_empty_completion(r.content) then
+        err("empty completion from provider '" + provider_of(model) + "' (spec '" + model + "'): a credential, quota or model-name failure can answer 200 with no completion, and an empty file scored against the oracle would look like a model failure")
+      else ok(strip_code_fences(r.content))
   }
+}
+
+test "an empty completion is a transport failure, never a scored attempt" {
+  // The shape Cloudflare returns for a bad key, after almai maps it: 200 OK
+  // with no `result`, i.e. an empty content string.
+  assert(is_empty_completion(""))
+  assert(is_empty_completion("   \n\n  "))
+  // ...and the same once the model replies with nothing but a fence.
+  assert(is_empty_completion("```almide\n```"))
+  assert(not is_empty_completion("fn f() = 1"))
 }
 
 test "strip_code_fences removes triple backtick lines" {
