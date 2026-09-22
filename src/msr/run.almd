@@ -591,9 +591,16 @@ effect fn cmd_verify(o: Opts) -> Unit! = {
   let probes = probe_all(o.languages)!
   probes |> list.map((pr) => println((if pr.available then "verifying " else "skipping  ") + pr.plugin.display + ": " + toolchain_line(pr)))
   let available = probes |> list.filter((pr) => pr.available)
+  // A language NAMED on the command line and then not measured is a
+  // failure, not a skip: `make msr-verify LANGUAGES=zig` going green
+  // because the Zig install step broke is exactly the silence to avoid.
+  // Without --languages, a missing toolchain is a skip.
+  let demanded = if list.is_empty(o.languages) then []
+    else probes |> list.filter((pr) => not pr.available)
+      |> list.map((pr) => pr.plugin.name + ": asked for by --languages but " + pr.missing + " is missing")
   let raw_dir = o.out + "/verify/raw"
   fs.mkdir_p(raw_dir)!
-  let problems = (available |> list.flat_map((pr) => (tasks |> list.flat_map((t) => verify_one(pr, t, raw_dir)!))!))!
+  let problems = demanded + (available |> list.flat_map((pr) => (tasks |> list.flat_map((t) => verify_one(pr, t, raw_dir)!))!))!
   println("")
   if list.is_empty(problems) then {
     println("verify: " + int.to_string(list.len(tasks)) + " task(s) x " + int.to_string(list.len(available)) + " language(s) ok" +
