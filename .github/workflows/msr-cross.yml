@@ -162,20 +162,27 @@ jobs:
           # overwritten by a stale copy. (Same reasoning as daily.yml.)
           rm -rf runs/
           echo "Running the cross-language lane with model: $MODEL"
-          # Exit codes of the lane: 0 every measured task passed, 1 some
-          # failed (the table IS the measurement), 2 nothing was measured.
-          # Only 2 is a harness failure.
+          # The lane's own exit codes are 0 (every measured task passed),
+          # 1 (some failed — the table IS the measurement) and 2 (nothing was
+          # measured). Do NOT read them through make: make reports 2 for ANY
+          # recipe failure, so the lane's honest 1 arrives here as 2 and a
+          # complete table reads as "nothing reached the model". Measured on
+          # the first run of this workflow (run 35733997751), which wrote a
+          # full seven-language table and was then failed for exiting 2.
+          #
+          # So this step never judges. The verdict is the next step, which
+          # reads the manifest and the table — the artifacts are the
+          # measurement, the exit code is not.
           set +e
           make msr MODEL="$MODEL" LANGUAGES="$INPUT_LANGUAGES" TASKS="$INPUT_TASKS" LABEL="$INPUT_LABEL"
           RC=$?
           set -e
-          echo "lane exit code: $RC"
-          if [ "$RC" -ge 2 ]; then
-            echo "::error::the cross-language lane exited $RC: nothing reached the model (credentials, quota or network). No table was written."
-            exit 1
-          fi
+          echo "make exit code: $RC (2 = any recipe failure, including the lane's 1 = some tasks failed; the table decides)"
 
       - name: Check the run against #2146's victory condition
+        # Runs even if the step above went red, because that step's verdict is
+        # not trustworthy (see its comment) and this one's is.
+        if: ${{ !cancelled() }}
         run: |
           MANIFEST=$(find runs/msr -name manifest.json 2>/dev/null | sort | tail -n1 || true)
           TABLE=$(dirname "${MANIFEST:-.}")/table.md
