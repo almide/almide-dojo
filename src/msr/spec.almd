@@ -1,0 +1,345 @@
+// The language-neutral task model of the cross-language lane.
+//
+// A task in msr/task-set.json is read from three files, none of them
+// language-specific in what they carry:
+//   - the signature(s): the `    fn name(p: T, ...) -> R` lines of the task's
+//     prompt.md (the Almide spelling is also the neutral notation),
+//   - the behavior text: msr/specs/<task>.md,
+//   - the oracle: the `assert_eq(<call>, <literal>)` lines of the task's
+//     tests.almd — the SAME cases the Almide daily run scores against.
+// Every plugin renders these into its own syntax; nothing here knows a
+// target language.
+
+type Ty = | TInt | TBool | TStr | TList(Ty)
+
+type Val =
+  | VInt(Int)
+  | VBool(Bool)
+  | VStr(String)
+  | VList(List[Val])
+  | VCall(String, List[Val])
+
+type Param = { name: String, ty: Ty }
+
+type Sig = { name: String, params: List[Param], ret: Ty }
+
+type Case = { label: String, call: Val, expected: Val }
+
+type PTask = {
+  name: String,
+  dir: String,
+  sigs: List[Sig],
+  behavior: String,
+  cases: List[Case],
+}
+
+// One command of a plugin's check, run in the attempt's work directory.
+// `kind` is "compile" or "run": a failing compile step is a compile error,
+// a failing run step is a wrong answer or a crash.
+type Step = { kind: String, cmd: String, args: List[String], timeout_ms: Int }
+
+let COMPILE_TIMEOUT_MS = 300000
+let RUN_TIMEOUT_MS = 30000
+
+// Every generated driver prints this line after the last case, and only
+// when every case passed; the verdict requires it, so a solution that exits
+// 0 before the driver runs its cases cannot pass.
+fn sentinel(n: Int) -> String = "msr: " + int.to_string(n) + " of " + int.to_string(n) + " cases passed"
+
+// Constructor helpers: almide 0.62.0 cannot construct an imported variant
+// case from another module (IR verify: unknown function `spec.VInt`), so
+// the runner builds values through these.
+fn vint(n: Int) -> Val = VInt(n)
+fn vbool(b: Bool) -> Val = VBool(b)
+fn vstr(s: String) -> Val = VStr(s)
+fn vlist(xs: List[Val]) -> Val = VList(xs)
+fn tlist(e: Ty) -> Ty = TList(e)
+
+// ── Types ──
+
+fn parse_ty(raw: String) -> Ty! = {
+  let s = string.trim(raw)
+  match s {
+    "Int" => ok(TInt),
+    "Bool" => ok(TBool),
+    "String" => ok(TStr),
+    _ =>
+      if string.starts_with(s, "List[") and string.ends_with(s, "]") then
+        ok(TList(parse_ty(string.drop(string.take(s, string.len(s) - 1), 5))!))
+      else err("unsupported type `" + s + "` (the cross-language set allows Int, Bool, String and List of those)"),
+  }
+}
+
+fn ty_neutral(t: Ty) -> String = match t {
+  TInt => "Int",
+  TBool => "Bool",
+  TStr => "String",
+  TList(e) => "List[" + ty_neutral(e) + "]",
+}
+
+fn elem(t: Ty) -> Ty = match t {
+  TList(e) => e,
+  _ => t,
+}
+
+// String and list results need an allocation in languages without a GC.
+fn is_heap(t: Ty) -> Bool = match t {
+  TStr => true,
+  TList(_) => true,
+  _ => false,
+}
+
+// ── Signatures ──
+
+fn parse_param(raw: String) -> Param! = {
+  let s = string.trim(raw)
+  match string.index_of(s, ":") {
+    none => err("parameter without a type: `" + s + "`"),
+    some(i) => ok(Param { name: string.trim(string.take(s, i)), ty: parse_ty(string.drop(s, i + 1))! }),
+  }
+}
+
+fn parse_sig(line: String) -> Sig! = {
+  let s = string.trim(line)
+  guard string.starts_with(s, "fn ") else err("not a signature: `" + s + "`")
+  let body = string.drop(s, 3)
+  let open = string.index_of(body, "(") ?? -1
+  let close = string.index_of(body, ")") ?? -1
+  let arrow = string.index_of(body, "->") ?? -1
+  guard open > 0 and close > open and arrow > close else err("malformed signature: `" + s + "`")
+  let name = string.trim(string.take(body, open))
+  let inner = string.drop(string.take(body, close), open + 1)
+  let parts = if string.trim(inner) == "" then [] else string.split(inner, ",")
+  let params = (parts |> list.map((p) => parse_param(p)!))!
+  ok(Sig { name: name, params: params, ret: parse_ty(string.drop(body, arrow + 2))! })
+}
+
+// Every indented `fn ` line of a prompt.md is a required signature.
+fn parse_sigs(prompt: String) -> List[Sig]! = {
+  let lines = string.split(prompt, "\n")
+    |> list.filter((l) => string.starts_with(l, "    fn "))
+  guard not list.is_empty(lines) else err("prompt.md has no `    fn ...` signature line")
+  ok((lines |> list.map((l) => parse_sig(l)!))!)
+}
+
+fn find_sig(sigs: List[Sig], name: String) -> Sig? =
+  list.find(sigs, (s) => s.name == name)
+
+// ── Values: a small reader for the literal/call subset of tests.almd ──
+
+fn peek(cs: List[String], i: Int) -> String = list.get(cs, i) ?? ""
+
+fn digit_char(c: String) -> Bool = c != "" and string.contains("0123456789", c)
+
+fn is_ident(c: String) -> Bool =
+  c != "" and string.contains("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789", c)
+
+fn skip_ws(cs: List[String], i: Int) -> Int = {
+  let c = peek(cs, i)
+  if c == " " or c == "\t" or c == "\n" or c == "\r" then skip_ws(cs, i + 1) else i
+}
+
+fn scan_while(cs: List[String], i: Int, pred: (String) -> Bool, acc: String) -> (String, Int) =
+  if pred(peek(cs, i)) then scan_while(cs, i + 1, pred, acc + peek(cs, i)) else (acc, i)
+
+fn read_str(cs: List[String], i: Int, acc: String) -> (String, Int)! = {
+  let c = peek(cs, i)
+  if c == "" then err("unterminated string literal")
+  else if c == "\"" then ok((acc, i + 1))
+  else if c == "\\" then {
+    let e = peek(cs, i + 1)
+    let ch = match e {
+      "n" => "\n",
+      "t" => "\t",
+      "r" => "\r",
+      _ => e,
+    }
+    read_str(cs, i + 2, acc + ch)
+  } else read_str(cs, i + 1, acc + c)
+}
+
+// Reads `v (, v)* <close>` and returns the values and the index after <close>.
+fn read_seq(cs: List[String], i0: Int, close: String, acc: List[Val]) -> (List[Val], Int)! = {
+  let i = skip_ws(cs, i0)
+  if peek(cs, i) == close then ok((acc, i + 1))
+  else {
+    let (v, j0) = read_val(cs, i)!
+    let j = skip_ws(cs, j0)
+    let c = peek(cs, j)
+    if c == "," then read_seq(cs, j + 1, close, acc + [v])
+    else if c == close then ok((acc + [v], j + 1))
+    else err("expected `,` or `" + close + "`, found `" + c + "`")
+  }
+}
+
+fn read_val(cs: List[String], i0: Int) -> (Val, Int)! = {
+  let i = skip_ws(cs, i0)
+  let c = peek(cs, i)
+  if c == "\"" then {
+    let (s, j) = read_str(cs, i + 1, "")!
+    ok((VStr(s), j))
+  } else if c == "[" then {
+    let (xs, j) = read_seq(cs, i + 1, "]", [])!
+    ok((VList(xs), j))
+  } else if c == "-" or digit_char(c) then {
+    let (digits, j) = scan_while(cs, i + 1, digit_char, c)
+    match int.parse(digits) {
+      ok(n) => ok((VInt(n), j)),
+      err(_) => err("bad integer literal `" + digits + "`"),
+    }
+  } else if is_ident(c) then {
+    let (name, j) = scan_while(cs, i, is_ident, "")
+    match name {
+      "true" => ok((VBool(true), j)),
+      "false" => ok((VBool(false), j)),
+      _ =>
+        if peek(cs, j) == "(" then {
+          let (args, k) = read_seq(cs, j + 1, ")", [])!
+          ok((VCall(name, args), k))
+        } else err("bare identifier `" + name + "` (only literals and calls are supported)"),
+    }
+  } else err("unexpected `" + c + "`")
+}
+
+// One `test "label" { assert_eq(<call>, <expected>) }` line.
+fn parse_case_line(line: String) -> Case! = {
+  let cs = string.chars(line)
+  let label = match string.index_of(line, "test \"") {
+    some(i) => {
+      let (s, _) = read_str(cs, i + 6, "")!
+      s
+    },
+    none => "",
+  }
+  let at = string.index_of(line, "assert_eq(") ?? -1
+  guard at >= 0 else err("not an assert_eq case: `" + line + "`")
+  let (call, j) = read_val(cs, at + 10)!
+  let k = skip_ws(cs, j)
+  guard peek(cs, k) == "," else err("expected `,` after the call in `" + line + "`")
+  let (expected, m) = read_val(cs, k + 1)!
+  guard peek(cs, skip_ws(cs, m)) == ")" else err("expected `)` closing assert_eq in `" + line + "`")
+  match call {
+    VCall(_, _) => ok(Case { label: label, call: call, expected: expected }),
+    _ => err("the first assert_eq argument is not a call in `" + line + "`"),
+  }
+}
+
+// Every non-blank line of a cross-language tests.almd is one assert_eq case;
+// anything else (multi-line tests, assert(...), lets) is refused so a task
+// cannot enter the set with an oracle the plugins would silently drop.
+fn parse_cases(tests: String) -> List[Case]! = {
+  let lines = string.split(tests, "\n") |> list.filter((l) => string.trim(l) != "")
+  guard not list.is_empty(lines) else err("tests.almd has no cases")
+  ok((lines |> list.map((l) => parse_case_line(l)!))!)
+}
+
+// ── Typing: a case must fit the declared signatures ──
+
+fn val_fits(sigs: List[Sig], v: Val, t: Ty) -> Bool = match v {
+  VInt(_) => t == TInt,
+  VBool(_) => t == TBool,
+  VStr(_) => t == TStr,
+  // The element type is read through elem() rather than captured from the
+  // `TList(e)` binder: almide 0.62.0's native backend clones a captured
+  // recursive-variant payload as `Box<Ty>` where `Ty` is expected.
+  VList(xs) => match t {
+    TList(_) => list.all(xs, (x) => val_fits(sigs, x, elem(t))),
+    _ => false,
+  },
+  VCall(name, args) => match find_sig(sigs, name) {
+    none => false,
+    some(sg) =>
+      sg.ret == t and list.len(args) == list.len(sg.params)
+        and list.all(list.zip_with(args, sg.params, (a, p) => val_fits(sigs, a, p.ty)), (b) => b),
+  },
+}
+
+// The type of a case: the declared return type of its outer call.
+fn case_ty(sigs: List[Sig], c: Case) -> Ty = match c.call {
+  VCall(name, _) => match find_sig(sigs, name) {
+    some(sg) => sg.ret,
+    none => TInt,
+  },
+  _ => TInt,
+}
+
+fn check_task(t: PTask) -> Unit! = {
+  let bad = t.cases |> list.filter((c) =>
+    not (val_fits(t.sigs, c.call, case_ty(t.sigs, c)) and val_fits(t.sigs, c.expected, case_ty(t.sigs, c))))
+  match list.first(bad) {
+    none => ok(()),
+    some(c) => err(t.name + ": case `" + neutral(c.call) + " == " + neutral(c.expected) + "` does not fit the signatures"),
+  }
+}
+
+// ── Rendering helpers shared by the plugins ──
+
+// A double-quoted literal in the C family (Rust, Go, TypeScript, Zig,
+// Gleam, MoonBit all read these escapes the same way).
+fn c_quote(s: String) -> String = {
+  let body = s
+    |> string.replace("\\", "\\\\")
+    |> string.replace("\"", "\\\"")
+    |> string.replace("\n", "\\n")
+    |> string.replace("\t", "\\t")
+    |> string.replace("\r", "\\r")
+  "\"" + body + "\""
+}
+
+// The neutral (Almide) spelling of a value: labels, failure messages, and
+// the Almide plugin's own oracle.
+fn neutral(v: Val) -> String = match v {
+  VInt(n) => int.to_string(n),
+  VBool(b) => if b then "true" else "false",
+  VStr(s) => c_quote(s) |> string.replace("$", "\\$"),
+  VList(xs) => "[" + (xs |> list.map(neutral) |> string.join(", ")) + "]",
+  VCall(name, args) => name + "(" + (args |> list.map(neutral) |> string.join(", ")) + ")",
+}
+
+fn sig_neutral(s: Sig) -> String =
+  "fn " + s.name + "(" + (s.params |> list.map((p) => p.name + ": " + ty_neutral(p.ty)) |> string.join(", ")) + ") -> " + ty_neutral(s.ret)
+
+fn case_label(c: Case) -> String = neutral(c.call)
+
+// ── Tests ──
+
+test "parse_ty reads nested lists" {
+  assert_eq(parse_ty("List[List[Int]]"), ok(TList(TList(TInt))))
+  assert_eq(parse_ty(" String "), ok(TStr))
+  assert(result.is_err(parse_ty("Map[String, Int]")))
+}
+
+test "parse_sig reads a multi-parameter signature" {
+  let s = parse_sig("    fn encrypt(text: String, shift: Int) -> String")
+  assert_eq(s, ok(Sig { name: "encrypt", params: [Param { name: "text", ty: TStr }, Param { name: "shift", ty: TInt }], ret: TStr }))
+  assert_eq(parse_sig("fn f() -> Int"), ok(Sig { name: "f", params: [], ret: TInt }))
+  assert(result.is_err(parse_sig("fn f(xs: List[Int]) -> Option[Int]")))
+}
+
+test "parse_case_line reads literals, escapes, negatives and nested calls" {
+  let c = parse_case_line("test \"fizzbuzz 1 is \\\"1\\\"\" { assert_eq(fizzbuzz(1), \"1\") }")
+  assert_eq(c, ok(Case { label: "fizzbuzz 1 is \"1\"", call: VCall("fizzbuzz", [VInt(1)]), expected: VStr("1") }))
+  let d = parse_case_line("test \"rt\" { assert_eq(decrypt(encrypt(\"almide\", 7), 7), \"almide\") }")
+  assert_eq(d, ok(Case { label: "rt", call: VCall("decrypt", [VCall("encrypt", [VStr("almide"), VInt(7)]), VInt(7)]), expected: VStr("almide") }))
+  let e = parse_case_line("test \"m\" { assert_eq(mat_add([[1, -2]], [[]]), [[1, -2]]) }")
+  assert_eq(e, ok(Case { label: "m", call: VCall("mat_add", [VList([VList([VInt(1), VInt(-2)])]), VList([VList([])])]), expected: VList([VList([VInt(1), VInt(-2)])]) }))
+  assert(result.is_err(parse_case_line("test \"x\" { assert(f(1)) }")))
+  assert(result.is_err(parse_case_line("test \"x\" { assert_eq(f(y), 1) }")))
+}
+
+test "val_fits checks a nested call against the signatures" {
+  let sigs = [
+    Sig { name: "encrypt", params: [Param { name: "text", ty: TStr }, Param { name: "shift", ty: TInt }], ret: TStr },
+    Sig { name: "decrypt", params: [Param { name: "text", ty: TStr }, Param { name: "shift", ty: TInt }], ret: TStr },
+  ]
+  assert(val_fits(sigs, VCall("decrypt", [VCall("encrypt", [VStr("a"), VInt(1)]), VInt(1)]), TStr))
+  assert(not val_fits(sigs, VCall("decrypt", [VInt(1), VInt(1)]), TStr))
+  assert(not val_fits(sigs, VCall("nope", []), TStr))
+  assert(val_fits(sigs, VList([]), TList(TList(TInt))))
+}
+
+test "c_quote and neutral escape what a literal needs" {
+  assert_eq(c_quote("a\"b\\c"), "\"a\\\"b\\\\c\"")
+  assert_eq(neutral(VCall("f", [VStr("x"), VList([VInt(-1)]), VBool(true)])), "f(\"x\", [-1], true)")
+  assert_eq(neutral(VStr("\$x")), "\"\\\$x\"")
+}

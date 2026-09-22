@@ -1,0 +1,53 @@
+// The plugin table of the cross-language lane.
+//
+// A plugin is what a task's prompt, its check commands and its verdict look
+// like in one language: the signature block the prompt shows, the syntax
+// notes the system prompt carries, the files an attempt writes (solution +
+// generated driver) and the steps that judge them. Almide is first; the
+// order here is the order of the table.
+
+import self.msr.spec.{PTask, Step}
+import self.msr.lang.almide
+import self.msr.lang.rust
+import self.msr.lang.go
+import self.msr.lang.typescript
+import self.msr.lang.zig
+import self.msr.lang.gleam
+import self.msr.lang.moonbit
+
+type Plugin = {
+  name: String,
+  display: String,
+  // The file extension a reference solution uses under msr/reference/<name>/.
+  ext: String,
+  // Executables the plugin needs on PATH; the first missing one makes the
+  // language "not measured".
+  tools: List[String],
+  // (label, command) pairs whose output is the toolchain version stamp.
+  versions: List[(String, List[String])],
+  notes: String,
+  // The indented signature lines the prompt shows.
+  signatures: (PTask) -> String,
+  files: (PTask, String) -> List[(String, String)],
+  steps: List[Step],
+}
+
+fn all() -> List[Plugin] = [
+  Plugin { name: "almide", display: "Almide", ext: "almd", tools: almide.tools(), versions: almide.versions(), notes: almide.notes(), signatures: almide.signatures, files: almide.files, steps: almide.steps() },
+  Plugin { name: "rust", display: "Rust", ext: "rs", tools: rust.tools(), versions: rust.versions(), notes: rust.notes(), signatures: rust.signatures, files: rust.files, steps: rust.steps() },
+  Plugin { name: "go", display: "Go", ext: "go", tools: go.tools(), versions: go.versions(), notes: go.notes(), signatures: go.signatures, files: go.files, steps: go.steps() },
+  Plugin { name: "typescript", display: "TypeScript", ext: "ts", tools: typescript.tools(), versions: typescript.versions(), notes: typescript.notes(), signatures: typescript.signatures, files: typescript.files, steps: typescript.steps() },
+  Plugin { name: "zig", display: "Zig", ext: "zig", tools: zig.tools(), versions: zig.versions(), notes: zig.notes(), signatures: zig.signatures, files: zig.files, steps: zig.steps() },
+  Plugin { name: "gleam", display: "Gleam", ext: "gleam", tools: gleam.tools(), versions: gleam.versions(), notes: gleam.notes(), signatures: gleam.signatures, files: gleam.files, steps: gleam.steps() },
+  Plugin { name: "moonbit", display: "MoonBit", ext: "mbt", tools: moonbit.tools(), versions: moonbit.versions(), notes: moonbit.notes(), signatures: moonbit.signatures, files: moonbit.files, steps: moonbit.steps() },
+]
+
+fn names() -> List[String] = all() |> list.map((p) => p.name)
+
+fn find(name: String) -> Plugin? = list.find(all(), (p) => p.name == name)
+
+test "Almide is the first plugin and every plugin has a driver" {
+  assert_eq(list.first(names()), some("almide"))
+  assert_eq(list.len(all()), 7)
+  assert(list.all(all(), (p) => not list.is_empty(p.steps) and not list.is_empty(p.tools)))
+}

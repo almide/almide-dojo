@@ -1,0 +1,91 @@
+// Go plugin: the solution file and a generated driver file in package main,
+// built with `go build` (no module, std only).
+
+import self.msr.spec.{Ty, TInt, TBool, TStr, TList, Val, VInt, VBool, VStr, VList, VCall, Sig, Param, PTask, Case, Step}
+import self.msr.spec
+
+fn tools() -> List[String] = ["go"]
+
+fn versions() -> List[(String, List[String])] = [("go", ["go", "version"])]
+
+fn notes() -> String =
+  "Start the file with `package main`. Use only the standard library. The driver is a second file of the same package, built with `go build`."
+
+fn ty(t: Ty) -> String = match t {
+  TInt => "int",
+  TBool => "bool",
+  TStr => "string",
+  TList(e) => "[]" + ty(e),
+}
+
+fn sig(s: Sig) -> String =
+  "func " + s.name + "(" + (s.params |> list.map((p) => p.name + " " + ty(p.ty)) |> string.join(", ")) + ") " + ty(s.ret)
+
+fn signatures(t: PTask) -> String =
+  t.sigs |> list.map((s) => "    " + sig(s)) |> string.join("
+")
+
+fn lit(t: PTask, v: Val, vt: Ty) -> String = match v {
+  VInt(n) => int.to_string(n),
+  VBool(b) => if b then "true" else "false",
+  VStr(s) => spec.c_quote(s),
+  VList(xs) => ty(vt) + "{" + (xs |> list.map((x) => lit(t, x, spec.elem(vt))) |> string.join(", ")) + "}",
+  VCall(name, args) => {
+    let params = match spec.find_sig(t.sigs, name) {
+      some(sg) => sg.params,
+      none => [],
+    }
+    name + "(" + (list.zip_with(args, params, (a, p) => lit(t, a, p.ty)) |> string.join(", ")) + ")"
+  },
+}
+
+// A solution without a package clause gets `package main` (the one
+// normalization this plugin applies; the prompt asks for it).
+fn with_package(solution: String) -> String =
+  if string.split(solution, "\n") |> list.any((l) => string.starts_with(string.trim(l), "package ")) then solution
+  else "package main\n\n" + solution
+
+fn driver(t: PTask) -> String = {
+  let n = list.len(t.cases)
+  let checks = t.cases
+    |> list.map((c) => "\tmsrCheck(" + spec.c_quote(spec.case_label(c)) + ", " + lit(t, c.call, spec.case_ty(t.sigs, c)) + ", " + lit(t, c.expected, spec.case_ty(t.sigs, c)) + ")")
+    |> string.join("\n")
+  // Equality is on the %v rendering: for the set's types (ints, bools,
+  // strings, nested int slices) it is exact, and a nil slice equals an
+  // empty one, as Go code treats them.
+  """
+    // msr driver (generated)
+    package main
+
+    import (
+    	"fmt"
+    	"os"
+    )
+
+    var msrFailed = 0
+
+    func msrCheck[T any](label string, got T, want T) {
+    	if fmt.Sprintf("%v", got) != fmt.Sprintf("%v", want) {
+    		msrFailed++
+    		fmt.Fprintf(os.Stderr, "FAIL %s: expected %#v, got %#v\\n", label, want, got)
+    	}
+    }
+
+    func main() {
+    ${checks}
+    	if msrFailed > 0 {
+    		fmt.Fprintf(os.Stderr, "msr: %d of ${int.to_string(n)} cases failed\\n", msrFailed)
+    		os.Exit(1)
+    	}
+    	fmt.Println("${spec.sentinel(n)}")
+    }
+    """
+}
+
+fn files(t: PTask, solution: String) -> List[(String, String)] =
+  [("solution.go", with_package(solution)), ("msr_main.go", driver(t))]
+
+fn steps() -> List[Step] = [
+  Step { kind: "compile", cmd: "go", args: ["build", "-o", "msr_bin", "solution.go", "msr_main.go"], timeout_ms: spec.COMPILE_TIMEOUT_MS },
+  Step { kind: "run", cmd: "./msr_bin", args: [], timeout_ms: spec.RUN_TIMEOUT_MS },
+]
