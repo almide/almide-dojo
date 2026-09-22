@@ -1,0 +1,16 @@
+# Toolchains the cross-language lane was written and verified against.
+# Every run records the versions it actually found in its manifest.json;
+# this file is the reference point, not a requirement. The one entry a
+# script reads is `typescript`: scripts/msr.sh installs that version into
+# .msr-tools/ when no `tsc` is on PATH (the other toolchains are installed
+# by their own installers; a missing one is reported as "not measured").
+
+[verified]
+almide = "0.62.0"       # almide-pin.toml is authoritative
+rustc = "1.96.1"
+go = "1.27"
+typescript = "7.0.2"
+node = "22"
+zig = "0.16.0"
+gleam = "1.18.1"        # JavaScript target: node, no Erlang
+moonbit = "0.1.20260824"

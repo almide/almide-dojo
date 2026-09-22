@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  harness:
+    name: Harness tests (pinned compiler)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the pinned Almide
+        run: |
+          PIN=$(sed -nE 's/^ref *= *"([^"]+)".*/\1/p' almide-pin.toml)
+          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "$PIN"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          test "$("$HOME/.local/bin/almide" --version)" = "almide ${PIN#v}"
+
+      - name: Test blocks
+        run: almide test src/
+
+      - name: Every task is either in or out of the cross-language set
+        run: bash scripts/check-task-set.sh
+
+  msr-verify:
+    name: Cross-language lane, reference solutions through every plugin
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27"
+          gleam-version: "1.18.1"
+
+      - name: Install MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      # rustc, node and npm are on the runner image; scripts/msr.sh installs
+      # the pinned compiler and the pinned tsc, then probes every plugin.
+      - name: Probe
+        run: make msr-probe
+
+      - name: Verify (the reference must pass and a perturbed oracle must fail, per language)
+        run: make msr-verify
