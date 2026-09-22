@@ -156,14 +156,73 @@ so the table is a function of the machine, stated in the manifest.
 
 ```
 runs/msr/<date>/<model-slug>/
-  manifest.json   model, provider, temperature (and whether the provider received it),
-                  seed (none: the transport has no seed option), retries, task-set revision
+  manifest.json   the verdict (below), model, provider, temperature (and whether the
+                  provider received it), seed (none: the transport has no seed option),
+                  the HTTP read timeout the run ran under, retries, task-set revision
                   + sha256, per-language toolchain versions and prompt hashes, compiler
                   pin + version, harness commit, the condition (see below)
-  results.json    per language x task: pass/fail, retries, the kind of each failed attempt
-  table.md        the multi-language table (summary + per-task grid)
+  results.json    EVERY planned (task, language) cell, with its typed state, pass/fail,
+                  retries, the reason an absent cell is absent, and the kind of each
+                  failed attempt
+  table.md        the verdict, then the multi-language table (summary + per-task grid)
   raw/            every attempt's sources and logs (gitignored)
 ```
+
+### The denominator is the planned task count, and every cell has a state
+
+A percentage over the subset a language happened to reach reads exactly like
+one over the whole set — `15/15 (100%)` and `21/21 (100%)` side by side are
+carried away as equal, and the caveat in the row is not what travels. So the
+denominator of every rate in the table is the **planned** task count, always,
+and every cell of the planned `tasks x languages` grid carries one of four
+states — the vocabulary [almide/almide#1963](https://github.com/almide/almide/issues/1963)
+item 4 asks for. The four partition the grid, and `manifest.verdict.cells`
+prints the four counts so a reader can add them up:
+
+| state | means | in the table |
+|---|---|---|
+| `measured` | the model answered and the language's own toolchain judged it, in a run where at least one measured cell **failed** — only such a cell carries discriminating information | `pass` / `pass@N` / `FAIL` |
+| `inconclusive-saturated` | judged exactly like `measured`, and passed, but every language reached ≥ 98 % of the cells it measured: the bank is at its ceiling and the cell separates nothing (`INCONCLUSIVE_BANK_SATURATED`, [almide-dojo#3](https://github.com/almide/almide-dojo/issues/3)) | `pass` / `pass@N`, under a verdict banner |
+| `not-run` | planned, and the model was never answered for it: an HTTP timeout, an empty completion, a missing credential. Not a failure and not a zero; `reason` says which | `not-run` |
+| `harness-limitation` | not measurable in this configuration at all — the language's toolchain is not on the machine. Not a failure and not a zero | `n/t` |
+
+A row with `not-run` cells prints its rate as an interval — `15/21 (71%–100%)`
+— because the true rate is bounded below by "every absent cell would have
+failed" and above by "every absent cell would have passed". A complete row's
+interval collapses to a point, which is exactly when it is comparable with
+another complete row.
+
+**The run's verdict.** `manifest.verdict.id` and the first lines of `table.md`
+carry one of:
+
+- `comparable` — every language whose toolchain was present saw the same,
+  complete task set, and the bank discriminated. This is the only verdict
+  under which the table is a comparison.
+- `inconclusive-saturated` — a valid comparison that separates nothing.
+- `not-comparable` — the languages saw different task counts, so the rows
+  share no denominator. **This run is not a comparison and must not be quoted
+  as one.**
+- `nothing-measured` — no cell reached the model.
+
+`almide run src/msr/run.almd -- verdict <run-dir>` re-derives the verdict from
+a written run's own artifacts (no model call, no key) and exits non-zero for
+`not-comparable` / `nothing-measured`; it also refuses a manifest whose stamped
+verdict its own results contradict. CI runs it on every cross-language run,
+after publishing the table to the job summary, and a `not-comparable` run
+fails the job — the results are still committed, carrying their own refusal,
+because a refused run is evidence; it is just not a comparison.
+`inconclusive-saturated` is a `::warning::` and not a failure: it is a true
+statement about the task bank rather than a harness fault, it holds every week
+until #1963 delivers a discriminating bank, and a gate that is red by design
+on every run stops being read.
+
+**The HTTP read timeout.** Both lanes set `ALMIDE_HTTP_TIMEOUT_SECS=140`
+(derived in `.github/workflows/msr-cross.yml`, recorded per run in the
+manifest). The compiler's default for this client is 30 s, and because the
+transport is non-streaming that is a deadline on the *whole* completion, not
+on the first byte — a reasoning model that writes a scratchpad before its
+answer exceeds it routinely, and every cell it costs is a `not-run` that
+shrinks the denominator.
 
 Other entry points: `make msr-probe` (which languages this machine can
 measure), `make msr-verify` (the reference solutions through every available
