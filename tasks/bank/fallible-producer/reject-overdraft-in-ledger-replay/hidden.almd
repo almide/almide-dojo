@@ -1,0 +1,20 @@
+test "hidden: exact overdraft message uses the balance before the line" {
+  let r = replay(["open A", "open B", "dep B 70", "xfer B A 20", "", "wd A 25"]) |> result.map((l) => report(l))
+  assert_eq(r, err("line 6: insufficient funds in A (balance 20, needed 25)"))
+}
+test "hidden: draining to exactly zero is valid" {
+  let r = replay(["open A", "open B", "dep A 40", "xfer A B 15", "wd A 25"]) |> result.map((l) => report(l))
+  assert_eq(r, ok("A=0 B=15 (5 ops)"))
+}
+test "hidden: an unknown destination beats insufficient funds" {
+  let r = replay(["open A", "dep A 10", "xfer A Z 500"]) |> result.map((l) => report(l))
+  assert_eq(r, err("line 3: unknown account Z"))
+}
+test "hidden: a bad amount beats insufficient funds, and the first bad line wins" {
+  assert_eq(replay(["open A", "wd A x"]) |> result.map((l) => report(l)), err("line 2: bad amount x"))
+  assert_eq(replay(["open A", "wd A 1", "wd A x"]) |> result.map((l) => report(l)), err("line 2: insufficient funds in A (balance 0, needed 1)"))
+}
+test "hidden: a transfer overdraft names the source account" {
+  let r = replay(["open A", "open B", "dep B 5", "xfer A B 1"]) |> result.map((l) => report(l))
+  assert_eq(r, err("line 4: insufficient funds in A (balance 0, needed 1)"))
+}

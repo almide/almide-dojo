@@ -1,0 +1,7 @@
+test "withdrawing more than the balance is an error" {
+  assert(result.is_err(replay(["open A", "dep A 50", "wd A 80"])))
+}
+test "an ordinary transfer still works" {
+  let r = replay(["open A", "open B", "dep A 100", "xfer A B 30"]) |> result.map((l) => report(l))
+  assert_eq(r, ok("A=70 B=30 (4 ops)"))
+}

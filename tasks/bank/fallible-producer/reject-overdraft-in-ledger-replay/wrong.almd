@@ -1,0 +1,86 @@
+// Plausible wrong patch: the funds check sits right next to the source lookup,
+// so in `xfer` it runs before the destination is looked up and an unknown
+// destination is reported as insufficient funds.
+// Ledger replay. Every non-blank line is one operation applied to the running
+// balances, in order:
+//   open <acct>                 create an account with balance 0
+//   dep <acct> <amount>         deposit
+//   wd <acct> <amount>          withdraw
+//   xfer <from> <to> <amount>   move money between two accounts
+// Lines are numbered from 1; blank lines are skipped but still counted.
+type Ledger: Eq, Repr = { balances: Map[String, Int], applied: Int }
+
+fn at(n: Int, msg: String) -> String = "line ${int.to_string(n)}: ${msg}"
+
+fn parse_amount(n: Int, s: String) -> Int! = {
+  let v = int.parse(s) |> result.map_err((_) => at(n, "bad amount ${s}"))!
+  guard v > 0 else err(at(n, "amount must be positive: ${s}"))
+  v
+}
+
+fn lookup(n: Int, bal: Map[String, Int], acct: String) -> Int! =
+  match map.get(bal, acct) {
+    some(b) => ok(b),
+    none => err(at(n, "unknown account ${acct}")),
+  }
+
+fn apply(bal: Map[String, Int], n: Int, words: List[String]) -> Map[String, Int]! = {
+  let op = list.get(words, 0) ?? ""
+  let arity = match op {
+    "open" => 2,
+    "dep" => 3,
+    "wd" => 3,
+    "xfer" => 4,
+    _ => 0,
+  }
+  guard arity > 0 else err(at(n, "unknown op ${op}"))
+  guard list.len(words) == arity else err(at(n, "${op} expects ${int.to_string(arity - 1)} fields"))
+  let a = list.get(words, 1) ?? ""
+  match op {
+    "open" => {
+      guard not map.contains(bal, a) else err(at(n, "account exists ${a}"))
+      map.set(bal, a, 0)
+    },
+    "dep" => {
+      let amt = parse_amount(n, list.get(words, 2) ?? "")!
+      let b = lookup(n, bal, a)!
+      map.set(bal, a, b + amt)
+    },
+    "wd" => {
+      let amt = parse_amount(n, list.get(words, 2) ?? "")!
+      let b = lookup(n, bal, a)!
+      guard b >= amt else err(at(n, "insufficient funds in ${a} (balance ${int.to_string(b)}, needed ${int.to_string(amt)})"))
+      map.set(bal, a, b - amt)
+    },
+    _ => {
+      let to = list.get(words, 2) ?? ""
+      let amt = parse_amount(n, list.get(words, 3) ?? "")!
+      let from_bal = lookup(n, bal, a)!
+      guard from_bal >= amt else err(at(n, "insufficient funds in ${a} (balance ${int.to_string(from_bal)}, needed ${int.to_string(amt)})"))
+      let to_bal = lookup(n, bal, to)!
+      let moved = map.set(bal, a, from_bal - amt)
+      map.set(moved, to, (map.get(moved, to) ?? to_bal) + amt)
+    },
+  }
+}
+
+fn replay(lines: List[String]) -> Ledger! = {
+  var bal: Map[String, Int] = [:]
+  var n = 0
+  var applied = 0
+  for line in lines {
+    n = n + 1
+    let words = string.split(string.trim(line), " ") |> list.filter((w) => w != "")
+    if list.is_empty(words) then () else {
+      bal = apply(bal, n, words)!
+      applied = applied + 1
+    }
+  }
+  Ledger { balances: bal, applied: applied }
+}
+
+// "A=10 B=0 (3 ops)", accounts in name order.
+fn report(l: Ledger) -> String = {
+  let parts = map.keys(l.balances) |> list.sort |> list.map((k) => "${k}=${int.to_string(map.get(l.balances, k) ?? 0)}")
+  "${list.join(parts, " ")} (${int.to_string(l.applied)} ops)"
+}
