@@ -1,0 +1,10 @@
+let CAT: Map[String, Map[String, String]] = [
+  "en": ["hi": "Hello {name}", "bye": "Bye {name}", "count": "{n} new"],
+  "fr": ["hi": "Bonjour {name}"],
+]
+test "a key missing in the locale falls back to English" {
+  assert_eq(message(CAT, "fr", "bye", ["name": "Ana"]), ok("Bye Ana"))
+}
+test "a key present in the locale is used" {
+  assert_eq(message(CAT, "fr", "hi", ["name": "Ana"]), ok("Bonjour Ana"))
+}

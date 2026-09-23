@@ -1,0 +1,42 @@
+// Message catalog. A template is looked up by locale and key, then its
+// "{name}" placeholders are filled from the arguments.
+type Catalog = Map[String, Map[String, String]]
+
+fn lookup(cat: Catalog, locale: String, key: String) -> String! = {
+  let table = match map.get(cat, locale) {
+    some(t) => ok(t),
+    none => err("unknown locale ${locale}"),
+  }!
+  match map.get(table, key) {
+    some(t) => ok(t),
+    none => err("missing key ${key} in ${locale}"),
+  }
+}
+
+fn fill(tpl: String, args: Map[String, String]) -> String! =
+  match string.index_of(tpl, "{") {
+    none => ok(tpl),
+    some(i) => {
+      let rest = string.slice(tpl, i + 1, string.len(tpl))
+      let j = string.index_of(rest, "}") ?? -1
+      guard j >= 0 else err("unclosed placeholder in: ${tpl}")
+      let name = string.slice(rest, 0, j)
+      let v = match map.get(args, name) {
+        some(v) => ok(v),
+        none => err("missing argument ${name}"),
+      }!
+      let tail = fill(string.slice(rest, j + 1, string.len(rest)), args)!
+      ok(string.slice(tpl, 0, i) + v + tail)
+    },
+  }
+
+fn message(cat: Catalog, locale: String, key: String, args: Map[String, String]) -> String! = {
+  let tpl = lookup(cat, locale, key)!
+  fill(tpl, args)
+}
+
+// Renders every key, in order, one per line.
+fn page(cat: Catalog, locale: String, keys: List[String], args: Map[String, String]) -> String! = {
+  let lines = keys |> list.map((k) => message(cat, locale, k, args)!)!
+  list.join(lines, "\n")
+}
