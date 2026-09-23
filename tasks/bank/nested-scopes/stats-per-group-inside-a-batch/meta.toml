@@ -1,9 +1,16 @@
 kind = "modify"
 family = "dojo:nested-scopes"
 contracts = []
-oracles = ["behaviour", "cross-target"]
-# The inner-cleanup-preserves-outer-data observation is resource-side
-# (almide/almide#1996); the behavioural half is scored now.
-resource_oracle = "pending"
+oracles = ["behaviour", "cross-target", "resource"]
 expected_loc = 3
 timeout_sec = 60
+# Resource oracle (scripts/resource-oracle.sh, almide-dojo#5): the probe runs
+# at both scales on both targets; the candidate's growth in `peak` must stay
+# within factor * the reference's growth + slack. wrong_resource.almd must pass
+# behaviour and exceed the bound.
+resource_oracle = "active"
+resource_probe = "probe.almd"
+resource_metric = "peak"
+resource_scales = "1,8"
+resource_factor_pct = 150
+resource_slack = 65536

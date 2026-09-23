@@ -1,0 +1,15 @@
+// Sum of the lines that are plain non-negative integers; every other line is ignored.
+// Plausible wrong patch: the extracted helper trims the line before parsing.
+// `int.parse` already accepts surrounding whitespace, so every line is decided
+// the same way — but the helper now allocates a trimmed copy per line where the
+// inlined decision allocated nothing: the refactor changed allocation routing.
+fn parse_valid(line: String) -> Int? = {
+  let cleaned = string.trim(line)
+  match int.parse(cleaned) {
+    ok(n) => if n >= 0 then some(n) else none,
+    err(_) => none,
+  }
+}
+
+fn sum_valid(lines: List[String]) -> Int =
+  lines |> list.fold(0, (acc, line) => acc + (parse_valid(line) ?? 0))

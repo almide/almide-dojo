@@ -1,0 +1,8 @@
+// Resource probe (scripts/resource-oracle.sh): the same 1,000 lines summed __K__
+// times. The extracted helper is a pure refactor of a decision that allocated
+// nothing per line, so the allocation count must not grow with the calls.
+effect fn main() -> Unit = {
+  let lines = list.range(0, 1000) |> list.map((i) => int.to_string(i - 10))
+  let total = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + sum_valid(lines))
+  println(int.to_string(total))
+}

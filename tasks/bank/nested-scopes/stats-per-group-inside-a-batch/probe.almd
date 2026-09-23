@@ -1,0 +1,8 @@
+// Resource probe (scripts/resource-oracle.sh): a batch of __K__ groups of 4,000.
+// Each group's sorted copy belongs to its own inner call, so the batch's live
+// storage grows by the input group only; sorting every group first keeps all
+// the sorted copies live at once and doubles the growth.
+effect fn main() -> Unit = {
+  let groups = list.range(0, __K__) |> list.map((g) => list.range(0, 4000) |> list.map((i) => (i * 7919 + g) % 4000))
+  println(int.to_string(list.len(stats_batch(groups))))
+}

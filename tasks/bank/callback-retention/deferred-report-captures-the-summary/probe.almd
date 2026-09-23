@@ -1,0 +1,8 @@
+// Resource probe (scripts/resource-oracle.sh): __K__ deferred reports, each over
+// a fresh 20,000-element list that nothing else keeps, all held live until the
+// end. A closure that captures the summary grows by a few bytes per report; one
+// that captures `xs` grows by the whole list.
+effect fn main() -> Unit = {
+  let reports = list.range(0, __K__) |> list.map((i) => deferred(list.range(0, 20000 + i)))
+  println(reports |> list.map((f) => string.len(f())) |> list.fold(0, (a, b) => a + b) |> int.to_string)
+}

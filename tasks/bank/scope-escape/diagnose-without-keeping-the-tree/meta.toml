@@ -3,8 +3,10 @@ family = "dojo:scope-escape"
 contracts = []
 oracles = ["behaviour", "cross-target"]
 # The protected observation is RESOURCE-side (no tree storage survives the
-# call). It becomes checkable when almide/almide#1996 lands the boundary
-# ownership counter; until then only the behavioural half is scored.
+# call): outstanding ownership AT the `diagnose` return. The process-end
+# allocation counters the other resource tasks use cannot express it; it needs
+# the per-boundary read of almide/almide#2581. Until then only the behavioural
+# half is scored.
 resource_oracle = "pending"
 expected_loc = 5
 timeout_sec = 60
