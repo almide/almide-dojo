@@ -1,0 +1,217 @@
+name: Bank Pilot
+
+# The contract-preserving bank's pilot lane (almide-dojo#3, almide/almide#1998
+# step 6). Frozen scale (#1998): 400 clusters x 3 model families x 3
+# repetitions is a pilot; 800 x 4 x 3 is a published comparison. The lane runs
+# whatever bank is checked out and REFUSES the label it cannot earn:
+# scripts/bank-pilot-verdict.sh stamps `under-scale` when the bank, the model
+# families or the repetitions are short of the requested size, and
+# `INCONCLUSIVE_BANK_SATURATED` when every model series is at the ceiling.
+#
+# Models: Cloudflare Workers AI only. The repo holds Cloudflare credentials and
+# nothing else (maintainer ruling: no Anthropic or OpenAI key in CI).
+#
+# A push to a `bank-pilot-smoke/**` branch runs the smoke size below (one
+# model, one repetition, BANK_LIMIT tasks): workflow_dispatch only reaches a
+# workflow that is already on the default branch, and the smoke is how the
+# lane is proven before it is.
+
+on:
+  workflow_dispatch:
+    inputs:
+      models:
+        description: 'Comma-separated cf: model specs (empty = the three pilot families: Llama, GLM, Qwen). anthropic:/openai: specs are refused.'
+        required: false
+        default: ''
+      clusters:
+        description: 'Clusters the verdict requires (400 pilot, 800 published)'
+        required: false
+        default: '400'
+      families:
+        description: 'Model families the verdict requires (3 pilot, 4 published)'
+        required: false
+        default: '3'
+      repetitions:
+        description: 'Repetitions per model (3)'
+        required: false
+        default: '3'
+      shards:
+        description: 'Jobs per model x repetition (the bank is split by task index)'
+        required: false
+        default: '8'
+      limit:
+        description: 'BANK_LIMIT: run only the first N bank tasks (0 = the whole bank; >0 is a smoke and stamps under-scale)'
+        required: false
+        default: '0'
+  push:
+    branches: ['bank-pilot-smoke/**']
+
+permissions:
+  contents: read
+
+env:
+  SMOKE_MODELS: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast'
+  # The pilot's three model families (ruled 2026-09-24): one keyless Cloudflare
+  # Workers AI model per family, general-purpose rather than code-specialised so
+  # the families are compared on the same footing. GLM passes nearly every task
+  # it answers on the daily bank (almide-dojo#12), so it is the family most
+  # likely to saturate — the verdict's INCONCLUSIVE_BANK_SATURATED guards that.
+  PILOT_MODELS: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast,cf:@cf/zai-org/glm-5.3-flash,cf:@cf/qwen/qwen3.8-27b'
+  SMOKE_LIMIT: '4'
+  # Same deadline as daily.yml / msr-cross.yml (derived in msr-cross.yml).
+  ALMIDE_HTTP_TIMEOUT_SECS: '140'
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      pin: ${{ steps.pin.outputs.ref }}
+      models: ${{ steps.p.outputs.models }}
+      reps: ${{ steps.p.outputs.reps }}
+      shards: ${{ steps.p.outputs.shards }}
+      limit: ${{ steps.p.outputs.limit }}
+      clusters: ${{ steps.p.outputs.clusters }}
+      families: ${{ steps.p.outputs.families }}
+      repetitions: ${{ steps.p.outputs.repetitions }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the compiler pin
+        id: pin
+        run: |
+          REF=$(sed -nE 's/^ref *= *"([^"]+)".*/\1/p' almide-pin.toml)
+          test -n "$REF" || { echo "almide-pin.toml has no [compiler] ref"; exit 1; }
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+
+      - name: Plan the matrix
+        id: p
+        env:
+          EVENT: ${{ github.event_name }}
+          IN_MODELS: ${{ github.event.inputs.models }}
+          IN_CLUSTERS: ${{ github.event.inputs.clusters }}
+          IN_FAMILIES: ${{ github.event.inputs.families }}
+          IN_REPS: ${{ github.event.inputs.repetitions }}
+          IN_SHARDS: ${{ github.event.inputs.shards }}
+          IN_LIMIT: ${{ github.event.inputs.limit }}
+        run: |
+          if [ "$EVENT" = push ]; then
+            MODELS="$SMOKE_MODELS"; REPS=1; SHARDS=1; LIMIT="$SMOKE_LIMIT"
+            CLUSTERS=400; FAMILIES=3; REPETITIONS=3
+          else
+            MODELS="${IN_MODELS:-$PILOT_MODELS}"; REPS="${IN_REPS:-3}"; SHARDS="${IN_SHARDS:-8}"; LIMIT="${IN_LIMIT:-0}"
+            CLUSTERS="${IN_CLUSTERS:-400}"; FAMILIES="${IN_FAMILIES:-3}"; REPETITIONS="${IN_REPS:-3}"
+          fi
+          BAD=$(printf '%s' "$MODELS" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | grep -v '^cf:' || true)
+          if [ -n "$BAD" ]; then
+            echo "::error::this lane runs Cloudflare Workers AI models only (no Anthropic/OpenAI key in CI). Refused: $(printf '%s' "$BAD" | tr '\n' ' ')"
+            exit 1
+          fi
+          for v in REPS SHARDS LIMIT CLUSTERS FAMILIES; do
+            eval "x=\$$v"; [[ "$x" =~ ^[0-9]+$ ]] || { echo "::error::$v='$x' is not a number"; exit 1; }
+          done
+          [ "$REPS" -ge 1 ] && [ "$SHARDS" -ge 1 ] || { echo "::error::repetitions and shards must be >= 1"; exit 1; }
+          {
+            echo "models=$(printf '%s' "$MODELS" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | jq -R . | jq -cs .)"
+            echo "reps=$(seq 1 "$REPS" | jq -cs .)"
+            echo "shards=$(seq 0 $((SHARDS - 1)) | jq -cs .)"
+            echo "limit=$LIMIT"; echo "clusters=$CLUSTERS"; echo "families=$FAMILIES"; echo "repetitions=$REPETITIONS"
+          } | tee -a "$GITHUB_OUTPUT"
+
+  run:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        model: ${{ fromJSON(needs.plan.outputs.models) }}
+        rep: ${{ fromJSON(needs.plan.outputs.reps) }}
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the pinned Almide (${{ needs.plan.outputs.pin }})
+        run: |
+          PIN="${{ needs.plan.outputs.pin }}"
+          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "$PIN"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          GOT=$("$HOME/.local/bin/almide" --version)
+          test "$GOT" = "almide ${PIN#v}" || { echo "::error::almide-pin.toml says $PIN but the installed binary is '$GOT'"; exit 1; }
+
+      # The bank scores cross-target agreement: the wasm leg must be on.
+      - uses: bytecodealliance/actions/wasmtime/setup@v1
+
+      - name: Resource oracle arming
+        run: |
+          # Unarmed is not a failure of this job: the harness records every
+          # resource task as `harness-limitation` and the run as not-comparable.
+          bash scripts/resource-oracle.sh --armed | tee -a "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Run the bank
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
+          CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
+          BANK_LIMIT: ${{ needs.plan.outputs.limit }}
+          BANK_RUN_LABEL: rep${{ matrix.rep }}-shard${{ matrix.shard }}
+          SHARDS_JSON: ${{ needs.plan.outputs.shards }}
+        run: |
+          rm -rf runs/
+          export BANK_SHARD="${{ matrix.shard }}/$(printf '%s' "$SHARDS_JSON" | jq length)"
+          echo "bank: model=${{ matrix.model }} rep=${{ matrix.rep }} shard=$BANK_SHARD limit=$BANK_LIMIT"
+          set +e
+          almide run src/main.almd -- bank "${{ matrix.model }}"
+          RC=$?
+          set -e
+          echo "harness exit code: $RC (1 = some tasks failed, 2 = nothing reached the model, 3 = not-comparable)"
+          SUMMARY=$(find runs -name 'bank-summary*.md' | head -n1 || true)
+          if [ -z "$SUMMARY" ]; then
+            echo "::error::the harness wrote no bank-summary (exit $RC) — nothing was measured"
+            exit 1
+          fi
+          {
+            echo "## Bank — \`${{ matrix.model }}\` rep ${{ matrix.rep }} shard $BANK_SHARD"
+            echo
+            sed -n '1,/^## /p' "$SUMMARY" | grep -E '^(> |- )' || true
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Each job's runs/ goes under its own directory, so the per-task reports
+      # of two repetitions of one task cannot overwrite each other when the
+      # verdict job merges the artifacts.
+      - name: Keep this job's evidence apart
+        if: ${{ !cancelled() }}
+        run: mkdir -p evidence && if [ -d runs ]; then mv runs "evidence/job-${{ strategy.job-index }}"; fi
+
+      - name: Upload results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: bank-${{ strategy.job-index }}
+          path: evidence/
+          if-no-files-found: warn
+
+  verdict:
+    needs: [plan, run]
+    if: ${{ !cancelled() && needs.plan.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: bank-*
+          merge-multiple: true
+          path: runs/
+
+      - name: Decide scale and saturation
+        run: |
+          bash scripts/bank-pilot-verdict.sh runs "${{ needs.plan.outputs.clusters }}" "${{ needs.plan.outputs.families }}" "${{ needs.plan.outputs.repetitions }}" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the verdict with the evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: bank-pilot-verdict
+          path: runs/

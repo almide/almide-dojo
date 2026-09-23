@@ -544,6 +544,14 @@ fn bank_counts(date: String, results: List[RunResult]) -> String = {
     "Score = compile ∧ visible ∧ hidden ∧ cross-target ∧ resource (where the task declares it), no partial credit; a refusal counts only if the repair survives within the retry budget.\n\n"
 }
 
+fn bank_shard(tasks: List[String], spec: String) -> List[String] = {
+  let parts = string.split(spec, "/")
+  let i = int.parse(list.get(parts, 0) ?? "") ?? -1
+  let n = int.parse(list.get(parts, 1) ?? "") ?? 0
+  if n <= 0 or i < 0 or i >= n then tasks
+  else tasks |> list.enumerate |> list.filter(((idx, _)) => idx % n == i) |> list.map(((_, t)) => t)
+}
+
 effect fn resource_tasks(tasks: List[String], acc: List[String]) -> List[String] =
   match list.first(tasks) {
     none => acc,
@@ -562,8 +570,17 @@ effect fn run_bank(model: String) -> Unit = {
       println("Failed to list bank tasks: " + e)
       process.exit(1)
     }
-    ok(tasks) => {
-      println("Running " + int.to_string(list.len(tasks)) + " bank tasks against " + model)
+    ok(all_tasks) => {
+      // BANK_LIMIT=N runs the first N tasks in bank order — the pilot lane's
+      // smoke size. The summary names the limit, so a smoke is never read as
+      // the bank.
+      let limit = int.parse(env.get("BANK_LIMIT") ?? "") ?? 0
+      let limited = if limit > 0 then list.take(all_tasks, limit) else all_tasks
+      // BANK_SHARD=i/n keeps the tasks whose bank index is i mod n, so a
+      // 400-cluster bank fits the pilot lane's per-job time limit.
+      let shard = env.get("BANK_SHARD") ?? ""
+      let tasks = bank_shard(limited, shard)
+      println("Running " + int.to_string(list.len(tasks)) + " of " + int.to_string(list.len(all_tasks)) + " bank tasks against " + model)
       // A compiler without the allocation counters cannot judge a resource
       // task. Those cells are `harness-limitation` — not asked, not scored —
       // and the run is then `not-comparable` by the shared decision table.
@@ -590,10 +607,15 @@ effect fn run_bank(model: String) -> Unit = {
             let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
             let dir = "runs/" + date + "/" + model_slug(model)
             fs.mkdir_p(dir)!
-            let path = dir + "/bank-summary.md"
+            // BANK_RUN_LABEL keeps repetitions and smokes apart in one run
+            // directory (the pilot lane sets it per matrix cell).
+            let label = env.get("BANK_RUN_LABEL") ?? ""
+            let path = dir + "/bank-summary" + (if label == "" then "" else "-" + label) + ".md"
+            let shard_note = if shard == "" then "" else "- **shard**: `" + shard + "` (" + int.to_string(list.len(tasks)) + " tasks of this run)\n"
+            let scope = shard_note + if limit > 0 then "- **scope**: first " + int.to_string(list.len(tasks)) + " of " + int.to_string(list.len(all_tasks)) + " bank tasks (BANK_LIMIT) — a smoke, not the bank\n" else "- **scope**: all " + int.to_string(list.len(all_tasks)) + " bank tasks\n"
             let compiler = compiler_version() ?? ""
             let timeout = http_timeout_secs() ?? ""
-            fs.write(path, bank_counts(date, results) + render.render_summary(date, model, compiler, timeout, results))!
+            fs.write(path, bank_counts(date, results) + scope + "\n" + render.render_summary(date, model, compiler, timeout, results))!
             println("Bank summary: " + path)
             let v = render.daily_verdict(results)
             println("verdict: " + v.id)
@@ -874,4 +896,12 @@ test "the three bank markers are three buckets, none of them a compile failure" 
   assert_eq(classifier.classify_failure(SILENT_VIOLATION), ("silent-violation", ""))
   assert_eq(classifier.classify_failure(RESOURCE_VIOLATION), ("resource-violation", ""))
   assert_eq(classifier.classify_failure(TARGET_DIVERGENCE), ("target-divergence", ""))
+}
+
+test "a bank shard keeps every i-th task, and a malformed spec keeps them all" {
+  let ts = ["a", "b", "c", "d", "e"]
+  assert_eq(bank_shard(ts, "0/2"), ["a", "c", "e"])
+  assert_eq(bank_shard(ts, "1/2"), ["b", "d"])
+  assert_eq(bank_shard(ts, ""), ts)
+  assert_eq(bank_shard(ts, "2/2"), ts)
 }
