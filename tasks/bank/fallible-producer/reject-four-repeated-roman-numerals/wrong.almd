@@ -1,0 +1,60 @@
+// Plausible wrong patch: mirrors the V/L/D check next to it and counts the
+// letter in the whole numeral, so XXXIX and MMMCMXCIX are rejected.
+// Chapter index. Each line is "<roman numeral>. <title>"; the index lists the
+// chapters by number. Numerals use I V X L C D M with subtractive pairs.
+type Chapter: Eq, Repr = { n: Int, title: String }
+
+fn digit(c: String) -> Int =
+  match c {
+    "I" => 1,
+    "V" => 5,
+    "X" => 10,
+    "L" => 50,
+    "C" => 100,
+    "D" => 500,
+    "M" => 1000,
+    _ => 0,
+  }
+
+fn roman(s: String) -> Int! = {
+  let cs = string.chars(s)
+  guard not list.is_empty(cs) else err("empty numeral")
+  match list.find(cs, (c) => digit(c) == 0) {
+    some(c) => err("bad numeral char ${c} in ${s}"),
+    none => ok(()),
+  }!
+  let pairs = list.zip(cs, list.drop(cs, 1))
+  match list.find(pairs, (p) => digit(p.0) < digit(p.1) and not list.contains(["IV", "IX", "XL", "XC", "CD", "CM"], p.0 + p.1)) {
+    some(p) => err("bad subtractive pair ${p.0}${p.1} in ${s}"),
+    none => ok(()),
+  }!
+  match list.find(["V", "L", "D"], (c) => string.count(s, c) > 1) {
+    some(c) => err("repeated ${c} in ${s}"),
+    none => ok(()),
+  }!
+  match list.find(["I", "X", "C", "M"], (c) => string.count(s, c) > 3) {
+    some(c) => err("more than three ${c} in a row in ${s}"),
+    none => ok(()),
+  }!
+  let vals = cs |> list.map((c) => digit(c))
+  let nexts = list.drop(vals, 1) + [0]
+  list.zip(vals, nexts) |> list.fold(0, (acc, p) => if p.0 < p.1 then acc - p.0 else acc + p.0)
+}
+
+fn parse_chapter(line: String) -> Chapter! = {
+  let i = string.index_of(line, ". ") ?? -1
+  guard i > 0 else err("bad line: ${line}")
+  let n = roman(string.slice(line, 0, i))!
+  Chapter { n: n, title: string.slice(line, i + 2, string.len(line)) }
+}
+
+fn index(lines: List[String]) -> List[String]! = {
+  let chapters = lines |> list.fold([], (acc, line) => {
+    let c = parse_chapter(line)!
+    match list.find(acc, (o) => o.n == c.n) {
+      some(o) => err("duplicate chapter ${int.to_string(c.n)}: ${o.title} / ${c.title}"),
+      none => ok(acc + [c]),
+    }!
+  })!
+  chapters |> list.sort_by((c) => c.n) |> list.map((c) => "${int.to_string(c.n)} ${c.title}")
+}
