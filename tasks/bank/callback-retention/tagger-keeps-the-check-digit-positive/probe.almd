@@ -1,0 +1,7 @@
+// Resource probe: __K__ taggers over fresh 20,000-item batches, all held live.
+// Capturing the check grows by a few bytes each; capturing `xs` grows by the
+// whole batch.
+effect fn main() -> Unit = {
+  let tags = list.range(0, __K__) |> list.map((i) => tagger(list.range(0, 20000 + i) |> list.map((j) => j % 11 - 5)))
+  println(int.to_string(tags |> list.fold(0, (acc, f) => acc + string.len(f("t")))))
+}

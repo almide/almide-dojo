@@ -1,0 +1,25 @@
+// A checklist. An item counts as done only when its status is exactly "done";
+// "skipped" and anything else is still open.
+type Item = { title: String, status: String }
+
+fn is_done(it: Item) -> Bool = it.status == "done"
+
+fn done_count(items: List[Item]) -> Int = items |> list.count((it) => is_done(it))
+
+fn open_titles(items: List[Item]) -> List[String] =
+  items |> list.filter((it) => not is_done(it)) |> list.map((it) => it.title)
+
+fn status(items: List[Item]) -> String =
+  int.to_string(done_count(items)) + " of " + int.to_string(list.len(items)) + " done"
+
+// The closure captures (done, total) only.
+fn progress_bar(items: List[Item]) -> (Int) -> String = {
+  let done = done_count(items)
+  let total = list.len(items)
+  (width) =>
+    if total == 0 then "no tasks"
+    else {
+      let filled = done * width / total
+      string.repeat("#", filled) + string.repeat("-", width - filled) + " " + int.to_string((200 * done + total) / (2 * total)) + "%"
+    }
+}

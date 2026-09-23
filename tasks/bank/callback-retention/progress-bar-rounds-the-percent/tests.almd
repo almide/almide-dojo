@@ -1,0 +1,5 @@
+test "progress" {
+  let f = progress_bar([Item { title: "a", status: "done" }, Item { title: "b", status: "open" }, Item { title: "c", status: "done" }, Item { title: "d", status: "skipped" }])
+  assert_eq(f(4), "##-- 50%")
+  assert_eq(progress_bar([])(3), "no tasks")
+}

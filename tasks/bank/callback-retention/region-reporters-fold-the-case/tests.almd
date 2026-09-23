@@ -1,0 +1,4 @@
+test "reporters" {
+  let rs = reporters([Sale { region: "north", amount: 50 }, Sale { region: "south", amount: 20 }, Sale { region: "north", amount: 30 }])
+  assert_eq(rs |> list.map(((r, f)) => f(60)), ["north: 80/60 met", "south: 20/60 short"])
+}

@@ -1,0 +1,4 @@
+test "timesheet" {
+  let f = timesheet([("09:00", "17:30"), ("10:00", "11:00")])
+  assert_eq(f("kim"), "kim worked 9h30m")
+}

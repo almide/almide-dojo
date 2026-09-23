@@ -1,0 +1,17 @@
+test "hidden: percent rounds to nearest" {
+  let f = progress_bar([Item { title: "a", status: "done" }, Item { title: "b", status: "done" }, Item { title: "c", status: "open" }])
+  assert_eq(f(3), "##- 67%")
+  assert_eq(f(4), "##-- 67%")
+  let eight = list.range(0, 8) |> list.map((i) => Item { title: "t", status: if i == 0 then "done" else "open" })
+  assert_eq(progress_bar(eight)(8), "#------- 13%")
+}
+test "hidden: widths" {
+  let f = progress_bar([Item { title: "a", status: "done" }, Item { title: "b", status: "Done" }])
+  assert_eq(f(0), " 50%")
+  assert_eq(f(1), "- 50%")
+  assert_eq(progress_bar([Item { title: "z", status: "done" }])(2), "## 100%")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(status([]), "0 of 0 done")
+  assert_eq(open_titles([Item { title: "x", status: "skipped" }]), ["x"])
+}

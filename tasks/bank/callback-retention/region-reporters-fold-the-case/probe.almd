@@ -1,0 +1,11 @@
+// Resource probe: __K__ batches of 3,000 sales over 2 regions, every reporter
+// held live. Capturing (name, total) grows by a few bytes per reporter;
+// capturing `sales` grows by a whole batch per reporter.
+effect fn main() -> Unit = {
+  let all = list.range(0, __K__) |> list.flat_map((i) =>
+    reporters(list.range(0, 3000) |> list.map((j) => Sale { region: if j % 2 == 0 then "east" else "west", amount: (j + i) % 17 })))
+  println(int.to_string(all |> list.fold(0, (acc, p) => {
+    let (_, f) = p
+    acc + string.len(f(1000))
+  })))
+}

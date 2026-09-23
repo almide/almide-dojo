@@ -1,0 +1,27 @@
+// Clock times "HH:MM" as minutes after midnight.
+fn to_minutes(t: String) -> Int? =
+  match string.split(t, ":") {
+    [h, m] => match (int.parse(h), int.parse(m)) {
+      (ok(hh), ok(mm)) => if hh >= 0 and hh < 24 and mm >= 0 and mm < 60 then some(hh * 60 + mm) else none,
+      _ => none,
+    },
+    _ => none,
+  }
+
+fn hm(total: Int) -> String = int.to_string(total / 60) + "h" + (if total % 60 < 10 then "0" else "") + int.to_string(total % 60) + "m"
+
+// Valid clock times in a list of punches (bad ones skipped).
+fn valid_punches(punches: List[String]) -> Int = punches |> list.count((p) => option.is_some(to_minutes(p)))
+
+// Plausible wrong patch: takes the absolute difference, so a shift across
+// midnight counts the hours between the two clock times the wrong way round.
+fn timesheet(shifts: List[(String, String)]) -> (String) -> String = {
+  let total = shifts |> list.fold(0, (acc, sh) => {
+    let (a, b) = sh
+    match (to_minutes(a), to_minutes(b)) {
+      (some(s), some(e)) => acc + int.abs(e - s),
+      _ => acc,
+    }
+  })
+  (name) => name + " worked " + hm(total)
+}

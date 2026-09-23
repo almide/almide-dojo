@@ -1,0 +1,6 @@
+// A habit log: one Bool per day, true when the habit was done.
+fn done_days(days: List[Bool]) -> Int = days |> list.count((d) => d)
+
+fn completion(days: List[Bool]) -> String =
+  if list.is_empty(days) then "no days"
+  else int.to_string(done_days(days)) + "/" + int.to_string(list.len(days)) + " days"

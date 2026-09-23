@@ -1,0 +1,13 @@
+test "hidden: the last run counts for best" {
+  let f = streak_badge([true, false, true, true, true])
+  assert_eq(f("bo"), "bo: best 3, current 3")
+  assert_eq(streak_badge([true, true, true])("x"), "x: best 3, current 3")
+}
+test "hidden: missed last day and empty" {
+  assert_eq(streak_badge([true, true, false])("y"), "y: best 2, current 0")
+  assert_eq(streak_badge([])("z"), "z: best 0, current 0")
+  assert_eq(streak_badge([false, false])("w"), "w: best 0, current 0")
+}
+test "hidden: completion unchanged" {
+  assert_eq(completion([true, false]), "1/2 days")
+}

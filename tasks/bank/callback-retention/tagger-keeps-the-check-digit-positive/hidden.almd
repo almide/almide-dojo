@@ -1,0 +1,11 @@
+test "hidden: negative sums wrap into 0..96" {
+  assert_eq(tagger([-1])("n"), "n-96")
+  assert_eq(tagger([0, -50])("m"), "m-94")
+  assert_eq(tagger([-97])("z"), "z-00")
+}
+test "hidden: empty and repeated calls" {
+  let f = tagger([])
+  assert_eq(f("e"), "e-00")
+  assert_eq(f("e"), "e-00")
+  assert_eq(describe([-1, 1]), "2 items, weighted 1")
+}

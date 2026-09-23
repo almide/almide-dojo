@@ -1,0 +1,8 @@
+// Resource probe: __K__ progress bars over fresh 5,000-item checklists, all
+// held live. Capturing the counts grows by a few bytes each; capturing `items`
+// grows by the whole checklist.
+effect fn main() -> Unit = {
+  let bars = list.range(0, __K__) |> list.map((i) =>
+    progress_bar(list.range(0, 5000 + i) |> list.map((j) => Item { title: "task " + int.to_string(j), status: if j % 3 == 0 then "done" else "open" })))
+  println(int.to_string(bars |> list.fold(0, (acc, f) => acc + string.len(f(10)))))
+}
