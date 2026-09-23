@@ -1,0 +1,10 @@
+test "tags are a set" {
+  let i = item("lamp", ["home", "light"])
+  assert_eq(i.tags, set.from_list(["home", "light"]))
+  assert_eq(tag_line(i), "lamp [home,light]")
+  assert(has_tag(i, "Home"))
+}
+test "groups by set" {
+  let xs = [item("a", ["x"]), item("b", ["x", "y"]), item("c", ["x"])]
+  assert_eq(groups(xs), ["x: a,c", "x,y: b"])
+}
