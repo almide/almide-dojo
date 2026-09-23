@@ -1,0 +1,8 @@
+// Resource probe: the same 1,000 invoice lines totalled __K__ times. The
+// inline computation allocated nothing per line, so the allocation count must
+// not grow with the repetitions.
+effect fn main() -> Unit = {
+  let lines = list.range(0, 1000) |> list.map((i) => (i % 150, 100 + i))
+  let total = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + order_total(lines))
+  println(int.to_string(total))
+}

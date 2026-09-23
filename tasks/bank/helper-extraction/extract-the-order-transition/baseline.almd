@@ -1,0 +1,27 @@
+// An order's life: new -> paid -> shipped -> delivered. "cancel" is allowed
+// only from new or paid. Any event that is not allowed in the current state is
+// rejected: the state stays and the rejection is counted.
+fn replay(events: List[String]) -> String = {
+  let (state, rejected) = events |> list.fold(("new", 0), (acc, ev) => {
+    let (st, rej) = acc
+    let next = match st {
+      "new" => match ev {
+        "pay" => "paid",
+        "cancel" => "cancelled",
+        _ => "",
+      },
+      "paid" => match ev {
+        "ship" => "shipped",
+        "cancel" => "cancelled",
+        _ => "",
+      },
+      "shipped" => match ev {
+        "deliver" => "delivered",
+        _ => "",
+      },
+      _ => "",
+    }
+    if next == "" then (st, rej + 1) else (next, rej)
+  })
+  "state=" + state + ",rejected=" + int.to_string(rejected)
+}

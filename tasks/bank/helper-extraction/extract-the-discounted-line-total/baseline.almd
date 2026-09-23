@@ -1,0 +1,14 @@
+// Invoice lines (quantity, unit price in cents). Bulk discount on the whole
+// line: 10% from 100 units, 5% from 10 units. The line total is rounded down
+// once, after the discount: qty * unit * (100 - pct) / 100.
+fn order_total(lines: List[(Int, Int)]) -> Int =
+  lines |> list.fold(0, (acc, line) => {
+    let (qty, unit) = line
+    let pct = if qty >= 100 then 10 else if qty >= 10 then 5 else 0
+    acc + qty * unit * (100 - pct) / 100
+  })
+
+fn invoice(lines: List[(Int, Int)]) -> String = {
+  let cents = order_total(lines)
+  int.to_string(cents / 100) + "." + (if cents % 100 < 10 then "0" else "") + int.to_string(cents % 100)
+}

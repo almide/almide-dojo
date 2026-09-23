@@ -1,0 +1,11 @@
+test "hidden: uppercase and non-ASCII are not identifier characters" {
+  assert_eq(ident_continue("Q"), false)
+  assert_eq(ident_continue("é"), false)
+  assert_eq(tokens("aB_c"), ["a", "B", "_c"])
+  assert_eq(tokens("xé1"), ["x", "é", "1"])
+}
+test "hidden: digits and underscore" {
+  assert_eq(ident_continue("_"), true)
+  assert_eq(ident_continue("0"), true)
+  assert_eq(tokens("_9x 42y"), ["_9x", "42", "y"])
+}

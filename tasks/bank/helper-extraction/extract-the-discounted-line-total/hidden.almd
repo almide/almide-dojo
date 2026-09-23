@@ -1,0 +1,11 @@
+test "hidden: rounded once per line" {
+  assert_eq(line_total(10, 199), 1890)
+  assert_eq(line_total(100, 3), 270)
+  assert_eq(line_total(9, 199), 1791)
+  assert_eq(invoice([(10, 199), (1, 5)]), "18.95")
+}
+test "hidden: tiers at the edges" {
+  assert_eq(line_total(99, 100), 9405)
+  assert_eq(line_total(0, 100), 0)
+  assert_eq(order_total([]), 0)
+}

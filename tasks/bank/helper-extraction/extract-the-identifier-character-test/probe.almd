@@ -1,0 +1,8 @@
+// Resource probe: the identifier-character test applied to the same 2,000
+// characters __K__ times. The inline test allocated nothing, so the
+// allocation count must not grow with the repetitions.
+effect fn main() -> Unit = {
+  let cs = string.chars(string.repeat("ab_9Z-", 334))
+  let total = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (cs |> list.count((c) => ident_continue(c))))
+  println(int.to_string(total))
+}

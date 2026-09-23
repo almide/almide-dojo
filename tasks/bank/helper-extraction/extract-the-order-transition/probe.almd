@@ -1,0 +1,11 @@
+// Resource probe: the same 2,000 (state, event) lookups made __K__ times. The
+// nested match allocated nothing per lookup, so the allocation count must not
+// grow with the repetitions.
+effect fn main() -> Unit = {
+  let states = ["new", "paid", "shipped", "delivered"]
+  let events = ["pay", "ship", "deliver", "cancel", "jump"]
+  let pairs = list.range(0, 2000) |> list.map((i) => (list.get(states, i % 4) ?? "new", list.get(events, i % 5) ?? "pay"))
+  let total = list.range(0, __K__) |> list.fold(0, (acc, _) =>
+    acc + (pairs |> list.count(((s, e)) => option.is_some(transition(s, e)))))
+  println(int.to_string(total))
+}

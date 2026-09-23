@@ -1,0 +1,5 @@
+test "transition helper" {
+  assert_eq(transition("new", "pay"), some("paid"))
+  assert_eq(transition("paid", "pay"), none)
+  assert_eq(replay(["pay", "ship", "deliver"]), "state=delivered,rejected=0")
+}

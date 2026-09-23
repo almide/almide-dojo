@@ -1,0 +1,13 @@
+test "hidden: env keys keep their case" {
+  let env = load_env(["PATH=/bin", " Home =x=y", "skip"])
+  assert_eq(map.get(env, "PATH"), some("/bin"))
+  assert_eq(map.get(env, "Home"), some("x=y"))
+  assert_eq(map.len(env), 2)
+  assert_eq(split_kv(" Key =v"), some(("Key", "v")))
+}
+test "hidden: settings unchanged" {
+  let s = load_settings(["A=1", "a=2", "B= spaced "])
+  assert_eq(map.get(s, "a"), some("2"))
+  assert_eq(map.get(s, "b"), some(" spaced "))
+  assert_eq(map.len(s), 2)
+}

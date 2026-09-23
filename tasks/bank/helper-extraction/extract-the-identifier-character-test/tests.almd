@@ -1,0 +1,6 @@
+test "identifier continue" {
+  assert_eq(ident_continue("a"), true)
+  assert_eq(ident_continue("7"), true)
+  assert_eq(ident_continue("-"), false)
+  assert_eq(tokens("ab1 + 23"), ["ab1", "+", "23"])
+}

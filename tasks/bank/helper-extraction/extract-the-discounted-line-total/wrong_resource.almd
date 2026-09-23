@@ -1,0 +1,19 @@
+// Plausible wrong patch: the helper looks the discount up in a tier table. The
+// same tiers, the same totals — but the table is a list built on every call,
+// where the inline computation allocated nothing.
+fn line_total(qty: Int, unit: Int) -> Int = {
+  let tiers = [(100, 10), (10, 5)]
+  let pct = tiers |> list.find(((min, _)) => qty >= min) |> option.map(((_, p)) => p) ?? 0
+  qty * unit * (100 - pct) / 100
+}
+
+fn order_total(lines: List[(Int, Int)]) -> Int =
+  lines |> list.fold(0, (acc, line) => {
+    let (qty, unit) = line
+    acc + line_total(qty, unit)
+  })
+
+fn invoice(lines: List[(Int, Int)]) -> String = {
+  let cents = order_total(lines)
+  int.to_string(cents / 100) + "." + (if cents % 100 < 10 then "0" else "") + int.to_string(cents % 100)
+}

@@ -1,0 +1,5 @@
+test "line total" {
+  assert_eq(line_total(2, 150), 300)
+  assert_eq(line_total(10, 200), 1900)
+  assert_eq(order_total([(2, 150), (10, 200)]), 2200)
+}

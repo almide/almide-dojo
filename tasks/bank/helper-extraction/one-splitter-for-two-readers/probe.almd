@@ -1,0 +1,8 @@
+// Resource probe: the same 500 environment lines loaded __K__ times. The
+// helper is a refactor of one index lookup and two slices per line, so the
+// allocation count must grow only as the inline version's did.
+effect fn main() -> Unit = {
+  let lines = list.range(0, 500) |> list.map((i) => "KEY" + int.to_string(i % 50) + "=a=b=c" + int.to_string(i))
+  let total = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + map.len(load_env(lines)))
+  println(int.to_string(total))
+}

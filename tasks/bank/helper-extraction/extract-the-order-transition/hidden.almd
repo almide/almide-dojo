@@ -1,0 +1,12 @@
+test "hidden: cancel only early" {
+  assert_eq(transition("shipped", "cancel"), none)
+  assert_eq(transition("delivered", "cancel"), none)
+  assert_eq(transition("paid", "cancel"), some("cancelled"))
+  assert_eq(replay(["pay", "ship", "cancel", "deliver"]), "state=delivered,rejected=1")
+}
+test "hidden: terminal and unknown" {
+  assert_eq(transition("cancelled", "pay"), none)
+  assert_eq(transition("lost", "deliver"), none)
+  assert_eq(replay(["cancel", "cancel", "pay", "jump"]), "state=cancelled,rejected=3")
+  assert_eq(replay([]), "state=new,rejected=0")
+}

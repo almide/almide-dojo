@@ -1,0 +1,23 @@
+// Two readers of "key=value" lines. Settings keys are case-insensitive (stored
+// lowercase); environment keys are case-sensitive. In both, the key is trimmed,
+// the value is everything after the FIRST "=" (it may contain "="), kept as is.
+// A line without "=" is skipped.
+fn split_kv(line: String) -> (String, String)? =
+  match string.index_of(line, "=") {
+    some(i) => some((string.trim(string.slice(line, 0, i)), string.drop(line, i + 1))),
+    none => none,
+  }
+
+fn load_settings(lines: List[String]) -> Map[String, String] =
+  lines |> list.fold(map.new(), (m, line) =>
+    match split_kv(line) {
+      some((k, v)) => map.set(m, string.to_lower(k), v),
+      none => m,
+    })
+
+fn load_env(lines: List[String]) -> Map[String, String] =
+  lines |> list.fold(map.new(), (m, line) =>
+    match split_kv(line) {
+      some((k, v)) => map.set(m, k, v),
+      none => m,
+    })
