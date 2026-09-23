@@ -1,0 +1,26 @@
+// A scoreboard: one entry per round, a player may appear in many rounds.
+type Entry = { name: String, points: Int }
+
+// Points per player, players in order of first appearance.
+fn totals(entries: List[Entry]) -> Map[String, Int] =
+  entries |> list.fold(map.new(), (m, e) => map.set(m, e.name, (map.get(m, e.name) ?? 0) + e.points))
+
+// "name:points", highest total first, ties alphabetical.
+fn standings(entries: List[Entry]) -> List[String] =
+  map.entries(totals(entries))
+    |> list.sort_by(((name, _)) => name)
+    |> list.sort_by(((_, pts)) => 0 - pts)
+    |> list.map(((name, pts)) => name + ":" + int.to_string(pts))
+
+// Plausible wrong patch: picks the single best ENTRY instead of the best
+// total, forgetting that a player can score in several rounds.
+fn announcer(entries: List[Entry]) -> (String) -> String = {
+  let best = entries |> list.fold(none, (acc, e) => match acc {
+    some(b) => if e.points > b.points or (e.points == b.points and e.name < b.name) then some(e) else acc,
+    none => some(e),
+  })
+  match best {
+    some(b) => (greeting) => greeting + ", " + b.name + " leads with " + int.to_string(b.points),
+    none => (greeting) => greeting + ", no scores",
+  }
+}

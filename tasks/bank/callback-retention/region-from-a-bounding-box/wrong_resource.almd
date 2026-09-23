@@ -1,0 +1,32 @@
+// Points given as "x,y" lines.
+fn parse_point(line: String) -> Result[(Int, Int), String] = {
+  let parts = string.split(line, ",")
+  match parts {
+    [a, b] => match (int.parse(string.trim(a)), int.parse(string.trim(b))) {
+      (ok(x), ok(y)) => ok((x, y)),
+      _ => err("bad point: " + line),
+    },
+    _ => err("bad point: " + line),
+  }
+}
+
+// All points, in order; the first bad line is the error.
+fn parse_points(lines: List[String]) -> Result[List[(Int, Int)], String] =
+  lines |> list.map((l) => parse_point(l)!)
+
+fn count_points(lines: List[String]) -> Result[Int, String] = {
+  let ps = parse_points(lines)!
+  ok(list.len(ps))
+}
+
+// Plausible wrong patch: correct answers, but the closure scans the parsed
+// points on every call, so it captures the whole point list.
+fn region(lines: List[String]) -> Result[((Int, Int)) -> Bool, String] = {
+  let ps = parse_points(lines)!
+  ok((p) => {
+    let (x, y) = p
+    let xs = ps |> list.map(((a, _)) => a)
+    let ys = ps |> list.map(((_, b)) => b)
+    not list.is_empty(ps) and x >= (list.min(xs) ?? 0) and x <= (list.max(xs) ?? 0) and y >= (list.min(ys) ?? 0) and y <= (list.max(ys) ?? 0)
+  })
+}

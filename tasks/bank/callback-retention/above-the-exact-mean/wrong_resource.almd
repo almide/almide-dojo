@@ -1,0 +1,14 @@
+// Summaries of a list of readings.
+fn total(xs: List[Int]) -> Int = xs |> list.fold(0, (a, x) => a + x)
+
+// Integer mean for display, rounded toward zero; 0 for no readings.
+fn mean(xs: List[Int]) -> Int =
+  if list.is_empty(xs) then 0 else total(xs) / list.len(xs)
+
+fn report(xs: List[Int]) -> String =
+  "n=" + int.to_string(list.len(xs)) + ",mean~" + int.to_string(mean(xs))
+
+// Plausible wrong patch: correct answers, but the closure computes the
+// summary when it runs, so it captures `xs` and keeps the whole list alive.
+fn above_mean(xs: List[Int]) -> (Int) -> Bool =
+  (x) => list.len(xs) > 0 and x * list.len(xs) > total(xs)

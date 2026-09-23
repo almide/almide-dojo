@@ -1,0 +1,18 @@
+// Durations in whole seconds, and samples of seconds spent per work unit.
+fn pad2(n: Int) -> String = if n < 10 then "0" + int.to_string(n) else int.to_string(n)
+
+// "1h02m03s"; below an hour "2m03s"; below a minute "3s".
+fn format_secs(s: Int) -> String =
+  if s >= 3600 then int.to_string(s / 3600) + "h" + pad2((s % 3600) / 60) + "m" + pad2(s % 60) + "s"
+  else if s >= 60 then int.to_string(s / 60) + "m" + pad2(s % 60) + "s"
+  else int.to_string(s) + "s"
+
+fn spent(samples: List[Int]) -> String = format_secs(samples |> list.fold(0, (a, x) => a + x))
+
+// Plausible wrong patch: the closure sums the samples each time it runs, so
+// it captures `samples` and keeps the whole list alive.
+fn eta(samples: List[Int]) -> (Int) -> String =
+  (remaining) => {
+    let n = list.len(samples)
+    if n == 0 then "unknown" else format_secs((remaining * (samples |> list.fold(0, (a, x) => a + x)) + n - 1) / n)
+  }

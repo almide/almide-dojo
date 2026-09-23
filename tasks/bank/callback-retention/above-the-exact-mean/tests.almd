@@ -1,0 +1,5 @@
+test "above the mean" {
+  let f = above_mean([1, 2, 3])
+  assert_eq(f(3), true)
+  assert_eq(f(2), false)
+}

@@ -1,0 +1,7 @@
+// Resource probe: __K__ checkers over fresh 20,000-element lists, all held
+// live. A checker that captures the summary grows by a few bytes each; one
+// that captures `xs` grows by the whole list.
+effect fn main() -> Unit = {
+  let checks = list.range(0, __K__) |> list.map((i) => above_mean(list.range(0, 20000 + i)))
+  println(int.to_string(checks |> list.count((f) => f(10000))))
+}

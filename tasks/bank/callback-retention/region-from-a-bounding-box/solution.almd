@@ -1,0 +1,40 @@
+// Points given as "x,y" lines.
+fn parse_point(line: String) -> Result[(Int, Int), String] = {
+  let parts = string.split(line, ",")
+  match parts {
+    [a, b] => match (int.parse(string.trim(a)), int.parse(string.trim(b))) {
+      (ok(x), ok(y)) => ok((x, y)),
+      _ => err("bad point: " + line),
+    },
+    _ => err("bad point: " + line),
+  }
+}
+
+// All points, in order; the first bad line is the error.
+fn parse_points(lines: List[String]) -> Result[List[(Int, Int)], String] =
+  lines |> list.map((l) => parse_point(l)!)
+
+fn count_points(lines: List[String]) -> Result[Int, String] = {
+  let ps = parse_points(lines)!
+  ok(list.len(ps))
+}
+
+// The box is computed now from the first point on; the closure captures the
+// four bounds and whether any point existed.
+fn region(lines: List[String]) -> Result[((Int, Int)) -> Bool, String] = {
+  let ps = parse_points(lines)!
+  match list.first(ps) {
+    none => ok((p) => false),
+    some((x0, y0)) => {
+      let (lx, ly, hx, hy) = ps |> list.fold((x0, y0, x0, y0), (b, p) => {
+        let (a, c, d, e) = b
+        let (x, y) = p
+        (int.min(a, x), int.min(c, y), int.max(d, x), int.max(e, y))
+      })
+      ok((p) => {
+        let (x, y) = p
+        x >= lx and x <= hx and y >= ly and y <= hy
+      })
+    },
+  }
+}

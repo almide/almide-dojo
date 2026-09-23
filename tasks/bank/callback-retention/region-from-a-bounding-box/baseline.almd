@@ -1,0 +1,20 @@
+// Points given as "x,y" lines.
+fn parse_point(line: String) -> Result[(Int, Int), String] = {
+  let parts = string.split(line, ",")
+  match parts {
+    [a, b] => match (int.parse(string.trim(a)), int.parse(string.trim(b))) {
+      (ok(x), ok(y)) => ok((x, y)),
+      _ => err("bad point: " + line),
+    },
+    _ => err("bad point: " + line),
+  }
+}
+
+// All points, in order; the first bad line is the error.
+fn parse_points(lines: List[String]) -> Result[List[(Int, Int)], String] =
+  lines |> list.map((l) => parse_point(l)!)
+
+fn count_points(lines: List[String]) -> Result[Int, String] = {
+  let ps = parse_points(lines)!
+  ok(list.len(ps))
+}

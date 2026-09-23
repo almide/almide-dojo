@@ -1,0 +1,36 @@
+// Points given as "x,y" lines.
+fn parse_point(line: String) -> Result[(Int, Int), String] = {
+  let parts = string.split(line, ",")
+  match parts {
+    [a, b] => match (int.parse(string.trim(a)), int.parse(string.trim(b))) {
+      (ok(x), ok(y)) => ok((x, y)),
+      _ => err("bad point: " + line),
+    },
+    _ => err("bad point: " + line),
+  }
+}
+
+// All points, in order; the first bad line is the error.
+fn parse_points(lines: List[String]) -> Result[List[(Int, Int)], String] =
+  lines |> list.map((l) => parse_point(l)!)
+
+fn count_points(lines: List[String]) -> Result[Int, String] = {
+  let ps = parse_points(lines)!
+  ok(list.len(ps))
+}
+
+// Plausible wrong patch: the fold starts the box at (0, 0, 0, 0), so the box
+// always stretches to include the origin.
+fn region(lines: List[String]) -> Result[((Int, Int)) -> Bool, String] = {
+  let ps = parse_points(lines)!
+  let (lx, ly, hx, hy) = ps |> list.fold((0, 0, 0, 0), (b, p) => {
+    let (a, c, d, e) = b
+    let (x, y) = p
+    (int.min(a, x), int.min(c, y), int.max(d, x), int.max(e, y))
+  })
+  let any = not list.is_empty(ps)
+  ok((p) => {
+    let (x, y) = p
+    any and x >= lx and x <= hx and y >= ly and y <= hy
+  })
+}

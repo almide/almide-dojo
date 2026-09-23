@@ -1,0 +1,8 @@
+// Resource probe: __K__ alert rules over fresh 4,000-line logs, all held live.
+// Capturing the count grows by a few bytes each; capturing `lines` grows by
+// the whole log.
+effect fn main() -> Unit = {
+  let rules = list.range(0, __K__) |> list.map((i) =>
+    alert_rule(list.range(0, 4000) |> list.map((j) => if (j + i) % 5 == 0 then "ERROR event " + int.to_string(j) else "INFO event " + int.to_string(j))))
+  println(int.to_string(rules |> list.fold(0, (acc, f) => acc + string.len(f(100)))))
+}

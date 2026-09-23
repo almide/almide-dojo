@@ -1,0 +1,5 @@
+test "alert rule" {
+  let f = alert_rule(["ERROR disk", "INFO ok", "ERROR net"])
+  assert_eq(f(2), "alert: 2 errors")
+  assert_eq(f(3), "ok: 2 errors")
+}
