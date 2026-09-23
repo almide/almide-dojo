@@ -1,0 +1,6 @@
+test "adding with an empty stack is an error" {
+  assert(result.is_err(run(["add"])))
+}
+test "a normal program still runs" {
+  assert_eq(run(["push 2", "push 5", "sub", "dup", "mul", "out", "push 1"]) |> result.map((v) => show(v)), ok("stack 1 out 9"))
+}
