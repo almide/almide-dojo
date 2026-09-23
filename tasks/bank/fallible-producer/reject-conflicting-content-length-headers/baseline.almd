@@ -1,0 +1,45 @@
+// HTTP-style message reader. Header lines "<Name>: <value>" up to the first
+// empty line, then the body. Header names are case-insensitive; a header may
+// repeat. The body is cut to Content-Length when that header is present.
+type Header: Eq, Repr = { name: String, value: String }
+type Message: Eq, Repr = { headers: List[Header], body: String }
+
+fn parse_header(line: String) -> Header! = {
+  let i = string.index_of(line, ":") ?? -1
+  guard i >= 0 else err("malformed header line: ${line}")
+  let name = string.trim(string.slice(line, 0, i))
+  guard name != "" else err("empty header name: ${line}")
+  Header { name: name, value: string.trim(string.slice(line, i + 1, string.len(line))) }
+}
+
+fn all_named(hs: List[Header], name: String) -> List[Header] =
+  hs |> list.filter((h) => string.to_lower(h.name) == string.to_lower(name))
+
+// none when the header is absent.
+fn content_length(hs: List[Header]) -> Int?! =
+  match list.first(all_named(hs, "content-length")) {
+    none => ok(none),
+    some(h) => {
+      let n = int.parse(h.value) |> result.map_err((_) => "bad content-length: ${h.value}")!
+      guard n >= 0 else err("bad content-length: ${h.value}")
+      ok(some(n))
+    },
+  }
+
+fn parse_message(raw: String) -> Message! = {
+  let lines = string.split(raw, "\n")
+  let head = lines |> list.take_while((l) => l != "")
+  let rest = list.drop(lines, list.len(head) + 1) |> list.join("\n")
+  let headers = head |> list.map((l) => parse_header(l)!)!
+  let body = match content_length(headers)! {
+    none => rest,
+    some(n) => {
+      guard string.len(rest) >= n else err("body shorter than content-length")
+      string.slice(rest, 0, n)
+    },
+  }
+  Message { headers: headers, body: body }
+}
+
+fn summary(m: Message) -> String =
+  "${int.to_string(list.len(m.headers))} headers, body=${m.body}"

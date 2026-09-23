@@ -1,0 +1,18 @@
+test "hidden: names match in any case, exact message in header order" {
+  assert_eq(parse_message("content-length: 5\nX: y\nCONTENT-LENGTH: 3\n\nabcdef") |> result.map((m) => summary(m)), err("conflicting content-length: 5 vs 3"))
+}
+test "hidden: repeating the same value is allowed, surrounding spaces ignored" {
+  assert_eq(parse_message("Content-Length: 3\ncontent-length:3  \n\nabcdef") |> result.map((m) => summary(m)), ok("2 headers, body=abc"))
+}
+test "hidden: the conflict compares raw values before any number check" {
+  assert_eq(parse_message("Content-Length: abc\nContent-Length: 2\n\nxy") |> result.map((m) => summary(m)), err("conflicting content-length: abc vs 2"))
+  assert_eq(parse_message("Content-Length: 02\nContent-Length: 2\n\nxy") |> result.map((m) => summary(m)), err("conflicting content-length: 02 vs 2"))
+  assert_eq(parse_message("Content-Length: -1\nContent-Length: -1\n\nxy") |> result.map((m) => summary(m)), err("bad content-length: -1"))
+}
+test "hidden: the first differing value is reported, header-line errors come first" {
+  assert_eq(parse_message("Content-Length: 1\nContent-Length: 1\nContent-Length: 7\nContent-Length: 9\n\nabcdefghi") |> result.map((m) => summary(m)), err("conflicting content-length: 1 vs 7"))
+  assert_eq(parse_message("Content-Length: 1\nContent-Length: 2\nbroken\n\nab") |> result.map((m) => summary(m)), err("malformed header line: broken"))
+}
+test "hidden: a message without the header keeps its whole body" {
+  assert_eq(parse_message("A: 1\na: 2\n\nhello\nworld") |> result.map((m) => summary(m)), ok("2 headers, body=hello\nworld"))
+}
