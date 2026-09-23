@@ -1,0 +1,7 @@
+test "an ingredient with an unknown unit is skipped with a warning" {
+  let r = parse_book(["## Rice (serves 2)", "- 2 cups rice", "- 500 ml water"]) |> result.map((b) => describe(b))
+  assert_eq(r, ok("Rice(2): 500 ml water | Rice: skipped - 2 cups rice (unknown unit cups)"))
+}
+test "a bad quantity is still fatal" {
+  assert_eq(parse_book(["## Rice", "- lots g rice"]) |> result.map((b) => describe(b)), err("bad quantity in: - lots g rice"))
+}

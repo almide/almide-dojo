@@ -1,0 +1,17 @@
+test "hidden: a bad quantity wins over an unknown unit on the same line" {
+  assert_eq(parse_book(["## Tea (serves 1)", "- 1 pcs bag", "- 0 cups water"]) |> result.map((b) => describe(b)), err("bad quantity in: - 0 cups water"))
+}
+test "hidden: a recipe whose ingredients were all skipped is still empty" {
+  assert_eq(parse_book(["## Soup (serves 2)", "- 1 l stock", "## Air (serves 1)", "- 3 cups nothing"]) |> result.map((b) => describe(b)), err("empty recipe Air"))
+}
+test "hidden: skipping keeps the rest of the recipe and the next recipes, warnings in order" {
+  let r = parse_book(["## Cake", "- 2 cups flour", "- 3 pcs egg", "- 1 pinch salt", "- 100 g sugar", "", "## Tea (serves 3)", "- 1 mug water"]) |> result.map((b) => describe(b))
+  assert_eq(r, err("empty recipe Tea"))
+  let r2 = parse_book(["## Cake", "- 2 cups flour", "- 3 pcs egg", "- 1 pinch salt", "- 100 g sugar", "## Tea (serves 3)", "- 1 mug water", "- 1 l water"]) |> result.map((b) => describe(b))
+  assert_eq(r2, ok("Cake(1): 3 pcs egg, 100 g sugar / Tea(3): 1 l water | Cake: skipped - 2 cups flour (unknown unit cups); Cake: skipped - 1 pinch salt (unknown unit pinch); Cake: servings missing, assuming 1; Tea: skipped - 1 mug water (unknown unit mug)"))
+}
+test "hidden: other errors stay fatal with their exact text" {
+  assert_eq(parse_book(["- 1 g salt", "## Late"]) |> result.map((b) => describe(b)), err("ingredient outside recipe: - 1 g salt"))
+  assert_eq(parse_book(["## Pie (serves x)", "- 1 g salt"]) |> result.map((b) => describe(b)), err("bad servings in: Pie (serves x)"))
+  assert_eq(parse_book(["## Pie", "- 1 cups"]) |> result.map((b) => describe(b)), err("short ingredient: - 1 cups"))
+}
