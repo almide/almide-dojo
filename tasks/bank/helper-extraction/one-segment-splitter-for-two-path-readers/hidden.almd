@@ -1,0 +1,11 @@
+test "hidden: dot segments differ between the readers" {
+  assert_eq(segments("a/./b"), ["a", ".", "b"])
+  assert_eq(depth("a/./b/."), 2)
+  assert_eq(basename("a/."), ".")
+  assert_eq(basename("./"), ".")
+}
+test "hidden: empties" {
+  assert_eq(segments(""), [])
+  assert_eq(depth("//"), 0)
+  assert_eq(basename("/"), "")
+}

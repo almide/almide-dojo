@@ -1,0 +1,15 @@
+// Plausible wrong patch: the helper prepares the message prefix up front, so
+// even a GOOD field now costs a string allocation. Same results.
+type Field = { name: String, value: String }
+
+fn check_field(f: Field) -> Result[Unit, String] = {
+  let prefix = f.name + ": "
+  if f.value == "" then err(prefix + "required")
+  else if string.len(f.value) > 20 then err(prefix + "too long")
+  else ok(())
+}
+
+fn check_form(fields: List[Field]) -> List[String] =
+  fields |> list.filter_map((f) => result.to_err_option(check_field(f)))
+
+fn is_valid(fields: List[Field]) -> Bool = list.is_empty(check_form(fields))

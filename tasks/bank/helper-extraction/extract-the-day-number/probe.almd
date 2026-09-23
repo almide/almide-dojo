@@ -1,0 +1,12 @@
+// Resource probe: the same 500 date pairs compared __K__ times. The helper
+// must allocate no more per date than the inline slicing did.
+effect fn main() -> Unit = {
+  let pairs = list.range(0, 500) |> list.map((i) =>
+    (int.to_string(1900 + i % 200) + "-0" + int.to_string(1 + i % 9) + "-1" + int.to_string(i % 10), "2000-02-29"))
+  let total = list.range(0, __K__) |> list.fold(0, (acc, _) =>
+    acc + (pairs |> list.fold(0, (a, p) => {
+      let (x, y) = p
+      a + (days_between(x, y) ?? 0)
+    })))
+  println(int.to_string(total))
+}

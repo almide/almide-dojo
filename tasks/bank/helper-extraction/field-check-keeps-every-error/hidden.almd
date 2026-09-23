@@ -1,0 +1,10 @@
+test "hidden: every problem is reported" {
+  let fs = [Field { name: "a", value: "" }, Field { name: "b", value: "ok" }, Field { name: "c", value: "123456789012345678901" }]
+  assert_eq(check_form(fs), ["a: required", "c: too long"])
+  assert_eq(is_valid(fs), false)
+}
+test "hidden: boundaries" {
+  assert_eq(check_field(Field { name: "d", value: "12345678901234567890" }), ok(()))
+  assert_eq(check_form([]), [])
+  assert_eq(is_valid([Field { name: "e", value: " " }]), true)
+}

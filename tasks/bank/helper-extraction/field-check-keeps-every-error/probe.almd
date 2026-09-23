@@ -1,0 +1,8 @@
+// Resource probe: the same 1,000 good fields checked __K__ times. Checking a
+// good field allocated nothing, so the allocation count must not grow with
+// the repetitions.
+effect fn main() -> Unit = {
+  let fields = list.range(0, 1000) |> list.map((i) => Field { name: "f" + int.to_string(i), value: "v" + int.to_string(i) })
+  let total = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (if is_valid(fields) then 1 else 0))
+  println(int.to_string(total))
+}

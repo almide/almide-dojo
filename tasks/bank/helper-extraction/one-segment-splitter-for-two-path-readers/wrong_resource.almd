@@ -1,0 +1,14 @@
+// Plausible wrong patch: the helper walks the path character by character and
+// builds each segment by concatenation. Same segments — but one allocation
+// per character instead of one per segment.
+fn segments(p: String) -> List[String] = {
+  let (done, cur) = string.chars(p) |> list.fold(([], ""), (st, c) => {
+    let (segs, part) = st
+    if c == "/" then (if part == "" then segs else segs + [part], "") else (segs, part + c)
+  })
+  if cur == "" then done else done + [cur]
+}
+
+fn depth(p: String) -> Int = segments(p) |> list.filter((s) => s != ".") |> list.len
+
+fn basename(p: String) -> String = segments(p) |> list.last ?? ""

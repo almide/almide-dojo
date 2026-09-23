@@ -1,0 +1,7 @@
+// Resource probe: the same 300 paths measured __K__ times. The helper must
+// allocate no more per path than the inline split did.
+effect fn main() -> Unit = {
+  let paths = list.range(0, 300) |> list.map((i) => "/usr/local/share/pkg" + int.to_string(i) + "/./lib//file.txt")
+  let total = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (paths |> list.fold(0, (a, p) => a + depth(p))))
+  println(int.to_string(total))
+}

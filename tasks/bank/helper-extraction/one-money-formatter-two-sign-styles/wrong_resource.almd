@@ -1,0 +1,15 @@
+// Plausible wrong patch: the helper pads the whole number to three digits and
+// cuts it into units and cents. Same text for every amount — but padding and
+// cutting allocate several extra strings per call.
+fn money(cents: Int) -> String = {
+  let digits = string.pad_start(int.to_string(int.abs(cents)), 3, "0")
+  let units = string.drop_end(digits, 2)
+  let frac = string.take_end(digits, 2)
+  units + "." + frac
+}
+
+fn receipt_line(item: String, cents: Int) -> String =
+  item + " " + (if cents < 0 then "-" else "") + money(cents)
+
+fn total_line(cents: Int) -> String =
+  "TOTAL " + (if cents < 0 then "(" + money(cents) + ")" else money(cents))

@@ -1,0 +1,10 @@
+// A form: every field is checked and EVERY problem is reported, in field order.
+type Field = { name: String, value: String }
+
+fn check_form(fields: List[Field]) -> List[String] =
+  fields |> list.filter_map((f) =>
+    if f.value == "" then some(f.name + ": required")
+    else if string.len(f.value) > 20 then some(f.name + ": too long")
+    else none)
+
+fn is_valid(fields: List[Field]) -> Bool = list.is_empty(check_form(fields))
