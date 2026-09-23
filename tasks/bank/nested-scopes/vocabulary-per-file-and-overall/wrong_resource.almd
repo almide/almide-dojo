@@ -1,0 +1,20 @@
+// Vocabulary of a text: lowercase words separated by any run of spaces.
+fn words(text: String) -> List[String] =
+  string.split(string.to_lower(text), " ") |> list.filter((w) => w != "")
+
+fn distinct(text: String) -> Int = set.len(set.from_list(words(text)))
+
+fn describe(name: String, text: String) -> String =
+  name + ":" + int.to_string(distinct(text))
+
+// Plausible wrong patch: every file's word set is built up front and kept in a
+// list, so all the per-file sets are live at once. Same lines, same order.
+fn vocab_report(files: List[(String, String)]) -> List[String] = {
+  let sets = files |> list.map(((_, text)) => set.from_list(words(text)))
+  let all = sets |> list.fold(set.new(), (acc, s) => set.union(acc, s))
+  let lines = list.zip(files, sets) |> list.map(((f, s)) => {
+    let (name, _) = f
+    name + ":" + int.to_string(set.len(s))
+  })
+  lines + ["all:" + int.to_string(set.len(all))]
+}

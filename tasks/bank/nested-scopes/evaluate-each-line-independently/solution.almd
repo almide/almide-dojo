@@ -1,0 +1,41 @@
+// Reverse Polish arithmetic on one line: "3 4 + 2 *" is 14.
+fn apply_op(stack: List[Int], op: String) -> Result[List[Int], String] = {
+  guard list.len(stack) >= 2 else err("stack underflow")
+  let b = list.last(stack) ?? 0
+  let a = list.get(stack, list.len(stack) - 2) ?? 0
+  let rest = list.drop_end(stack, 2)
+  match op {
+    "+" => ok(rest + [a + b]),
+    "-" => ok(rest + [a - b]),
+    "*" => ok(rest + [a * b]),
+    _ => if b == 0 then err("division by zero") else ok(rest + [a / b]),
+  }
+}
+
+fn step(stack: List[Int], tok: String) -> Result[List[Int], String] =
+  match tok {
+    "+" | "-" | "*" | "/" => apply_op(stack, tok),
+    _ => match int.parse(tok) {
+      ok(n) => ok(stack + [n]),
+      err(_) => err("bad token: " + tok),
+    },
+  }
+
+fn eval(line: String) -> Result[Int, String] = {
+  let toks = string.split(line, " ") |> list.filter((t) => t != "")
+  let stack = toks |> list.fold(ok([]), (acc, t) => match acc {
+    ok(st) => step(st, t),
+    err(e) => err(e),
+  })!
+  guard list.len(stack) == 1 else err("expected one result, got " + int.to_string(list.len(stack)))
+  ok(list.first(stack) ?? 0)
+}
+
+// Each line is evaluated in its own step; blank lines produce nothing.
+fn eval_all(lines: List[String]) -> List[String] =
+  lines |> list.filter_map((l) =>
+    if string.trim(l) == "" then none
+    else match eval(l) {
+      ok(v) => some("=" + int.to_string(v)),
+      err(e) => some("!" + e),
+    })

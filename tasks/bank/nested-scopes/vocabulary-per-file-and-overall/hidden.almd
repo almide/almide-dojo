@@ -1,0 +1,10 @@
+test "hidden: overlapping vocabularies" {
+  assert_eq(vocab_report([("a", "x y"), ("b", "Y  z x")]), ["a:2", "b:3", "all:3"])
+  assert_eq(vocab_report([("a", "k"), ("b", "K"), ("c", "")]), ["a:1", "b:1", "c:0", "all:1"])
+}
+test "hidden: no files" {
+  assert_eq(vocab_report([]), ["all:0"])
+}
+test "hidden: describe unchanged" {
+  assert_eq(describe("f", " A a  b "), "f:2")
+}

@@ -1,0 +1,8 @@
+// Resource probe: a class of __K__ students with 4,000 scores each. Each
+// sorted copy belongs to its own student's step, so the batch grows by the
+// input only; sorting everyone first keeps every sorted copy live at once.
+effect fn main() -> Unit = {
+  let students = list.range(0, __K__) |> list.map((i) =>
+    Student { name: "s" + int.to_string(i), scores: list.range(0, 4000) |> list.map((j) => (j * 7919 + i) % 101) })
+  println(int.to_string(list.len(class_report(students))))
+}

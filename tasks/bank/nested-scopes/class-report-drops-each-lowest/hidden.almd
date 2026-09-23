@@ -1,0 +1,8 @@
+test "hidden: one score and zero averages" {
+  assert_eq(class_report([Student { name: "c", scores: [40] }, Student { name: "d", scores: [0, 0] }]), ["c:40", "d:0"])
+}
+test "hidden: empty class and unchanged helpers" {
+  assert_eq(class_report([]), [])
+  assert_eq(line_for(Student { name: "e", scores: [] }), "e:0")
+  assert_eq(average_drop_lowest([9, 1, 1]), 5)
+}

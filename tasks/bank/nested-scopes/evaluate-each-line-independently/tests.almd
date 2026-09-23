@@ -1,0 +1,3 @@
+test "eval all" {
+  assert_eq(eval_all(["1 2 +", "4 0 /", "3"]), ["=3", "!division by zero", "=3"])
+}

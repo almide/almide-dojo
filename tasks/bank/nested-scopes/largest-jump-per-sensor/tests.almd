@@ -1,0 +1,4 @@
+test "ranking" {
+  let s = [Sensor { id: "a", readings: [1, 4] }, Sensor { id: "b", readings: [0, 10, 2] }, Sensor { id: "c", readings: [5] }]
+  assert_eq(jump_ranking(s), ["b:10", "a:3", "c:n/a"])
+}
