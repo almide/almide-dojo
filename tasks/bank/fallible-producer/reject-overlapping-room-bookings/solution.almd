@@ -1,0 +1,49 @@
+// Room booking sheet. Each line is "<room> <HH:MM>-<HH:MM> <who>"; the building
+// is open 08:00-20:00. Bookings are accepted in list order and kept per room.
+type Booking: Eq, Repr = { room: String, start: Int, stop: Int, who: String }
+
+fn minutes(s: String) -> Int! = {
+  let parts = string.split(s, ":")
+  guard list.len(parts) == 2 else err("bad time ${s}")
+  let h = int.parse(list.get(parts, 0) ?? "") |> result.map_err((_) => "bad time ${s}")!
+  let m = int.parse(list.get(parts, 1) ?? "") |> result.map_err((_) => "bad time ${s}")!
+  guard h >= 0 and h < 24 and m >= 0 and m < 60 else err("bad time ${s}")
+  h * 60 + m
+}
+
+fn parse_booking(line: String) -> Booking! = {
+  let words = string.split(line, " ") |> list.filter((w) => w != "")
+  guard list.len(words) == 3 else err("bad line: ${line}")
+  let span = string.split(list.get(words, 1) ?? "", "-")
+  guard list.len(span) == 2 else err("bad span in: ${line}")
+  let start = minutes(list.get(span, 0) ?? "")!
+  let stop = minutes(list.get(span, 1) ?? "")!
+  let room = list.get(words, 0) ?? ""
+  let who = list.get(words, 2) ?? ""
+  guard stop > start else err("empty booking for ${who}")
+  guard start >= 8 * 60 and stop <= 20 * 60 else err("outside opening hours: ${who}")
+  Booking { room: room, start: start, stop: stop, who: who }
+}
+
+fn add(sheet: Map[String, List[Booking]], line: String) -> Map[String, List[Booking]]! = {
+  let b = parse_booking(line)!
+  let existing = map.get(sheet, b.room) ?? []
+  match list.find(existing, (o) => b.start < o.stop and o.start < b.stop) {
+    some(o) => err("overlap in ${b.room}: ${b.who} clashes with ${o.who}"),
+    none => ok(map.set(sheet, b.room, existing + [b])),
+  }
+}
+
+fn book_all(lines: List[String]) -> Map[String, List[Booking]]! =
+  lines |> list.fold([:], (sheet, line) => add(sheet, line)!)!
+
+fn hhmm(t: Int) -> String =
+  "${string.pad_start(int.to_string(t / 60), 2, "0")}:${string.pad_start(int.to_string(t % 60), 2, "0")}"
+
+// "A: 09:00-10:00 ann, 12:00-13:00 bob / B: ..." rooms by name, bookings by start.
+fn agenda(sheet: Map[String, List[Booking]]) -> String =
+  map.keys(sheet) |> list.sort |> list.map((room) => {
+    let bs = (map.get(sheet, room) ?? []) |> list.sort_by((b) => b.start)
+    let items = bs |> list.map((b) => "${hhmm(b.start)}-${hhmm(b.stop)} ${b.who}") |> list.join(", ")
+    "${room}: ${items}"
+  }) |> list.join(" / ")

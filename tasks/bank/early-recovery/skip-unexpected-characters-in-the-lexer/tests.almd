@@ -1,0 +1,6 @@
+test "an unexpected character is skipped with a warning" {
+  assert_eq(lex("a = 1 @ b") |> result.map((l) => show(l)), ok("id:a = num:1 id:b | skipped @ at 6"))
+}
+test "clean input lexes as before" {
+  assert_eq(lex("f(x, \"hi\") = 42") |> result.map((l) => show(l)), ok("id:f ( id:x , str:hi ) = num:42"))
+}

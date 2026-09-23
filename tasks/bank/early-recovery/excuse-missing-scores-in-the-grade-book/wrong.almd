@@ -1,0 +1,44 @@
+// Plausible wrong patch: an excused score becomes a 0 in `scores`, so it drags
+// the average down (and an all-excused student averages 0 instead of n/a).
+// Grade book. The first line is the header "name,<assignment>,...", every other
+// line "<name>,<score>,..." with one integer score 0..100 per assignment.
+// A student's average is the integer mean of their scores, rounded down.
+type Student: Eq, Repr = { name: String, scores: List[Int], excused: Int }
+
+fn parse_score(row: Int, cell: String) -> Int! = {
+  let t = string.trim(cell)
+  guard t != "-" and t != "" else err("row ${int.to_string(row)}: missing score")
+  let n = int.parse(t) |> result.map_err((_) => "row ${int.to_string(row)}: bad score ${t}")!
+  guard n >= 0 and n <= 100 else err("row ${int.to_string(row)}: score out of range ${t}")
+  n
+}
+
+fn parse_student(row: Int, width: Int, line: String) -> Student! = {
+  let cells = string.split(line, ",")
+  let name = string.trim(list.first(cells) ?? "")
+  let raw = list.drop(cells, 1)
+  guard list.len(raw) == width else err("row ${int.to_string(row)}: expected ${int.to_string(width)} scores, got ${int.to_string(list.len(raw))}")
+  let missing = (c: String) => string.trim(c) == "-" or string.trim(c) == ""
+  let scores = raw |> list.map((c) => if missing(c) then ok(0) else parse_score(row, c)) |> list.map((r) => r!)!
+  Student { name: name, scores: scores, excused: raw |> list.count((c) => missing(c)) }
+}
+
+fn load(lines: List[String]) -> List[Student]! = {
+  let header = list.first(lines) ?? ""
+  let width = list.len(string.split(header, ",")) - 1
+  guard width > 0 else err("no assignments in header")
+  list.drop(lines, 1) |> list.enumerate |> list.map((p) => parse_student(p.0 + 2, width, p.1)!)!
+}
+
+fn average(s: Student) -> String =
+  if list.is_empty(s.scores) then "n/a" else int.to_string(list.sum(s.scores) / list.len(s.scores))
+
+// "ann 85; bob 70 (1 excused)"
+fn report(lines: List[String]) -> String! = {
+  let students = load(lines)!
+  let parts = students |> list.map((s) => {
+    let ex = if s.excused == 0 then "" else " (${int.to_string(s.excused)} excused)"
+    "${s.name} ${average(s)}${ex}"
+  })
+  list.join(parts, "; ")
+}

@@ -1,0 +1,17 @@
+test "hidden: century rule, both ways" {
+  assert_eq(total_nights(["1900-02-28..1900-02-29"]), err("not a leap year: 1900-02-29"))
+  assert_eq(total_nights(["2100-02-29..2100-03-01"]), err("not a leap year: 2100-02-29"))
+  assert_eq(total_nights(["2000-02-28..2000-03-01"]), ok(2))
+}
+test "hidden: february 29 in a leap year stays valid" {
+  assert_eq(total_nights(["2024-02-29..2024-03-01", "1996-02-28..1996-02-29"]), ok(2))
+}
+test "hidden: february 30 keeps its old message" {
+  assert_eq(total_nights(["2023-02-30..2023-03-02"]), err("day out of range: 2023-02-30"))
+  assert_eq(total_nights(["2024-02-30..2024-03-02"]), err("day out of range: 2024-02-30"))
+}
+test "hidden: the first failing stay and the first date of a stay win" {
+  assert_eq(total_nights(["2023-02-29..2023-13-01"]), err("not a leap year: 2023-02-29"))
+  assert_eq(total_nights(["2023-03-05..2023-03-01", "2023-02-29..2023-03-01"]), err("empty stay 2023-03-05..2023-03-01"))
+  assert_eq(total_nights(["2023-1-05..2023-02-29"]), err("bad month in 2023-1-05"))
+}

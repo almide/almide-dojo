@@ -1,0 +1,20 @@
+test "hidden: exact message for a run of four" {
+  assert_eq(roman("XIIII"), err("more than three I in a row in XIIII"))
+  assert_eq(roman("MMMMC"), err("more than three M in a row in MMMMC"))
+  assert_eq(index(["II. a", "CCCCX. b"]), err("more than three C in a row in CCCCX"))
+}
+test "hidden: a letter may appear four times when no run is longer than three" {
+  assert_eq(roman("XXXIX"), ok(39))
+  assert_eq(roman("MMMCMXCIX"), ok(3999))
+  assert_eq(roman("CCCXC"), ok(390))
+  assert_eq(roman("XXXIV"), ok(34))
+}
+test "hidden: earlier checks of a numeral win" {
+  assert_eq(roman("IIIIQ"), err("bad numeral char Q in IIIIQ"))
+  assert_eq(roman("IIIIL"), err("bad subtractive pair IL in IIIIL"))
+  assert_eq(roman("VVIIII"), err("repeated V in VVIIII"))
+}
+test "hidden: first failing line wins, duplicates keep their message" {
+  assert_eq(index(["IV. a", "IIII. b", "IV. c"]), err("more than three I in a row in IIII"))
+  assert_eq(index(["IV. a", "IV. c", "IIII. b"]), err("duplicate chapter 4: a / c"))
+}

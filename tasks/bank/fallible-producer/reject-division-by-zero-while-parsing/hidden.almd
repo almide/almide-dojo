@@ -1,0 +1,23 @@
+test "hidden: exact message names the position of the slash" {
+  assert_eq(eval("12 +  7/0", [:]), err("division by zero at 7"))
+}
+test "hidden: a divisor that evaluates to zero is rejected" {
+  assert_eq(eval("5 / (2 - 2)", [:]), err("division by zero at 2"))
+  assert_eq(eval("9 / n * 2", ["n": 0]), err("division by zero at 2"))
+  assert_eq(eval("1 / 00", [:]), err("division by zero at 2"))
+}
+test "hidden: zero as a dividend or elsewhere stays valid" {
+  assert_eq(eval("0 / 5 + 0 * 3 - (0)", [:]), ok(0))
+  assert_eq(eval("10 / -3", [:]), ok(-3))
+}
+test "hidden: an error inside the divisor wins, a later syntax error loses" {
+  assert_eq(eval("4 / (q - q)", [:]), err("unknown variable q at 5"))
+  assert_eq(eval("4 / 0 )", [:]), err("division by zero at 2"))
+  assert_eq(eval("(4 / 0", [:]), err("division by zero at 3"))
+}
+test "hidden: old messages untouched" {
+  assert_eq(eval("3 + ", [:]), err("unexpected end of input"))
+  assert_eq(eval("(1 + 2", [:]), err("unexpected end of input"))
+  assert_eq(eval("2 # 3", [:]), err("bad char # at 2"))
+  assert_eq(eval("2 3", [:]), err("unexpected 3 at 2"))
+}

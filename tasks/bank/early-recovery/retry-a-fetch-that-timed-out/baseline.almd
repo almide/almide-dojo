@@ -1,0 +1,30 @@
+// Batch fetcher over a scripted network. For every url the network holds the
+// responses of successive attempts: "ok:<body>", "status:<code>", "timeout"
+// (attempt k gets response k, or the last one once the script runs out).
+type Net = Map[String, List[String]]
+type FetchErr: Eq, Repr = | Timeout(String, Int) | Status(String, Int) | NoRoute(String)
+type Report: Eq, Repr = { bodies: List[String], attempts: Int }
+
+fn fetch_once(net: Net, url: String, attempt: Int) -> String!FetchErr = {
+  let script = match map.get(net, url) {
+    some(s) => ok(s),
+    none => err(NoRoute(url)),
+  }!
+  let resp = list.get(script, attempt) ?? (list.last(script) ?? "timeout")
+  if string.starts_with(resp, "ok:") then ok(string.drop(resp, 3))
+  else if string.starts_with(resp, "status:") then err(Status(url, int.parse(string.drop(resp, 7)) ?? 0))
+  else err(Timeout(url, attempt))
+}
+
+fn fetch_all(net: Net, urls: List[String]) -> Report!FetchErr = {
+  var bodies: List[String] = []
+  var attempts = 0
+  for url in urls {
+    attempts = attempts + 1
+    let body = fetch_once(net, url, 0)!
+    bodies = bodies + [body]
+  }
+  Report { bodies: bodies, attempts: attempts }
+}
+
+fn show(r: Report) -> String = "${list.join(r.bodies, ",")} (${int.to_string(r.attempts)} attempts)"

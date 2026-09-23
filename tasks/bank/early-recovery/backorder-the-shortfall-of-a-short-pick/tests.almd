@@ -1,0 +1,7 @@
+test "a pick from an empty shelf is backordered" {
+  let r = replay(["fig": 0], [Pick("fig", 2)]) |> result.map((x) => summary(x))
+  assert_eq(r, ok("fig=0 (1 moves) backorders: fig x2"))
+}
+test "picking an unknown sku is still fatal" {
+  assert_eq(replay(["apple": 5], [Pick("kiwi", 1)]) |> result.map((x) => summary(x)), err(UnknownSku("kiwi")))
+}

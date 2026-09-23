@@ -1,0 +1,6 @@
+test "a missing score is excused, not failed" {
+  assert_eq(report(["name,hw1,hw2", "ann,0,-"]), ok("ann 0 (1 excused)"))
+}
+test "a score out of range is still an error" {
+  assert_eq(report(["name,hw1", "ann,101"]), err("row 2: score out of range 101"))
+}

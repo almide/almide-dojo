@@ -1,0 +1,14 @@
+test "hidden: consecutive and adjacent skipped characters keep their own positions" {
+  assert_eq(lex("x=#$1;y") |> result.map((l) => show(l)), ok("id:x = num:1 id:y | skipped # at 2; skipped $ at 3; skipped ; at 5"))
+  assert_eq(lex("!!") |> result.map((l) => show(l)), ok(" | skipped ! at 0; skipped ! at 1"))
+}
+test "hidden: a bad number stays fatal, before and after a skip" {
+  assert_eq(lex("n = 12ab") |> result.map((l) => show(l)), err(BadNumber(4, "12ab")))
+  assert_eq(lex("@ n = 3x") |> result.map((l) => show(l)), err(BadNumber(6, "3x")))
+}
+test "hidden: an unterminated string after a skipped character is still fatal" {
+  assert_eq(lex("f(%, \"abc)") |> result.map((l) => show(l)), err(Unterminated(5)))
+}
+test "hidden: characters inside a string are not skipped" {
+  assert_eq(lex("s = \"a@b\" @") |> result.map((l) => show(l)), ok("id:s = str:a@b | skipped @ at 10"))
+}

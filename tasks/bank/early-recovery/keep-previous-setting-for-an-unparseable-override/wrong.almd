@@ -1,0 +1,82 @@
+// Plausible wrong patch: recovers by the text of the error. The out-of-range
+// message starts with the same "bad value for <key>:" prefix, so an out-of-range
+// int is silently ignored instead of staying fatal.
+// Settings loader: built-in defaults overlaid by "key=value" override lines.
+// Lines starting with "#" and blank lines are ignored. Every applied override
+// is recorded in `notes`, in line order.
+type Kind = | IntK(Int, Int) | BoolK | TextK
+type Settings: Eq, Repr = { values: Map[String, String], notes: List[String] }
+type Override = { key: String, raw: String }
+
+fn kind_of(key: String) -> Kind? =
+  match key {
+    "port" => some(IntK(1, 65535)),
+    "workers" => some(IntK(1, 64)),
+    "timeout" => some(IntK(0, 3600)),
+    "debug" => some(BoolK),
+    "name" => some(TextK),
+    _ => none,
+  }
+
+fn defaults() -> Map[String, String] =
+  ["port": "80", "workers": "4", "timeout": "30", "debug": "false", "name": "app"]
+
+fn parse_override(line: String) -> Override! = {
+  let i = string.index_of(line, "=") ?? -1
+  guard i > 0 else err("malformed: ${line}")
+  let key = string.trim(string.slice(line, 0, i))
+  let raw = string.trim(string.slice(line, i + 1, string.len(line)))
+  Override { key: key, raw: raw }
+}
+
+fn parse_int_value(key: String, raw: String) -> Int! =
+  int.parse(raw) |> result.map_err((_) => "bad value for ${key}: ${raw}")
+
+fn check_range(key: String, v: Int, lo: Int, hi: Int) -> Int! = {
+  guard v >= lo and v <= hi else err("bad value for ${key}: ${int.to_string(v)} not in ${int.to_string(lo)}..${int.to_string(hi)}")
+  v
+}
+
+fn parse_value(key: String, raw: String) -> String! =
+  match kind_of(key) {
+    none => err("unknown setting ${key}"),
+    some(IntK(lo, hi)) => {
+      let v = parse_int_value(key, raw)!
+      let checked = check_range(key, v, lo, hi)!
+      ok(int.to_string(checked))
+    },
+    some(BoolK) => if raw == "true" or raw == "false" then ok(raw) else err("bad value for ${key}: ${raw}"),
+    some(TextK) => ok(raw),
+  }
+
+fn load(lines: List[String]) -> Settings! = {
+  var values = defaults()
+  var notes: List[String] = []
+  for line in lines {
+    let t = string.trim(line)
+    if t == "" or string.starts_with(t, "#") then () else {
+      let o = parse_override(t)!
+      match parse_value(o.key, o.raw) {
+        ok(v) => {
+          values = map.set(values, o.key, v)
+          notes = notes + ["set ${o.key}=${v}"]
+        },
+        err(e) => {
+          guard string.starts_with(e, "bad value for ") else err(e)
+          let what = match kind_of(o.key) {
+            some(BoolK) => "a bool",
+            _ => "an int",
+          }
+          notes = notes + ["ignored ${o.key}=${o.raw}: not ${what}"]
+        },
+      }
+    }
+  }
+  Settings { values: values, notes: notes }
+}
+
+// "debug=false name=app port=80 timeout=30 workers=4 | set port=80"
+fn show(s: Settings) -> String = {
+  let kv = map.keys(s.values) |> list.sort |> list.map((k) => "${k}=${map.get(s.values, k) ?? ""}") |> list.join(" ")
+  if list.is_empty(s.notes) then kv else "${kv} | ${list.join(s.notes, "; ")}"
+}

@@ -1,0 +1,17 @@
+test "hidden: a digit repeated in a column is an error at the lower cell" {
+  assert_eq(load(["0300", "0000", "0300", "0000"]) |> result.map((g) => filled(g)), err(Duplicate(3, 2, 3)))
+}
+test "hidden: the first repeating cell in row-major order wins, row or column" {
+  assert_eq(load(["1000", "1000", "0000", "0220"]) |> result.map((g) => filled(g)), err(Duplicate(2, 1, 1)))
+  assert_eq(load(["0400", "0000", "3303", "0400"]) |> result.map((g) => filled(g)), err(Duplicate(3, 2, 3)))
+  assert_eq(load(["0400", "0000", "0000", "4404"]) |> result.map((g) => filled(g)), err(Duplicate(4, 2, 4)))
+}
+test "hidden: empty cells may repeat anywhere" {
+  assert_eq(load(["0000", "0000", "0000", "0000"]) |> result.map((g) => filled(g)), ok(0))
+  assert_eq(load(["1234", "3412", "2143", "4321"]) |> result.map((g) => filled(g)), ok(16))
+}
+test "hidden: shape errors anywhere beat any duplicate" {
+  assert_eq(load(["1100", "0000", "00x0", "0000"]) |> result.map((g) => filled(g)), err(BadCell(3, 3, "x")))
+  assert_eq(load(["1100", "0000", "000", "0000"]) |> result.map((g) => filled(g)), err(Ragged(3, 3)))
+  assert_eq(load(["1100", "0000", "0000"]) |> result.map((g) => filled(g)), err(WrongHeight(3)))
+}

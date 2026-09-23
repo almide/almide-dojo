@@ -1,0 +1,6 @@
+test "a digit repeated in a row is an error" {
+  assert_eq(load(["1231", "0000", "0000", "0000"]) |> result.map((g) => filled(g)), err(Duplicate(1, 4, 1)))
+}
+test "a valid grid still loads" {
+  assert_eq(load(["1200", "3400", "0012", "0034"]) |> result.map((g) => render(g)), ok("12../34../..12/..34"))
+}

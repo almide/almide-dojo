@@ -1,0 +1,86 @@
+// Plausible wrong patch: pre-screens the unit BEFORE parsing, and keeps the
+// emptiness check on the raw lines, so a line with a bad quantity and an unknown
+// unit is skipped and a recipe with only skipped lines comes out empty-but-valid.
+// Recipe book reader. A recipe starts with "## <name>" or "## <name> (serves <n>)",
+// followed by ingredient lines "- <qty> <unit> <name...>". Blank lines are ignored.
+type Ingredient: Eq, Repr = { qty: Int, unit: String, name: String }
+type Recipe: Eq, Repr = { name: String, serves: Int, items: List[Ingredient] }
+type Book: Eq, Repr = { recipes: List[Recipe], warnings: List[String] }
+type Section = { header: String, lines: List[String] }
+
+let UNITS = ["g", "kg", "ml", "l", "tsp", "tbsp", "pcs"]
+
+fn parse_ingredient(line: String) -> Ingredient! = {
+  let words = string.split(string.drop(line, 2), " ") |> list.filter((w) => w != "")
+  guard list.len(words) >= 3 else err("short ingredient: ${line}")
+  let qty = int.parse(list.get(words, 0) ?? "") |> result.map_err((_) => "bad quantity in: ${line}")!
+  guard qty > 0 else err("bad quantity in: ${line}")
+  let unit = list.get(words, 1) ?? ""
+  guard list.contains(UNITS, unit) else err("unknown unit ${unit} in: ${line}")
+  Ingredient { qty: qty, unit: unit, name: list.drop(words, 2) |> list.join(" ") }
+}
+
+// Groups lines under their "## " header, in order.
+fn sections(lines: List[String]) -> List[Section]! = {
+  var out: List[Section] = []
+  for line in lines {
+    let t = string.trim(line)
+    if t == "" then ()
+    else if string.starts_with(t, "## ") then { out = out + [Section { header: string.drop(t, 3), lines: [] }] }
+    else {
+      let last = list.last(out)
+      match last {
+        none => { out = out + [Section { header: "", lines: [t] }] },
+        some(s) => { out = list.set(out, list.len(out) - 1, Section { header: s.header, lines: s.lines + [t] }) },
+      }
+    }
+  }
+  match list.find(out, (s) => s.header == "") {
+    some(s) => err("ingredient outside recipe: ${list.first(s.lines) ?? ""}"),
+    none => ok(out),
+  }
+}
+
+fn parse_header(h: String) -> Recipe! = {
+  match string.index_of(h, " (serves ") {
+    none => ok(Recipe { name: h, serves: 0, items: [] }),
+    some(i) => {
+      guard string.ends_with(h, ")") else err("bad header: ${h}")
+      let n = int.parse(string.slice(h, i + 9, string.len(h) - 1)) |> result.map_err((_) => "bad servings in: ${h}")!
+      guard n > 0 else err("bad servings in: ${h}")
+      ok(Recipe { name: string.slice(h, 0, i), serves: n, items: [] })
+    },
+  }
+}
+
+fn parse_book(lines: List[String]) -> Book! = {
+  var recipes: List[Recipe] = []
+  var warnings: List[String] = []
+  for sec in sections(lines)! {
+    let r = parse_header(sec.header)!
+    guard not list.is_empty(sec.lines) else err("empty recipe ${r.name}")
+    var items: List[Ingredient] = []
+    for l in sec.lines {
+      let words = string.split(string.drop(l, 2), " ") |> list.filter((w) => w != "")
+      let unit = list.get(words, 1) ?? ""
+      if list.len(words) >= 3 and not list.contains(UNITS, unit) then {
+        warnings = warnings + ["${r.name}: skipped ${l} (unknown unit ${unit})"]
+      } else {
+        items = items + [parse_ingredient(l)!]
+      }
+    }
+    let serves = if r.serves == 0 then 1 else r.serves
+    if r.serves == 0 then { warnings = warnings + ["${r.name}: servings missing, assuming 1"] } else ()
+    recipes = recipes + [Recipe { name: r.name, serves: serves, items: items }]
+  }
+  Book { recipes: recipes, warnings: warnings }
+}
+
+// "Pancakes(4): 200 g flour, 2 pcs egg | warning; warning"
+fn describe(b: Book) -> String = {
+  let rs = b.recipes |> list.map((r) => {
+    let items = r.items |> list.map((i) => "${int.to_string(i.qty)} ${i.unit} ${i.name}") |> list.join(", ")
+    "${r.name}(${int.to_string(r.serves)}): ${items}"
+  }) |> list.join(" / ")
+  if list.is_empty(b.warnings) then rs else "${rs} | ${list.join(b.warnings, "; ")}"
+}

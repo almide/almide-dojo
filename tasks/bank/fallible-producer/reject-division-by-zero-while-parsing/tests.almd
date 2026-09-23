@@ -1,0 +1,6 @@
+test "dividing by a literal zero is an error" {
+  assert(result.is_err(eval("7 / 0", [:])))
+}
+test "ordinary division still works" {
+  assert_eq(eval("(8 + 4) / 3 * 2", [:]), ok(8))
+}

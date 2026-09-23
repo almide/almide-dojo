@@ -1,0 +1,21 @@
+test "hidden: at most three attempts per url, then the last timeout is the error" {
+  let net: Map[String, List[String]] = ["a": ["timeout", "timeout", "timeout", "ok:late"]]
+  assert_eq(fetch_all(net, ["a"]) |> result.map((r) => show(r)), err(Timeout("a", 2)))
+  let net2: Map[String, List[String]] = ["a": ["timeout", "timeout", "ok:just"]]
+  assert_eq(fetch_all(net2, ["a"]) |> result.map((r) => show(r)), ok("just (3 attempts)"))
+}
+test "hidden: a status error is never retried" {
+  let net: Map[String, List[String]] = ["a": ["status:503", "ok:A"]]
+  assert_eq(fetch_all(net, ["a"]) |> result.map((r) => show(r)), err(Status("a", 503)))
+  let net2: Map[String, List[String]] = ["a": ["timeout", "status:404", "ok:A"]]
+  assert_eq(fetch_all(net2, ["a"]) |> result.map((r) => show(r)), err(Status("a", 404)))
+}
+test "hidden: every url gets its own three attempts" {
+  let net: Map[String, List[String]] = ["a": ["timeout", "timeout", "ok:A"], "b": ["timeout", "timeout", "ok:B"], "c": ["ok:C"]]
+  assert_eq(fetch_all(net, ["a", "b", "c", "a"]) |> result.map((r) => show(r)), ok("A,B,C,A (10 attempts)"))
+}
+test "hidden: an empty script is a timeout on every attempt" {
+  let nothing: List[String] = []
+  let net: Map[String, List[String]] = ["a": ["ok:A"], "z": nothing]
+  assert_eq(fetch_all(net, ["a", "z", "a"]) |> result.map((r) => show(r)), err(Timeout("z", 2)))
+}

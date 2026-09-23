@@ -1,0 +1,7 @@
+test "four I in a row are rejected" {
+  assert(result.is_err(roman("IIII")))
+}
+test "ordinary numerals still work" {
+  assert_eq(roman("XIV"), ok(14))
+  assert_eq(index(["XII. End", "IX. Middle", "III. Start"]), ok(["3 Start", "9 Middle", "12 End"]))
+}

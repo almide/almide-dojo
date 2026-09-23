@@ -1,0 +1,17 @@
+test "hidden: stock keeps flowing after a backorder" {
+  let r = replay(["apple": 3, "pear": 1], [Pick("apple", 5), Receive("apple", 4), Pick("apple", 1), Pick("pear", 1), Pick("pear", 2)]) |> result.map((x) => summary(x))
+  assert_eq(r, ok("apple=3 pear=0 (5 moves) backorders: apple x2, pear x2"))
+}
+test "hidden: an exact pick of the whole stock is not a backorder" {
+  assert_eq(replay(["apple": 3], [Pick("apple", 3)]) |> result.map((x) => summary(x)), ok("apple=0 (1 moves)"))
+}
+test "hidden: a bad quantity stays fatal even after a backorder" {
+  assert_eq(replay(["apple": 1], [Pick("apple", 4), Pick("apple", 0)]) |> result.map((x) => summary(x)), err(BadQty("apple", 0)))
+  assert_eq(replay(["apple": 1], [Pick("apple", 9), Count("apple", -1)]) |> result.map((x) => summary(x)), err(BadQty("apple", -1)))
+}
+test "hidden: an unknown sku after a backorder is still reported" {
+  assert_eq(replay(["apple": 1], [Pick("apple", 2), Count("fig", 3)]) |> result.map((x) => summary(x)), err(UnknownSku("fig")))
+}
+test "hidden: a short pick empties the shelf, so the next pick is short too" {
+  assert_eq(replay(["apple": 3], [Pick("apple", 5), Pick("apple", 1)]) |> result.map((x) => summary(x)), ok("apple=0 (2 moves) backorders: apple x2, apple x1"))
+}

@@ -1,0 +1,18 @@
+test "hidden: a parent may be declared later in the list" {
+  assert_eq(build(["c b Cy", "b a Bob Lee", "a - Ann", "d a Dee"]), ok("Ann (a)\n  Bob Lee (b)\n    Cy (c)\n  Dee (d)"))
+  assert_eq(headcount(["c b Cy", "b a Bob", "a - Ann"]), ok(3))
+}
+test "hidden: exact message, first unknown parent in list order" {
+  assert_eq(build(["a - Ann", "b x Bob", "c y Cy"]), err("unknown parent x for b"))
+  assert_eq(headcount(["a - Ann", "b a Bob", "c y Cy"]), err("unknown parent y for c"))
+}
+test "hidden: a duplicate id anywhere beats an unknown parent" {
+  assert_eq(build(["a - Ann", "b q Bob", "b a Again"]), err("duplicate id b"))
+  assert_eq(build(["a - Ann", "b q Bob", "c - Cy"]), err("multiple roots: a and c"))
+}
+test "hidden: a missing root is reported before an unknown parent" {
+  assert_eq(build(["b q Bob"]), err("no root"))
+}
+test "hidden: old messages untouched" {
+  assert_eq(build(["a - Ann", "b a"]), err("bad line: b a"))
+}

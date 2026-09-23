@@ -1,0 +1,7 @@
+test "a garbled timestamp reuses the previous entry's time" {
+  let r = load(["09:00:00 INFO boot", "9:00:07 WARN disk"]) |> result.map((l) => render(l))
+  assert_eq(r, ok("09:00:00 I boot; 09:00:00 W disk | line 2: bad time 9:00:07, reusing 09:00:00"))
+}
+test "an unknown level is still fatal" {
+  assert_eq(load(["09:00:00 INFO boot", "09:00:01 NOTICE x"]) |> result.map((l) => render(l)), err(BadLevel(2, "NOTICE")))
+}

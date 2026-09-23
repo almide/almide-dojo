@@ -1,0 +1,18 @@
+test "hidden: exact message names the earliest-listed clashing booking" {
+  assert_eq(book_all(["A 09:00-10:00 ann", "A 12:00-13:00 bob", "A 09:30-09:45 cy"]) |> result.map((s) => agenda(s)),
+    err("overlap in A: cy clashes with ann"))
+  assert_eq(book_all(["A 10:00-11:00 ann", "A 08:00-09:00 bob", "A 08:30-10:30 cy"]) |> result.map((s) => agenda(s)),
+    err("overlap in A: cy clashes with ann"))
+}
+test "hidden: back-to-back bookings touch but do not overlap" {
+  assert_eq(book_all(["A 10:00-11:00 ann", "A 09:00-10:00 bob", "A 11:00-20:00 cy", "A 08:00-09:00 dee"]) |> result.map((s) => agenda(s)),
+    ok("A: 08:00-09:00 dee, 09:00-10:00 bob, 10:00-11:00 ann, 11:00-20:00 cy"))
+}
+test "hidden: a booking containing another one is an overlap" {
+  assert_eq(book_all(["B 09:15-09:30 ann", "B 09:00-12:00 bob"]) |> result.map((s) => agenda(s)), err("overlap in B: bob clashes with ann"))
+}
+test "hidden: line errors come before the overlap check and the first bad line wins" {
+  assert_eq(book_all(["A 09:00-10:00 ann", "A 09:30-09:30 bob"]) |> result.map((s) => agenda(s)), err("empty booking for bob"))
+  assert_eq(book_all(["A 09:00-10:00 ann", "A 07:30-09:30 bob"]) |> result.map((s) => agenda(s)), err("outside opening hours: bob"))
+  assert_eq(book_all(["A 09:00-10:00 ann", "A 09:30-10:30 bob", "A 9:xx-10:00 cy"]) |> result.map((s) => agenda(s)), err("overlap in A: bob clashes with ann"))
+}

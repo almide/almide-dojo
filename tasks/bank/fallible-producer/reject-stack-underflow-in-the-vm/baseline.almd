@@ -1,0 +1,38 @@
+// A tiny stack machine. Instructions, one per line:
+//   push <n> | add | sub | mul | dup | swap | drop | out
+// "#" lines and blank lines are comments. Instructions are numbered from 1,
+// comments not counted. A missing operand currently reads as 0.
+type Vm: Eq, Repr = { stack: List[Int], out: List[Int] }
+
+fn top(st: List[Int], i: Int) -> Int = list.get(st, list.len(st) - 1 - i) ?? 0
+
+fn popn(st: List[Int], n: Int) -> List[Int] = list.take(st, int.max(0, list.len(st) - n))
+
+fn step(vm: Vm, k: Int, ins: String) -> Vm! = {
+  let words = string.split(ins, " ") |> list.filter((w) => w != "")
+  let op = list.get(words, 0) ?? ""
+  let st = vm.stack
+  match op {
+    "push" => {
+      guard list.len(words) == 2 else err("push needs a value at ${int.to_string(k)}")
+      let v = int.parse(list.get(words, 1) ?? "") |> result.map_err((_) => "bad value at ${int.to_string(k)}")!
+      ok({ ...vm, stack: st + [v] })
+    },
+    "add" => ok({ ...vm, stack: popn(st, 2) + [top(st, 1) + top(st, 0)] }),
+    "sub" => ok({ ...vm, stack: popn(st, 2) + [top(st, 1) - top(st, 0)] }),
+    "mul" => ok({ ...vm, stack: popn(st, 2) + [top(st, 1) * top(st, 0)] }),
+    "dup" => ok({ ...vm, stack: st + [top(st, 0)] }),
+    "swap" => ok({ ...vm, stack: popn(st, 2) + [top(st, 0), top(st, 1)] }),
+    "drop" => ok({ ...vm, stack: popn(st, 1) }),
+    "out" => ok({ stack: popn(st, 1), out: vm.out + [top(st, 0)] }),
+    _ => err("unknown op ${op} at ${int.to_string(k)}"),
+  }
+}
+
+fn run(program: List[String]) -> Vm! = {
+  let code = program |> list.map((l) => string.trim(l)) |> list.filter((l) => l != "" and not string.starts_with(l, "#"))
+  code |> list.enumerate |> list.fold(Vm { stack: [], out: [] }, (vm, p) => step(vm, p.0 + 1, p.1)!)!
+}
+
+fn show(vm: Vm) -> String =
+  "stack ${list.map(vm.stack, (x) => int.to_string(x)) |> list.join(",")} out ${list.map(vm.out, (x) => int.to_string(x)) |> list.join(",")}"

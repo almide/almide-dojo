@@ -1,0 +1,21 @@
+let HCAT: Map[String, Map[String, String]] = [
+  "en": ["hi": "Hello {name}", "bye": "Bye {name}", "broken": "Oops {name", "count": "{n} new"],
+  "fr": ["hi": "Bonjour {name}", "count": "{n} nouveaux {x}"],
+  "de": ["other": "x"],
+]
+test "hidden: an unknown locale is still fatal, no fallback" {
+  assert_eq(message(HCAT, "es", "hi", ["name": "Ana"]), err("unknown locale es"))
+}
+test "hidden: a key missing everywhere reports the requested locale" {
+  assert_eq(message(HCAT, "fr", "nope", [:]), err("missing key nope in fr"))
+  assert_eq(message(HCAT, "en", "nope", [:]), err("missing key nope in en"))
+}
+test "hidden: errors in the fallback template still propagate" {
+  assert_eq(message(HCAT, "de", "broken", ["name": "Ana"]), err("unclosed placeholder in: Oops {name"))
+  assert_eq(message(HCAT, "de", "hi", [:]), err("missing argument name"))
+}
+test "hidden: a present key is never replaced by English, even when filling it fails" {
+  assert_eq(message(HCAT, "fr", "count", ["n": "3"]), err("missing argument x"))
+  assert_eq(page(HCAT, "de", ["hi", "bye", "count"], ["name": "Bo", "n": "2"]), ok("Hello Bo\nBye Bo\n2 new"))
+  assert_eq(page(HCAT, "fr", ["hi", "nope", "bye"], ["name": "Bo"]), err("missing key nope in fr"))
+}

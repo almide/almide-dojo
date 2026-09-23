@@ -1,0 +1,90 @@
+// Integer expression evaluator: + - * / with the usual precedence, parentheses
+// and named variables. Parsing and evaluation happen in one recursive-descent
+// pass over the token list; positions are 0-based character offsets.
+type Tok: Eq, Repr = { text: String, pos: Int }
+
+fn tokenize_from(src: String, i: Int, acc: List[Tok]) -> List[Tok]! = {
+  let c = string.slice(src, i, i + 1)
+  if i >= string.len(src) then ok(acc)
+  else if c == " " then tokenize_from(src, i + 1, acc)
+  else if string.contains("+-*/()", c) then tokenize_from(src, i + 1, acc + [Tok { text: c, pos: i }])
+  else if string.is_digit(c) or string.is_alpha(c) then {
+    let digits = string.is_digit(c)
+    let end = scan(src, i, digits)
+    tokenize_from(src, end, acc + [Tok { text: string.slice(src, i, end), pos: i }])
+  } else err("bad char ${c} at ${int.to_string(i)}")
+}
+
+fn scan(src: String, i: Int, digits: Bool) -> Int = {
+  let c = string.slice(src, i, i + 1)
+  let same = if digits then string.is_digit(c) else string.is_alphanumeric(c)
+  if i < string.len(src) and same then scan(src, i + 1, digits) else i
+}
+
+fn peek(ts: List[Tok], i: Int) -> Tok = list.get(ts, i) ?? Tok { text: "", pos: -1 }
+
+fn expr(ts: List[Tok], env: Map[String, Int], i: Int) -> (Int, Int)! = {
+  let (v, j) = term(ts, env, i)!
+  expr_rest(ts, env, v, j)
+}
+
+fn expr_rest(ts: List[Tok], env: Map[String, Int], acc: Int, i: Int) -> (Int, Int)! =
+  match peek(ts, i).text {
+    "+" => {
+      let (v, j) = term(ts, env, i + 1)!
+      expr_rest(ts, env, acc + v, j)
+    },
+    "-" => {
+      let (v, j) = term(ts, env, i + 1)!
+      expr_rest(ts, env, acc - v, j)
+    },
+    _ => ok((acc, i)),
+  }
+
+fn term(ts: List[Tok], env: Map[String, Int], i: Int) -> (Int, Int)! = {
+  let (v, j) = atom(ts, env, i)!
+  term_rest(ts, env, v, j)
+}
+
+fn term_rest(ts: List[Tok], env: Map[String, Int], acc: Int, i: Int) -> (Int, Int)! =
+  match peek(ts, i).text {
+    "*" => {
+      let (v, j) = atom(ts, env, i + 1)!
+      term_rest(ts, env, acc * v, j)
+    },
+    "/" => {
+      let (v, j) = atom(ts, env, i + 1)!
+      term_rest(ts, env, acc / v, j)
+    },
+    _ => ok((acc, i)),
+  }
+
+fn atom(ts: List[Tok], env: Map[String, Int], i: Int) -> (Int, Int)! = {
+  let t = peek(ts, i)
+  guard t.pos >= 0 else err("unexpected end of input")
+  if t.text == "(" then {
+    let (v, j) = expr(ts, env, i + 1)!
+    let close = peek(ts, j)
+    guard close.text == ")" else err(if close.pos < 0 then "unexpected end of input" else "expected ) at ${int.to_string(close.pos)}")
+    ok((v, j + 1))
+  } else if t.text == "-" then {
+    let (v, j) = atom(ts, env, i + 1)!
+    ok((0 - v, j))
+  } else if string.is_digit(string.slice(t.text, 0, 1)) then {
+    let v = int.parse(t.text)!
+    ok((v, i + 1))
+  } else if string.is_alpha(string.slice(t.text, 0, 1)) then {
+    match map.get(env, t.text) {
+      some(v) => ok((v, i + 1)),
+      none => err("unknown variable ${t.text} at ${int.to_string(t.pos)}"),
+    }
+  } else err("unexpected ${t.text} at ${int.to_string(t.pos)}")
+}
+
+fn eval(src: String, env: Map[String, Int]) -> Int! = {
+  let ts = tokenize_from(src, 0, [])!
+  let (v, j) = expr(ts, env, 0)!
+  let rest = peek(ts, j)
+  guard rest.pos < 0 else err("unexpected ${rest.text} at ${int.to_string(rest.pos)}")
+  v
+}

@@ -1,0 +1,17 @@
+test "hidden: a garbled first entry has nothing to reuse and stays fatal" {
+  assert_eq(load(["25:00:00 INFO boot", "09:00:00 INFO up"]) |> result.map((l) => render(l)), err(BadTime(1, "25:00:00")))
+  assert_eq(load(["", "  ", "12:3:00 INFO boot"]) |> result.map((l) => render(l)), err(BadTime(3, "12:3:00")))
+}
+test "hidden: a recovered line is still checked for its level" {
+  assert_eq(load(["10:00:00 INFO a", "xx DEBUGG b"]) |> result.map((l) => render(l)), err(BadLevel(2, "DEBUGG")))
+}
+test "hidden: a truncated line stays fatal even with a garbled time" {
+  assert_eq(load(["10:00:00 INFO a", "oops ERROR"]) |> result.map((l) => render(l)), err(Truncated(2)))
+}
+test "hidden: warnings stay in line order and reuse chains through recovered lines" {
+  let r = load(["08:30:00 DEBUG a", "", "8:31 INFO b", "?? ERROR c d", "", "08:30:10 WARN e"]) |> result.map((l) => render(l))
+  assert_eq(r, ok("08:30:00 D a; 08:30:00 I b; 08:30:00 E c d; 08:30:10 W e | line 2: blank line skipped; line 3: bad time 8:31, reusing 08:30:00; line 4: bad time ??, reusing 08:30:00; line 5: blank line skipped"))
+}
+test "hidden: order is still checked against the reused time" {
+  assert_eq(load(["10:00:00 INFO a", "10:00:00 INFO b", "t INFO c", "09:59:59 INFO d"]) |> result.map((l) => render(l)), err(OutOfOrder(4, 36000, 35999)))
+}

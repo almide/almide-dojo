@@ -1,0 +1,47 @@
+// Plausible wrong patch: checks every row first and only then the columns, so a
+// column repeat high in the grid loses to a row repeat further down.
+// 4x4 mini-sudoku reader. Each row is four characters "0"-"4"; "0" is an empty
+// cell. Rows and columns in errors are numbered from 1.
+type GridErr: Eq, Repr =
+  | WrongHeight(Int)
+  | Ragged(Int, Int)
+  | BadCell(Int, Int, String)
+  | Duplicate(Int, Int, Int)
+
+fn parse_row(r: Int, line: String) -> List[Int]!GridErr = {
+  let cs = string.chars(line)
+  guard list.len(cs) == 4 else err(Ragged(r, list.len(cs)))
+  cs |> list.enumerate |> list.map((p) => {
+    let c = p.1
+    if string.is_digit(c) and c <= "4" then ok(int.parse(c) ?? 0) else err(BadCell(r, p.0 + 1, c))
+  }) |> list.map((x) => x!)!
+}
+
+fn load(rows: List[String]) -> List[List[Int]]!GridErr = {
+  guard list.len(rows) == 4 else err(WrongHeight(list.len(rows)))
+  let g = rows |> list.enumerate |> list.map((p) => parse_row(p.0 + 1, p.1)!)!
+  let cells = list.range(0, 16) |> list.map((k) => (k / 4, k % 4))
+  let in_row = cells |> list.find((rc) => {
+    let v = cell(g, rc.0, rc.1)
+    v != 0 and (list.range(0, rc.1) |> list.any((c) => cell(g, rc.0, c) == v))
+  })
+  let in_col = cells |> list.find((rc) => {
+    let v = cell(g, rc.0, rc.1)
+    v != 0 and (list.range(0, rc.0) |> list.any((r) => cell(g, r, rc.1) == v))
+  })
+  match in_row {
+    some(rc) => err(Duplicate(rc.0 + 1, rc.1 + 1, cell(g, rc.0, rc.1))),
+    none => match in_col {
+      some(rc) => err(Duplicate(rc.0 + 1, rc.1 + 1, cell(g, rc.0, rc.1))),
+      none => ok(g),
+    },
+  }
+}
+
+fn cell(g: List[List[Int]], r: Int, c: Int) -> Int = list.get(list.get(g, r) ?? [], c) ?? 0
+
+fn filled(g: List[List[Int]]) -> Int =
+  g |> list.flat_map((row) => row) |> list.count((v) => v != 0)
+
+fn render(g: List[List[Int]]) -> String =
+  g |> list.map((row) => row |> list.map((v) => if v == 0 then "." else int.to_string(v)) |> list.join("")) |> list.join("/")

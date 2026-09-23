@@ -1,0 +1,17 @@
+test "hidden: binary ops need two values, exact message" {
+  assert_eq(run(["push 4", "# comment", "", "add"]) |> result.map((v) => show(v)), err("stack underflow at 2: add needs 2, has 1"))
+  assert_eq(run(["push 4", "swap"]) |> result.map((v) => show(v)), err("stack underflow at 2: swap needs 2, has 1"))
+}
+test "hidden: unary ops need one value" {
+  assert_eq(run(["push 1", "out", "drop"]) |> result.map((v) => show(v)), err("stack underflow at 3: drop needs 1, has 0"))
+  assert_eq(run(["dup"]) |> result.map((v) => show(v)), err("stack underflow at 1: dup needs 1, has 0"))
+}
+test "hidden: exactly enough values is fine, the stack may end empty" {
+  assert_eq(run(["push 3", "push 4", "swap", "sub", "out"]) |> result.map((v) => show(v)), ok("stack  out 1"))
+  assert_eq(run(["push -2", "dup", "mul", "drop"]) |> result.map((v) => show(v)), ok("stack  out "))
+}
+test "hidden: push and unknown-op errors keep their text and the first failure wins" {
+  assert_eq(run(["frob", "add"]) |> result.map((v) => show(v)), err("unknown op frob at 1"))
+  assert_eq(run(["out", "push x"]) |> result.map((v) => show(v)), err("stack underflow at 1: out needs 1, has 0"))
+  assert_eq(run(["push 1", "push x", "add"]) |> result.map((v) => show(v)), err("bad value at 2"))
+}
