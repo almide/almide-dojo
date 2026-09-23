@@ -1,0 +1,40 @@
+// Plausible wrong patch: `list.all` over the parts, which is vacuously true for
+// an empty AllOf, so the composite fails OPEN. Passes the visible tests.
+// An authorization port: may `user` perform `action`?
+protocol Auth {
+  fn allows(a: Self, user: String, action: String) -> Bool
+}
+
+// Grant rules written "user:action"; "user:*" grants every action to that user.
+type Grants: Auth = { rules: List[String] }
+fn Grants.allows(g: Grants, user: String, action: String) -> Bool =
+  list.contains(g.rules, user + ":" + action) or list.contains(g.rules, user + ":*")
+
+// Every part must allow.
+type AllOf: Auth = { parts: List[Grants] }
+fn AllOf.allows(a: AllOf, user: String, action: String) -> Bool =
+  list.all(a.parts, (g) => g.allows(user, action))
+
+// The actions `user` may perform, in the order asked (duplicates kept).
+fn permitted[A: Auth](a: A, user: String, actions: List[String]) -> List[String] =
+  actions |> list.filter((act) => a.allows(user, act))
+
+// "user: read=yes, write=no"
+fn audit[A: Auth](a: A, user: String, actions: List[String]) -> String = {
+  let parts = actions |> list.map((act) => act + "=" + (if a.allows(user, act) then "yes" else "no"))
+  user + ": " + list.join(parts, ", ")
+}
+
+type Policy = | Single(Grants) | All(AllOf)
+
+fn permitted_by(p: Policy, user: String, actions: List[String]) -> List[String] =
+  match p {
+    Single(g) => permitted(g, user, actions),
+    All(a) => permitted(a, user, actions),
+  }
+
+fn audit_by(p: Policy, user: String, actions: List[String]) -> String =
+  match p {
+    Single(g) => audit(g, user, actions),
+    All(a) => audit(a, user, actions),
+  }
