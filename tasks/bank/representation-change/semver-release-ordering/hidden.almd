@@ -1,0 +1,22 @@
+test "hidden: components compare as numbers" {
+  assert(newer(release("a", 1, 10, 0), release("a", 1, 9, 7)))
+  assert(newer(release("a", 10, 0, 0), release("a", 9, 99, 99)))
+  assert(not newer(release("a", 1, 2, 3), release("a", 1, 2, 3)))
+  assert(newer(release("a", 0, 0, 10), release("a", 0, 0, 9)))
+}
+test "hidden: newest keeps the first of equals" {
+  let rs = [release("w", 2, 0, 0), release("x", 9, 0, 0), release("w", 2, 0, 0), release("w", 1, 99, 0)]
+  assert_eq(newest(rs, "w"), some(release("w", 2, 0, 0)))
+  assert_eq(newest(rs, "zz"), none)
+  assert_eq(newest([release("w", 1, 9, 0), release("w", 1, 10, 0)], "w"), some(release("w", 1, 10, 0)))
+}
+test "hidden: upgrades are strict" {
+  let av = [release("a", 1, 10, 0), release("b", 3, 0, 0), release("c", 0, 9, 0)]
+  let inst = [release("c", 0, 10, 0), release("b", 3, 0, 0), release("a", 1, 9, 9)]
+  assert_eq(upgrades(inst, av), ["a@1.10.0"])
+  assert_eq(upgrades([], av), [])
+}
+test "hidden: catalogue order" {
+  let rs = [release("b", 1, 10, 0), release("a", 2, 0, 0), release("b", 1, 9, 0), release("b", 10, 0, 0), release("a", 2, 0, 0)]
+  assert_eq(catalogue(rs), ["a@2.0.0", "a@2.0.0", "b@1.9.0", "b@1.10.0", "b@10.0.0"])
+}

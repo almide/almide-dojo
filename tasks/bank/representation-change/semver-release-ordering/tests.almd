@@ -1,0 +1,8 @@
+test "labels are semantic versions" {
+  assert_eq(label(release("web", 1, 2, 3)), "web@1.2.3")
+}
+test "newest and upgrades by version" {
+  let av = [release("web", 1, 2, 0), release("web", 1, 3, 1), release("db", 2, 0, 0)]
+  assert_eq(newest(av, "web"), some(release("web", 1, 3, 1)))
+  assert_eq(upgrades([release("web", 1, 2, 0), release("db", 2, 0, 0)], av), ["web@1.3.1"])
+}
