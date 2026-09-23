@@ -1,0 +1,26 @@
+// User permissions. `perms` holds names from PERMS, unique, in PERMS order.
+// "admin" implies every other permission.
+type User: Eq, Repr = { name: String, perms: List[String] }
+
+let PERMS = ["read", "write", "exec", "admin"]
+
+fn normalize(ps: List[String]) -> List[String] = PERMS |> list.filter((p) => list.contains(ps, p))
+
+fn user(name: String, perms: List[String]) -> User = User { name: name, perms: normalize(perms) }
+
+fn grant(u: User, p: String) -> User = User { ...u, perms: normalize(u.perms + [p]) }
+
+fn revoke(u: User, p: String) -> User = User { ...u, perms: u.perms |> list.filter((q) => q != p) }
+
+fn can(u: User, p: String) -> Bool = list.contains(u.perms, p) or list.contains(u.perms, "admin")
+
+// Four characters r, w, x, a, with "-" for a missing permission: "rw--".
+fn render(u: User) -> String = {
+  let letters = ["r", "w", "x", "a"]
+  list.zip(PERMS, letters)
+    |> list.map(((p, l)) => if list.contains(u.perms, p) then l else "-")
+    |> list.join("")
+}
+
+// The permissions both users hold explicitly, in PERMS order.
+fn common(a: User, b: User) -> List[String] = a.perms |> list.filter((p) => list.contains(b.perms, p))

@@ -1,0 +1,10 @@
+test "bitmask permissions" {
+  let u = user("ann", ["write", "read"])
+  assert_eq(u.perms, 3)
+  assert_eq(render(u), "rw--")
+  assert_eq(render(grant(u, "exec")), "rwx-")
+  assert_eq(revoke(u, "read").perms, 2)
+}
+test "common names" {
+  assert_eq(common(user("a", ["read", "exec"]), user("b", ["exec", "read", "write"])), ["read", "exec"])
+}
