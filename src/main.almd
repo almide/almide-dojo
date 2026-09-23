@@ -109,6 +109,7 @@ effect fn list_bank_tasks() -> Result[List[String], String] = {
 // lines in the diagnostic so the classifier and the summary can count them
 // without a new record field; the hidden oracle's detail is never leaked.
 let SILENT_VIOLATION = "[bank] silent-violation: the visible tests pass but the hidden oracle rejected the change — an untouched behaviour listed under Preserve changed. No further detail is given; re-read the Preserve section."
+let RESOURCE_VIOLATION = "[bank] resource-violation: behaviour is unchanged but the program keeps or allocates more than the requested edit needs — a resource listed under Preserve changed. No further detail is given; re-read the Preserve section."
 let TARGET_DIVERGENCE = "[bank] target-divergence: native and --target wasm disagree on this program. A compiler finding, not a repair target: the attempt is scored as failed and not retried."
 
 effect fn load_task_search(name: String, levels: List[String]) -> Result[Task, String] =
@@ -176,11 +177,35 @@ effect fn bank_oracles(task: Task, tmp: String, solution: String) -> Result[Atte
       err(_) => ok(AttemptResult { success: false, code: solution, diagnostic: SILENT_VIOLATION })
       ok(_) => match process.exec("almide", ["test", all, "--target", "wasm"]) {
         err(_) => ok(AttemptResult { success: false, code: solution, diagnostic: TARGET_DIVERGENCE })
-        ok(_) => ok(AttemptResult { success: true, code: solution, diagnostic: "" })
+        ok(_) => if bank_task_needs_resource(task.dir)! then resource_oracle(task, all, solution)
+          else ok(AttemptResult { success: true, code: solution, diagnostic: "" })
       }
     }
   }
 }
+
+// The third oracle (almide-dojo#5): for a task whose meta says
+// `resource_oracle = "active"`, scripts/resource-oracle.sh runs the task's
+// probe over the model's program and over the reference solution at two
+// scales on both targets, and bounds the program's growth by the reference's.
+// A violation is a model outcome (marker, retried like a silent violation). A
+// probe that cannot run on the REFERENCE, or a compiler without the counters,
+// is the harness's problem and never a score: it surfaces as an error, which
+// the cell records as `not-run` with the script's words.
+effect fn bank_task_needs_resource(dir: String) -> Bool =
+  match fs.read_text(dir + "/meta.toml") {
+    err(_) => false
+    ok(m) => string.contains(m, "resource_oracle = \"active\"")
+  }
+
+effect fn resource_oracle(task: Task, program: String, solution: String) -> Result[AttemptResult, String] =
+  match process.exec("bash", ["scripts/resource-oracle.sh", task.dir, program]) {
+    ok(_) => ok(AttemptResult { success: true, code: solution, diagnostic: "" })
+    err(e) =>
+      if string.contains(e, "__RESOURCE_VERDICT violation") or string.contains(e, "__RESOURCE_FAILED_ON candidate") then
+        ok(AttemptResult { success: false, code: solution, diagnostic: RESOURCE_VIOLATION })
+      else err("resource oracle could not judge " + task.name + ": " + string.trim(e))
+  }
 
 // ── Fix loop ──
 //
@@ -507,13 +532,29 @@ fn bank_counts(date: String, results: List[RunResult]) -> String = {
   let silent = list.count(measured, (r) => r.final_diagnostic == SILENT_VIOLATION)
   let diverged = list.count(measured, (r) => r.final_diagnostic == TARGET_DIVERGENCE)
   let silent_any = list.count(measured, (r) => list.any(r.attempts, (a) => a.diagnostic == SILENT_VIOLATION))
+  let resource = list.count(measured, (r) => r.final_diagnostic == RESOURCE_VIOLATION)
+  let resource_any = list.count(measured, (r) => list.any(r.attempts, (a) => a.diagnostic == RESOURCE_VIOLATION))
   "# Bank run " + date + "\n\n" +
     "- **survived**: " + int.to_string(list.count(measured, (r) => r.success)) + "/" + int.to_string(list.len(results)) + " planned (" + int.to_string(list.len(measured)) + " reached the model)\n" +
     "- **silent violations (final)**: " + int.to_string(silent) + "\n" +
     "- **silent violations (any attempt)**: " + int.to_string(silent_any) + "\n" +
+    "- **resource violations (final)**: " + int.to_string(resource) + "\n" +
+    "- **resource violations (any attempt)**: " + int.to_string(resource_any) + "\n" +
     "- **target divergences**: " + int.to_string(diverged) + "\n\n" +
-    "Score = compile ∧ visible ∧ hidden ∧ cross-target, no partial credit; a refusal counts only if the repair survives within the retry budget.\n\n"
+    "Score = compile ∧ visible ∧ hidden ∧ cross-target ∧ resource (where the task declares it), no partial credit; a refusal counts only if the repair survives within the retry budget.\n\n"
 }
+
+effect fn resource_tasks(tasks: List[String], acc: List[String]) -> List[String] =
+  match list.first(tasks) {
+    none => acc,
+    some(t) => {
+      let needs = match load_bank_task(t) {
+        ok(task) => bank_task_needs_resource(task.dir)!
+        err(_) => false
+      }
+      resource_tasks(list.drop(tasks, 1), if needs then acc + [t] else acc)!
+    },
+  }
 
 effect fn run_bank(model: String) -> Unit = {
   match list_bank_tasks() {
@@ -523,8 +564,20 @@ effect fn run_bank(model: String) -> Unit = {
     }
     ok(tasks) => {
       println("Running " + int.to_string(list.len(tasks)) + " bank tasks against " + model)
+      // A compiler without the allocation counters cannot judge a resource
+      // task. Those cells are `harness-limitation` — not asked, not scored —
+      // and the run is then `not-comparable` by the shared decision table.
+      let armed = match process.exec("bash", ["scripts/resource-oracle.sh", "--armed"]) {
+        ok(_) => true
+        err(_) => false
+      }
+      let blocked = if armed then [] else resource_tasks(tasks, [])!
+      let unarmed_reason = "resource oracle unarmed: " + (compiler_version() ?? "") + " prints no allocation-counter line (ALMIDE_ALLOC_COUNT / ALMIDE_WASM_ALLOC_COUNT); advance almide-pin.toml to a release that carries both"
+      let absent = blocked |> list.map((t) => absent_cell(t, model, false, unarmed_reason))
+      absent |> list.map((r) => record_cell(r)!)!
+      if not list.is_empty(blocked) then println(unarmed_reason + " — " + int.to_string(list.len(blocked)) + " task(s) not run") else {}
       println("")
-      match run_all_loop(tasks, model, []) {
+      match run_all_loop(tasks |> list.filter((t) => not list.contains(blocked, t)), model, absent) {
         err(e) => {
           println("Harness error: " + e)
           process.exit(1)
@@ -815,4 +868,10 @@ test "the per-task report of an unanswered task carries no success line to be mi
   let measured = render.render_report(t_fail("gcd"))
   assert(string.contains(measured, "- **success**: no\n"))
   assert(string.contains(measured, "- **state**: `measured`\n"))
+}
+
+test "the three bank markers are three buckets, none of them a compile failure" {
+  assert_eq(classifier.classify_failure(SILENT_VIOLATION), ("silent-violation", ""))
+  assert_eq(classifier.classify_failure(RESOURCE_VIOLATION), ("resource-violation", ""))
+  assert_eq(classifier.classify_failure(TARGET_DIVERGENCE), ("target-divergence", ""))
 }
