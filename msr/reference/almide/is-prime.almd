@@ -1,0 +1,7 @@
+fn has_divisor(n: Int, d: Int) -> Bool =
+  if d * d > n then false
+  else if n % d == 0 then true
+  else has_divisor(n, d + 1)
+
+fn is_prime(n: Int) -> Bool =
+  if n < 2 then false else not has_divisor(n, 2)

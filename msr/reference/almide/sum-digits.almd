@@ -1,0 +1,4 @@
+fn digits_go(n: Int) -> Int =
+  if n == 0 then 0 else n % 10 + digits_go(n / 10)
+
+fn sum_digits(n: Int) -> Int = digits_go(if n < 0 then 0 - n else n)

@@ -6,38 +6,104 @@ on:
   workflow_dispatch:
     inputs:
       models:
-        description: 'Comma-separated model specs'
+        description: 'Comma-separated model specs (empty = the daily set below). An anthropic:/openai: spec needs ANTHROPIC_API_KEY / OPENAI_API_KEY, which this repo does NOT provide — such a job is red; measure those locally (README: Running the harness).'
         required: false
-        default: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast'
+        default: ''
 
 permissions:
   contents: write
 
+env:
+  # The nightly set: the Cloudflare Workers AI models only — the repo holds
+  # Cloudflare credentials and nothing else (maintainer ruling: no Anthropic
+  # or OpenAI key in CI). Anthropic / OpenAI rows for the README scorecard are
+  # measured locally and committed by hand; see README "Running the harness".
+  # Specs are what src/main.almd parses: `cf:` = Cloudflare,
+  # `anthropic:` = Anthropic Messages API, `openai:` = OpenAI.
+  DAILY_MODELS: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast,cf:@cf/meta/llama-3.1-8b-instruct'
+
+  # The HTTP read timeout, derived in msr-cross.yml — same number here on
+  # purpose: one deadline, one derivation, no drift between the lanes. The
+  # compiler's default is 30 s, which is a deadline on the whole completion
+  # (this transport is non-streaming), and a reasoning model exceeds it. The
+  # daily lane is the more exposed of the two: `call_model` passes
+  # max_attempts=1, so there is no transport retry to absorb a slow answer.
+  #
+  # A task this deadline costs is now `not-run` in summary.md rather than a
+  # scored zero (almide-dojo#17), and summary.md records the number below, so
+  # a reader knows which deadline produced the absence. The timeout still
+  # matters: inside the window it strictly converts `not-run` cells into
+  # measured ones.
+  ALMIDE_HTTP_TIMEOUT_SECS: '140'
+
 jobs:
-  run-msr:
+  plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        model:
-          - 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast'
-          - 'cf:@cf/meta/llama-3.1-8b-instruct'
+    outputs:
+      models: ${{ steps.matrix.outputs.models }}
+      pin: ${{ steps.pin.outputs.ref }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Almide v0.14.8
+      - name: Read the compiler pin
+        id: pin
         run: |
-          cargo install --git https://github.com/almide/almide --tag v0.14.8 --bin almide --locked --force
-          almide --version  # expect `almide 0.14.6` (v0.14.7 has almai dispatch regression — see almide issue)
+          REF=$(sed -nE 's/^ref *= *"([^"]+)".*/\1/p' almide-pin.toml)
+          test -n "$REF" || { echo "almide-pin.toml has no [compiler] ref"; exit 1; }
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "compiler pin: $REF"
+
+      - name: Build the model matrix
+        id: matrix
+        env:
+          INPUT_MODELS: ${{ github.event.inputs.models }}
+        run: |
+          MODELS="$INPUT_MODELS"
+          if [ -z "$MODELS" ]; then MODELS="$DAILY_MODELS"; fi
+          # The input's description has said an anthropic:/openai: spec is red
+          # since this lane was written, but it was red only as a consequence:
+          # the key is absent, every task fails to reach the model, and the
+          # summary guard fires with "the harness wrote no summary". Say the
+          # actual reason, before 38 tasks are attempted.
+          BAD=$(printf '%s' "$MODELS" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -E '^(anthropic:|openai:|claude-)' || true)
+          if [ -n "$BAD" ]; then
+            echo "::error::this repo holds Cloudflare Workers AI credentials and nothing else (maintainer ruling: no Anthropic or OpenAI key in CI). Refused spec(s): $(printf '%s' "$BAD" | tr '\n' ' ')"
+            echo "Anthropic / OpenAI rows are measured locally and committed by hand; see README, \"Nightly vs. by hand\"."
+            exit 1
+          fi
+          JSON=$(printf '%s' "$MODELS" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | jq -R . | jq -cs .)
+          test "$(printf '%s' "$JSON" | jq length)" -gt 0 || { echo "empty model list"; exit 1; }
+          echo "models=$JSON" >> "$GITHUB_OUTPUT"
+          echo "models: $JSON"
+
+  run-msr:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        model: ${{ fromJSON(needs.plan.outputs.models) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the pinned Almide (${{ needs.plan.outputs.pin }})
+        run: |
+          PIN="${{ needs.plan.outputs.pin }}"
+          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "$PIN"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          GOT=$("$HOME/.local/bin/almide" --version)
+          echo "installed: $GOT (pin $PIN)"
+          # The pin is the measurement's identity: refuse to measure with anything else.
+          test "$GOT" = "almide ${PIN#v}" || { echo "::error::almide-pin.toml says $PIN but the installed binary is '$GOT'"; exit 1; }
 
       - name: Run all tasks
         env:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
           CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          # No ANTHROPIC_API_KEY / OPENAI_API_KEY here on purpose: neither
+          # secret exists, and naming them read as if CI might hold one.
         run: |
           MODEL="${{ matrix.model }}"
           # Clear runs/ so this job's artifact contains ONLY this model's fresh
@@ -48,23 +114,95 @@ jobs:
           # is silently overwritten by stale checked-out copies.
           rm -rf runs/
           echo "Running MSR with model: $MODEL"
-          almide run src/main.almd -- all "$MODEL" || true
+          # Harness exit codes: 0 all planned tasks passed, 1 some measured
+          # task failed (that is the measurement), 2 nothing reached the model
+          # (no summary written), 3 the run is `not-comparable` — some planned
+          # task was never answered, so the rate is an interval. The job
+          # verdict is the summary, not the exit code: a run that measured
+          # zero tasks is red whatever the code says.
+          set +e
+          almide run src/main.almd -- all "$MODEL"
+          RC=$?
+          set -e
+          echo "harness exit code: $RC"
+          SUMMARY=$(find runs -name summary.md 2>/dev/null | head -n1 || true)
+          if [ -z "$SUMMARY" ]; then
+            echo "::error::the harness wrote no runs/*/*/summary.md (exit $RC) — nothing was measured"
+            exit 1
+          fi
+          TASKS=$(sed -nE 's/^- \*\*tasks\*\*: ([0-9]+).*/\1/p' "$SUMMARY")
+          if [ "${TASKS:-0}" -eq 0 ]; then
+            echo "::error::$SUMMARY reports 0 tasks"
+            exit 1
+          fi
+          # The evidence is published BEFORE anything judges it (the shape
+          # almide-dojo#19 arrived at for the cross lane): a refusal that
+          # exits before writing its own summary hides the one run that most
+          # needs reading.
+          {
+            echo "## MSR run — \`$MODEL\`"
+            echo
+            echo "- summary: \`$SUMMARY\`"
+            echo "- compiler pin: \`${{ needs.plan.outputs.pin }}\` (\`$(almide --version)\`)"
+            echo "- harness exit code: $RC (1 = some tasks failed, 3 = some tasks were never asked; the measurement is still recorded)"
+            echo
+            sed -n '1,/^## Per-task/p' "$SUMMARY" | grep -E '^(> |- )' || true
+            echo
+            sed -n '/^## Never asked/,/^## By category/p' "$SUMMARY" | grep -E '^\|' || true
+          } >> "$GITHUB_STEP_SUMMARY"
+          # Re-derive the refusal from the summary's OWN numbers rather than
+          # trusting the banner it printed: `reached` < `tasks` is the whole
+          # condition, and a run cannot certify itself.
+          REACHED=$(sed -nE 's/^- \*\*reached\*\*: ([0-9]+) \/ [0-9]+.*/\1/p' "$SUMMARY")
+          VERDICT=$(sed -nE 's/^> \*\*Verdict: `([a-z-]+)`.*/\1/p' "$SUMMARY" | head -n1)
+          echo "reached $REACHED of $TASKS planned; stamped verdict: ${VERDICT:-unstamped}"
+          if [ "${REACHED:-0}" -lt "$TASKS" ]; then
+            if [ "$VERDICT" != "not-comparable" ]; then
+              echo "::error::$SUMMARY reached $REACHED of $TASKS planned tasks but is stamped \`${VERDICT:-unstamped}\` — the summary contradicts its own numbers"
+              exit 1
+            fi
+            # A number that travelled away from its condition is the whole
+            # defect class, so an incomplete run fails the job — after the
+            # table is published and while the results still get committed
+            # (commit-results runs on `!cancelled()`). A refused run is
+            # evidence; it is just not a scorecard number.
+            echo "::error::verdict \`not-comparable\`: $((TASKS - REACHED)) of $TASKS planned tasks never reached the model, so this run's rate is an interval and must not be published as a point (almide-dojo#17)"
+            exit 1
+          fi
+          # True about the task bank rather than a harness fault, so it warns
+          # and does not fail: a gate that is red by design stops being read.
+          if [ "$VERDICT" = "inconclusive-saturated" ]; then
+            echo "::warning::every task this model was asked passed: a complete run that separates nothing (almide/almide#1963). Do not quote it as evidence about the model."
+          fi
 
+      # Runs even when a step above went red. The refusal step exits non-zero
+      # on `not-comparable`, and that is EXACTLY the run whose evidence someone
+      # needs to read — without this condition the upload is skipped, so the
+      # refused run is the only one that leaves nothing behind. Measured
+      # 2026-09-22: a 38-task run refused for one unreached task produced no
+      # artifact and no committed results, while the run beside it that passed
+      # kept everything. A refused run is evidence; it is just not a number.
       - name: Upload results
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: runs-${{ strategy.job-index }}
           path: runs/
+          if-no-files-found: error
 
   commit-results:
-    needs: run-msr
+    needs: [plan, run-msr]
+    # Run as long as the matrix was not cancelled: commit whatever models did
+    # produce a summary even when another model's job is red (the workflow as
+    # a whole still fails on that job).
+    if: ${{ !cancelled() && needs.plan.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Almide
+      - name: Install the pinned Almide (${{ needs.plan.outputs.pin }})
         run: |
-          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh
+          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "${{ needs.plan.outputs.pin }}"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Download all results
@@ -76,14 +214,56 @@ jobs:
 
       - name: Regenerate dashboard
         run: |
-          almide run dashboards/build.almd || true
-          cp -f dashboards/index.html docs/index.html 2>/dev/null || true
+          almide run dashboards/build.almd
+          cp -f dashboards/index.html docs/index.html
 
       - name: Commit results and dashboard
+        # Only the main branch carries the trend line. A dispatch on any other
+        # ref (e.g. to test this workflow from a PR) leaves its results in the
+        # run's artifacts and the job summary, and commits nothing.
+        if: github.ref == 'refs/heads/main'
         run: |
           DATE=$(date -u +%Y-%m-%d)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add runs/ docs/index.html dashboards/index.html
-          git diff --cached --quiet || git commit -m "Daily MSR run $DATE (multi-model)"
-          git push || true
+          if git diff --cached --quiet; then
+            echo "::error::nothing to commit — the run-msr jobs produced no new files under runs/"
+            exit 1
+          fi
+          git commit -m "Daily MSR run $DATE (${{ needs.plan.outputs.pin }}, multi-model)"
+          # Push with a rebase-and-retry, because BOTH lanes commit to `main`
+          # and a scheduled run is not alone on the branch.
+          #
+          # This was a bare `git push`. On 2026-09-22 a cross-language run —
+          # seven toolchains, 21 tasks, ~500 model calls, and a `comparable`
+          # verdict that had already passed every publication threshold in the
+          # step above — was discarded because `main` had moved while it ran.
+          # The measurement is the expensive, unrepeatable part; the push is
+          # the cheap part, and it was the only part allowed to fail.
+          #
+          # A rebase is safe here: every lane writes under its own dated,
+          # model-named directory, so two runs never touch the same file. A
+          # conflict would mean two runs of the SAME model on the same day,
+          # which is the collision #22 addresses by putting `--label` in the
+          # path — and if one somehow happens, the loop exits non-zero rather
+          # than resolving it blind.
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              echo "pushed on attempt $attempt"
+              exit 0
+            fi
+            echo "push rejected (attempt $attempt) — another run reached main first; rebasing"
+            git pull --rebase --no-edit origin main || {
+              echo "::error::rebase onto main failed: two runs wrote the same files. The results are in the artifacts and the job summary; commit them by hand."
+              exit 1
+            }
+            sleep $((attempt * 5))
+          done
+          echo "::error::could not push the results after 5 attempts; they remain in the artifacts (see the upload step)"
+          exit 1
+
+      - name: Results were not committed (not main)
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "ref is ${{ github.ref }}: results stay in the artifacts (runs-*) and the job summaries; nothing was pushed." | tee -a "$GITHUB_STEP_SUMMARY"

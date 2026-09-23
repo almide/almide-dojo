@@ -1,0 +1,6 @@
+- Return `true` if every opening bracket in `s` has a matching closing bracket in the correct order
+- Support three bracket types: `()`, `[]`, `{}`
+- Non-bracket characters are ignored
+- `is_balanced("")` returns `true`
+- `is_balanced("([{}])")` returns `true`
+- `is_balanced("([)]")` returns `false`

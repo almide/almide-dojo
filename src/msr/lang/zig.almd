@@ -1,0 +1,171 @@
+// Zig plugin: the solution is `solution.zig`, imported by a generated
+// `main.zig` driver and built with `zig build-exe` (Zig 0.16 syntax).
+// Strings are `[]const u8`, lists are `[]const T` slices; a function whose
+// result is a string or a list takes an allocator first and returns an
+// error union, the way the standard library spells it.
+
+import self.msr.spec.{Ty, TInt, TBool, TStr, TList, Val, VInt, VBool, VStr, VList, VCall, Sig, Param, PTask, Case, Step}
+import self.msr.spec
+
+fn versions() -> List[(String, List[String])] = [("zig", ["zig", "version"])]
+
+fn notes() -> String =
+  "Zig 0.16. Your file is imported by the driver as `@import(\"solution.zig\")`, so mark every required function `pub`. A function that returns a string or a list takes `allocator: std.mem.Allocator` as its first parameter and returns an error union (`![]u8`, `![]i64`, `![][]i64`): allocate the result with that allocator and never free it (the driver uses an arena). Do not write a `main`."
+
+fn owned_ty(t: Ty) -> String = match t {
+  TInt => "i64",
+  TBool => "bool",
+  TStr => "[]u8",
+  TList(e) => "[]" + owned_ty(e),
+}
+
+fn const_ty(t: Ty) -> String = match t {
+  TInt => "i64",
+  TBool => "bool",
+  TStr => "[]const u8",
+  TList(e) => "[]const " + const_ty(e),
+}
+
+fn sig(s: Sig) -> String = {
+  let params = s.params |> list.map((p) => p.name + ": " + const_ty(p.ty))
+  let all = if spec.is_heap(s.ret) then ["allocator: std.mem.Allocator"] + params else params
+  let ret = if spec.is_heap(s.ret) then "!" + owned_ty(s.ret) else owned_ty(s.ret)
+  "pub fn " + s.name + "(" + string.join(all, ", ") + ") " + ret
+}
+
+fn signatures(t: PTask) -> String =
+  t.sigs |> list.map((s) => "    " + sig(s)) |> string.join("
+")
+
+// A literal of type `ty` in argument or expected position: strings are
+// string literals, lists are pointers to array literals (`&[_]T{ ... }`).
+fn lit(t: PTask, v: Val, ty: Ty) -> String = match v {
+  VInt(n) => int.to_string(n),
+  VBool(b) => if b then "true" else "false",
+  VStr(s) => spec.c_quote(s),
+  VList(xs) => "&[_]" + const_ty(spec.elem(ty)) + "{ " + (xs |> list.map((x) => lit(t, x, spec.elem(ty))) |> string.join(", ")) + " }",
+  VCall(_, _) => call(t, v),
+}
+
+fn call(t: PTask, v: Val) -> String = match v {
+  VCall(name, args) => {
+    let sg = spec.find_sig(t.sigs, name)
+    let params = match sg {
+      some(s) => s.params,
+      none => [],
+    }
+    let heap = match sg {
+      some(s) => spec.is_heap(s.ret),
+      none => false,
+    }
+    let rendered = list.zip_with(args, params, (a, p) => lit(t, a, p.ty))
+    let all = if heap then ["a"] + rendered else rendered
+    (if heap then "try " else "") + "sol." + name + "(" + string.join(all, ", ") + ")"
+  },
+  _ => spec.neutral(v),
+}
+
+fn check_fn(t: Ty) -> String = match t {
+  TInt => "__msr_check_int",
+  TBool => "__msr_check_bool",
+  TStr => "__msr_check_str",
+  TList(TInt) => "__msr_check_ints",
+  TList(_) => "__msr_check_nested",
+}
+
+// Whether a call tree reaches a function that takes the allocator.
+fn uses_alloc(t: PTask, v: Val) -> Bool = match v {
+  VCall(name, args) => {
+    let heap = match spec.find_sig(t.sigs, name) {
+      some(s) => spec.is_heap(s.ret),
+      none => false,
+    }
+    heap or list.any(args, (a) => uses_alloc(t, a))
+  },
+  _ => false,
+}
+
+fn driver(t: PTask) -> String = {
+  let n = list.len(t.cases)
+  // Zig refuses both an unused local and a pointless discard, so the
+  // allocator is discarded exactly when no case reaches it.
+  let discard = if list.any(t.cases, (c) => uses_alloc(t, c.call)) then "" else "    _ = a;\n"
+  let checks = t.cases
+    |> list.map((c) => {
+      let ty = spec.case_ty(t.sigs, c)
+      "    " + check_fn(ty) + "(&failed, " + spec.c_quote(spec.case_label(c)) + ", " + call(t, c.call) + ", " + lit(t, c.expected, ty) + ");"
+    })
+    |> string.join("\n")
+  """
+    // ── msr driver (generated) ──
+    const std = @import("std");
+    const sol = @import("solution.zig");
+
+    fn __msr_fail(failed: *u32, label: []const u8) void {
+        failed.* += 1;
+        std.debug.print("FAIL {s}: ", .{label});
+    }
+
+    fn __msr_check_int(failed: *u32, label: []const u8, got: i64, want: i64) void {
+        if (got != want) {
+            __msr_fail(failed, label);
+            std.debug.print("expected {d}, got {d}\\n", .{ want, got });
+        }
+    }
+
+    fn __msr_check_bool(failed: *u32, label: []const u8, got: bool, want: bool) void {
+        if (got != want) {
+            __msr_fail(failed, label);
+            std.debug.print("expected {any}, got {any}\\n", .{ want, got });
+        }
+    }
+
+    fn __msr_check_str(failed: *u32, label: []const u8, got: []const u8, want: []const u8) void {
+        if (!std.mem.eql(u8, got, want)) {
+            __msr_fail(failed, label);
+            std.debug.print("expected \\"{s}\\", got \\"{s}\\"\\n", .{ want, got });
+        }
+    }
+
+    fn __msr_check_ints(failed: *u32, label: []const u8, got: []const i64, want: []const i64) void {
+        if (!std.mem.eql(i64, got, want)) {
+            __msr_fail(failed, label);
+            std.debug.print("expected {any}, got {any}\\n", .{ want, got });
+        }
+    }
+
+    fn __msr_check_nested(failed: *u32, label: []const u8, got: []const []const i64, want: []const []const i64) void {
+        var same = got.len == want.len;
+        if (same) {
+            for (got, want) |g, w| {
+                if (!std.mem.eql(i64, g, w)) same = false;
+            }
+        }
+        if (!same) {
+            __msr_fail(failed, label);
+            std.debug.print("expected {any}, got {any}\\n", .{ want, got });
+        }
+    }
+
+    pub fn main() !void {
+        var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+        defer arena.deinit();
+        const a = arena.allocator();
+    ${discard}    var failed: u32 = 0;
+    ${checks}
+        if (failed > 0) {
+            std.debug.print("msr: {d} of ${int.to_string(n)} cases failed\\n", .{failed});
+            std.process.exit(1);
+        }
+        std.debug.print("${spec.sentinel(n)}\\n", .{});
+    }
+    """
+}
+
+fn files(t: PTask, solution: String) -> List[(String, String)] =
+  [("solution.zig", solution), ("main.zig", driver(t))]
+
+fn steps() -> List[Step] = [
+  Step { kind: "compile", cmd: "zig", args: ["build-exe", "main.zig", "-femit-bin=msr_bin"], timeout_ms: spec.COMPILE_TIMEOUT_MS },
+  Step { kind: "run", cmd: "./msr_bin", args: [], timeout_ms: spec.RUN_TIMEOUT_MS },
+]

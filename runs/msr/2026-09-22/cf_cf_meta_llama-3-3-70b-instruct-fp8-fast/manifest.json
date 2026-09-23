@@ -1,0 +1,194 @@
+{
+  "verdict": {
+    "id": "comparable",
+    "comparable": true,
+    "conclusive": true,
+    "planned_tasks": 21,
+    "planned_cells": 147,
+    "cells": {
+      "measured": 147,
+      "inconclusive-saturated": 0,
+      "not-run": 0,
+      "harness-limitation": 0
+    },
+    "reasons": []
+  },
+  "lane": "cross-language",
+  "label": "",
+  "date": "2026-09-22",
+  "harness": {
+    "repo": "almide/almide-dojo",
+    "commit": "c225b3780f63172bcba9fc21f0bf32e34ddd7339",
+    "dirty": false
+  },
+  "compiler": {
+    "pin": "v0.62.0",
+    "version": "almide 0.62.0"
+  },
+  "model": {
+    "spec": "cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    "provider": "cf",
+    "temperature_requested": 0,
+    "seed_requested": 20260922,
+    "transport_attempts": 3,
+    "http_timeout_secs": "140",
+    "temperature_sent": true,
+    "temperature": 0,
+    "top_p_sent": true,
+    "top_p": 1,
+    "max_tokens_sent": true,
+    "max_tokens": 4096,
+    "seed_sent": true,
+    "seed": 20260922
+  },
+  "retries": 3,
+  "condition": {
+    "effects": "shipped"
+  },
+  "task_set": {
+    "path": "msr/task-set.json",
+    "revision": "2026-09-22.1",
+    "sha256": "03c1dc2ba71cf4ee195808ff1324cf9b33558cc8186451e181635ba22f5ce7d0",
+    "tasks": [
+      "clamp",
+      "count-vowels",
+      "factorial",
+      "fibonacci",
+      "fizzbuzz",
+      "gcd",
+      "is-palindrome",
+      "is-prime",
+      "list-sum",
+      "remove-duplicates",
+      "repeat-string",
+      "string-reverse",
+      "sum-digits",
+      "title-case",
+      "anagram-check",
+      "balanced-parens",
+      "caesar-cipher",
+      "flatten-nested",
+      "roman-numeral",
+      "run-length-encoding",
+      "matrix-ops"
+    ],
+    "neutral_prompts_sha256": "b0b9bfbf171c07ee087bc1a9328194add46be61bff455b86d875631a79d2008b"
+  },
+  "retry_template_sha256": "075c29810a697def4752d565037dbbe39f91dbbe31017ef4acef92260541320e",
+  "languages": [
+    {
+      "name": "almide",
+      "measured": true,
+      "toolchain": {
+        "almide": "almide 0.62.0"
+      },
+      "prompts": {
+        "system_sha256": "a321201cf4b9a6a73810b19dd185ea0d61942e313ddc9637fc8c1ad88b04753e",
+        "prompts_sha256": "7644ce80331f4fe41d2aa1ed8fae19100bdd3f9d7b5b6e991f20539ea8c920a2",
+        "notes_bytes": 12935
+      },
+      "steps": [
+        "almide build main.almd -o msr_bin",
+        "./msr_bin "
+      ]
+    },
+    {
+      "name": "rust",
+      "measured": true,
+      "toolchain": {
+        "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)"
+      },
+      "prompts": {
+        "system_sha256": "887faf60103ec636c533163d3fe551017f568f6172fbe7e513b978d73150fcd6",
+        "prompts_sha256": "e47041f4c029f07ec7c025748d5ae3479aae045c75dcc6e03ab10ca7275b953a",
+        "notes_bytes": 119
+      },
+      "steps": [
+        "rustc --edition 2021 -o msr_bin main.rs",
+        "./msr_bin "
+      ]
+    },
+    {
+      "name": "go",
+      "measured": true,
+      "toolchain": {
+        "go": "go version go1.27.1 linux/amd64"
+      },
+      "prompts": {
+        "system_sha256": "08ab66036f4c825fbe94d1a902a5c7be93b0f037b9c7e1661b74a30f81170d83",
+        "prompts_sha256": "27b991d038c513e8e29c0013ea94d0fef56b0f427c354296da6b8440704e71d3",
+        "notes_bytes": 138
+      },
+      "steps": [
+        "go build -o msr_bin solution.go msr_main.go",
+        "./msr_bin "
+      ]
+    },
+    {
+      "name": "typescript",
+      "measured": true,
+      "toolchain": {
+        "tsc": "Version 7.0.2",
+        "node": "v22.23.2"
+      },
+      "prompts": {
+        "system_sha256": "c73417672c6f171bd160d5e110b39adff74cdafa053f6ecb51624f02ac362df9",
+        "prompts_sha256": "674fdc9de747b5fd0f39356e258f2c23f0b491bd7a39d5dabd421d3fa161eb52",
+        "notes_bytes": 173
+      },
+      "steps": [
+        "tsc --strict --noEmitOnError --target es2022 --module commonjs --lib es2022 --types  --outDir out msr.cts",
+        "node out/msr.cjs"
+      ]
+    },
+    {
+      "name": "zig",
+      "measured": true,
+      "toolchain": {
+        "zig": "0.16.0"
+      },
+      "prompts": {
+        "system_sha256": "35ce7a6ab871e24f6e83dd68111c32b8c5d5205a3c1056e4966b30d789d30757",
+        "prompts_sha256": "b91fbfe36862665b52fccb1b06159693deb1829de99436daa5df1a6907a40eef",
+        "notes_bytes": 386
+      },
+      "steps": [
+        "zig build-exe main.zig -femit-bin=msr_bin",
+        "./msr_bin "
+      ]
+    },
+    {
+      "name": "gleam",
+      "measured": true,
+      "toolchain": {
+        "gleam": "gleam 1.18.1",
+        "node": "v22.23.2"
+      },
+      "prompts": {
+        "system_sha256": "31d3965e4b92843ea1fc8f0da487448b3bb6a8c2094e2905ae0121b3a657b481",
+        "prompts_sha256": "d81d95c7c525ee4fb88d4d38b3fc42bce1ebd9134271d93aa412205660b295ce",
+        "notes_bytes": 244
+      },
+      "steps": [
+        "gleam build",
+        "gleam run -m msr"
+      ]
+    },
+    {
+      "name": "moonbit",
+      "measured": true,
+      "toolchain": {
+        "moon": "moon 0.1.20260920 (914d7da 2026-09-20)"
+      },
+      "prompts": {
+        "system_sha256": "31323c7ed398747f1d316b0b94e37eaacc928aa683b02db82054a367d5b2be6c",
+        "prompts_sha256": "0c3a801c68d60941b380380b3f519121c3e5b56f98506df9abab0b13b6c178f4",
+        "notes_bytes": 252
+      },
+      "steps": [
+        "moon build main",
+        "moon run main"
+      ]
+    }
+  ]
+}

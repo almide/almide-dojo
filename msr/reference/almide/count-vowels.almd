@@ -1,0 +1,2 @@
+fn count_vowels(s: String) -> Int =
+  string.chars(s) |> list.count((c) => string.contains("aeiou", c))

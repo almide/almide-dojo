@@ -1,0 +1,72 @@
+// MoonBit plugin: a one-package MoonBit module whose `main` package holds
+// the model's file and the generated driver, run with `moon run` (the
+// toolchain's default wasm-gc target and bundled runner).
+
+import self.msr.spec.{Ty, TInt, TBool, TStr, TList, Val, VInt, VBool, VStr, VList, VCall, Sig, Param, PTask, Case, Step}
+import self.msr.spec
+
+fn versions() -> List[(String, List[String])] = [("moon", ["moon", "version"])]
+
+fn notes() -> String =
+  "MoonBit (the current `moon` toolchain). Plain top-level functions; the driver lives in the same package, so no `pub` is needed. Lists are `Array[Int]` / `Array[Array[Int]]`, strings are `String`; only the core library is available. Do not write `main`."
+
+fn ty(t: Ty) -> String = match t {
+  TInt => "Int",
+  TBool => "Bool",
+  TStr => "String",
+  TList(e) => "Array[" + ty(e) + "]",
+}
+
+fn sig(s: Sig) -> String =
+  "fn " + s.name + "(" + (s.params |> list.map((p) => p.name + " : " + ty(p.ty)) |> string.join(", ")) + ") -> " + ty(s.ret)
+
+fn signatures(t: PTask) -> String =
+  t.sigs |> list.map((s) => "    " + sig(s)) |> string.join("
+")
+
+fn lit(v: Val) -> String = match v {
+  VInt(n) => int.to_string(n),
+  VBool(b) => if b then "true" else "false",
+  VStr(s) => spec.c_quote(s),
+  VList(xs) => "[" + (xs |> list.map(lit) |> string.join(", ")) + "]",
+  VCall(name, args) => name + "(" + (args |> list.map(lit) |> string.join(", ")) + ")",
+}
+
+fn driver(t: PTask) -> String = {
+  let n = list.len(t.cases)
+  let checks = t.cases
+    |> list.map((c) => "  msr_check(" + spec.c_quote(spec.case_label(c)) + ", " + lit(c.call) + ", " + lit(c.expected) + ")")
+    |> string.join("\n")
+  """
+    // ── msr driver (generated) ──
+    let msr_failed : Ref[Int] = { val: 0 }
+
+    fn[T : Eq + Debug] msr_check(label : String, got : T, want : T) -> Unit {
+      if got != want {
+        msr_failed.val = msr_failed.val + 1
+        println("FAIL " + label + ": expected " + @debug.to_string(want) + ", got " + @debug.to_string(got))
+      }
+    }
+
+    fn main {
+    ${checks}
+      if msr_failed.val > 0 {
+        println("msr: " + msr_failed.val.to_string() + " of ${int.to_string(n)} cases failed")
+        panic()
+      }
+      println("${spec.sentinel(n)}")
+    }
+    """
+}
+
+fn files(t: PTask, solution: String) -> List[(String, String)] = [
+  ("moon.mod.json", "{ \"name\": \"msr/solution\" }\n"),
+  ("main/moon.pkg.json", "{ \"is-main\": true, \"import\": [\"moonbitlang/core/debug\"] }\n"),
+  ("main/solution.mbt", solution),
+  ("main/msr_main.mbt", driver(t)),
+]
+
+fn steps() -> List[Step] = [
+  Step { kind: "compile", cmd: "moon", args: ["build", "main"], timeout_ms: spec.COMPILE_TIMEOUT_MS },
+  Step { kind: "run", cmd: "moon", args: ["run", "main"], timeout_ms: spec.RUN_TIMEOUT_MS },
+]

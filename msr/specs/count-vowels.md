@@ -1,0 +1,5 @@
+- Return the number of vowel characters in `s`
+- Vowels are: `a`, `e`, `i`, `o`, `u` (lowercase only)
+- `count_vowels("")` must return `0`
+- `count_vowels("hello")` must return `2`
+- Uppercase vowels do NOT count: `count_vowels("HELLO")` returns `0`

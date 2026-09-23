@@ -1,0 +1,395 @@
+name: Cross-language MSR Run
+
+# The cross-language lane (almide/almide#2146) on CI, on the Cloudflare
+# Workers AI models — the only provider credentials this repo holds. The
+# maintainer's ruling (2026-09-22) is that ANTHROPIC_API_KEY is NOT a
+# requirement of this measurement: an `anthropic:` / `openai:` spec is
+# refused here with a message, not attempted.
+#
+# Weekly, not daily. One cross-language run is 21 tasks x up to 7 languages x
+# up to 4 attempts (~500 model calls) plus seven toolchain installs, against
+# the daily lane's 21 calls; and the number it feeds — the almide README
+# scorecard — is gated at 90 days of freshness by
+# almide/almide scripts/check-readme-numbers.sh. Weekly re-measures it twelve
+# times inside that window, so the cadence is headroom, not a constraint.
+# Monday 05:00 UTC keeps it clear of the 03:00 UTC daily lane, which commits
+# to the same branch.
+
+on:
+  schedule:
+    - cron: '0 5 * * 1'  # Mondays 05:00 UTC (14:00 JST)
+  workflow_dispatch:
+    inputs:
+      models:
+        description: 'Comma-separated model specs (empty = the Cloudflare set below). An anthropic:/openai: spec is REFUSED: this repo holds Cloudflare credentials and nothing else.'
+        required: false
+        default: ''
+      languages:
+        description: 'Comma-separated plugin names (empty = every plugin whose toolchain is on the runner)'
+        required: false
+        default: ''
+      tasks:
+        description: 'Comma-separated task names (empty = every task in msr/task-set.json)'
+        required: false
+        default: ''
+      label:
+        description: 'Free-text label stamped into the manifest. "smoke" marks a run as a pipeline proof, not a number.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+env:
+  # The Cloudflare Workers AI models only — same set and same reasoning as
+  # daily.yml. `cf:` = Cloudflare; src/msr/run.almd parses the spec.
+  CROSS_MODELS: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast,cf:@cf/meta/llama-3.1-8b-instruct'
+
+  # The HTTP read timeout the lane runs under (almide's runtime reads this;
+  # `crates/almide-rt-core/src/http_client_core.rs`, `0` = no timeout). The
+  # compiler's default for this client shape is 30 s, and 30 s is a deadline
+  # on the WHOLE completion, not on the first byte: this transport is
+  # non-streaming, so the socket stays silent until the model has finished
+  # generating. A reasoning model like GLM 5.3 Flash writes a
+  # `reasoning_content` scratchpad first and routinely needs longer, and in
+  # run 35783112036 that cost 14 of 147 cells — cells the table then printed
+  # as a 100% over a shrunken denominator.
+  #
+  # 140 s is the top of the window two measurements leave:
+  #
+  #   floor 94 s — nothing the model can do takes longer than generating
+  #     `max_tokens` (4096) tokens, because the transport is non-streaming and
+  #     the token budget caps the work. The slowest full-budget generation
+  #     measured on this endpoint is 94 s (run 35789724076, the five
+  #     completions that exhausted the budget: 63, 66, 74, 79, 94 s). Below
+  #     this the lane keeps discarding answers the model did produce.
+  #   ceiling 142 s — a cell that never answers costs
+  #     TRANSPORT_ATTEMPTS (3) x this value before it is recorded `not-run`.
+  #     Run 35783112036 did 35 min of real work and lost 14 of its 147 cells;
+  #     holding that loss rate and leaving a quarter of the 180-minute job cap
+  #     spare gives 3 x T x 14 + 35 min <= 135 min, i.e. T <= 142 s.
+  #
+  # Inside that window a larger value strictly converts `not-run` cells into
+  # measured ones, so it takes the top of it, rounded down to something a
+  # reader can hold. The same number is in daily.yml on purpose: one deadline,
+  # one derivation, and no drift between the two lanes. The manifest records
+  # it per run, because a cell is `not-run` BECAUSE of this deadline.
+  ALMIDE_HTTP_TIMEOUT_SECS: '140'
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      models: ${{ steps.matrix.outputs.models }}
+      pin: ${{ steps.pin.outputs.ref }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the compiler pin
+        id: pin
+        run: |
+          REF=$(sed -nE 's/^ref *= *"([^"]+)".*/\1/p' almide-pin.toml)
+          test -n "$REF" || { echo "almide-pin.toml has no [compiler] ref"; exit 1; }
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "compiler pin: $REF"
+
+      - name: Build the model matrix
+        id: matrix
+        env:
+          INPUT_MODELS: ${{ github.event.inputs.models }}
+        run: |
+          MODELS="$INPUT_MODELS"
+          if [ -z "$MODELS" ]; then MODELS="$CROSS_MODELS"; fi
+          # Refuse a keyed provider up front, with the reason, instead of
+          # letting ~500 model calls fail one at a time. The harness would
+          # also refuse (a missing key is a harness error, and every task
+          # would be recorded as unreached), but a plan-step refusal names
+          # the offending spec.
+          BAD=$(printf '%s' "$MODELS" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -E '^(anthropic:|openai:|claude-)' || true)
+          if [ -n "$BAD" ]; then
+            echo "::error::this repo holds Cloudflare Workers AI credentials and nothing else (maintainer ruling: no Anthropic or OpenAI key in CI). Refused spec(s): $(printf '%s' "$BAD" | tr '\n' ' ')"
+            echo "Anthropic / OpenAI rows are measured locally and committed by hand; see README, \"Nightly vs. by hand\"."
+            exit 1
+          fi
+          JSON=$(printf '%s' "$MODELS" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | jq -R . | jq -cs .)
+          test "$(printf '%s' "$JSON" | jq length)" -gt 0 || { echo "empty model list"; exit 1; }
+          echo "models=$JSON" >> "$GITHUB_OUTPUT"
+          echo "models: $JSON"
+
+  run-msr:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        model: ${{ fromJSON(needs.plan.outputs.models) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Every toolchain step is continue-on-error: a language whose install
+      # breaks must come out of the run as "not measured: <tool> missing"
+      # (#2146 item 3), which is what the runner's probe writes when the
+      # compiler is off PATH. Killing the whole measurement because Gleam's
+      # setup action had a bad day would turn one absent row into zero rows.
+      - uses: actions/setup-go@v5
+        continue-on-error: true
+        with:
+          go-version: stable
+
+      - uses: mlugg/setup-zig@v2
+        continue-on-error: true
+        with:
+          version: 0.16.0
+
+      - uses: erlef/setup-beam@v1
+        continue-on-error: true
+        with:
+          otp-version: "27"
+          gleam-version: "1.18.1"
+
+      - name: Install MoonBit
+        continue-on-error: true
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      # rustc, node and npm come with the runner image; scripts/msr.sh
+      # installs the pinned tsc when TypeScript has none.
+      - name: Install the pinned Almide (${{ needs.plan.outputs.pin }})
+        run: |
+          PIN="${{ needs.plan.outputs.pin }}"
+          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "$PIN"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          GOT=$("$HOME/.local/bin/almide" --version)
+          echo "installed: $GOT (pin $PIN)"
+          # The pin is the measurement's identity: refuse to measure with anything else.
+          test "$GOT" = "almide ${PIN#v}" || { echo "::error::almide-pin.toml says $PIN but the installed binary is '$GOT'"; exit 1; }
+
+      - name: Probe the runner
+        run: |
+          make msr-probe | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Run the cross-language lane
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
+          CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
+          INPUT_LANGUAGES: ${{ github.event.inputs.languages }}
+          INPUT_TASKS: ${{ github.event.inputs.tasks }}
+          INPUT_LABEL: ${{ github.event.inputs.label }}
+        run: |
+          MODEL="${{ matrix.model }}"
+          # Clear runs/ so this job's artifact carries ONLY this job's fresh
+          # output. Without it each matrix job uploads the checked-out
+          # history too, and the merge in commit-results races: the artifact
+          # applied last wins and the other model's fresh data is silently
+          # overwritten by a stale copy. (Same reasoning as daily.yml.)
+          rm -rf runs/
+          echo "Running the cross-language lane with model: $MODEL"
+          # The lane's own exit codes are 0 (every measured task passed),
+          # 1 (some failed — the table IS the measurement) and 2 (nothing was
+          # measured). Do NOT read them through make: make reports 2 for ANY
+          # recipe failure, so the lane's honest 1 arrives here as 2 and a
+          # complete table reads as "nothing reached the model". Measured on
+          # the first run of this workflow (run 35733997751), which wrote a
+          # full seven-language table and was then failed for exiting 2.
+          #
+          # So this step never judges. The verdict is the next step, which
+          # reads the manifest and the table — the artifacts are the
+          # measurement, the exit code is not.
+          set +e
+          make msr MODEL="$MODEL" LANGUAGES="$INPUT_LANGUAGES" TASKS="$INPUT_TASKS" LABEL="$INPUT_LABEL"
+          RC=$?
+          set -e
+          echo "make exit code: $RC (2 = any recipe failure, including the lane's 1 = some tasks failed; the table decides)"
+
+          # The manifest THIS job wrote, resolved from the working tree.
+          #
+          # It used to be `find runs/msr -name manifest.json | sort | tail -n1`,
+          # which is the lexicographically last manifest in the whole REPO —
+          # every past run is committed here, so on any day with two models the
+          # steps below judged whichever model slug sorted last, not the one
+          # this job ran. The run directory now carries `--label`, which sorts
+          # after the unlabelled measurement, so a labelled run would have been
+          # judged in a measurement's place. Asking git what this job changed
+          # cannot pick up somebody else's run.
+          MSR_MANIFEST=$(git status --porcelain --untracked-files=all -- runs/msr \
+            | sed 's/^...//' | grep -E '/manifest\.json$' | head -n1 || true)
+          echo "MSR_MANIFEST=$MSR_MANIFEST" >> "$GITHUB_ENV"
+          echo "this job's manifest: ${MSR_MANIFEST:-<none>}"
+
+      # The evidence is published BEFORE anything judges it. A verdict step
+      # that exits on its first failed assertion never reaches its own
+      # summary write, so the one run that most needs reading — the refused
+      # one — was the only run whose table nobody could see.
+      - name: Publish the table to the job summary
+        if: ${{ !cancelled() }}
+        run: |
+          MANIFEST="${MSR_MANIFEST:-}"
+          if [ -z "$MANIFEST" ]; then
+            echo "this job wrote no manifest under runs/msr/" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          DIR=$(dirname "$MANIFEST")
+          {
+            echo "## Cross-language MSR — \`${{ matrix.model }}\`"
+            echo
+            echo "- manifest: \`$MANIFEST\`"
+            echo "- compiler pin: \`${{ needs.plan.outputs.pin }}\`"
+            echo "- HTTP read timeout: \`${ALMIDE_HTTP_TIMEOUT_SECS:-compiler default}\` s"
+            echo
+            cat "$DIR/table.md" 2>/dev/null || echo "_(the lane wrote no table.md)_"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Certify the run
+        # Runs even if the lane step went red, because that step's exit code is
+        # not trustworthy (see its comment) and this one's verdict is.
+        if: ${{ !cancelled() }}
+        run: |
+          MANIFEST="${MSR_MANIFEST:-}"
+          TABLE=$(dirname "${MANIFEST:-.}")/table.md
+          if [ -z "$MANIFEST" ] || [ ! -f "$TABLE" ]; then
+            echo "::error::this job wrote no manifest under runs/msr/ — nothing was measured"
+            exit 1
+          fi
+          DIR=$(dirname "$MANIFEST")
+          # The comparability refusal, re-derived from the run's OWN artifacts
+          # rather than trusted from its stamp: exit 1 = the languages saw
+          # different task counts, so the rows share no denominator and the
+          # table is not a comparison. It is a hard failure and not a note in
+          # the manifest, because the manifest note is read by whoever already
+          # opened the manifest, and the whole failure mode here is a number
+          # travelling away from its condition. The results are still
+          # committed (commit-results runs on !cancelled), carrying their own
+          # refusal — a refused run is evidence, it is just not a comparison.
+          #
+          # `inconclusive-saturated` (every measured cell passed) exits 0 on
+          # purpose: it is a true statement about the task bank, not a harness
+          # failure, and it will hold every week until almide/almide#1963
+          # delivers a discriminating bank. A gate that is red by design on
+          # every single run stops being read, and would mask the
+          # not-comparable failure above. It is carried in the table's first
+          # lines and in manifest.verdict instead.
+          set +e
+          almide run src/msr/run.almd -- verdict "$DIR" | tee /tmp/verdict.md
+          VRC=${PIPESTATUS[0]}
+          set -e
+          cat /tmp/verdict.md >> "$GITHUB_STEP_SUMMARY"
+          VERDICT=$(jq -r '.verdict.id // "unstamped"' "$MANIFEST")
+          if [ "$VERDICT" = "inconclusive-saturated" ]; then
+            echo "::warning::every measured cell passed: this run is a valid comparison that separates nothing (almide/almide#1963). Do not quote it as evidence."
+          fi
+          if [ "$VRC" -ne 0 ]; then
+            echo "::error::verdict \`$VERDICT\`: this run is not certified as a comparison and must not be published as one (exit $VRC)"
+            exit 1
+          fi
+          MEASURED=$(jq '[.languages[] | select(.measured)] | length' "$MANIFEST")
+          FIRST=$(jq -r '.languages[0].name' "$MANIFEST")
+          FIRST_MEASURED=$(jq -r '.languages[0].measured' "$MANIFEST")
+          ABSENT=$(jq -r '[.languages[] | select(.measured | not) | .name + " (" + .reason + ")"] | join(", ")' "$MANIFEST")
+          echo "measured languages: $MEASURED; first: $FIRST (measured=$FIRST_MEASURED)"
+          echo "not measured: ${ABSENT:-none}"
+          # #2146: "a table with >=5 languages measured under one manifest,
+          # Almide first". A language the runner could not measure is a row
+          # that says so; it is never dropped and never counted as a zero.
+          # These two stay here rather than in the harness: they are this
+          # lane's publication threshold, not a property of a measurement, and
+          # a third party running `make msr` with two toolchains must not be
+          # told their run is broken.
+          [ "$FIRST" = "almide" ] && [ "$FIRST_MEASURED" = "true" ] || { echo "::error::Almide is not the first measured language in the manifest"; exit 1; }
+          [ "$MEASURED" -ge 5 ] || { echo "::error::only $MEASURED language(s) measured; #2146 needs at least 5 under one manifest. Not measured: ${ABSENT:-none}"; exit 1; }
+          # #2146's third clause: "third-party reproducible". Until today this
+          # lane could not tell a pinned run from an unpinned one — the
+          # manifest carried a hand-written table about what the provider
+          # sends instead of the provider's own report, and a run that WAS
+          # pinned published itself as unpinned. The manifest now records
+          # what went on the wire, measured by a preflight call with the
+          # run's own options, so this threshold can be CHECKED instead of
+          # assumed.
+          #
+          # `seed_sent` is what decides it: a fixed temperature alone still
+          # leaves the sampler free. Note what `*_sent` claims and does not:
+          # the field was written into the request body. Whether the model
+          # HONOURED it is a separate, empirical question — re-run the same
+          # (model, seed, task set) and compare — because no text-generation
+          # API reports back which sampling controls it applied.
+          SEED_SENT=$(jq -r '.model.seed_sent // false' "$MANIFEST")
+          TEMP_SENT=$(jq -r '.model.temperature_sent // false' "$MANIFEST")
+          echo "sampling on the wire: seed_sent=$SEED_SENT (seed=$(jq -r '.model.seed // "null"' "$MANIFEST")), temperature_sent=$TEMP_SENT"
+          [ "$SEED_SENT" = "true" ] && [ "$TEMP_SENT" = "true" ] || { echo "::error::this run's own manifest reports unpinned sampling (seed_sent=$SEED_SENT, temperature_sent=$TEMP_SENT) — a third party cannot re-run it, so it is not publishable under #2146"; exit 1; }
+
+      - name: Upload results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: msr-runs-${{ strategy.job-index }}
+          path: runs/
+          if-no-files-found: error
+
+  commit-results:
+    needs: [plan, run-msr]
+    # Commit whatever models did produce a table even when another model's
+    # job is red; the workflow as a whole still fails on that job.
+    if: ${{ !cancelled() && needs.plan.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: msr-runs-*
+          merge-multiple: true
+          path: runs/
+
+      - name: Commit the cross-language runs
+        # Only main carries the record. A dispatch on any other ref (e.g. to
+        # test this workflow from a branch) leaves its results in the run's
+        # artifacts and the job summaries, and commits nothing.
+        if: github.ref == 'refs/heads/main'
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add runs/msr/
+          if git diff --cached --quiet; then
+            echo "::error::nothing to commit — the run-msr jobs produced no new files under runs/msr/"
+            exit 1
+          fi
+          git commit -m "Cross-language MSR run $DATE (${{ needs.plan.outputs.pin }}, Cloudflare models)"
+          # Push with a rebase-and-retry, because BOTH lanes commit to `main`
+          # and a scheduled run is not alone on the branch.
+          #
+          # This was a bare `git push`. On 2026-09-22 a cross-language run —
+          # seven toolchains, 21 tasks, ~500 model calls, and a `comparable`
+          # verdict that had already passed every publication threshold in the
+          # step above — was discarded because `main` had moved while it ran.
+          # The measurement is the expensive, unrepeatable part; the push is
+          # the cheap part, and it was the only part allowed to fail.
+          #
+          # A rebase is safe here: every lane writes under its own dated,
+          # model-named directory, so two runs never touch the same file. A
+          # conflict would mean two runs of the SAME model on the same day,
+          # which is the collision #22 addresses by putting `--label` in the
+          # path — and if one somehow happens, the loop exits non-zero rather
+          # than resolving it blind.
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              echo "pushed on attempt $attempt"
+              exit 0
+            fi
+            echo "push rejected (attempt $attempt) — another run reached main first; rebasing"
+            git pull --rebase --no-edit origin main || {
+              echo "::error::rebase onto main failed: two runs wrote the same files. The results are in the artifacts and the job summary; commit them by hand."
+              exit 1
+            }
+            sleep $((attempt * 5))
+          done
+          echo "::error::could not push the results after 5 attempts; they remain in the artifacts (see the upload step)"
+          exit 1
+
+      - name: Results were not committed (not main)
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "ref is ${{ github.ref }}: results stay in the artifacts (msr-runs-*) and the job summaries; nothing was pushed." | tee -a "$GITHUB_STEP_SUMMARY"

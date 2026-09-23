@@ -1,0 +1,59 @@
+// Almide plugin: the model's file plus a generated `main` driver, built
+// with the pinned compiler (`almide build`) and run as a binary, the same
+// shape as the Rust, Go and Zig plugins. The language notes are the daily
+// lane's system prompt (src/prompts.almd) so the two lanes ask for Almide
+// the same way; the oracle cases are the task's own tests.almd cases.
+
+import self.msr.spec.{Ty, TInt, TBool, TStr, TList, Val, VInt, VBool, VStr, VList, VCall, Sig, Param, PTask, Case, Step}
+import self.msr.spec
+import self.prompts
+
+fn versions() -> List[(String, List[String])] = [("almide", ["almide", "--version"])]
+
+// The daily system prompt minus its first line: that line is the
+// language-name header the runner adds to every plugin.
+fn notes() -> String = {
+  let lines = string.split(prompts.SYSTEM_PROMPT, "\n")
+  list.drop(lines, 1) |> string.join("\n") |> string.trim
+}
+
+fn sig(s: Sig) -> String = spec.sig_neutral(s)
+
+fn signatures(t: PTask) -> String =
+  t.sigs |> list.map((s) => "    " + sig(s)) |> string.join("
+")
+
+fn driver(t: PTask) -> String = {
+  let n = list.len(t.cases)
+  let checks = t.cases
+    |> list.map((c) => "  failed = msr_check(failed, " + spec.c_quote(spec.case_label(c)) + ", " + spec.neutral(c.call) + ", " + spec.neutral(c.expected) + ")")
+    |> string.join("\n")
+  """
+    // ── msr driver (generated) ──
+    fn msr_check[T](failed: Int, label: String, got: T, want: T) -> Int =
+      if got == want then failed
+      else {
+        eprintln("FAIL " + label + ": expected \${want}, got \${got}")
+        failed + 1
+      }
+
+    effect fn main() -> Unit = {
+      var failed = 0
+    ${checks}
+      if failed > 0 then {
+        eprintln("msr: " + int.to_string(failed) + " of ${int.to_string(n)} cases failed")
+        process.exit(1)
+      } else println("${spec.sentinel(n)}")
+    }
+    """
+}
+
+// Imports must precede every declaration, so the driver's one import goes
+// above the solution rather than with the driver.
+fn files(t: PTask, solution: String) -> List[(String, String)] =
+  [("main.almd", "import process\n\n" + solution + "\n\n" + driver(t))]
+
+fn steps() -> List[Step] = [
+  Step { kind: "compile", cmd: "almide", args: ["build", "main.almd", "-o", "msr_bin"], timeout_ms: spec.COMPILE_TIMEOUT_MS },
+  Step { kind: "run", cmd: "./msr_bin", args: [], timeout_ms: spec.RUN_TIMEOUT_MS },
+]
