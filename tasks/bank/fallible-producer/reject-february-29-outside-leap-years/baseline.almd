@@ -1,0 +1,46 @@
+// Hotel stays. A stay is "YYYY-MM-DD..YYYY-MM-DD" (check-in..check-out); the
+// number of nights is the day difference between the two dates.
+type Date: Eq, Repr = { y: Int, m: Int, d: Int }
+
+fn days_in_month(m: Int) -> Int =
+  match m {
+    2 => 29,
+    4 | 6 | 9 | 11 => 30,
+    _ => 31,
+  }
+
+fn num(s: String, width: Int, what: String, raw: String) -> Int! = {
+  guard string.len(s) == width and string.is_digit(s) else err("bad ${what} in ${raw}")
+  int.parse(s)!
+}
+
+fn parse_date(raw: String) -> Date! = {
+  let parts = string.split(raw, "-")
+  guard list.len(parts) == 3 else err("bad date ${raw}")
+  let y = num(list.get(parts, 0) ?? "", 4, "year", raw)!
+  let m = num(list.get(parts, 1) ?? "", 2, "month", raw)!
+  let d = num(list.get(parts, 2) ?? "", 2, "day", raw)!
+  guard m >= 1 and m <= 12 else err("month out of range: ${raw}")
+  guard d >= 1 and d <= days_in_month(m) else err("day out of range: ${raw}")
+  Date { y: y, m: m, d: d }
+}
+
+// Days since 0000-03-01, counting the year from March so February is last.
+fn day_number(dt: Date) -> Int = {
+  let y = if dt.m <= 2 then dt.y - 1 else dt.y
+  let mp = (dt.m + 9) % 12
+  365 * y + y / 4 - y / 100 + y / 400 + (153 * mp + 2) / 5 + dt.d - 1
+}
+
+fn nights_of(stay: String) -> Int! = {
+  let ends = string.split(stay, "..")
+  guard list.len(ends) == 2 else err("bad stay ${stay}")
+  let a = parse_date(list.get(ends, 0) ?? "")!
+  let b = parse_date(list.get(ends, 1) ?? "")!
+  let n = day_number(b) - day_number(a)
+  guard n > 0 else err("empty stay ${stay}")
+  n
+}
+
+fn total_nights(stays: List[String]) -> Int! =
+  stays |> list.fold(0, (acc, s) => acc + nights_of(s)!)!

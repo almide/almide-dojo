@@ -1,0 +1,6 @@
+test "february 29 in a common year is rejected" {
+  assert_eq(total_nights(["2023-02-27..2023-02-29"]), err("not a leap year: 2023-02-29"))
+}
+test "stays still add up" {
+  assert_eq(total_nights(["2024-01-30..2024-02-02", "2024-12-31..2025-01-01"]), ok(4))
+}
