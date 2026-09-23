@@ -1,0 +1,41 @@
+// An exchange-rate port. Rates are fixed point: 1_000_000 means 1.0.
+protocol Rates {
+  fn rate(r: Self, from: String, to: String) -> Int?
+}
+
+let ONE = 1000000
+
+// Quoted rates keyed "FROM/TO". A currency always converts to itself at 1.0;
+// no inverse is derived.
+type Table: Rates = { quotes: Map[String, Int] }
+fn Table.rate(t: Table, from: String, to: String) -> Int? =
+  if from == to then some(ONE) else map.get(t.quotes, from + "/" + to)
+
+// The table's own rate when it has one, otherwise from -> hub -> to.
+type ViaHub: Rates = { table: Table, hub: String }
+fn ViaHub.rate(v: ViaHub, from: String, to: String) -> Int? =
+  match v.table.rate(from, to) {
+    some(x) => some(x),
+    none => match (v.table.rate(from, v.hub), v.table.rate(v.hub, to)) {
+      (some(a), some(b)) => some(a * b / ONE),
+      _ => none,
+    },
+  }
+
+// Cents in `to` currency, truncated toward zero; none when there is no rate.
+fn convert[R: Rates](r: R, cents: Int, from: String, to: String) -> Int? =
+  r.rate(from, to) |> option.map((x) => cents * x / ONE)
+
+fn quote_line[R: Rates](r: R, cents: Int, from: String, to: String) -> String =
+  match convert(r, cents, from, to) {
+    some(v) => int.to_string(cents) + " " + from + " = " + int.to_string(v) + " " + to,
+    none => int.to_string(cents) + " " + from + ": no rate to " + to,
+  }
+
+type Pricing = | Quoted(Table) | Hub(ViaHub)
+
+fn quote_with(p: Pricing, cents: Int, from: String, to: String) -> String =
+  match p {
+    Quoted(t) => quote_line(t, cents, from, to),
+    Hub(h) => quote_line(h, cents, from, to),
+  }

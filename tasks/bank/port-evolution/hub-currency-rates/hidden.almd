@@ -1,0 +1,21 @@
+test "hidden: identity is the table's answer" {
+  let t = Table { quotes: ["EUR/USD": 1087000, "USD/EUR": 919000] }
+  let h = ViaHub { table: t, hub: "USD" }
+  assert_eq(quote_with(Hub(h), 1000, "EUR", "EUR"), "1000 EUR = 1000 EUR")
+  assert_eq(h.rate("EUR", "EUR"), some(1000000))
+}
+test "hidden: legs at the hub are identity legs" {
+  let t = Table { quotes: ["USD/JPY": 150000000, "EUR/USD": 1100000] }
+  let h = ViaHub { table: t, hub: "USD" }
+  assert_eq(h.rate("USD", "JPY"), some(150000000))
+  assert_eq(h.rate("EUR", "USD"), some(1100000))
+  assert_eq(quote_with(Hub(h), 3, "EUR", "JPY"), "3 EUR = 495 JPY")
+}
+test "hidden: direct wins, missing legs, refunds" {
+  let t = Table { quotes: ["EUR/USD": 1100000, "USD/GBP": 800000, "EUR/GBP": 870000] }
+  let h = ViaHub { table: t, hub: "USD" }
+  assert_eq(h.rate("EUR", "GBP"), some(870000))
+  assert_eq(h.rate("GBP", "EUR"), none)
+  assert_eq(quote_with(Hub(h), -999, "EUR", "USD"), "-999 EUR = -1098 USD")
+  assert_eq(quote_with(Hub(ViaHub { table: t, hub: "CHF" }), 5, "USD", "EUR"), "5 USD: no rate to EUR")
+}
