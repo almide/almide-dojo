@@ -1,0 +1,17 @@
+// A points table. The leaderboard lists players by points, highest first, and
+// ties alphabetically; its line numbers are display positions.
+type Score = { player: String, points: Int }
+
+fn ordered(scores: List[Score]) -> List[Score] =
+  scores |> list.sort_by((s) => s.player) |> list.sort_by((s) => 0 - s.points)
+
+fn leaderboard(scores: List[Score]) -> List[String] =
+  ordered(scores) |> list.enumerate |> list.map(((i, s)) =>
+    int.to_string(i + 1) + ". " + s.player + " (" + int.to_string(s.points) + ")")
+
+// Competition rank: 1 + the number of players with strictly more points.
+fn rank_of(scores: List[Score], player: String) -> String =
+  match scores |> list.find((s) => s.player == player) {
+    some(me) => "rank=" + int.to_string(1 + (scores |> list.count((s) => s.points > me.points))) + " of " + int.to_string(list.len(scores)),
+    none => "unranked",
+  }

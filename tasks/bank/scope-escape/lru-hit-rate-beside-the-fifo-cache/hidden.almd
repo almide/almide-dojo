@@ -1,0 +1,11 @@
+test "hidden: a hit refreshes recency" {
+  assert_eq(lru_stats(2, ["a", "b", "a", "c", "a"]), "hits=2,misses=3")
+  assert_eq(lru_stats(3, ["a", "b", "c", "a", "d", "a", "b"]), "hits=2,misses=5")
+}
+test "hidden: zero capacity and empty trace" {
+  assert_eq(lru_stats(0, ["a", "a"]), "hits=0,misses=2")
+  assert_eq(lru_stats(2, []), "hits=0,misses=0")
+}
+test "hidden: fifo unchanged" {
+  assert_eq(fifo_report(2, ["a", "b", "a", "c", "a"]), "fifo misses=4/5")
+}

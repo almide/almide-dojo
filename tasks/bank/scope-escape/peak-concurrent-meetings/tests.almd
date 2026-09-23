@@ -1,0 +1,4 @@
+test "peak" {
+  assert_eq(peak(["09:00-10:00", "09:30-11:00", "12:00-13:00"]), "peak=2")
+  assert_eq(peak(["9-10"]), "bad time: 9")
+}

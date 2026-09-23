@@ -1,0 +1,12 @@
+test "hidden: back-to-back is not overlap" {
+  assert_eq(peak(["09:00-10:00", "10:00-11:00"]), "peak=1")
+  assert_eq(peak(["10:00-11:00", "09:00-10:00", "09:30-10:00"]), "peak=2")
+}
+test "hidden: empty spans and errors" {
+  assert_eq(peak(["10:00-10:00", "11:00-09:00"]), "peak=0")
+  assert_eq(peak([]), "peak=0")
+  assert_eq(peak(["08:00-09:00", "x", "25:00-26:00"]), "bad meeting: x")
+}
+test "hidden: booked unchanged" {
+  assert_eq(booked_minutes(["09:00-09:30", "10:00-09:00"]), ok(30))
+}

@@ -1,0 +1,43 @@
+// Build dependencies, one per line: "a -> b" means a must be built before b.
+// Blank lines are ignored.
+fn parse_edge(line: String) -> Result[(String, String), String] = {
+  let parts = string.split(line, "->") |> list.map((p) => string.trim(p))
+  match parts {
+    [a, b] => if a != "" and b != "" then ok((a, b)) else err("bad edge: " + line),
+    _ => err("bad edge: " + line),
+  }
+}
+
+fn parse_edges(lines: List[String]) -> Result[List[(String, String)], String] =
+  lines |> list.filter((l) => string.trim(l) != "") |> list.map((l) => parse_edge(l)!)
+
+// Every node, in order of first appearance.
+fn nodes(edges: List[(String, String)]) -> List[String] =
+  edges |> list.fold([], (acc, e) => {
+    let (a, b) = e
+    let with_a = if list.contains(acc, a) then acc else acc + [a]
+    if list.contains(with_a, b) then with_a else with_a + [b]
+  })
+
+fn describe(lines: List[String]) -> String =
+  match parse_edges(lines) {
+    ok(es) => int.to_string(list.len(nodes(es))) + " nodes, " + int.to_string(list.len(es)) + " edges",
+    err(e) => e,
+  }
+
+fn ready_nodes(pending: List[String], edges: List[(String, String)], done: List[String]) -> List[String] =
+  pending |> list.filter((n) => edges |> list.all(((a, b)) => b != n or list.contains(done, a)))
+
+fn order_from(pending: List[String], edges: List[(String, String)], done: List[String]) -> String? =
+  if list.is_empty(pending) then some(list.join(done, ","))
+  else match list.min(ready_nodes(pending, edges, done)) {
+    some(n) => order_from(pending |> list.filter((p) => p != n), edges, done + [n]),
+    none => none,
+  }
+
+// The smallest ready node at every step; the tables stay local to this call.
+fn build_order(lines: List[String]) -> String =
+  match parse_edges(lines) {
+    err(e) => e,
+    ok(es) => order_from(nodes(es), es, []) ?? "cycle",
+  }

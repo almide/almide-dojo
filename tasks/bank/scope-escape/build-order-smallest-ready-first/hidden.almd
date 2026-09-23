@@ -1,0 +1,13 @@
+test "hidden: newly ready small node goes first" {
+  assert_eq(build_order(["b -> a", "c -> d", "b -> e"]), "b,a,c,d,e")
+  assert_eq(build_order(["z -> y", "z -> x", "m -> n"]), "m,n,z,x,y")
+}
+test "hidden: errors, cycles, empty" {
+  assert_eq(build_order(["a -> b", "oops"]), "bad edge: oops")
+  assert_eq(build_order(["a -> b", "b -> c", "c -> b"]), "cycle")
+  assert_eq(build_order([]), "")
+  assert_eq(build_order(["", "q -> p"]), "q,p")
+}
+test "hidden: describe unchanged" {
+  assert_eq(describe(["x -> y", "y -> x"]), "2 nodes, 2 edges")
+}

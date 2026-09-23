@@ -1,0 +1,5 @@
+test "rank" {
+  let t = [Score { player: "a", points: 5 }, Score { player: "b", points: 9 }, Score { player: "c", points: 1 }]
+  assert_eq(rank_of(t, "a"), "rank=2 of 3")
+  assert_eq(rank_of(t, "z"), "unranked")
+}

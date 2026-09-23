@@ -1,0 +1,4 @@
+test "lru stats" {
+  assert_eq(lru_stats(2, ["a", "b", "a", "c", "d"]), "hits=1,misses=4")
+  assert_eq(lru_stats(1, ["x", "x"]), "hits=1,misses=1")
+}

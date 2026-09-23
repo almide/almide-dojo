@@ -1,0 +1,4 @@
+test "dot" {
+  assert_eq(dot("1:2 3:4", "3:5 9:1"), "dot=20")
+  assert_eq(dot("1:x", "2:2"), "error=bad pair: 1:x")
+}

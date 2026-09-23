@@ -1,0 +1,26 @@
+// Sparse vectors written as "index:value" pairs separated by spaces, e.g.
+// "3:5 7:-2". An index may appear more than once; its values add up.
+fn parse_pair(tok: String) -> Result[(Int, Int), String] =
+  match string.split(tok, ":") {
+    [i, v] => match int.parse(i) {
+      ok(ix) => match int.parse(v) {
+        ok(val) => ok((ix, val)),
+        err(_) => err("bad pair: " + tok),
+      },
+      err(_) => err("bad pair: " + tok),
+    },
+    _ => err("bad pair: " + tok),
+  }
+
+fn parse_sparse(s: String) -> Result[List[(Int, Int)], String] =
+  string.split(s, " ") |> list.filter((t) => t != "") |> list.map((t) => parse_pair(t)!)
+
+// Sum of absolute values, index by index (repeated indices add up first).
+fn norm1(s: String) -> Result[Int, String] = {
+  let pairs = parse_sparse(s)!
+  let by_index = pairs |> list.fold(map.new(), (m, p) => {
+    let (i, v) = p
+    map.set(m, i, (map.get(m, i) ?? 0) + v)
+  })
+  ok(map.values(by_index) |> list.fold(0, (a, v) => a + int.abs(v)))
+}
