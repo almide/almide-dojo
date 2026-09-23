@@ -1,7 +1,8 @@
 // dojo — Almide Dojo harness
 //
 // Multi-provider LLM harness for MSR measurement.
-// Supports Cloudflare Workers AI, Anthropic, OpenRouter, OpenAI, and Claude CLI.
+// Supports Cloudflare Workers AI, Anthropic, OpenRouter, OpenAI, and the
+// Claude Code CLI (all through almai; see src/llm.almd).
 //
 // Usage:
 //   almide run src/main.almd -- <task-name> [provider:model]
@@ -9,269 +10,36 @@
 //
 // Model formats:
 //   cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast    Cloudflare Workers AI
-//   anthropic:claude-sonnet-4-6                      Anthropic Messages API
+//   anthropic:claude-sonnet-5                        Anthropic Messages API
+//   claude-sonnet-5                                  Anthropic Messages API (an unprefixed claude-* is the API, not the CLI)
 //   openrouter:meta-llama/llama-3.3-70b-instruct    OpenRouter (100+ models)
-//   openai:gpt-4o                                   OpenAI API
-//   claude-sonnet-4-6                               Claude CLI (no prefix)
+//   openai:<model>                                  OpenAI API
+//   cli:claude                                      Claude Code CLI (`claude -p`; no API key, the CLI's own model and sampling)
 //
 // Environment variables (per provider):
-//   CF_ACCOUNT_ID, CLOUDFLARE_API_KEY               Cloudflare Workers AI
-//   ANTHROPIC_API_KEY                               Anthropic / Claude CLI
-//   OPENROUTER_API_KEY                              OpenRouter
-//   OPENAI_API_KEY                                  OpenAI
+//   CF_ACCOUNT_ID, CLOUDFLARE_API_KEY, CLOUDFLARE_EMAIL   Cloudflare Workers AI (Global API Key auth)
+//   ANTHROPIC_API_KEY                                     Anthropic Messages API
+//   OPENROUTER_API_KEY                                    OpenRouter
+//   OPENAI_API_KEY                                        OpenAI
+//   (none)                                                cli:claude — needs a logged-in `claude` on PATH
 
 import env
 import fs
 import process
 import datetime
-import almai
 import self.types.{Task, Attempt, RunResult, AttemptResult}
+import self.cellstate
 import self.classifier
 import self.hints
 import self.render
 import self.backfill
+import self.llm
+import self.prompts
 
 // ── Constants ──
 
 let DEFAULT_MODEL = "claude-sonnet-4-6"
 let DEFAULT_MAX_RETRIES = 3
-
-let SYSTEM_PROMPT = """
-  You are writing Almide. Output ONLY source code, no fences or prose.
-
-  ## Prefer stdlib helpers when the task shape matches (don't re-implement)
-
-    - sorted-list search     → `list.binary_search(xs, target) -> Option[Int]`
-    - run-length grouping    → `string.run_length_encode(s) -> List[(String, Int)]` (format result for output)
-    - integer parsing        → `int.parse(s) -> Result[Int, String]` (NOT `int.from_string`)
-    - integer sqrt (→ Int)   → `float.to_int(float.sqrt(int.to_float(n)))` (NOT `int.sqrt`)
-    - comparisons            → operators `a > b`, `a <= b` (NOT `int.gt(a, b)`, `int.le(a, b)`)
-    - list head/tail         → `list.first(xs)` + `list.drop(xs, 1)` (NOT `[head, ..rest]` pattern)
-    - folds                  → `list.fold(xs, init, (acc, x) => ...)` (NOT manual recursion with an accumulator unless necessary)
-
-  Syntax:
-    fn name(x: T) -> R = expr                 // no `return`; the last expression is the value
-    if cond then a else b                     // every `if` used as an expression MUST have `else`
-    match v { some(x) => ..., none => ... }   // match must be exhaustive
-    (x) => expr                               // LAMBDA: parentheses around params are MANDATORY.
-                                              // `x => expr` is a parse error. Always write `(x) =>`.
-    Modules use dot, NOT method syntax:
-      string.len(s)        not   s.len()
-      int.abs(n)           not   n.abs()
-      list.map(xs, f)      not   xs.map(f)
-      xs |> list.map(f)    is the pipe form for chaining
-
-  Types:
-    Option[T]: some(v) / none. Result[T, E]: ok(v) / err(e).
-    No Char type — single characters are String.
-    int.to_string(n) for int→string. int.parse(s) -> Result[Int, _].
-
-  Lists are immutable:
-    Append: xs + [item]            // NOT list.push — that returns Unit (mutates var)
-    Reduce: list.fold(xs, init, (acc, x) => ...)   // no foldLeft / foldRight
-    Other: list.map, list.filter, list.filter_map, list.flat_map, list.find, list.sort, list.unique
-
-  Common pitfalls (these trip up LLMs the most):
-    - DO NOT write `test "..." { ... }` blocks. The harness appends the reference test suite AFTER your code. Emitting your own tests causes duplicate-definition errors (E012). Submit only the fn definitions the task requires.
-    - `if cond then a` without `else` yields Unit — every if-as-expression needs `else`
-    - `match` arms must all return the SAME type; don't mix `String` and `Int` arms
-    - Don't use stdlib module names as locals: `value`, `error`, `string`, `list`, `option` are modules
-    - `list.push(xs, x)` is mutation + returns Unit — use `xs + [x]` for immutable append
-    - Non-exhaustive match is an error: cover all constructors or use `_` catch-all
-    - Calling an `effect fn` (fs, process, env, random, etc.) from a pure `fn` is an error — mark the caller `effect fn`
-
-  Foreign-language idioms that DO NOT WORK in Almide (do not use, even if natural in OCaml/Haskell/JS/Rust):
-    - `let x = ... in expr`             // OCaml/Haskell. WRONG. Just: `let x = ...` then the next expression on a new line.
-    - `let rec name(...) = ...`         // OCaml. WRONG. Top-level fn: `fn name(...) -> R = ...` (recursion is automatic).
-    - `while cond do ... done`          // Pascal/Ruby. WRONG. Pure code: use recursion or `list.fold`.
-                                        // In `effect fn` only: `while cond { ... }` (curly braces, no `do`).
-    - `for x in xs do ...`              // No for-loop. Use `list.map` / `list.fold` / `list.for_each` (effect fn).
-    - `xs.head` `xs.tail` `xs.length`   // No field access on list. Use `list.first(xs)`, `list.drop(xs, 1)`, `list.len(xs)`.
-    - `s.length` `s.toUpperCase()`      // No string methods. Use `string.len(s)`, `string.to_upper(s)`.
-    - `Some(x)` `None` `Ok` `Err`       // Capitalized constructors are wrong. Use lowercase: `some(x)`, `none`, `ok(x)`, `err(e)`.
-    - `return x`                        // No `return`. The last expression of the body IS the value.
-    - `n.abs()` `n.toString()`          // No method calls on values. Use `int.abs(n)`, `int.to_string(n)`.
-    - `[first, ..rest]` rest-pattern    // Rust/Swift/JS. WRONG. Almide list pattern is fixed-length only.
-                                        // For head+tail split: `let head = list.first(xs) |> option.unwrap_or(default)` and `let rest = list.drop(xs, 1)` (or use `list.is_empty(xs)` + explicit first/drop).
-
-  Auto-imported (no `import` needed): string, list, int, float, math, map, result, option, value, set.
-  Other (need `import`): fs, env, io, process, json, random, regex, datetime, http, log, testing, error.
-
-  ## Available stdlib API (use ONLY these names — inventing other names like `string.from_code_points` will fail)
-
-  ### string
-  - fn string.capitalize(s: String) -> String
-  - fn string.chars(s: String) -> List[String]
-  - fn string.codepoint(s: String) -> Option[Int]
-  - fn string.contains(s: String, sub: String) -> Bool
-  - fn string.count(s: String, sub: String) -> Int
-  - fn string.drop(s: String, n: Int) -> String
-  - fn string.drop_end(s: String, n: Int) -> String
-  - fn string.ends_with(s: String, suffix: String) -> Bool
-  - fn string.first(s: String) -> Option[String]
-  - fn string.from_bytes(bytes: List[Int]) -> String
-  - fn string.from_codepoint(n: Int) -> String
-  - fn string.get(s: String, i: Int) -> Option[String]
-  - fn string.index_of(s: String, needle: String) -> Option[Int]
-  - fn string.is_alpha(s: String) -> Bool
-  - fn string.is_alphanumeric(s: String) -> Bool
-  - fn string.is_digit(s: String) -> Bool
-  - fn string.is_empty(s: String) -> Bool
-  - fn string.is_lower(s: String) -> Bool
-  - fn string.is_upper(s: String) -> Bool
-  - fn string.is_whitespace(s: String) -> Bool
-  - fn string.join(list: List[String], sep: String) -> String
-  - fn string.last(s: String) -> Option[String]
-  - fn string.last_index_of(s: String, needle: String) -> Option[Int]
-  - fn string.len(s: String) -> Int
-  - fn string.lines(s: String) -> List[String]
-  - fn string.pad_end(s: String, n: Int, ch: String) -> String
-  - fn string.pad_start(s: String, n: Int, ch: String) -> String
-  - fn string.repeat(s: String, n: Int) -> String
-  - fn string.replace(s: String, from: String, to: String) -> String
-  - fn string.replace_first(s: String, from: String, to: String) -> String
-  - fn string.reverse(s: String) -> String
-  - fn string.slice(s: String, start: Int, end: Int) -> String
-  - fn string.split(s: String, sep: String) -> List[String]
-  - fn string.starts_with(s: String, prefix: String) -> Bool
-  - fn string.strip_prefix(s: String, prefix: String) -> Option[String]
-  - fn string.strip_suffix(s: String, suffix: String) -> Option[String]
-  - fn string.take(s: String, n: Int) -> String
-  - fn string.take_end(s: String, n: Int) -> String
-  - fn string.to_bytes(s: String) -> List[Int]
-  - fn string.to_lower(s: String) -> String
-  - fn string.to_upper(s: String) -> String
-  - fn string.trim(s: String) -> String
-  - fn string.trim_end(s: String) -> String
-  - fn string.run_length_encode(s: String) -> List[(String, Int)]
-  - fn string.trim_start(s: String) -> String
-
-  ### list
-  - fn list.all[A](xs: List[A], f: fn(A) -> Bool) -> Bool
-  - fn list.any[A](xs: List[A], f: fn(A) -> Bool) -> Bool
-  - fn list.chunk[A](xs: List[A], n: Int) -> List[List[A]]
-  - fn list.contains[A](xs: List[A], x: A) -> Bool
-  - fn list.count[A](xs: List[A], f: fn(A) -> Bool) -> Int
-  - fn list.dedup[A](xs: List[A]) -> List[A]
-  - fn list.drop[A](xs: List[A], n: Int) -> List[A]
-  - fn list.drop_end[A](xs: List[A], n: Int) -> List[A]
-  - fn list.drop_while[A](xs: List[A], f: fn(A) -> Bool) -> List[A]
-  - fn list.enumerate[A](xs: List[A]) -> List[(Int, A)]
-  - fn list.filter[A](xs: List[A], f: fn(A) -> Bool) -> List[A]
-  - fn list.filter_map[A, B](xs: List[A], f: fn(A) -> Option[B]) -> List[B]
-  - fn list.find[A](xs: List[A], f: fn(A) -> Bool) -> Option[A]
-  - fn list.find_index[A](xs: List[A], f: fn(A) -> Bool) -> Option[Int]
-  - fn list.first[A](xs: List[A]) -> Option[A]
-  - fn list.flat_map[A, B](xs: List[A], f: fn(A) -> List[B]) -> List[B]
-  - fn list.flatten[T](xss: List[List[T]]) -> List[T]
-  - fn list.fold[A, B](xs: List[A], init: B, f: fn(B, A) -> B) -> B
-  - fn list.get[A](xs: List[A], i: Int) -> Option[A]
-  - fn list.get_or[A](xs: List[A], i: Int, default: A) -> A
-  - fn list.group_by[A, B](xs: List[A], f: fn(A) -> B) -> Map[B, List[A]]
-  - fn list.index_of[A](xs: List[A], x: A) -> Option[Int]
-  - fn list.insert[A](xs: List[A], i: Int, val: A) -> List[A]
-  - fn list.intersperse[A](xs: List[A], sep: A) -> List[A]
-  - fn list.is_empty[A](xs: List[A]) -> Bool
-  - fn list.join(xs: List[String], sep: String) -> String
-  - fn list.last[A](xs: List[A]) -> Option[A]
-  - fn list.len[A](xs: List[A]) -> Int
-  - fn list.map[A, B](xs: List[A], f: fn(A) -> B) -> List[B]
-  - fn list.max[A](xs: List[A]) -> Option[A]
-  - fn list.min[A](xs: List[A]) -> Option[A]
-  - fn list.partition[A](xs: List[A], f: fn(A) -> Bool) -> (List[A], List[A])
-  - fn list.product(xs: List[Int]) -> Int
-  - fn list.range(start: Int, end: Int) -> List[Int]
-  - fn list.reduce[A](xs: List[A], f: fn(A, A) -> A) -> Option[A]
-  - fn list.repeat[A](val: A, n: Int) -> List[A]
-  - fn list.reverse[A](xs: List[A]) -> List[A]
-  - fn list.set[A](xs: List[A], i: Int, val: A) -> List[A]
-  - fn list.slice[A](xs: List[A], start: Int, end: Int) -> List[A]
-  - fn list.sort[A](xs: List[A]) -> List[A]
-  - fn list.sort_by[A, B](xs: List[A], f: fn(A) -> B) -> List[A]
-  - fn list.sum(xs: List[Int]) -> Int
-  - fn list.take[A](xs: List[A], n: Int) -> List[A]
-  - fn list.take_end[A](xs: List[A], n: Int) -> List[A]
-  - fn list.take_while[A](xs: List[A], f: fn(A) -> Bool) -> List[A]
-  - fn list.unique[A](xs: List[A]) -> List[A]
-  - fn list.unique_by[A, K](xs: List[A], f: fn(A) -> K) -> List[A]
-  - fn list.update[A](xs: List[A], i: Int, f: fn(A) -> A) -> List[A]
-  - fn list.windows[A](xs: List[A], n: Int) -> List[List[A]]
-  - fn list.zip[A, B](xs: List[A], ys: List[B]) -> List[(A, B)]
-  - fn list.binary_search(xs: List[Int], target: Int) -> Option[Int]
-  - fn list.zip_with[A, B, C](xs: List[A], ys: List[B], f: fn(A, B) -> C) -> List[C]
-  - fn list.split_at[A](xs: List[A], n: Int) -> (List[A], List[A])
-  - fn list.iterate[A](seed: A, f: fn(A) -> A, n: Int) -> List[A]
-
-  ### int
-  - fn int.abs(n: Int) -> Int
-  - fn int.clamp(n: Int, lo: Int, hi: Int) -> Int
-  - fn int.from_hex(s: String) -> Result[Int, String]
-  - fn int.max(a: Int, b: Int) -> Int
-  - fn int.min(a: Int, b: Int) -> Int
-  - fn int.parse(s: String) -> Result[Int, String]
-  - fn int.to_float(n: Int) -> Float
-  - fn int.to_hex(n: Int) -> String
-  - fn int.to_string(n: Int) -> String
-
-  ### option
-  - fn option.filter[A](o: Option[A], f: fn(A) -> Bool) -> Option[A]
-  - fn option.flat_map[A, B](o: Option[A], f: fn(A) -> Option[B]) -> Option[B]
-  - fn option.flatten[A](o: Option[Option[A]]) -> Option[A]
-  - fn option.is_none[A](o: Option[A]) -> Bool
-  - fn option.is_some[A](o: Option[A]) -> Bool
-  - fn option.map[A, B](o: Option[A], f: fn(A) -> B) -> Option[B]
-  - fn option.or_else[A](o: Option[A], f: fn(Unit) -> Option[A]) -> Option[A]
-  - fn option.to_list[A](o: Option[A]) -> List[A]
-  - fn option.to_result[A, E](o: Option[A], e: E) -> Result[A, E]
-  - fn option.unwrap_or[A](o: Option[A], default: A) -> A
-  - fn option.unwrap_or_else[A](o: Option[A], f: fn(Unit) -> A) -> A
-  - fn option.zip[A, B](a: Option[A], b: Option[B]) -> Option[(A, B)]
-
-  ### result
-  - fn result.flat_map[A, B, E](r: Result[A, E], f: fn(A) -> Result[B, E]) -> Result[B, E]
-  - fn result.is_err[A, E](r: Result[A, E]) -> Bool
-  - fn result.is_ok[A, E](r: Result[A, E]) -> Bool
-  - fn result.map[A, B, E](r: Result[A, E], f: fn(A) -> B) -> Result[B, E]
-  - fn result.map_err[A, E, F](r: Result[A, E], f: fn(E) -> F) -> Result[A, F]
-  - fn result.partition[T, E](rs: List[Result[T, E]]) -> (List[T], List[E])
-  - fn result.to_err_option[A, E](r: Result[A, E]) -> Option[E]
-  - fn result.to_option[A, E](r: Result[A, E]) -> Option[A]
-  - fn result.unwrap_or[A, E](r: Result[A, E], default: A) -> A
-  - fn result.unwrap_or_else[A, E](r: Result[A, E], f: fn(E) -> A) -> A
-
-  ### map
-  - fn map.contains[K, V](m: Map[K, V], key: K) -> Bool
-  - fn map.entries[K, V](m: Map[K, V]) -> List[(K, V)]
-  - fn map.from_list[K, V](pairs: List[(K, V)]) -> Map[K, V]
-  - fn map.get[K, V](m: Map[K, V], key: K) -> Option[V]
-  - fn map.get_or[K, V](m: Map[K, V], key: K, default: V) -> V
-  - fn map.is_empty[K, V](m: Map[K, V]) -> Bool
-  - fn map.keys[K, V](m: Map[K, V]) -> List[K]
-  - fn map.len[K, V](m: Map[K, V]) -> Int
-  - fn map.set[K, V](m: Map[K, V], key: K, value: V) -> Map[K, V]
-  - fn map.values[K, V](m: Map[K, V]) -> List[V]
-  - fn map.new[K, V]() -> Map[K, V]
-
-  ### set
-  - fn set.contains[A](s: Set[A], value: A) -> Bool
-  - fn set.from_list[A](xs: List[A]) -> Set[A]
-  - fn set.insert[A](s: Set[A], value: A) -> Set[A]
-  - fn set.is_empty[A](s: Set[A]) -> Bool
-  - fn set.len[A](s: Set[A]) -> Int
-  - fn set.new[A]() -> Set[A]
-  - fn set.to_list[A](s: Set[A]) -> List[A]
-  - fn set.union[A](a: Set[A], b: Set[A]) -> Set[A]
-
-  ### math
-  - fn math.abs(n: Int) -> Int
-  - fn math.max(a: Int, b: Int) -> Int
-  - fn math.min(a: Int, b: Int) -> Int
-  - fn math.pow(base: Int, exp: Int) -> Int
-  - fn math.sign(n: Int) -> Int
-  - fn math.factorial(n: Int) -> Int
-  - fn math.sqrt(x: Float) -> Float
-  - fn math.pi() -> Float
-  """
 
 // ── Types ──
 
@@ -359,35 +127,12 @@ effect fn load_task_search(name: String, levels: List[String]) -> Result[Task, S
   }
 
 // ── Model call (via llm module) ──
+//
+// One attempt per call (no transport retry) and almai's default temperature
+// 0.0: the daily lane's call exactly as it was before the shared module.
 
-fn strip_code_fences(s: String) -> String =
-  s
-    |> string.split("\n")
-    |> list.filter((line) => not string.starts_with(string.trim(line), "```"))
-    |> string.join("\n")
-
-fn to_almai_spec(model: String) -> String = {
-  // "cf:@cf/meta/..." → "cf/@cf/meta/..."
-  // "anthropic:claude-..." → "anthropic/claude-..."
-  // "claude-sonnet-4-6" (no prefix) → "anthropic/claude-sonnet-4-6"
-  let colon = string.index_of(model, ":")
-  match colon {
-    some(i) => string.take(model, i) + "/" + string.drop(model, i + 1)
-    none => if string.starts_with(model, "claude") then "anthropic/" + model
-      else if string.starts_with(model, "gpt") then "openai/" + model
-      else "openai/" + model
-  }
-}
-
-effect fn call_model(model: String, user_prompt: String) -> Result[String, String] = {
-  let spec = to_almai_spec(model)
-  let opts = almai.defaults() |> almai.with_system(SYSTEM_PROMPT)
-  let msgs = [almai.user(user_prompt)]
-  match almai.call_with(spec, msgs, opts) {
-    err(e) => err(e)
-    ok(r) => ok(strip_code_fences(r.content))
-  }
-}
+effect fn call_model(model: String, user_prompt: String) -> Result[String, String] =
+  llm.call(model, prompts.SYSTEM_PROMPT, user_prompt, 0.0, 1)
 
 // ── Compile + test ──
 //
@@ -477,6 +222,7 @@ effect fn fix_loop_step(
       task: task.name, model: model, success: false,
       retries: max_retries, final_diagnostic: last_diag, final_code: last_code,
       attempts: acc,
+      reached: true, measurable: true, reason: "",
     })
   else {
     let user_prompt =
@@ -492,6 +238,7 @@ effect fn fix_loop_step(
             task: task.name, model: model, success: true,
             retries: attempt, final_diagnostic: "", final_code: result.code,
             attempts: new_acc,
+            reached: true, measurable: true, reason: "",
           })
         else if result.diagnostic == TARGET_DIVERGENCE then
           // A compiler finding: retrying the model cannot fix it, and a "repair"
@@ -500,6 +247,7 @@ effect fn fix_loop_step(
             task: task.name, model: model, success: false,
             retries: attempt, final_diagnostic: result.diagnostic, final_code: result.code,
             attempts: new_acc,
+            reached: true, measurable: true, reason: "",
           })
         else
           fix_loop_step(task, model, max_retries, attempt + 1, result.code, result.diagnostic, new_acc)
@@ -555,10 +303,10 @@ effect fn print_usage() -> Unit = {
   println("")
   println("Providers:")
   println("  cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast")
-  println("  anthropic:claude-sonnet-4-6")
+  println("  anthropic:claude-sonnet-5   (an unprefixed claude-* is also the Anthropic API)")
   println("  openrouter:meta-llama/llama-3.3-70b-instruct")
-  println("  openai:gpt-4o")
-  println("  claude-sonnet-4-6  (Claude CLI, no prefix)")
+  println("  openai:<model>")
+  println("  cli:claude                  (Claude Code CLI, no API key)")
 }
 
 effect fn print_result(result: RunResult) -> Unit = {
@@ -566,39 +314,84 @@ effect fn print_result(result: RunResult) -> Unit = {
   println("── Result ──")
   println("  task:    " + result.task)
   println("  model:   " + result.model)
-  println("  success: " + bool_str(result.success))
-  println("  retries: " + int.to_string(result.retries))
-  if result.success then {
+  println("  state:   " + cellstate.state_of(result.measurable, result.reached, false))
+  if not result.reached then {
+    println("  reason:  " + result.reason)
     println("")
-    println("Task passed.")
+    println("The model was never answered for this task: it is not a failure and not a zero.")
   } else {
-    println("")
-    println("Final diagnostic:")
-    println(result.final_diagnostic)
+    println("  success: " + bool_str(result.success))
+    println("  retries: " + int.to_string(result.retries))
+    if result.success then {
+      println("")
+      println("Task passed.")
+    } else {
+      println("")
+      println("Final diagnostic:")
+      println(result.final_diagnostic)
+    }
   }
 }
 
-effect fn run_task(task_name: String, model: String) -> Result[RunResult, String] = {
+// A planned cell the model was never answered for. `measurable` is false only
+// when the task's own files are not on this machine.
+//
+// This — not `RunResult { success: false }` — is what a harness error becomes
+// (almide-dojo#17). The old code turned every `err` from the run into a
+// scored zero, so a read timeout and an empty completion were published in
+// `summary.md`'s `passed/total` line as if the model had answered wrongly.
+fn absent_cell(task_name: String, model: String, measurable: Bool, reason: String) -> RunResult =
+  RunResult {
+    task: task_name, model: model, success: false, retries: 0,
+    final_diagnostic: "", final_code: "", attempts: [],
+    reached: false, measurable: measurable, reason: reason,
+  }
+
+// One planned cell of the `tasks x one model` grid. It always yields a cell:
+// there is no outcome this lane can meet that is not one of the four states.
+effect fn run_cell(task_name: String, model: String) -> RunResult = {
   println("Loading task: " + task_name)
   match load_task(task_name) {
-    err(e) => err("load task: " + e)
+    // Not measurable in this configuration at all: `harness-limitation`.
+    err(e) => {
+      println("  harness limitation: load task: " + e)
+      absent_cell(task_name, model, false, "load task: " + e)
+    }
     ok(task) => {
       println("Model:    " + model)
       println("Retries:  " + int.to_string(DEFAULT_MAX_RETRIES))
       println("")
       match fix_loop(task, model, DEFAULT_MAX_RETRIES) {
-        err(e) => err("fix_loop: " + e)
-        ok(result) => {
-          print_result(result)!
-          match write_metrics(result) {
-            ok(path) => println("\nReport: " + path)
-            err(e) => println("\nWarning: failed to write report: " + e)
-          }
-          ok(result)
+        // The model was never answered — an HTTP read timeout, the empty
+        // completion `src/llm.almd` refuses, a missing credential. The fix
+        // loop discards the attempts it did get, so a run that answered twice
+        // and then timed out is `not-run` too: a truncated retry budget is
+        // not a measured outcome, and the verbatim reason names the attempt.
+        err(e) => {
+          println("  not run: " + e)
+          absent_cell(task_name, model, true, "fix_loop: " + e)
         }
+        ok(result) => result
       }
     }
   }
+}
+
+// Write the per-task report for any cell, absent or measured, and print it.
+// An absent cell gets a report too, so the run directory holds every planned
+// task and `backfill` can see the absences it used to have no file for.
+effect fn record_cell(result: RunResult) -> Unit = {
+  print_result(result)!
+  match write_metrics(result) {
+    ok(path) => println("\nReport: " + path)
+    err(e) => println("\nWarning: failed to write report: " + e)
+  }
+}
+
+effect fn run_task(task_name: String, model: String) -> RunResult = {
+  let result = run_cell(task_name, model)!
+  record_cell(result)!
+  result
 }
 
 // ── Run all tasks ──
@@ -624,6 +417,22 @@ effect fn list_all_tasks() -> Result[List[String], String] = {
   else ok(all)
 }
 
+// The compiler that judged this run, as `almide --version` prints it.
+// Recorded in summary.md so a scorecard row can cite the exact version.
+effect fn compiler_version() -> String =
+  match process.exec("almide", ["--version"]) {
+    ok(v) => string.trim(v)
+    err(_) => ""
+  }
+
+// The HTTP read timeout this process ran under, as summary.md must state it:
+// a task is `not-run` BECAUSE some deadline expired, so the deadline is part
+// of the run's identity. "" = the compiler's own 30 s default, which — the
+// transport being non-streaming — is a deadline on the WHOLE completion.
+// The cross-language lane records the same number in its manifest
+// (almide-dojo#19); this lane has only summary.md to record it in.
+effect fn http_timeout_secs() -> String = env.get("ALMIDE_HTTP_TIMEOUT_SECS") ?? ""
+
 effect fn write_summary(date: String, model: String, results: List[RunResult]) -> Result[String, String] = {
   let slug = model_slug(model)
   let dir = "runs/" + date + "/" + slug
@@ -631,7 +440,9 @@ effect fn write_summary(date: String, model: String, results: List[RunResult]) -
     err(_) => err("failed to create " + dir)
     ok(_) => {
       let path = dir + "/summary.md"
-      match fs.write(path, render.render_summary(date, model, results)) {
+      let compiler = compiler_version() ?? ""
+      let timeout = http_timeout_secs() ?? ""
+      match fs.write(path, render.render_summary(date, model, compiler, timeout, results)) {
         err(_) => err("failed to write " + path)
         ok(_) => ok(path)
       }
@@ -655,17 +466,55 @@ effect fn run_all(model: String) -> Unit = {
           process.exit(1)
         }
         ok(results) => {
-          let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
-          run_all_finish(date, model, results)
+          // A cell the model never answered is `not-run`, so one flaky task
+          // cannot abort a run — but when NO task reached the model, nothing
+          // was measured: no summary (a 0/N row with zero model calls would
+          // poison the trend line) and exit 2 so a CI job goes red. This is
+          // the lane's one refusal to publish at all, and it is kept.
+          if list.all(results, (r) => not r.reached) then {
+            println("Harness error: no task reached the model (" + int.to_string(list.len(results)) + " tasks, 0 answered); no summary written")
+            process.exit(2)
+          } else {
+            let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
+            run_all_finish(date, model, results)!
+          }
         }
       }
     }
   }
 }
 
-// The bank lane. Same fix loop, its own summary file, and the two extra counts
-// the bank's scoring needs on top of pass/fail: silent violations (compiled,
-// visible-green, hidden-red) and target divergences (compiler findings).
+// Exit codes of `all`, in the order they are decided:
+//
+//   2  no task reached the model — nothing written (above).
+//   3  the run is `not-comparable`: some planned task was never answered, so
+//      the published rate is an INTERVAL and must not be quoted as a point.
+//      The summary IS written and committed, carrying its own refusal: a
+//      refused run is evidence, it is just not a scorecard number.
+//   1  some measured task failed. That is the measurement.
+//   0  every planned task reached the model and passed.
+//
+// 3 outranks 1 because a run that is missing tasks cannot be read as "N of M
+// failed" at all, whatever its measured cells did.
+
+// The bank lane. Same fix loop and the same typed cells as `all` (a task the
+// model never answered is `not-run`, never a zero), its own summary file, and
+// the extra counts the bank's scoring needs on top of pass/fail: silent
+// violations (compiled, visible-green, hidden-red) and target divergences
+// (compiler findings). Exit codes are `all`'s.
+fn bank_counts(date: String, results: List[RunResult]) -> String = {
+  let measured = results |> list.filter((r) => r.reached)
+  let silent = list.count(measured, (r) => r.final_diagnostic == SILENT_VIOLATION)
+  let diverged = list.count(measured, (r) => r.final_diagnostic == TARGET_DIVERGENCE)
+  let silent_any = list.count(measured, (r) => list.any(r.attempts, (a) => a.diagnostic == SILENT_VIOLATION))
+  "# Bank run " + date + "\n\n" +
+    "- **survived**: " + int.to_string(list.count(measured, (r) => r.success)) + "/" + int.to_string(list.len(results)) + " planned (" + int.to_string(list.len(measured)) + " reached the model)\n" +
+    "- **silent violations (final)**: " + int.to_string(silent) + "\n" +
+    "- **silent violations (any attempt)**: " + int.to_string(silent_any) + "\n" +
+    "- **target divergences**: " + int.to_string(diverged) + "\n\n" +
+    "Score = compile ∧ visible ∧ hidden ∧ cross-target, no partial credit; a refusal counts only if the repair survives within the retry budget.\n\n"
+}
+
 effect fn run_bank(model: String) -> Unit = {
   match list_bank_tasks() {
     err(e) => {
@@ -681,25 +530,25 @@ effect fn run_bank(model: String) -> Unit = {
           process.exit(1)
         }
         ok(results) => {
-          let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
-          let slug = model_slug(model)
-          let dir = "runs/" + date + "/" + slug
-          let silent = list.count(results, (r) => r.final_diagnostic == SILENT_VIOLATION)
-          let diverged = list.count(results, (r) => r.final_diagnostic == TARGET_DIVERGENCE)
-          let silent_any = list.count(results, (r) => list.any(r.attempts, (a) => a.diagnostic == SILENT_VIOLATION))
-          let header = "# Bank run " + date + "\n\n" +
-            "- **survived**: " + int.to_string(list.count(results, (r) => r.success)) + "/" + int.to_string(list.len(results)) + "\n" +
-            "- **silent violations (final)**: " + int.to_string(silent) + "\n" +
-            "- **silent violations (any attempt)**: " + int.to_string(silent_any) + "\n" +
-            "- **target divergences**: " + int.to_string(diverged) + "\n\n" +
-            "Score = compile ∧ visible ∧ hidden ∧ cross-target, no partial credit; a refusal counts only if the repair survives within the retry budget.\n\n"
-          let _ = fs.mkdir_p(dir)
-          let path = dir + "/bank-summary.md"
-          match fs.write(path, header + render.render_summary(date, model, results)) {
-            ok(_) => println("Bank summary: " + path)
-            err(e) => println("Warning: failed to write " + path + ": " + e)
+          if list.all(results, (r) => not r.reached) then {
+            println("Harness error: no bank task reached the model (" + int.to_string(list.len(results)) + " tasks, 0 answered); no summary written")
+            process.exit(2)
+          } else {
+            let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
+            let dir = "runs/" + date + "/" + model_slug(model)
+            fs.mkdir_p(dir)!
+            let path = dir + "/bank-summary.md"
+            let compiler = compiler_version() ?? ""
+            let timeout = http_timeout_secs() ?? ""
+            fs.write(path, bank_counts(date, results) + render.render_summary(date, model, compiler, timeout, results))!
+            println("Bank summary: " + path)
+            let v = render.daily_verdict(results)
+            println("verdict: " + v.id)
+            let passed = list.count(results, (r) => r.reached and r.success)
+            if not v.comparable then process.exit(3)
+            else if passed < list.len(results) then process.exit(1)
+            else {}
           }
-          if list.count(results, (r) => r.success) < list.len(results) then process.exit(1) else {}
         }
       }
     }
@@ -711,10 +560,17 @@ effect fn run_all_finish(date: String, model: String, results: List[RunResult]) 
     ok(path) => {
       println("")
       println("Summary: " + path)
-      let passed = list.count(results, (r) => r.success)
+      let v = render.daily_verdict(results)
       let total = list.len(results)
-      println(int.to_string(passed) + "/" + int.to_string(total) + " tasks passed")
-      if passed < total then process.exit(1) else {}
+      let reached = list.count(results, (r) => r.reached)
+      let passed = list.count(results, (r) => r.reached and r.success)
+      println("verdict: " + v.id)
+      v.reasons |> list.map((r) => println("  - " + r))
+      println(cellstate.rate(passed, total - reached, total) + " of the planned tasks passed" +
+        (if reached == total then "" else " (" + int.to_string(total - reached) + " never asked, so this is an interval)"))
+      if not v.comparable then process.exit(3)
+      else if passed < total then process.exit(1)
+      else {}
     }
     err(e) => {
       println("Warning: failed to write summary: " + e)
@@ -729,23 +585,11 @@ effect fn run_all_loop(tasks: List[String], model: String, acc: List[RunResult])
     let task_name = list.get(tasks, 0) |> option.unwrap_or("")
     let rest = list.drop(tasks, 1)
     println("=== " + task_name + " ===")
-    let next_acc = match run_task(task_name, model) {
-      ok(r) => acc + [r]
-      err(e) => {
-        println("  harness error: " + e)
-        acc + [RunResult {
-          task: task_name,
-          model: model,
-          success: false,
-          retries: 0,
-          final_diagnostic: e,
-          final_code: "",
-          attempts: [],
-        }]
-      }
-    }
+    // Every outcome is already a typed cell: there is no error path left here
+    // that could turn a network event into a model result.
+    let r = run_task(task_name, model)!
     println("")
-    run_all_loop(rest, model, next_acc)
+    run_all_loop(rest, model, acc + [r])
   }
 }
 
@@ -753,24 +597,24 @@ effect fn main() -> Unit = {
   let args = env.args()
   let argc = list.len(args)
   if argc < 1 then
-    print_usage()
+    print_usage()!
   else {
     let first = list.get(args, 0) |> option.unwrap_or("")
     let model = list.get(args, 1) |> option.unwrap_or(DEFAULT_MODEL)
     if first == "all" then
-      run_all(model)
+      run_all(model)!
     else if first == "bank" then
-      run_bank(model)
+      run_bank(model)!
     else if first == "backfill" then
-      backfill.backfill_all()
+      backfill.backfill_all()!
     else {
-      match run_task(first, model) {
-        ok(r) => if not r.success then process.exit(1) else {}
-        err(e) => {
-          println("Harness error: " + e)
-          process.exit(1)
-        }
-      }
+      // Single task. A cell the model never answered exits 2, the same code
+      // `all` uses for "nothing was measured" — it is not a failing task, and
+      // exiting 1 for it is the single-task spelling of the same defect.
+      let r = run_task(first, model)!
+      if not r.reached then process.exit(2)
+      else if not r.success then process.exit(1)
+      else {}
     }
   }
 }
@@ -785,15 +629,6 @@ test "bool_str false is no" {
   assert_eq(bool_str(false), "no")
 }
 
-test "strip_code_fences removes triple backtick lines" {
-  let raw = "```almide\nfn f() = 1\n```"
-  assert_eq(strip_code_fences(raw), "fn f() = 1")
-}
-
-test "strip_code_fences leaves non-fenced text alone" {
-  assert_eq(strip_code_fences("plain text"), "plain text")
-}
-
 test "render_report contains task name and model" {
   let r = RunResult {
     task: "fizzbuzz",
@@ -803,6 +638,7 @@ test "render_report contains task name and model" {
     final_diagnostic: "",
     final_code: "fn fizzbuzz(n: Int) -> String = \"1\"",
     attempts: [Attempt { code: "fn fizzbuzz(n: Int) -> String = \"1\"", diagnostic: "", passed: true }],
+    reached: true, measurable: true, reason: "",
   }
   let out = render.render_report(r)
   assert(string.contains(out, "fizzbuzz"))
@@ -814,4 +650,169 @@ test "model_slug sanitizes provider string" {
   assert_eq(model_slug("cf:@cf/meta/llama-3.3-70b"), "cf_cf_meta_llama-3-3-70b")
   assert_eq(model_slug("claude-sonnet-4-6"), "claude-sonnet-4-6")
   assert_eq(model_slug("anthropic/claude-sonnet-4-6"), "anthropic_claude-sonnet-4-6")
+}
+
+// ── almide-dojo#17: a task the model was never asked is never a zero ──
+
+fn t_pass(task: String) -> RunResult = RunResult {
+  task: task, model: "cf:m", success: true, retries: 0,
+  final_diagnostic: "", final_code: "",
+  attempts: [Attempt { code: "fn f() = 1", diagnostic: "", passed: true }],
+  reached: true, measurable: true, reason: "",
+}
+
+fn t_fail(task: String) -> RunResult = RunResult {
+  task: task, model: "cf:m", success: false, retries: 3,
+  final_diagnostic: "error[E003]: undefined variable 'x'", final_code: "",
+  attempts: [Attempt { code: "fn f() = x", diagnostic: "error[E003]: undefined variable 'x'", passed: false }],
+  reached: true, measurable: true, reason: "",
+}
+
+// The shape run 35783112036 produced 14 times, and the one main.almd used to
+// publish as `success: false`.
+let TIMED_OUT_REASON =
+  "fix_loop: attempt 0: call_model: cloudflare: http: read timed out waiting for the server (raise ALMIDE_HTTP_TIMEOUT_SECS; 0 = no timeout)"
+
+fn t_timeout(task: String) -> RunResult = absent_cell(task, "cf:m", true, TIMED_OUT_REASON)
+
+test "a timed-out task is not-run in summary.md, with the transport's own words" {
+  let out = render.render_summary("2026-09-23", "cf:m", "almide 0.62.0", "140",
+    [t_pass("clamp"), t_fail("gcd"), t_timeout("matrix-ops")])
+  // The per-task row says `not-run`, not FAIL, and carries no retry count it
+  // never had.
+  assert(string.contains(out, "| `matrix-ops` | not-run | not-run | `timeout` | — |"))
+  assert(not string.contains(out, "| `matrix-ops` | FAIL"))
+  // The reason is in summary.md verbatim — requirement 1 of almide-dojo#17 is
+  // that it is visible here, not only somewhere a reader would have to open.
+  assert(string.contains(out, "## Never asked (the model was never answered)"))
+  assert(string.contains(out, "read timed out waiting for the server (raise ALMIDE_HTTP_TIMEOUT_SECS; 0 = no timeout)"))
+  // The deadline that produced it is part of the run's identity.
+  assert(string.contains(out, "- **http timeout (s)**: `140`\n"))
+  // ...and the four states add up to the planned task count.
+  assert(string.contains(out, "- **cells**: measured 2, inconclusive-saturated 0, not-run 1, harness-limitation 0\n"))
+}
+
+test "the headline rate carries its own incompleteness rather than a point over a subset" {
+  let done = [t_pass("a"), t_pass("b"), t_fail("c")]
+  let gone = [t_timeout("d")]
+  let out = render.render_summary("2026-09-23", "cf:m", "almide 0.62.0", "140", done + gone)
+  // 2 of 4 PLANNED tasks passed, and the true rate is somewhere in [50%,75%]
+  // because task `d` was never asked. The old renderer printed `2 / 4`, which
+  // reads as a point over the whole set, and `- **tasks**: 4` beside it.
+  assert(string.contains(out, "- **passed**: 2/4 (50%–75%)\n"))
+  assert(string.contains(out, "- **1-shot passes**: 2/4 (50%–75%)\n"))
+  assert(string.contains(out, "- **reached**: 3 / 4\n"))
+  assert(string.contains(out, "- **not-run**: 1\n"))
+  // The denominator is the planned count in every rate: never 3, the subset
+  // that answered.
+  assert(not string.contains(out, "2/3"))
+  assert(not string.contains(out, "2 / 3"))
+  // A complete run's interval collapses to the point that IS quotable.
+  let whole = render.render_summary("2026-09-23", "cf:m", "almide 0.62.0", "140", done + [t_pass("d")])
+  assert(string.contains(whole, "- **passed**: 3/4 (75%)\n"))
+  assert(not string.contains(whole, "–"))
+}
+
+test "the verdict is above the numbers, and an incomplete run refuses to be quoted" {
+  let out = render.render_summary("2026-09-23", "cf:m", "almide 0.62.0", "140",
+    [t_pass("a"), t_fail("b"), t_timeout("c")])
+  let banner = string.index_of(out, "Verdict: `not-comparable`")
+  let first_rate = string.index_of(out, "- **passed**:")
+  assert(option.is_some(banner))
+  // What a reader carries away is the number, so the refusal must be above it.
+  assert((banner ?? 0) < (first_rate ?? 0))
+  assert(string.contains(out, "must not be quoted as a point"))
+  assert(string.contains(out, "certified as a comparison: **no**"))
+  // ...and the run itself refuses: not-comparable is not comparable.
+  let v = render.daily_verdict([t_pass("a"), t_fail("b"), t_timeout("c")])
+  assert_eq(v.id, "not-comparable")
+  assert(not v.comparable)
+  // One failing measured cell is enough for the bank to have discriminated.
+  assert(v.conclusive)
+}
+
+test "a complete run is comparable, and a clean sweep is inconclusive-saturated" {
+  let mixed = [t_pass("a"), t_pass("b"), t_fail("c")]
+  let v = render.daily_verdict(mixed)
+  assert_eq(v.id, "comparable")
+  assert(v.comparable)
+  assert(v.conclusive)
+  assert(list.is_empty(v.reasons))
+  // The README scorecard's own shape: 100% over the whole bank. It is a
+  // complete run and still not evidence about the model — the bank is at its
+  // ceiling (almide-dojo#3 / almide/almide#1963).
+  let sweep = ["a", "b", "c"] |> list.map(t_pass)
+  let vs = render.daily_verdict(sweep)
+  assert_eq(vs.id, cellstate.ST_SATURATED)
+  assert(vs.comparable)
+  assert(not vs.conclusive)
+  let out = render.render_summary("2026-09-23", "cf:m", "almide 0.62.0", "140", sweep)
+  assert(string.contains(out, "do not quote this rate as evidence about the model"))
+  assert(string.contains(out, "- **cells**: measured 0, inconclusive-saturated 3, not-run 0, harness-limitation 0\n"))
+  // Saturation never invents an interval: the run is complete.
+  assert(string.contains(out, "- **passed**: 3/3 (100%)\n"))
+}
+
+test "a run that reached nothing is refused before a summary can be written" {
+  let none_reached = ["a", "b"] |> list.map(t_timeout)
+  let v = render.daily_verdict(none_reached)
+  assert_eq(v.id, "nothing-measured")
+  assert(not v.comparable)
+  assert(not v.conclusive)
+  // This is the condition run_all refuses to publish under at all: `all`
+  // exits 2 and writes no summary, because a 0/N row with zero model calls
+  // would poison the trend line.
+  assert(list.all(none_reached, (r) => not r.reached))
+}
+
+test "an unanswered task is in no failure bucket: not the retry distribution, not the code backlog" {
+  let out = render.render_summary("2026-09-23", "cf:m", "almide 0.62.0", "140",
+    [t_pass("a"), t_timeout("b")])
+  // `fail-0` is where a RunResult { success: false, retries: 0 } used to land,
+  // which is exactly what the old harness error became.
+  assert(string.contains(out, "- fail-0: 0\n"))
+  assert(string.contains(out, "- pass-0: 1\n"))
+  // ...and it is not read as a diagnostic the model could not act on.
+  assert(not string.contains(out, "Unrecoverable diagnostic codes"))
+  // The breakdown counts it as an absence, by name.
+  assert(string.contains(out, "- not-run: 1\n"))
+}
+
+test "a task whose files are missing is a harness limitation, not a model failure" {
+  let ghost = absent_cell("ghost", "cf:m", false, "load task: task not found: ghost")
+  let out = render.render_summary("2026-09-23", "cf:m", "almide 0.62.0", "", [t_pass("a"), t_fail("b"), ghost])
+  assert(string.contains(out, "| `ghost` | harness-limitation | harness-limitation | `task-files-missing` | — |"))
+  assert(string.contains(out, "- **cells**: measured 2, inconclusive-saturated 0, not-run 0, harness-limitation 1\n"))
+  // It still shrinks the denominator's certainty: the cell was planned.
+  assert(string.contains(out, "- **passed**: 1/3 (33%–66%)\n"))
+  // A run with no ALMIDE_HTTP_TIMEOUT_SECS states no line rather than an empty one.
+  assert(not string.contains(out, "**http timeout"))
+}
+
+test "render_summary stamps the compiler version the run was judged with" {
+  let r = t_pass("fizzbuzz")
+  let out = render.render_summary("2026-09-22", "anthropic:claude-sonnet-5", "almide 0.62.0", "140", [r])
+  assert(string.contains(out, "- **compiler**: `almide 0.62.0`\n"))
+  assert(string.contains(out, "- **tasks**: 1\n"))
+  // A backfill does not know the compiler: no line rather than an empty one.
+  let bare = render.render_summary("2026-09-22", "anthropic:claude-sonnet-5", "", "", [r])
+  assert(not string.contains(bare, "**compiler**"))
+}
+
+test "the per-task report of an unanswered task carries no success line to be misread" {
+  let out = render.render_report(t_timeout("matrix-ops"))
+  assert(string.contains(out, "- **state**: `not-run`\n"))
+  assert(string.contains(out, "- **reason**: " + TIMED_OUT_REASON + "\n"))
+  // The transport class, and never labelled `diagnostic code`: there is no
+  // diagnostic, and naming one sends a reader after a compiler bug.
+  assert(string.contains(out, "- **class**: `timeout`\n"))
+  assert(not string.contains(out, "diagnostic code"))
+  // `- **success**: no` is the lie: there was no attempt to succeed at.
+  assert(not string.contains(out, "**success**"))
+  assert(string.contains(out, "not a failure, and not a zero"))
+  // A measured report still says what it always said, and now says which
+  // state it is.
+  let measured = render.render_report(t_fail("gcd"))
+  assert(string.contains(measured, "- **success**: no\n"))
+  assert(string.contains(measured, "- **state**: `measured`\n"))
 }

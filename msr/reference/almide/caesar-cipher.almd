@@ -1,0 +1,11 @@
+fn shift_char(c: String, k: Int) -> String = {
+  let cp = string.codepoint(c) ?? 0
+  if cp >= 97 and cp <= 122 then string.from_codepoint(97 + ((cp - 97 + k) % 26 + 26) % 26)
+  else c
+}
+
+fn encrypt(text: String, shift: Int) -> String =
+  string.chars(text) |> list.map((c) => shift_char(c, shift % 26)) |> string.join("")
+
+fn decrypt(text: String, shift: Int) -> String =
+  string.chars(text) |> list.map((c) => shift_char(c, 26 - shift % 26)) |> string.join("")

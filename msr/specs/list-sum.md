@@ -1,0 +1,3 @@
+- Return the sum of all elements in `xs`
+- `list_sum([])` must return `0`
+- `list_sum([1, 2, 3])` must return `6`

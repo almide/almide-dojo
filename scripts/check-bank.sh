@@ -36,6 +36,7 @@ FAMILIES="bank/families.txt"
 command -v almide >/dev/null || { echo "::error::almide not on PATH"; exit 2; }
 FAMILY_SLUGS="$(grep -vE '^[[:space:]]*(#|$)' "$FAMILIES" | cut -f1)"
 HAVE_WASM=0; command -v wasmtime >/dev/null && HAVE_WASM=1
+if [ "$HAVE_WASM" = 0 ] && [ "${BANK_REQUIRE_WASM:-0}" = 1 ]; then echo "::error::BANK_REQUIRE_WASM=1 but wasmtime is not on PATH: the cross-target leg would be skipped"; exit 2; fi
 
 fail=0
 err() { fail=1; echo "::error::$*"; }

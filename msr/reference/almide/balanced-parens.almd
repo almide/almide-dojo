@@ -1,0 +1,20 @@
+fn closer_of(c: String) -> String = match c {
+  "(" => ")",
+  "[" => "]",
+  "{" => "}",
+  _ => "",
+}
+
+fn balance_go(cs: List[String], stack: List[String]) -> Bool = match cs {
+  [] => list.is_empty(stack),
+  [c, ..rest] =>
+    if closer_of(c) != "" then balance_go(rest, stack + [closer_of(c)])
+    else if c == ")" or c == "]" or c == "}" then
+      match list.last(stack) {
+        some(top) => if top == c then balance_go(rest, list.take(stack, list.len(stack) - 1)) else false,
+        none => false,
+      }
+    else balance_go(rest, stack),
+}
+
+fn is_balanced(s: String) -> Bool = balance_go(string.chars(s), [])

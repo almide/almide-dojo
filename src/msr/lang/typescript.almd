@@ -1,0 +1,71 @@
+// TypeScript plugin: one file type-checked by tsc (--strict, no emit on
+// error) and run on node. `tsc` is looked up on PATH (a global install or
+// `npm install -g typescript`; `make msr` puts a pinned one on PATH).
+
+import self.msr.spec.{Ty, TInt, TBool, TStr, TList, Val, VInt, VBool, VStr, VList, VCall, Sig, Param, PTask, Case, Step}
+import self.msr.spec
+
+fn versions() -> List[(String, List[String])] = [("tsc", ["tsc", "--version"]), ("node", ["node", "--version"])]
+
+fn notes() -> String =
+  "Plain functions at the top level (no `export`, no imports, no `console.log` of your own). The file is checked with `tsc --strict` and the driver appended to it runs on node."
+
+fn ty(t: Ty) -> String = match t {
+  TInt => "number",
+  TBool => "boolean",
+  TStr => "string",
+  TList(e) => ty(e) + "[]",
+}
+
+fn sig(s: Sig) -> String =
+  "function " + s.name + "(" + (s.params |> list.map((p) => p.name + ": " + ty(p.ty)) |> string.join(", ")) + "): " + ty(s.ret)
+
+fn signatures(t: PTask) -> String =
+  t.sigs |> list.map((s) => "    " + sig(s)) |> string.join("
+")
+
+fn lit(t: PTask, v: Val) -> String = match v {
+  VInt(n) => int.to_string(n),
+  VBool(b) => if b then "true" else "false",
+  VStr(s) => spec.c_quote(s),
+  VList(xs) => "[" + (xs |> list.map((x) => lit(t, x)) |> string.join(", ")) + "]",
+  VCall(name, args) => name + "(" + (args |> list.map((a) => lit(t, a)) |> string.join(", ")) + ")",
+}
+
+fn driver(t: PTask) -> String = {
+  let n = list.len(t.cases)
+  let checks = t.cases
+    |> list.map((c) => "__msrCheck(" + spec.c_quote(spec.case_label(c)) + ", " + lit(t, c.call) + ", " + lit(t, c.expected) + ");")
+    |> string.join("\n")
+  // JSON equality: exact for numbers, booleans, strings and nested arrays.
+  // console/process are declared here so the check needs no @types/node
+  // and no DOM lib (`--types ""` keeps any ambient @types out of the run).
+  """
+    // ── msr driver (generated) ──
+    declare const console: { log(msg: string): void; error(msg: string): void };
+    declare const process: { exit(code: number): never };
+    let __msrFailed = 0;
+    function __msrCheck<T>(label: string, got: T, want: T): void {
+      if (JSON.stringify(got) !== JSON.stringify(want)) {
+        __msrFailed++;
+        console.error("FAIL " + label + ": expected " + JSON.stringify(want) + ", got " + JSON.stringify(got));
+      }
+    }
+    ${checks}
+    if (__msrFailed > 0) {
+      console.error("msr: " + __msrFailed + " of ${int.to_string(n)} cases failed");
+      process.exit(1);
+    }
+    console.log("${spec.sentinel(n)}");
+    """
+}
+
+// `.cts` so node runs the emitted `.cjs` as CommonJS whatever the ambient
+// package.json says.
+fn files(t: PTask, solution: String) -> List[(String, String)] =
+  [("msr.cts", solution + "\n\n" + driver(t))]
+
+fn steps() -> List[Step] = [
+  Step { kind: "compile", cmd: "tsc", args: ["--strict", "--noEmitOnError", "--target", "es2022", "--module", "commonjs", "--lib", "es2022", "--types", "", "--outDir", "out", "msr.cts"], timeout_ms: spec.COMPILE_TIMEOUT_MS },
+  Step { kind: "run", cmd: "node", args: ["out/msr.cjs"], timeout_ms: spec.RUN_TIMEOUT_MS },
+]

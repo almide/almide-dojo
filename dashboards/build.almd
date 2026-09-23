@@ -112,6 +112,9 @@ type DayRun = {
   passed: Int,
   one_shot: Int,
   total_retries: Int,
+  // Planned tasks the model was never answered for (almide-dojo#17).
+  // `passed / total` is a LOWER bound while this is non-zero.
+  not_run: Int,
   tasks: List[(String, String, String, String, Int)],
   categories: List[(String, Int)],
   codes: List[(String, Int)],
@@ -126,6 +129,10 @@ fn parse_summary(date: String, content: String) -> DayRun = {
     model: parse_field(lines, "**model**: "),
     total: parse_int_field(lines, "**tasks**: "),
     passed: parse_int_field(lines, "**passed**: "),
+    // Absent from a summary written before the cell states existed, which
+    // reads as 0 — those runs recorded no absences anywhere, so 0 is what
+    // is known about them rather than a claim that none happened.
+    not_run: parse_int_field(lines, "**not-run**: "),
     one_shot: parse_int_field(lines, "**1-shot passes**: "),
     total_retries: parse_int_field(lines, "**total retries**: "),
     tasks: parse_task_rows(lines),
@@ -165,6 +172,7 @@ fn run_to_json(run: DayRun) -> String = {
     "\"passed\":" + int.to_string(run.passed) + "," +
     "\"oneShot\":" + int.to_string(run.one_shot) + "," +
     "\"totalRetries\":" + int.to_string(run.total_retries) + "," +
+    "\"notRun\":" + int.to_string(run.not_run) + "," +
     "\"tasks\":[" + tasks_json + "]," +
     "\"categories\":[" + cats_json + "]," +
     "\"codes\":[" + codes_json + "]," +
@@ -229,9 +237,15 @@ fn generate_html(runs: List[DayRun], metas: List[TaskMeta]) -> String = {
     "  'pass-1shot':'#3fb950','pass-retry':'#56d364',",
     "  'parse-error':'#a371f7','type-error':'#f85149','name-error':'#ff7b72',",
     "  'import-error':'#79c0ff','compile-error':'#d29922','runtime-error':'#ffa657',",
-    "  'wrong-output':'#ec8e2c','timeout':'#8b949e','unknown':'#6e7681'",
+    "  'wrong-output':'#ec8e2c','timeout':'#8b949e','unknown':'#6e7681',",
+    "  'not-run':'#484f58','harness-limitation':'#30363d'",
     "};",
-    "var CAT_ORDER = ['pass-1shot','pass-retry','parse-error','type-error','name-error','import-error','compile-error','runtime-error','wrong-output','timeout','unknown'];",
+    "var CAT_ORDER = ['pass-1shot','pass-retry','not-run','harness-limitation','parse-error','type-error','name-error','import-error','compile-error','runtime-error','wrong-output','timeout','unknown'];",
+    // A run with tasks the model was never answered for publishes an
+    // interval, not a point (almide-dojo#17): the headline percentage is
+    // bounded below by 'every absent task would have failed' and above by
+    // 'every one would have passed'.
+    "function notRunNote(d){ return (d.notRun || 0) > 0 ? ' · ' + d.notRun + ' never asked' : ''; }",
     "var byModel = {};",
     "DATA.forEach(function(d){ if(!byModel[d.model]) byModel[d.model]=[]; byModel[d.model].push(d); });",
     "var allDates = Array.from(new Set(DATA.map(function(d){return d.date;}))).sort();",
@@ -241,11 +255,12 @@ fn generate_html(runs: List[DayRun], metas: List[TaskMeta]) -> String = {
     "  .sort(function(a,b){ return a.model < b.model ? -1 : 1; });",
     "if (latestEntries.length > 0) {",
     "  document.getElementById('metrics').innerHTML = latestEntries.map(function(d){",
+    "    var hi = d.total > 0 ? Math.round(100 * (d.passed + (d.notRun || 0)) / d.total) : 0;",
     "    var pct = d.total > 0 ? Math.round(100 * d.passed / d.total) : 0;",
     "    var os = d.total > 0 ? Math.round(100 * d.oneShot / d.total) : 0;",
     "    return '<div class=\"card\"><h2>' + d.model + '</h2>' +",
-    "      '<div class=\"metric green\">' + pct + '%</div>' +",
-    "      '<div class=\"sub\">' + d.passed + '/' + d.total + ' pass · 1-shot ' + os + '% · retries ' + d.totalRetries + '</div></div>';",
+    "      '<div class=\"metric green\">' + (d.notRun > 0 ? pct + '–' + hi + '%' : pct + '%') + '</div>' +",
+    "      '<div class=\"sub\">' + d.passed + '/' + d.total + ' pass · 1-shot ' + os + '% · retries ' + d.totalRetries + notRunNote(d) + '</div></div>';",
     "  }).join('');",
     "}",
     "if (DATA.length > 0) {",

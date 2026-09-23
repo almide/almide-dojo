@@ -4,8 +4,15 @@
 // The category drives the dashboard breakdown; the code drives the
 // "top diagnostic codes" leaderboard that surfaces the diagnostics most
 // likely to mislead an LLM.
+//
+// A cell the model never answered is classified by its ABSENCE, never by a
+// diagnostic it does not have (almide-dojo#17): its category is the cell
+// state (`not-run` / `harness-limitation`) and its code column carries the
+// transport class, so the breakdown has somewhere to put a read timeout that
+// is not the `timeout` bucket a genuinely slow `almide test` lands in.
 
 import self.types.{RunResult, Attempt}
+import self.cellstate
 
 fn primary_diagnostic_code(diag: String) -> String =
   match string.index_of(diag, "error[E") {
@@ -52,7 +59,10 @@ fn classify_failure(diag: String) -> (String, String) = {
 }
 
 fn classify(result: RunResult) -> (String, String) =
-  if result.success then
+  if not result.reached then
+    (cellstate.state_of(result.measurable, false, false),
+     cellstate.absence_class(result.measurable, result.reason))
+  else if result.success then
     (if result.retries == 0 then "pass-1shot" else "pass-retry", "")
   else
     classify_failure(result.final_diagnostic)
@@ -70,8 +80,12 @@ fn first_failed_code(result: RunResult) -> String =
 fn final_failed_code(result: RunResult) -> String =
   primary_diagnostic_code(result.final_diagnostic)
 
+// The two absence categories come right after the passes, before the failure
+// taxonomy: a reader who stops reading the breakdown after two lines must
+// still see that some tasks were never asked.
 fn category_order() -> List[String] = [
   "pass-1shot", "pass-retry",
+  cellstate.ST_NOT_RUN, cellstate.ST_HARNESS,
   "parse-error", "type-error", "name-error", "import-error",
   "compile-error", "runtime-error", "wrong-output", "timeout",
   "silent-violation", "target-divergence", "unknown",
@@ -109,11 +123,40 @@ test "classify_failure runtime-error from panic" {
 }
 
 test "classify pass-1shot when success and zero retries" {
-  let r = RunResult { task: "x", model: "m", success: true, retries: 0, final_diagnostic: "", final_code: "", attempts: [] }
+  let r = RunResult { task: "x", model: "m", success: true, retries: 0, final_diagnostic: "", final_code: "", attempts: [],
+    reached: true, measurable: true, reason: "" }
   assert_eq(classify(r).0, "pass-1shot")
 }
 
 test "classify pass-retry when success after retries" {
-  let r = RunResult { task: "x", model: "m", success: true, retries: 2, final_diagnostic: "", final_code: "", attempts: [] }
+  let r = RunResult { task: "x", model: "m", success: true, retries: 2, final_diagnostic: "", final_code: "", attempts: [],
+    reached: true, measurable: true, reason: "" }
   assert_eq(classify(r).0, "pass-retry")
+}
+
+test "a task the model never answered is classified by its absence, never as a failure" {
+  // The exact shape almide-dojo#17 is about: `run_task` returned err, so the
+  // old code built a RunResult { success: false } and the breakdown counted
+  // it beside genuine compile failures.
+  let timed_out = RunResult { task: "matrix-ops", model: "m", success: false, retries: 0,
+    final_diagnostic: "", final_code: "", attempts: [], reached: false, measurable: true,
+    reason: "fix_loop: attempt 0: call_model: cloudflare: http: read timed out waiting for the server (raise ALMIDE_HTTP_TIMEOUT_SECS; 0 = no timeout)" }
+  assert_eq(classify(timed_out).0, cellstate.ST_NOT_RUN)
+  assert_eq(classify(timed_out).1, "timeout")
+  // It is NOT any of the failure categories, including `timeout`, which means
+  // "the model's code was too slow" and is a measurement.
+  assert(classify(timed_out).0 != "timeout")
+  assert(classify(timed_out).0 != "unknown")
+  assert(classify(timed_out).0 != "compile-error")
+  // An empty completion is the other absence the daily lane sees.
+  let empty = { ...timed_out, reason: "fix_loop: attempt 0: call_model: empty completion from provider 'cf' (spec 'cf:@cf/x')" }
+  assert_eq(classify(empty).0, cellstate.ST_NOT_RUN)
+  assert_eq(classify(empty).1, "empty-completion")
+  // A task whose own files are missing was never measurable here at all.
+  let no_files = { ...timed_out, measurable: false, reason: "load task: task not found: ghost" }
+  assert_eq(classify(no_files).0, cellstate.ST_HARNESS)
+  // Both absence categories are in the breakdown's vocabulary, so a run that
+  // has them cannot lose them silently.
+  assert(list.contains(category_order(), cellstate.ST_NOT_RUN))
+  assert(list.contains(category_order(), cellstate.ST_HARNESS))
 }

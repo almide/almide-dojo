@@ -1,0 +1,4 @@
+fn letters(s: String) -> List[String] =
+  string.to_lower(s) |> string.chars |> list.filter((c) => c != " ") |> list.sort
+
+fn is_anagram(a: String, b: String) -> Bool = letters(a) == letters(b)

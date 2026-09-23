@@ -1,7 +1,16 @@
 // Markdown rendering for per-task reports and per-(date, model) summaries.
 // Both feed runs/<date>/[<model>/]*.md files and the dashboard build.
+//
+// summary.md is the daily lane's ONLY published artifact — there is no
+// results.json here — so everything a reader must know to quote a number
+// has to be in it (almide-dojo#17 requirement 1: "visible in summary.md, not
+// only in the JSON nobody opens"). In particular the almide README scorecard
+// (almide/almide#1617) cites this file, so a reader of that citation has to
+// be able to tell a model failure from a task the model was never asked.
 
 import self.types.{Attempt, RunResult}
+import self.cellstate.{Verdict}
+import self.cellstate
 import self.classifier
 
 fn fence_block(lang: String, body: String) -> String =
@@ -26,32 +35,152 @@ fn render_attempts(attempts: List[Attempt]) -> String =
     "## Attempts\n\n" + body
   }
 
+// The state one cell can know about itself. `inconclusive-saturated` is a
+// property of the RUN, not of the cell, so a per-task report can never print
+// it — summary.md re-types this lane's measured cells when every one passed.
+fn cell_state(r: RunResult) -> String = cellstate.state_of(r.measurable, r.reached, false)
+
+// A report for a cell the model never answered has no attempt to score, so it
+// carries no `success` line at all: "success: no" is exactly the lie
+// almide-dojo#17 is about. What it carries instead is the verbatim reason.
 fn render_report(result: RunResult) -> String = {
   let c = classifier.classify(result)
   let code_line = if c.1 == "" then "" else "- **diagnostic code**: `" + c.1 + "`\n"
-  "# " + result.task + "\n\n" +
-  "- **model**: `" + result.model + "`\n" +
-  "- **success**: " + (if result.success then "yes" else "no") + "\n" +
-  "- **retries**: " + int.to_string(result.retries) + "\n" +
-  "- **category**: " + c.0 + "\n" +
-  code_line + "\n" +
-  render_attempts(result.attempts)
+  let head =
+    "# " + result.task + "\n\n" +
+    "- **model**: `" + result.model + "`\n" +
+    "- **state**: `" + cell_state(result) + "`\n"
+  if not result.reached then
+    head +
+    "- **reason**: " + result.reason + "\n" +
+    "- **category**: " + c.0 + "\n" +
+    // Not a `diagnostic code`: there is no diagnostic. It is the transport
+    // class of the absence, and calling it a diagnostic code is how a reader
+    // starts looking for a compiler bug that is not there.
+    "- **class**: `" + c.1 + "`\n" + "\n" +
+    "The model was never answered for this task, so there is no attempt to\n" +
+    "score. This cell is `" + cell_state(result) + "`: not a failure, and not a zero.\n"
+  else
+    head +
+    "- **success**: " + (if result.success then "yes" else "no") + "\n" +
+    "- **retries**: " + int.to_string(result.retries) + "\n" +
+    "- **category**: " + c.0 + "\n" +
+    code_line + "\n" +
+    render_attempts(result.attempts)
 }
 
-fn render_summary(date: String, model: String, results: List[RunResult]) -> String = {
+// ── The run's verdict ──
+//
+// The daily lane's grid is `tasks x ONE model`, so its stratum for
+// almide-dojo#3's saturation rule is that model. Everything else — the four
+// states, the 98% threshold, the interval rate, which of the four verdict
+// ids a run gets — is the shared vocabulary in src/cellstate.almd, because
+// the cross-language lane says the same things about its own grid.
+
+fn measured(results: List[RunResult]) -> List[RunResult] =
+  results |> list.filter((r) => r.reached)
+
+fn absent(results: List[RunResult]) -> List[RunResult] =
+  results |> list.filter((r) => not r.reached)
+
+fn is_saturated(results: List[RunResult]) -> Bool = {
+  let got = measured(results)
+  cellstate.saturated_series(list.count(got, (r) => r.success), list.len(got))
+}
+
+let SATURATED_REASON =
+  "this model passed " + int.to_string(cellstate.SATURATION_PCT) + "% or better of the tasks it was asked, so the bank " +
+  "did not discriminate and the rate above is a statement about the bank's ceiling rather than about the model " +
+  "(INCONCLUSIVE_BANK_SATURATED, almide-dojo#3 / almide/almide#1963)"
+
+fn absent_reason(results: List[RunResult]) -> String = {
+  let gone = absent(results)
+  let names = gone |> list.map((r) => "`" + r.task + "` (" + cellstate.absence_class(r.measurable, r.reason) + ")")
+  int.to_string(list.len(gone)) + " of " + int.to_string(list.len(results)) +
+    " planned task(s) were never answered by the model, so their outcome is unknown and the rate above is an " +
+    "interval, not a point — do not quote it as one: " + string.join(names, ", ")
+}
+
+fn daily_verdict(results: List[RunResult]) -> Verdict = {
+  let saturated = is_saturated(results)
+  let any_reached = not list.is_empty(measured(results))
+  let complete = list.is_empty(absent(results))
+  let sat = if saturated then [SATURATED_REASON] else []
+  let reasons =
+    if not any_reached then ["no task reached the model: nothing was measured"]
+    else if not complete then [absent_reason(results)] + sat
+    else sat
+  cellstate.verdict(any_reached, complete, saturated, reasons)
+}
+
+fn verdict_headline(v: Verdict) -> String = match v.id {
+  "comparable" => "every planned task reached the model, and the bank discriminated: this rate is a point",
+  "inconclusive-saturated" => "a complete run that separates nothing: do not quote this rate as evidence about the model",
+  "not-comparable" => "some planned tasks never reached the model: this rate is an interval and must not be quoted as a point",
+  _ => "no task reached the model",
+}
+
+// ── summary.md ──
+
+fn cells_line(results: List[RunResult], saturated: Bool) -> String =
+  cellstate.CELL_STATES
+    |> list.map((s) => s + " " + int.to_string(
+      list.count(results, (r) => cellstate.state_of(r.measurable, r.reached, saturated) == s)))
+    |> string.join(", ")
+
+fn not_run_section(results: List[RunResult]) -> String = {
+  let gone = absent(results)
+  if list.is_empty(gone) then ""
+  else {
+    let rows = gone
+      |> list.map((r) =>
+        "| `" + r.task + "` | `" + cellstate.state_of(r.measurable, r.reached, false) + "` | `" +
+        cellstate.absence_class(r.measurable, r.reason) + "` | " +
+        // Verbatim, and on one line: what the transport actually said is the
+        // only thing a reader can act on, and a summarised reason is how this
+        // defect family starts.
+        (r.reason |> string.replace("\n", " ") |> string.replace("|", "\\|")) + " |")
+      |> string.join("\n")
+    "\n## Never asked (the model was never answered)\n\n" +
+    "These tasks are `not-run`, not zeros. They are inside every denominator\n" +
+    "above and inside no numerator, which is why the rates are intervals.\n\n" +
+    "| task | state | class | what the transport said |\n|---|---|---|---|\n" + rows + "\n"
+  }
+}
+
+// `compiler` is the `almide --version` line the run was measured with
+// ("" when unknown, e.g. a backfill): the README scorecard cites it, so a
+// summary without it cannot be quoted. `http_timeout` is the
+// ALMIDE_HTTP_TIMEOUT_SECS this run ran under ("" = the compiler's own 30 s
+// default): a task is `not-run` BECAUSE some deadline expired, so the
+// deadline is part of the run's identity (almide-dojo#19 records it in the
+// cross lane's manifest; this lane has only this file to record it in).
+fn render_summary(date: String, model: String, compiler: String, http_timeout: String, results: List[RunResult]) -> String = {
+  let compiler_line = if compiler == "" then "" else "- **compiler**: `" + compiler + "`\n"
+  let timeout_line = if http_timeout == "" then "" else "- **http timeout (s)**: `" + http_timeout + "`\n"
+  // The denominator is the PLANNED task count, always — never the subset
+  // that answered. The interval in `rate` is what carries the difference.
   let total = list.len(results)
-  let passed = list.count(results, (r) => r.success)
-  let one_shot = list.count(results, (r) => r.success and r.retries == 0)
-  let total_retries = results
+  let got = measured(results)
+  let gone = list.len(results) - list.len(got)
+  let passed = list.count(got, (r) => r.success)
+  let one_shot = list.count(got, (r) => r.success and r.retries == 0)
+  let total_retries = got
     |> list.map((r) => r.retries)
     |> list.sum
+  let saturated = is_saturated(results)
+  let v = daily_verdict(results)
 
   let rows = results
     |> list.map((r) => {
       let c = classifier.classify(r)
-      let success_mark = if r.success then "pass" else "FAIL"
+      let state = cellstate.state_of(r.measurable, r.reached, saturated)
+      // A task the model never answered gets its state in the result column,
+      // never `FAIL`: this column is what a reader scans.
+      let success_mark = if not r.reached then state else if r.success then "pass" else "FAIL"
       let code_cell = if c.1 == "" then "—" else "`" + c.1 + "`"
-      "| `" + r.task + "` | " + success_mark + " | " + c.0 + " | " + code_cell + " | " + int.to_string(r.retries) + " |"
+      let retry_cell = if r.reached then int.to_string(r.retries) else "—"
+      "| `" + r.task + "` | " + success_mark + " | " + c.0 + " | " + code_cell + " | " + retry_cell + " |"
     })
     |> string.join("\n")
 
@@ -64,7 +193,7 @@ fn render_summary(date: String, model: String, results: List[RunResult]) -> Stri
 
   // Recoverable: first-failed code for tasks that eventually passed via retry.
   // The diagnostic was good enough that the model recovered.
-  let recoverable_codes = results
+  let recoverable_codes = got
     |> list.filter((r) => r.success and r.retries > 0)
     |> list.map(classifier.first_failed_code)
     |> list.filter((c) => c != "")
@@ -77,8 +206,10 @@ fn render_summary(date: String, model: String, results: List[RunResult]) -> Stri
 
   // Unrecoverable: final-failed code for tasks that did NOT pass.
   // These are the diagnostics the model could not act on usefully —
-  // primary backlog for almide compiler / hint improvements.
-  let unrecov_codes = results
+  // primary backlog for almide compiler / hint improvements. Only MEASURED
+  // cells appear: a task the model never answered produced no diagnostic and
+  // must not be read as one the model could not act on.
+  let unrecov_codes = got
     |> list.filter((r) => not r.success)
     |> list.map(classifier.final_failed_code)
     |> list.filter((c) => c != "")
@@ -91,26 +222,37 @@ fn render_summary(date: String, model: String, results: List[RunResult]) -> Stri
 
   // Retry distribution: how many tasks landed at each retry count, split
   // by pass/fail. Reveals whether the diagnostic loop converges with more
-  // retries (the headline question for retry-success accuracy).
+  // retries (the headline question for retry-success accuracy). Over the
+  // MEASURED cells: an unanswered task has no retry count, and counting it
+  // as `fail-0` is the scored zero this whole file refuses.
   let dist_buckets = [0, 1, 2, 3]
   let dist_lines = dist_buckets
     |> list.flat_map((n) => [
-      "- pass-" + int.to_string(n) + ": " + int.to_string(list.count(results, (r) => r.success and r.retries == n)),
-      "- fail-" + int.to_string(n) + ": " + int.to_string(list.count(results, (r) => not r.success and r.retries == n)),
+      "- pass-" + int.to_string(n) + ": " + int.to_string(list.count(got, (r) => r.success and r.retries == n)),
+      "- fail-" + int.to_string(n) + ": " + int.to_string(list.count(got, (r) => not r.success and r.retries == n)),
     ])
     |> string.join("\n")
   let dist_section = "\n## Retry distribution\n\n" + dist_lines + "\n"
 
   "# MSR run " + date + "\n\n" +
+  // The verdict comes FIRST, above the numbers: what a reader carries away
+  // from a summary is the number, so a caveat below it does not travel.
+  cellstate.verdict_block(v, verdict_headline(v)) +
   "- **model**: `" + model + "`\n" +
+  compiler_line +
+  timeout_line +
   "- **tasks**: " + int.to_string(total) + "\n" +
-  "- **passed**: " + int.to_string(passed) + " / " + int.to_string(total) + "\n" +
-  "- **1-shot passes**: " + int.to_string(one_shot) + " / " + int.to_string(total) + "\n" +
+  "- **reached**: " + int.to_string(list.len(got)) + " / " + int.to_string(total) + "\n" +
+  "- **not-run**: " + int.to_string(gone) + "\n" +
+  "- **cells**: " + cells_line(results, saturated) + "\n" +
+  "- **passed**: " + cellstate.rate(passed, gone, total) + "\n" +
+  "- **1-shot passes**: " + cellstate.rate(one_shot, gone, total) + "\n" +
   "- **total retries**: " + int.to_string(total_retries) + "\n\n" +
   "## Per-task\n\n" +
   "| task | result | category | code | retries |\n" +
   "|---|---|---|---|---|\n" +
-  rows + "\n\n" +
+  rows + "\n" +
+  not_run_section(results) + "\n" +
   "## By category\n\n" + cat_lines + "\n" +
   dist_section +
   recov_section +

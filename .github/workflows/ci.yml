@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  harness:
+    name: Harness tests (pinned compiler)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the pinned Almide
+        run: |
+          PIN=$(sed -nE 's/^ref *= *"([^"]+)".*/\1/p' almide-pin.toml)
+          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "$PIN"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          test "$("$HOME/.local/bin/almide" --version)" = "almide ${PIN#v}"
+
+      - name: Test blocks
+        run: almide test src/
+
+      - name: Every bank task is decided by the cross-language task set
+        run: bash scripts/check-task-set.sh
+
+      # The contract-preserving bank (tasks/bank/, almide-dojo#3): every task's
+      # edit is required, a correct patch exists, its wrong patch fools the
+      # visible suite and fails the hidden oracle, and the solution agrees on
+      # wasm. wasmtime keeps the cross-target leg on; the gate refuses to run
+      # with it off in CI (BANK_REQUIRE_WASM) rather than silently skipping it.
+      - uses: bytecodealliance/actions/wasmtime/setup@v1
+
+      - name: The contract-preserving bank discriminates
+        env:
+          BANK_REQUIRE_WASM: '1'
+        run: bash scripts/check-bank.sh
+
+  msr-verify:
+    # One job per language: the reference solution of every task in the
+    # cross-language set must pass through that language's plugin, and the
+    # same reference with a perturbed expectation must fail at the run step.
+    # No model and no API key — this is the offline gate on the plugins.
+    name: verify ${{ matrix.language }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [almide, rust, go, typescript, zig, gleam, moonbit]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        if: matrix.language == 'go'
+        with:
+          go-version: stable
+
+      - uses: mlugg/setup-zig@v2
+        if: matrix.language == 'zig'
+        with:
+          version: 0.16.0
+
+      - uses: erlef/setup-beam@v1
+        if: matrix.language == 'gleam'
+        with:
+          otp-version: "27"
+          gleam-version: "1.18.1"
+
+      - name: Install MoonBit
+        if: matrix.language == 'moonbit'
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      # rustc, node and npm come with the runner image; scripts/msr.sh
+      # installs the pinned compiler and, for TypeScript, the pinned tsc.
+      - name: Probe
+        run: make msr-probe
+
+      - name: Verify
+        run: make msr-verify LANGUAGES=${{ matrix.language }}

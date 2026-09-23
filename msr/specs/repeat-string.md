@@ -1,0 +1,5 @@
+- Return `s` concatenated with itself `n` times
+- `repeat("ab", 3)` must return `"ababab"`
+- `repeat("x", 0)` must return `""`
+- `repeat("", 5)` must return `""`
+- Assume `n >= 0`

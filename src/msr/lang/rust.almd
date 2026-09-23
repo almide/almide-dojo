@@ -1,0 +1,93 @@
+// Rust plugin: one file (solution + driver) compiled with rustc, std only.
+// Signatures take borrowed inputs (`&str`, `&[T]`) and return owned values.
+
+import self.msr.spec.{Ty, TInt, TBool, TStr, TList, Val, VInt, VBool, VStr, VList, VCall, Sig, Param, PTask, Case, Step}
+import self.msr.spec
+
+fn versions() -> List[(String, List[String])] = [("rustc", ["rustc", "--version"])]
+
+fn notes() -> String =
+  "Use only the standard library (no crates). Your code and the driver are one file, compiled with `rustc --edition 2021`."
+
+fn owned_ty(t: Ty) -> String = match t {
+  TInt => "i64",
+  TBool => "bool",
+  TStr => "String",
+  TList(e) => "Vec<" + owned_ty(e) + ">",
+}
+
+fn param_ty(t: Ty) -> String = match t {
+  TStr => "&str",
+  TList(e) => "&[" + owned_ty(e) + "]",
+  _ => owned_ty(t),
+}
+
+fn sig(s: Sig) -> String =
+  "fn " + s.name + "(" + (s.params |> list.map((p) => p.name + ": " + param_ty(p.ty)) |> string.join(", ")) + ") -> " + owned_ty(s.ret)
+
+fn signatures(t: PTask) -> String =
+  t.sigs |> list.map((s) => "    " + sig(s)) |> string.join("
+")
+
+// An owned value of type `ty`.
+fn owned(t: PTask, v: Val, ty: Ty) -> String = match v {
+  VInt(n) => int.to_string(n),
+  VBool(b) => if b then "true" else "false",
+  VStr(s) => "String::from(" + spec.c_quote(s) + ")",
+  VList(xs) => "vec![" + (xs |> list.map((x) => owned(t, x, spec.elem(ty))) |> string.join(", ")) + "]",
+  VCall(_, _) => call(t, v),
+}
+
+// A value passed to a parameter of type `ty`: literals borrow directly
+// (`"x"`, `&[1, 2]`), a nested call's owned result is borrowed with `&`.
+fn arg(t: PTask, v: Val, ty: Ty) -> String = match v {
+  VStr(s) => spec.c_quote(s),
+  VList(xs) => "&[" + (xs |> list.map((x) => owned(t, x, spec.elem(ty))) |> string.join(", ")) + "]",
+  VCall(_, _) => if spec.is_heap(ty) then "&" + call(t, v) else call(t, v),
+  _ => owned(t, v, ty),
+}
+
+fn call(t: PTask, v: Val) -> String = match v {
+  VCall(name, args) => {
+    let params = match spec.find_sig(t.sigs, name) {
+      some(sg) => sg.params,
+      none => [],
+    }
+    name + "(" + (list.zip_with(args, params, (a, p) => arg(t, a, p.ty)) |> string.join(", ")) + ")"
+  },
+  _ => spec.neutral(v),
+}
+
+fn driver(t: PTask) -> String = {
+  let n = list.len(t.cases)
+  let checks = t.cases
+    |> list.map((c) => "    __msr_check(&mut failed, " + spec.c_quote(spec.case_label(c)) + ", " + call(t, c.call) + ", " + owned(t, c.expected, spec.case_ty(t.sigs, c)) + ");")
+    |> string.join("\n")
+  """
+    // ── msr driver (generated) ──
+    fn __msr_check<T: PartialEq + std::fmt::Debug>(failed: &mut u32, label: &str, got: T, want: T) {
+        if got != want {
+            *failed += 1;
+            eprintln!("FAIL {}: expected {:?}, got {:?}", label, want, got);
+        }
+    }
+
+    fn main() {
+        let mut failed: u32 = 0;
+    ${checks}
+        if failed > 0 {
+            eprintln!("msr: {} of ${int.to_string(n)} cases failed", failed);
+            std::process::exit(1);
+        }
+        println!("${spec.sentinel(n)}");
+    }
+    """
+}
+
+fn files(t: PTask, solution: String) -> List[(String, String)] =
+  [("main.rs", solution + "\n\n" + driver(t))]
+
+fn steps() -> List[Step] = [
+  Step { kind: "compile", cmd: "rustc", args: ["--edition", "2021", "-o", "msr_bin", "main.rs"], timeout_ms: spec.COMPILE_TIMEOUT_MS },
+  Step { kind: "run", cmd: "./msr_bin", args: [], timeout_ms: spec.RUN_TIMEOUT_MS },
+]
