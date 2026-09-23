@@ -1,0 +1,22 @@
+test "hidden: end of the address space" {
+  assert_eq(next(addr(255, 255, 255, 255)), none)
+  assert_eq(block(addr(255, 255, 255, 254), 5), ["255.255.255.254", "255.255.255.255"])
+  assert_eq(render(addr(255, 255, 255, 255)), "255.255.255.255")
+  assert_eq(size(addr(0, 0, 0, 0), addr(255, 255, 255, 255)), 4294967296)
+}
+test "hidden: rendering and carry" {
+  assert_eq(render(addr(0, 0, 0, 0)), "0.0.0.0")
+  assert_eq(block(addr(9, 255, 255, 255), 2), ["9.255.255.255", "10.0.0.0"])
+  assert_eq(block(addr(1, 2, 3, 4), 0), [])
+}
+test "hidden: compare and range edges" {
+  assert_eq(compare(addr(10, 0, 0, 2), addr(9, 255, 255, 255)), 1)
+  assert_eq(compare(addr(128, 0, 0, 0), addr(200, 0, 0, 0)), -1)
+  assert_eq(compare(addr(7, 7, 7, 7), addr(7, 7, 7, 7)), 0)
+  assert_eq(in_range(addr(10, 0, 0, 1), addr(10, 0, 0, 9), addr(10, 0, 0, 9)), true)
+  assert_eq(in_range(addr(10, 0, 0, 1), addr(10, 0, 0, 9), addr(10, 0, 0, 10)), false)
+}
+test "hidden: size edges" {
+  assert_eq(size(addr(10, 0, 0, 9), addr(10, 0, 0, 1)), 0)
+  assert_eq(size(addr(10, 0, 0, 1), addr(10, 0, 0, 1)), 1)
+}
