@@ -1,0 +1,24 @@
+test "hidden: fixed part is capped by the remainder" {
+  let s = Stacked { pct: Percent { pct: 50 }, flat: Fixed { cents: 700 } }
+  let items = [Item { sku: "a", cents: 1000, qty: 1 }]
+  assert_eq(s.off(1000), 1000)
+  assert_eq(total_for(Combo(s), items), 0)
+  assert_eq(checkout(s, items), 0)
+}
+test "hidden: percentage first, rounded down" {
+  let s = Stacked { pct: Percent { pct: 20 }, flat: Fixed { cents: 300 } }
+  let items = [Item { sku: "a", cents: 1001, qty: 1 }]
+  assert_eq(total_for(Combo(s), items), 501)
+  assert_eq(total_for(Pct(Percent { pct: 33 }), [Item { sku: "b", cents: 10, qty: 1 }]), 7)
+}
+test "hidden: empty basket" {
+  let s = Stacked { pct: Percent { pct: 10 }, flat: Fixed { cents: 100 } }
+  assert_eq(total_for(Combo(s), []), 0)
+  assert_eq(total_for(Flat(Fixed { cents: 100 }), []), 0)
+  assert_eq(total_for(NoPromo, []), 0)
+}
+test "hidden: old strategies unchanged" {
+  let items = [Item { sku: "a", cents: 250, qty: 2 }]
+  assert_eq(receipt(Fixed { cents: 900 }, items), "subtotal 500, 900c off, total 0")
+  assert_eq(receipt(Percent { pct: 15 }, items), "subtotal 500, 15% off, total 425")
+}
