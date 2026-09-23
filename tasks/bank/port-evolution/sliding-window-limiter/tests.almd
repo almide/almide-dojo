@@ -1,0 +1,7 @@
+test "sliding log admits within the window" {
+  assert_eq(admit_with(Sliding(sliding(10, 2)), [0, 1, 2, 11]), [true, true, false, true])
+  assert_eq(admitted(sliding(5, 1), [0, 6, 7]), 2)
+}
+test "fixed policy still works" {
+  assert_eq(admit_with(Fixed(fixed(10, 1)), [0, 5, 10]), [true, false, true])
+}

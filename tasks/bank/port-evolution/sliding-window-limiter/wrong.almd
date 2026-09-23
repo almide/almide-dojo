@@ -1,0 +1,50 @@
+// Plausible wrong patch: every request is logged, admitted or not, so a burst
+// of rejected requests keeps blocking later ones. Passes the visible tests.
+// A rate-limiter port. `take` answers whether a request arriving at time `now`
+// is admitted, together with the limiter's next state. Times are >= 0 and
+// arrive in non-decreasing order.
+protocol Limiter {
+  fn take(l: Self, now: Int) -> (Bool, Self)
+}
+
+// At most `max` requests per aligned window [k*window, (k+1)*window).
+type FixedWindow: Limiter = { window: Int, max: Int, start: Int, used: Int }
+
+fn fixed(window: Int, max: Int) -> FixedWindow = FixedWindow { window: window, max: max, start: 0, used: 0 }
+
+fn FixedWindow.take(l: FixedWindow, now: Int) -> (Bool, FixedWindow) = {
+  let start = now / l.window * l.window
+  let used = if start == l.start then l.used else 0
+  if used < l.max then (true, FixedWindow { ...l, start: start, used: used + 1 })
+  else (false, FixedWindow { ...l, start: start, used: used })
+}
+
+// At most `max` admitted requests in any window of length `window` ending now.
+type SlidingLog: Limiter = { window: Int, max: Int, stamps: List[Int] }
+
+fn sliding(window: Int, max: Int) -> SlidingLog = SlidingLog { window: window, max: max, stamps: [] }
+
+fn SlidingLog.take(l: SlidingLog, now: Int) -> (Bool, SlidingLog) = {
+  let recent = l.stamps |> list.filter((s) => now - s < l.window)
+  (list.len(recent) < l.max, SlidingLog { ...l, stamps: recent + [now] })
+}
+
+// The admission decision for each request time, in order, threading the state.
+fn admit[L: Limiter](l: L, times: List[Int]) -> List[Bool] = {
+  let (_, out) = times |> list.fold((l, []), ((cur, acc), t) => {
+    let (pass, next) = cur.take(t)
+    (next, acc + [pass])
+  })
+  out
+}
+
+fn admitted[L: Limiter](l: L, times: List[Int]) -> Int =
+  admit(l, times) |> list.count((pass) => pass)
+
+type Policy = | Fixed(FixedWindow) | Sliding(SlidingLog)
+
+fn admit_with(p: Policy, times: List[Int]) -> List[Bool] =
+  match p {
+    Fixed(f) => admit(f, times),
+    Sliding(s) => admit(s, times),
+  }
