@@ -138,7 +138,8 @@ fn verdict_block(v: Verdict, headline: String) -> String =
 // said — a stored class can drift away from it, and this whole defect family
 // is a summary travelling away from its condition.
 fn absence_class(measurable: Bool, reason: String) -> String =
-  if not measurable then "task-files-missing"
+  if not measurable then
+    (if string.starts_with(reason, "resource oracle unarmed") then "resource-oracle-unarmed" else "task-files-missing")
   else if string.contains(reason, "timed out") or string.contains(reason, "Timeout") then "timeout"
   else if string.contains(reason, "empty completion") then "empty-completion"
   else if string.contains(reason, "missing env") or string.contains(reason, "empty env") then "no-credential"
@@ -200,4 +201,5 @@ test "an absent cell's class is derived from what the transport actually said" {
   assert_eq(absence_class(true, "cloudflare: json: unexpected token"), "transport")
   // Not measurable here at all outranks whatever the reason says.
   assert_eq(absence_class(false, "read timed out"), "task-files-missing")
+  assert_eq(absence_class(false, "resource oracle unarmed: almide 0.62.0 prints no allocation-counter line"), "resource-oracle-unarmed")
 }
