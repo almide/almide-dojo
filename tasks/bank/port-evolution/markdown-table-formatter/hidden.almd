@@ -1,0 +1,13 @@
+test "hidden: csv and tsv have no rule line" {
+  assert_eq(render_table(AsCsv, ["a"], []), "a")
+  assert_eq(render_table(AsTsv, ["a", "b"], [["1\t2", "3"]]), "a\tb\n1 2\t3")
+  assert_eq(table(Csv {}, ["h"], [["say \"hi\""]]), "h\n\"say \"\"hi\"\"\"")
+}
+test "hidden: markdown rule follows the header columns" {
+  assert_eq(render_table(AsMarkdown, ["a", "b", "c"], []), "| a | b | c |\n| --- | --- | --- |")
+  assert_eq(render_table(AsMarkdown, ["x"], [["1"], ["|"]]), "| x |\n| --- |\n| 1 |\n| \\| |")
+}
+test "hidden: empty cells kept" {
+  assert_eq(render_table(AsMarkdown, ["a", "b"], [["a", ""]]), "| a | b |\n| --- | --- |\n| a |  |")
+  assert_eq(render_table(AsCsv, ["a", "b", "c"], [["", "", "z"]]), "a,b,c\n,,z")
+}

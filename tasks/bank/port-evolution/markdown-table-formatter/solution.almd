@@ -1,0 +1,50 @@
+// A table formatter port: how one cell is escaped, how cells are separated,
+// how a joined line is wrapped, and which rule (if any) follows the header.
+protocol Format {
+  fn cell(f: Self, s: String) -> String
+  fn sep(f: Self) -> String
+  fn wrap(f: Self, line: String) -> String
+  fn rule(f: Self, columns: Int) -> String?
+}
+
+// Comma separated; a cell containing a comma or a quote is quoted, with quotes doubled.
+type Csv: Format = {}
+fn Csv.cell(f: Csv, s: String) -> String =
+  if string.contains(s, ",") or string.contains(s, "\"") then "\"" + string.replace(s, "\"", "\"\"") + "\""
+  else s
+fn Csv.sep(f: Csv) -> String = ","
+fn Csv.wrap(f: Csv, line: String) -> String = line
+fn Csv.rule(f: Csv, columns: Int) -> String? = none
+
+// Tab separated; a tab inside a cell becomes a space.
+type Tsv: Format = {}
+fn Tsv.cell(f: Tsv, s: String) -> String = string.replace(s, "\t", " ")
+fn Tsv.sep(f: Tsv) -> String = "\t"
+fn Tsv.wrap(f: Tsv, line: String) -> String = line
+fn Tsv.rule(f: Tsv, columns: Int) -> String? = none
+
+// Markdown pipe table.
+type Markdown: Format = {}
+fn Markdown.cell(f: Markdown, s: String) -> String = string.replace(s, "|", "\\|")
+fn Markdown.sep(f: Markdown) -> String = " | "
+fn Markdown.wrap(f: Markdown, line: String) -> String = "| " + line + " |"
+fn Markdown.rule(f: Markdown, columns: Int) -> String? =
+  some("| " + (list.repeat("---", columns) |> list.join(" | ")) + " |")
+
+fn row[F: Format](f: F, cells: List[String]) -> String =
+  f.wrap(cells |> list.map((c) => f.cell(c)) |> list.join(f.sep()))
+
+// The header line, the rule (if any), then one line per row, joined with newlines.
+fn table[F: Format](f: F, header: List[String], rows: List[List[String]]) -> String = {
+  let rule = option.to_list(f.rule(list.len(header)))
+  ([row(f, header)] + rule + (rows |> list.map((r) => row(f, r)))) |> list.join("\n")
+}
+
+type Style = | AsCsv | AsTsv | AsMarkdown
+
+fn render_table(s: Style, header: List[String], rows: List[List[String]]) -> String =
+  match s {
+    AsCsv => table(Csv {}, header, rows),
+    AsTsv => table(Tsv {}, header, rows),
+    AsMarkdown => table(Markdown {}, header, rows),
+  }

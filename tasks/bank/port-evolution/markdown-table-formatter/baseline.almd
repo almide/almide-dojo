@@ -1,0 +1,24 @@
+// A table formatter port: how one cell is escaped and how cells are separated.
+protocol Format {
+  fn cell(f: Self, s: String) -> String
+  fn sep(f: Self) -> String
+}
+
+// Comma separated; a cell containing a comma or a quote is quoted, with quotes doubled.
+type Csv: Format = {}
+fn Csv.cell(f: Csv, s: String) -> String =
+  if string.contains(s, ",") or string.contains(s, "\"") then "\"" + string.replace(s, "\"", "\"\"") + "\""
+  else s
+fn Csv.sep(f: Csv) -> String = ","
+
+// Tab separated; a tab inside a cell becomes a space.
+type Tsv: Format = {}
+fn Tsv.cell(f: Tsv, s: String) -> String = string.replace(s, "\t", " ")
+fn Tsv.sep(f: Tsv) -> String = "\t"
+
+fn row[F: Format](f: F, cells: List[String]) -> String =
+  cells |> list.map((c) => f.cell(c)) |> list.join(f.sep())
+
+// The header line, then one line per row, joined with newlines.
+fn table[F: Format](f: F, header: List[String], rows: List[List[String]]) -> String =
+  ([row(f, header)] + (rows |> list.map((r) => row(f, r)))) |> list.join("\n")

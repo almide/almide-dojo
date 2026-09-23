@@ -1,0 +1,8 @@
+test "markdown table" {
+  assert_eq(render_table(AsMarkdown, ["name", "qty"], [["tea", "2"]]), "| name | qty |\n| --- | --- |\n| tea | 2 |")
+  assert_eq(Markdown {}.cell("a|b"), "a\\|b")
+}
+test "csv rows unchanged" {
+  assert_eq(row(Csv {}, ["1", "x,y"]), "1,\"x,y\"")
+  assert_eq(row(Tsv {}, ["a", "b"]), "a\tb")
+}
