@@ -1,0 +1,72 @@
+// Lexer for a small config language: identifiers, integers, "strings" and the
+// punctuation ( ) = , ; positions are 0-based character offsets.
+type Tok: Eq, Repr = | Ident(String) | Num(Int) | Str(String) | Punct(String)
+type LexErr: Eq, Repr =
+  | Unexpected(Int, String)
+  | Unterminated(Int)
+  | BadNumber(Int, String)
+type Lexed: Eq, Repr = { toks: List[Tok], warnings: List[String] }
+type Step = { tok: Tok, next: Int }
+
+fn ch(src: String, i: Int) -> String = string.slice(src, i, i + 1)
+
+fn run_end(src: String, i: Int, pred: (String) -> Bool) -> Int =
+  if i < string.len(src) and pred(ch(src, i)) then run_end(src, i + 1, pred) else i
+
+fn next_token(src: String, i: Int) -> Step!LexErr = {
+  let c = ch(src, i)
+  if string.contains("()=,", c) then ok(Step { tok: Punct(c), next: i + 1 })
+  else if c == "\"" then {
+    let close = run_end(src, i + 1, (x) => x != "\"")
+    guard close < string.len(src) else err(Unterminated(i))
+    ok(Step { tok: Str(string.slice(src, i + 1, close)), next: close + 1 })
+  }
+  else if string.is_digit(c) then {
+    let end = run_end(src, i, (x) => string.is_alphanumeric(x))
+    let text = string.slice(src, i, end)
+    match int.parse(text) {
+      ok(n) => ok(Step { tok: Num(n), next: end }),
+      err(_) => err(BadNumber(i, text)),
+    }
+  }
+  else if string.is_alpha(c) or c == "_" then {
+    let end = run_end(src, i, (x) => string.is_alphanumeric(x) or x == "_")
+    ok(Step { tok: Ident(string.slice(src, i, end)), next: end })
+  }
+  else err(Unexpected(i, c))
+}
+
+fn go(src: String, i: Int, acc: List[Tok]) -> List[Tok]!LexErr = {
+  let j = run_end(src, i, (x) => x == " " or x == "\n" or x == "\t")
+  if j >= string.len(src) then ok(acc)
+  else {
+    let st = next_token(src, j)!
+    go(src, st.next, acc + [st.tok])
+  }
+}
+
+fn go_lenient(src: String, i: Int, acc: Lexed) -> Lexed!LexErr = {
+  let j = run_end(src, i, (x) => x == " " or x == "\n" or x == "\t")
+  if j >= string.len(src) then ok(acc)
+  else match next_token(src, j) {
+    ok(st) => go_lenient(src, st.next, { ...acc, toks: acc.toks + [st.tok] }),
+    err(Unexpected(at, c)) => go_lenient(src, at + 1, { ...acc, warnings: acc.warnings + ["skipped ${c} at ${int.to_string(at)}"] }),
+    err(e) => err(e),
+  }
+}
+
+fn lex(src: String) -> Lexed!LexErr =
+  go_lenient(src, 0, Lexed { toks: [], warnings: [] })
+
+fn show_tok(t: Tok) -> String =
+  match t {
+    Ident(s) => "id:${s}",
+    Num(n) => "num:${int.to_string(n)}",
+    Str(s) => "str:${s}",
+    Punct(p) => p,
+  }
+
+fn show(l: Lexed) -> String = {
+  let ts = l.toks |> list.map((t) => show_tok(t)) |> list.join(" ")
+  if list.is_empty(l.warnings) then ts else "${ts} | ${list.join(l.warnings, "; ")}"
+}
