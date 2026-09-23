@@ -14,7 +14,7 @@
 fn max_of_list(xs: List[Int]) -> Option[Int] =
   if list.is_empty(xs) then none
   else
-    let head = option.unwrap_or(list.first(xs), 0)
+    let head = list.first(xs) |> option.unwrap_or(0)
     some(list.fold(list.drop(xs, 1), head, (acc, x) => if x > acc then x else acc))
 ```
 
@@ -24,17 +24,17 @@ fn max_of_list(xs: List[Int]) -> Option[Int] =
 error: 'let' is not an expression in Almide
   --> /tmp/dojo-max-of-list-0.almd:4:5
   in let-in
-  here: let head = option.unwrap_or(list.first(xs), 0)
+  here: let head = list.first(xs) |> option.unwrap_or(0)
   hint: Lists are immutable — use `+` to build a new list: `some(stack + [item])`. If you need a temporary binding, use a block: `{ let x = expr; body }`
   |
-4 |     let head = option.unwrap_or(list.first(xs), 0)
+4 |     let head = list.first(xs) |> option.unwrap_or(0)
   |     ^^^
 error: 'let' is not an expression in Almide at line 4:5
   --> /tmp/dojo-max-of-list-0.almd:4:5
-  here: let head = option.unwrap_or(list.first(xs), 0)
+  here: let head = list.first(xs) |> option.unwrap_or(0)
   hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
   |
-4 |     let head = option.unwrap_or(list.first(xs), 0)
+4 |     let head = list.first(xs) |> option.unwrap_or(0)
   |     ^
 
 2 error(s) found
@@ -52,25 +52,24 @@ compile failed
 fn max_of_list(xs: List[Int]) -> Option[Int] =
   if list.is_empty(xs) then none
   else
-    some(
-      list.fold(
-        list.drop(xs, 1),
-        option.unwrap_or(list.first(xs), 0),
-        (acc, x) => if x > acc then x else acc
-      )
+    list.fold(
+      list.drop(xs, 1),
+      list.first(xs) |> option.unwrap_or(0),
+      (acc, x) => if x > acc then x else acc
     )
 ```
 
 **Diagnostic:**
 
 ```
-error: Expected expression at line 4:10 (got Newline '')
-  --> /tmp/dojo-max-of-list-1.almd:4:10
-  here: some(
-  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+error[E001]: type mismatch in if branches: expected Option[Int] but got Int
+  --> /tmp/dojo-max-of-list-1.almd:2:90
+  in if branches
+  here: else list.fold(list.drop(xs, 1), list.first(xs) ?? 0, (acc, x) => if x > acc then x else acc)
+  hint: Both branches of `if/then/else` must have the same type
   |
-4 |     some(
-  |          ^
+2 | else list.fold(list.drop(xs, 1), list.first(xs) ?? 0, (acc, x) => if x > acc then x else acc)
+  |                                                                                          ^^^
 
 1 error(s) found
 FAILED: /tmp/dojo-max-of-list-1.almd
@@ -85,6 +84,5 @@ compile failed
 
 ```almide
 fn max_of_list(xs: List[Int]) -> Option[Int] =
-  if list.is_empty(xs) then none
-  else list.reduce(xs, (a, b) => if b > a then b else a)
+  list.reduce(xs, (a, b) => if a > b then a else b)
 ```

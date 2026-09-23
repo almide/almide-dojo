@@ -12,7 +12,6 @@
 
 ```almide
 fn is_anagram(a: String, b: String) -> Bool =
-  let ca = string.to_lower(a) |> string.chars |> list.filter((c) => c != " ") |> list.sort
-  let cb = string.to_lower(b) |> string.chars |> list.filter((c) => c != " ") |> list.sort
-  ca == cb
+  let norm = (s) => list.filter(string.chars(string.to_lower(s)), (c) => c != " ")
+  list.sort(norm(a)) == list.sort(norm(b))
 ```

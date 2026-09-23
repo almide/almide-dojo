@@ -12,5 +12,5 @@
 
 ```almide
 fn clamp(value: Int, low: Int, high: Int) -> Int =
-  int.clamp(value, low, high)
+  if value < low then low else if value > high then high else value
 ```

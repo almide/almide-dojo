@@ -1,26 +1,10 @@
 # roman-numeral
 
 - **model**: `cf:@cf/zai-org/glm-5.3-flash`
-- **state**: `measured`
-- **success**: yes
-- **retries**: 0
-- **category**: pass-1shot
+- **state**: `not-run`
+- **reason**: fix_loop: attempt 0: call_model: empty completion from provider 'cf' (spec 'cf:@cf/zai-org/glm-5.3-flash'): the provider generated 4096 completion token(s), none of which reached `content`; finish_reason: length. An empty file scored against the oracle would look like a model failure, so this is a harness error and the cell is not measured.
+- **category**: not-run
+- **class**: `empty-completion`
 
-## Attempts
-
-### Attempt 1 (PASS)
-
-```almide
-fn to_roman(n: Int) -> String =
-  let thousands = ["", "M", "MM", "MMM"]
-  let hundreds = ["", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM"]
-  let tens = ["", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC"]
-  let ones = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"]
-  let rem = n % 1000
-  let rem2 = rem % 100
-  let th = option.unwrap_or(list.get(thousands, n / 1000), "")
-  let h = option.unwrap_or(list.get(hundreds, rem / 100), "")
-  let t = option.unwrap_or(list.get(tens, rem2 / 10), "")
-  let o = option.unwrap_or(list.get(ones, rem2 % 10), "")
-  th + h + t + o
-```
+The model was never answered for this task, so there is no attempt to
+score. This cell is `not-run`: not a failure, and not a zero.

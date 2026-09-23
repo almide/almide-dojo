@@ -12,7 +12,7 @@
 
 ```almide
 fn title_case(s: String) -> String =
-  let words = string.split(s, " ")
-  let cased = list.map(words, (word) => string.capitalize(string.to_lower(word)))
-  string.join(cased, " ")
+  let parts = string.split(s, " ")
+  let titled = list.map(parts, (word) => string.capitalize(string.to_lower(word)))
+  string.join(titled, " ")
 ```

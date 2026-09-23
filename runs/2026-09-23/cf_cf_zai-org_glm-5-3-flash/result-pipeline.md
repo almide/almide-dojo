@@ -12,7 +12,7 @@
 
 ```almide
 fn parse_int(s: String) -> Result[Int, String] =
-  result.map_err(int.parse(s), (e) => "not a number: " + s)
+  result.map_err(int.parse(s), (_) => "not a number: " + s)
 
 fn validate_positive(n: Int) -> Result[Int, String] =
   if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
@@ -22,8 +22,8 @@ fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] =
 
 fn process(input: String) -> Result[String, String] =
   result.flat_map(parse_int(input), (n) =>
-    result.flat_map(validate_positive(n), (m) =>
-      result.map(validate_range(m, 1, 100), (k) => "valid: " + int.to_string(k))))
+    result.flat_map(validate_positive(n), (p) =>
+      result.map(validate_range(p, 1, 100), (v) => "valid: " + int.to_string(v))))
 ```
 
 **Diagnostic:**
@@ -50,7 +50,7 @@ compile failed
 
 ```almide
 fn parse_int(s: String) -> Result[Int, String] =
-  result.map_err(int.parse(s), (e) => "not a number: " + s)
+  result.map_err(int.parse(s), (_) => "not a number: " + s)
 
 fn validate_positive(n: Int) -> Result[Int, String] =
   if n > 0 then ok(n) else err("must be positive: " + int.to_string(n))
@@ -60,6 +60,6 @@ fn validate_range(n: Int, lo: Int, hi: Int) -> Result[Int, String] =
 
 fn process(input: String) -> Result[String, String] =
   result.flat_map(parse_int(input), (n) =>
-    result.flat_map(validate_positive(n), (m) =>
-      result.map(validate_range(m, 1, 100), (k) => "valid: " + int.to_string(k))))
+    result.flat_map(validate_positive(n), (p) =>
+      result.map(validate_range(p, 1, 100), (v) => "valid: " + int.to_string(v))))
 ```

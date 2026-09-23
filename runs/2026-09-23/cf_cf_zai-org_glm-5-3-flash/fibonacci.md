@@ -1,18 +1,10 @@
 # fibonacci
 
 - **model**: `cf:@cf/zai-org/glm-5.3-flash`
-- **state**: `measured`
-- **success**: yes
-- **retries**: 0
-- **category**: pass-1shot
+- **state**: `not-run`
+- **reason**: fix_loop: attempt 0: call_model: empty completion from provider 'cf' (spec 'cf:@cf/zai-org/glm-5.3-flash'): the provider generated 4096 completion token(s), none of which reached `content`; finish_reason: length. An empty file scored against the oracle would look like a model failure, so this is a harness error and the cell is not measured.
+- **category**: not-run
+- **class**: `empty-completion`
 
-## Attempts
-
-### Attempt 1 (PASS)
-
-```almide
-fn fib_pair(a: Int, b: Int, steps: Int) -> Int =
-  if steps == 0 then a else fib_pair(b, a + b, steps - 1)
-
-fn fibonacci(n: Int) -> Int = fib_pair(0, 1, n)
-```
+The model was never answered for this task, so there is no attempt to
+score. This cell is `not-run`: not a failure, and not a zero.

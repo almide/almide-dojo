@@ -12,6 +12,7 @@
 
 ```almide
 fn word_count(s: String) -> Map[String, Int] =
-  let words = list.filter(string.split(s, " "), (w) => w != "")
-  list.fold(words, map.new(), (acc, w) => map.set(acc, w, map.get_or(acc, w, 0) + 1))
+  let words = string.split(s, " ")
+  let non_empty = list.filter(words, (w) => string.len(w) > 0)
+  list.fold(non_empty, map.new(), (acc, w) => map.set(acc, w, map.get_or(acc, w, 0) + 1))
 ```
