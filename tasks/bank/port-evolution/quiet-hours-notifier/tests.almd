@@ -1,0 +1,8 @@
+test "quiet window blocks" {
+  let q = QuietHours { inner: Sms { max_len: 20 }, start: 720, end: 780 }
+  assert_eq(broadcast_via(Quiet(q), 730, ["ann"], "hi"), ["failed ann: quiet hours"])
+  assert_eq(broadcast_via(Quiet(q), 800, ["ann", "bo"], "hi"), ["ok sms:ann@800", "ok sms:bo@800"])
+}
+test "plain channel" {
+  assert_eq(broadcast_via(Plain(Sms { max_len: 2 }), 5, ["ann"], "hey"), ["failed ann: too long: 3"])
+}
