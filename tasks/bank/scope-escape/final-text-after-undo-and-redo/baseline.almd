@@ -1,0 +1,31 @@
+// Editor commands, one per line: "type:<text>", "undo", "redo".
+type Cmd =
+  | TypeText(String)
+  | Undo
+  | Redo
+
+fn parse_cmd(line: String) -> Result[Cmd, String] =
+  match line {
+    "undo" => ok(Undo),
+    "redo" => ok(Redo),
+    _ => match string.strip_prefix(line, "type:") {
+      some(t) => ok(TypeText(t)),
+      none => err("unknown command: " + line),
+    },
+  }
+
+fn parse_script(lines: List[String]) -> Result[List[Cmd], String] =
+  lines |> list.map((l) => parse_cmd(l)!)
+
+// How many commands of each kind: (typed, undos, redos).
+fn census(lines: List[String]) -> Result[(Int, Int, Int), String] = {
+  let cmds = parse_script(lines)!
+  ok(cmds |> list.fold((0, 0, 0), (acc, c) => {
+    let (t, u, r) = acc
+    match c {
+      TypeText(_) => (t + 1, u, r),
+      Undo => (t, u + 1, r),
+      Redo => (t, u, r + 1),
+    }
+  }))
+}

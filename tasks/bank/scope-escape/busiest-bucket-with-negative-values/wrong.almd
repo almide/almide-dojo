@@ -1,0 +1,36 @@
+// Fixed-width buckets over the integers: bucket b covers [b*w, (b+1)*w).
+// Negative values fall in negative buckets (-1 is in [-10,0) for w = 10).
+
+fn bucket_of(x: Int, w: Int) -> Int =
+  if x >= 0 then x / w else 0 - ((0 - x + w - 1) / w)
+
+fn label(b: Int, w: Int) -> String =
+  "[" + int.to_string(b * w) + "," + int.to_string((b + 1) * w) + ")"
+
+// Bucket -> count, buckets in the order they are first seen.
+fn counts(xs: List[Int], w: Int) -> Map[Int, Int] =
+  xs |> list.fold(map.new(), (m, x) => {
+    let b = bucket_of(x, w)
+    map.set(m, b, (map.get(m, b) ?? 0) + 1)
+  })
+
+fn histogram(xs: List[Int], w: Int) -> List[String] =
+  map.entries(counts(xs, w))
+    |> list.sort_by(((b, _)) => b)
+    |> list.map(((b, n)) => label(b, w) + " " + int.to_string(n))
+
+// Plausible wrong patch: a fold over the counts keeping the strictly larger
+// bucket. Ties go to the bucket seen FIRST in the input, not the lowest one.
+fn busiest(xs: List[Int], w: Int) -> String = {
+  let best = map.entries(counts(xs, w)) |> list.fold(none, (acc, e) => {
+    let (_, n) = e
+    match acc {
+      some((_, bn)) => if n > bn then some(e) else acc,
+      none => some(e),
+    }
+  })
+  match best {
+    some((b, n)) => label(b, w) + " x" + int.to_string(n),
+    none => "empty",
+  }
+}

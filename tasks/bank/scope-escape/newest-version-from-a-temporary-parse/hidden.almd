@@ -1,0 +1,13 @@
+test "hidden: tie keeps the first spelling" {
+  assert_eq(newest(["2.0", "1.5", "2.0.0"]), "newest=2.0")
+  assert_eq(newest(["3", "3.0.0", "3.0"]), "newest=3")
+}
+test "hidden: empty and first bad" {
+  assert_eq(newest([]), "none")
+  assert_eq(newest(["1.x", "2", "y"]), "error=bad version: 1.x")
+  assert_eq(newest(["1..2"]), "error=bad version: 1..2")
+}
+test "hidden: old functions unchanged" {
+  assert_eq(sort_versions(["2.0.0", "1.9", "2.0"]), ok(["1.9", "2.0.0", "2.0"]))
+  assert_eq(compare([1, 2], [1, 2, 0]), 0)
+}

@@ -1,0 +1,34 @@
+// A ledger replay: deposits, withdrawals and transfers between accounts.
+type Tx =
+  | Deposit(String, Int)
+  | Withdraw(String, Int)
+  | Transfer(String, String, Int)
+
+fn add(m: Map[String, Int], acct: String, amt: Int) -> Map[String, Int] =
+  map.set(m, acct, (map.get(m, acct) ?? 0) + amt)
+
+fn apply(m: Map[String, Int], tx: Tx) -> Map[String, Int] =
+  match tx {
+    Deposit(a, n) => add(m, a, n),
+    Withdraw(a, n) => add(m, a, 0 - n),
+    Transfer(from, to, n) => add(add(m, from, 0 - n), to, n),
+  }
+
+// Balances after the whole replay, accounts in order of first appearance.
+fn final_balances(txs: List[Tx]) -> Map[String, Int] =
+  txs |> list.fold(map.new(), (m, tx) => apply(m, tx))
+
+fn render(m: Map[String, Int]) -> String =
+  map.entries(m) |> list.map(((a, n)) => a + "=" + int.to_string(n)) |> list.join(",")
+
+fn statement(txs: List[Tx]) -> String = render(final_balances(txs))
+
+// Plausible wrong patch: reuses final_balances and lists the accounts that are
+// negative at the END. An account that dipped and recovered is missed, and the
+// order is first appearance, not first going negative.
+fn overdrawn(txs: List[Tx]) -> String = {
+  let neg = map.entries(final_balances(txs))
+    |> list.filter(((_, n)) => n < 0)
+    |> list.map(((a, _)) => a)
+  if list.is_empty(neg) then "none" else list.join(neg, ",")
+}

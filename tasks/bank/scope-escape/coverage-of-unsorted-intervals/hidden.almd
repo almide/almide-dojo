@@ -1,0 +1,12 @@
+test "hidden: unsorted input" {
+  assert_eq(coverage([(5, 7), (0, 2), (1, 6)]), "covered=7,pieces=1")
+  assert_eq(coverage([(10, 12), (0, 1), (3, 4)]), "covered=4,pieces=3")
+}
+test "hidden: empty, touching, reversed" {
+  assert_eq(coverage([]), "covered=0,pieces=0")
+  assert_eq(coverage([(3, 5), (1, 3)]), "covered=4,pieces=1")
+  assert_eq(coverage([(4, 2), (2, 2)]), "covered=0,pieces=0")
+}
+test "hidden: show_schedule unchanged" {
+  assert_eq(show_schedule([(0, 2), (2, 4), (6, 5)]), "[0,4)")
+}
