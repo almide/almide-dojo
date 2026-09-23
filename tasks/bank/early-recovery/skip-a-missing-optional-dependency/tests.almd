@@ -1,0 +1,8 @@
+test "a missing optional dependency is skipped" {
+  let reg = ["app": [dep("core"), opt("extras")], "core": leaf()]
+  assert_eq(plan(reg, "linux", "app") |> result.map((p) => show(p)), ok("core app skipped: extras (optional for app)"))
+}
+test "a missing required dependency is still fatal" {
+  let reg = ["app": [dep("core")]]
+  assert_eq(plan(reg, "linux", "app") |> result.map((p) => show(p)), err("missing package core (required by app)"))
+}

@@ -1,0 +1,18 @@
+test "hidden: an optional dependency that exists is installed, and its own failures are fatal" {
+  let reg = ["app": [opt("plot"), dep("core")], "plot": [dep("fonts")], "core": leaf()]
+  assert_eq(plan(reg, "linux", "app") |> result.map((p) => show(p)), err("missing package fonts (required by plot)"))
+  let reg2 = ["app": [opt("plot"), dep("core")], "plot": [dep("core")], "core": leaf()]
+  assert_eq(plan(reg2, "linux", "app") |> result.map((p) => show(p)), ok("core plot app"))
+}
+test "hidden: a cycle through an optional dependency is still fatal" {
+  let reg = ["a": [opt("b")], "b": [dep("a")]]
+  assert_eq(plan(reg, "linux", "a") |> result.map((p) => show(p)), err("cycle: a -> b -> a"))
+}
+test "hidden: skipped entries keep the depth-first order, platform skips included" {
+  let reg = ["app": [dep("lib"), only("winapi", "windows"), opt("gpu")], "lib": [opt("simd"), dep("base")], "base": leaf()]
+  assert_eq(plan(reg, "linux", "app") |> result.map((p) => show(p)), ok("base lib app skipped: simd (optional for lib), winapi (windows only), gpu (optional for app)"))
+}
+test "hidden: a missing root is still fatal" {
+  let reg = ["app": [opt("x")]]
+  assert_eq(plan(reg, "linux", "tool") |> result.map((p) => show(p)), err("missing package tool (required by <root>)"))
+}
