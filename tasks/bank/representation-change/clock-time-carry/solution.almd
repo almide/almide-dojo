@@ -1,0 +1,36 @@
+// Daily alarms at a time of day.
+type Clock: Eq, Repr = { h: Int, m: Int }
+type Alarm: Eq, Repr = { label: String, at: Clock }
+
+let DAY = 1440
+
+fn alarm(label: String, h: Int, m: Int) -> Alarm = Alarm { label: label, at: Clock { h: h, m: m } }
+
+fn minutes(c: Clock) -> Int = c.h * 60 + c.m
+
+fn clock_of(total: Int) -> Clock = {
+  let t = (total % DAY + DAY) % DAY
+  Clock { h: t / 60, m: t % 60 }
+}
+
+fn pad2(n: Int) -> String = string.pad_start(int.to_string(n), 2, "0")
+
+fn render(a: Alarm) -> String = pad2(a.at.h) + ":" + pad2(a.at.m) + " " + a.label
+
+// Moves an alarm by `mins` (either sign), wrapping around midnight.
+fn shift(a: Alarm, mins: Int) -> Alarm = Alarm { ...a, at: clock_of(minutes(a.at) + mins) }
+
+// The label of the next alarm at or after `now` today; when none is left today,
+// the earliest alarm tomorrow. Equal times: the first listed. none for no alarms.
+fn next_after(alarms: List[Alarm], now: Clock) -> String? = {
+  let later = alarms |> list.filter((a) => minutes(a.at) >= minutes(now))
+  let pool = if list.is_empty(later) then alarms else later
+  pool
+    |> list.sort_by((a) => minutes(a.at))
+    |> list.first
+    |> option.map((a) => a.label)
+}
+
+// All alarms by time of day; equal times keep list order.
+fn schedule(alarms: List[Alarm]) -> List[String] =
+  alarms |> list.sort_by((a) => minutes(a.at)) |> list.map(render)
