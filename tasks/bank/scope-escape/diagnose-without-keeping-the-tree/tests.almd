@@ -1,0 +1,3 @@
+test "diagnose small" {
+  assert_eq(diagnose([2, 1, 3]), "n=3,depth=2")
+}

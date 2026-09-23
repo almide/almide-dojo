@@ -7,6 +7,12 @@ type Task = {
   prompt: String,
   tests: String,
   dir: String,
+  // "write" (the classic bank: the model writes a program from prompt.md) or
+  // "modify" (the contract-preserving bank, tasks/bank/: the model edits
+  // `baseline`, and `hidden` is the oracle it never sees — almide-dojo#3).
+  kind: String,
+  baseline: String,
+  hidden: String,
 }
 
 type Attempt = {

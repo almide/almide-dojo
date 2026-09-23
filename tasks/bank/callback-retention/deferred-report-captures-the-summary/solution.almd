@@ -1,0 +1,8 @@
+// Sum of squares over a list, and a deferred report of it.
+fn analyse(xs: List[Int]) -> Int = xs |> list.fold(0, (acc, x) => acc + x * x)
+
+// The closure captures the computed summary only, never `xs`.
+fn deferred(xs: List[Int]) -> () -> String = {
+  let n = analyse(xs)
+  () => "sum=" + int.to_string(n)
+}

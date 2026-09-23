@@ -1,0 +1,9 @@
+kind = "modify"
+family = "dojo:helper-extraction"
+contracts = []
+oracles = ["behaviour", "cross-target"]
+# Allocation-routing across the helper boundary is resource-side; the
+# behavioural refactor invariant is scored now.
+resource_oracle = "pending"
+expected_loc = 8
+timeout_sec = 60

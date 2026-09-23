@@ -1,0 +1,8 @@
+test "hidden: an empty fallback is still a miss" {
+  let f = FallbackRepo { inner: MemRepo { rows: map.new() }, fallback: "" }
+  assert_eq(greet_via(Fallback(f), "9"), "who?")
+  assert_eq(f.find("9"), none)
+}
+test "hidden: generic greet unchanged" {
+  assert_eq(greet(MemRepo { rows: map.new() }, "x"), "who?")
+}

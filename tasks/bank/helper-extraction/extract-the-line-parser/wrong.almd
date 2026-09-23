@@ -1,0 +1,10 @@
+// Plausible wrong patch: the extracted helper forgets the sign rule, so a
+// negative line now counts. Passes the visible tests.
+fn parse_valid(line: String) -> Int? =
+  match int.parse(line) {
+    ok(n) => some(n),
+    err(_) => none,
+  }
+
+fn sum_valid(lines: List[String]) -> Int =
+  lines |> list.fold(0, (acc, line) => acc + (parse_valid(line) ?? 0))

@@ -1,0 +1,4 @@
+test "hidden: the sign rule survives the extraction" {
+  assert_eq(parse_valid("-3"), none)
+  assert_eq(sum_valid(["-3", "5", " 7", "+1", ""]), 13)
+}

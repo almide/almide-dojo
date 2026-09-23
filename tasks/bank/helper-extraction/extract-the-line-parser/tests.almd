@@ -1,0 +1,5 @@
+test "helper and sum" {
+  assert_eq(parse_valid("7"), some(7))
+  assert_eq(parse_valid("x"), none)
+  assert_eq(sum_valid(["1", "x", "2"]), 3)
+}

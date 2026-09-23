@@ -1,0 +1,20 @@
+// Key=value config loader.
+type Config: Eq, Repr = { entries: Map[String, String], skipped: Int }
+
+fn parse_entry(line: String) -> (String, String)! = {
+  let i = string.index_of(line, "=") ?? -1
+  guard i >= 0 else err("missing separator: " + line)
+  let key = string.slice(line, 0, i)
+  guard key != "" else err("empty key: " + line)
+  (key, string.slice(line, i + 1, string.len(line)))
+}
+
+fn load(lines: List[String]) -> Config! = {
+  var m: Map[String, String] = map.new()
+  for line in lines {
+    let (k, v) = parse_entry(line)!
+    guard not map.contains(m, k) else err("duplicate key: " + k)
+    m = map.set(m, k, v)
+  }
+  Config { entries: m, skipped: 0 }
+}

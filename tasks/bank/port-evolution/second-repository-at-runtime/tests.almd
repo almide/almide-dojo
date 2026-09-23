@@ -1,0 +1,10 @@
+test "mem backend" {
+  let m = MemRepo { rows: ["1": "ann"] }
+  assert_eq(greet_via(Mem(m), "1"), "hi ann")
+  assert_eq(greet_via(Mem(m), "9"), "who?")
+}
+test "fallback backend answers on a miss" {
+  let f = FallbackRepo { inner: MemRepo { rows: ["1": "ann"] }, fallback: "guest" }
+  assert_eq(greet_via(Fallback(f), "9"), "hi guest")
+  assert_eq(greet_via(Fallback(f), "1"), "hi ann")
+}

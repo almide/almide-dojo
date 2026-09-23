@@ -1,0 +1,8 @@
+test "hidden: negative fractions keep the sign" {
+  assert_eq(render(reading("a", -5)), "a:-0.5")
+  assert_eq(render(reading("a", -125)), "a:-12.5")
+}
+test "hidden: tie keeps the first" {
+  assert_eq(hottest([reading("a", 70), reading("b", 70)]), some("a"))
+  assert_eq(hottest([]), none)
+}

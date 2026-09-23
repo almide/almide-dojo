@@ -1,0 +1,17 @@
+// Inventory line parser. A line is "<sku>,<qty>,<unit_price>".
+type Line: Eq, Repr = { sku: String, qty: Int, unit_price: Int }
+
+fn parse_line(raw: String) -> Line! = {
+  let parts = string.split(raw, ",")
+  guard list.len(parts) == 3 else err("bad field count: " + raw)
+  let sku = list.get(parts, 0) ?? ""
+  let qty = int.parse(list.get(parts, 1) ?? "")!
+  let price = int.parse(list.get(parts, 2) ?? "")!
+  Line { sku: sku, qty: qty, unit_price: price }
+}
+
+fn parse_all(lines: List[String]) -> List[Line]! =
+  lines |> list.map((l) => parse_line(l)!)!
+
+fn total(lines: List[Line]) -> Int =
+  lines |> list.fold(0, (acc, l) => acc + l.qty * l.unit_price)

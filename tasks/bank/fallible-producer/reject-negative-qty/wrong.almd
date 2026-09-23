@@ -1,0 +1,21 @@
+// Plausible wrong patch: validates AFTER the whole list parsed, so the first-error
+// order changes, and clamps nothing. Compiles, passes the visible tests.
+type Line: Eq, Repr = { sku: String, qty: Int, unit_price: Int }
+
+fn parse_line(raw: String) -> Line! = {
+  let parts = string.split(raw, ",")
+  guard list.len(parts) == 3 else err("bad field count: " + raw)
+  let sku = list.get(parts, 0) ?? ""
+  let qty = int.parse(list.get(parts, 1) ?? "")!
+  let price = int.parse(list.get(parts, 2) ?? "")!
+  guard qty >= 0 else err("negative qty " + sku)
+  Line { sku: sku, qty: qty, unit_price: price }
+}
+
+fn parse_all(lines: List[String]) -> List[Line]! = {
+  let parsed = lines |> list.map((l) => parse_line(l)!)!
+  parsed
+}
+
+fn total(lines: List[Line]) -> Int =
+  lines |> list.fold(0, (acc, l) => acc + l.qty * l.unit_price)

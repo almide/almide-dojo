@@ -1,0 +1,7 @@
+kind = "modify"
+family = "dojo:fallible-producer"
+contracts = ["C-217"]
+oracles = ["behaviour", "cross-target"]
+resource_oracle = "not-needed"
+expected_loc = 3
+timeout_sec = 60

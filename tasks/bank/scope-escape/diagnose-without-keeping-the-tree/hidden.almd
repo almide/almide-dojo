@@ -1,0 +1,7 @@
+test "hidden: empty and chain" {
+  assert_eq(diagnose([]), "n=0,depth=0")
+  assert_eq(diagnose([1, 2, 3, 4]), "n=4,depth=4")
+}
+test "hidden: build unchanged" {
+  assert_eq(size(build([5, 5, 5])), 3)
+}

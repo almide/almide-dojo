@@ -48,7 +48,68 @@ let DEFAULT_MAX_RETRIES = 3
 let DIFFICULTIES = ["basic", "intermediate", "advanced"]
 
 effect fn load_task(name: String) -> Result[Task, String] =
-  load_task_search(name, DIFFICULTIES)
+  match load_task_search(name, DIFFICULTIES) {
+    ok(t) => ok(t)
+    err(_) => load_bank_task(name)
+  }
+
+// ── The contract-preserving bank (tasks/bank/<family>/<name>/) ──
+//
+// A bank task is a MODIFICATION of an already-correct program: the model gets
+// prompt.md (the requested edit + the Preserve contract) and baseline.almd,
+// and is scored against tests.almd (visible) AND hidden.almd (never shown),
+// on both targets. scripts/check-bank.sh keeps every task discriminating.
+
+let BANK_DIR = "tasks/bank"
+
+effect fn bank_families() -> List[String] =
+  match fs.list_dir(BANK_DIR) {
+    err(_) => []
+    ok(entries) => filter_dotfiles(entries) |> list.sort
+  }
+
+effect fn load_bank_task(name: String) -> Result[Task, String] =
+  load_bank_task_search(name, bank_families()!)
+
+effect fn load_bank_task_search(name: String, families: List[String]) -> Result[Task, String] =
+  if list.is_empty(families) then
+    err("task not found: " + name)
+  else {
+    let family = list.get(families, 0) |> option.unwrap_or("")
+    let dir = BANK_DIR + "/" + family + "/" + name
+    match fs.read_text(dir + "/prompt.md") {
+      err(_) => load_bank_task_search(name, list.drop(families, 1))
+      ok(prompt) => {
+        let baseline = fs.read_text(dir + "/baseline.almd")!
+        let tests = fs.read_text(dir + "/tests.almd")!
+        let hidden = fs.read_text(dir + "/hidden.almd")!
+        ok(Task {
+          name: name,
+          prompt: prompt + "\n\n## Current program\n\n" + baseline,
+          tests: tests, dir: dir,
+          kind: "modify", baseline: baseline, hidden: hidden,
+        })
+      }
+    }
+  }
+
+// Every bank task name, across families (names are unique bank-wide).
+effect fn list_bank_tasks() -> Result[List[String], String] = {
+  let names = bank_families()!
+    |> list.flat_map((family) => match fs.list_dir(BANK_DIR + "/" + family) {
+      err(_) => [],
+      ok(entries) => filter_dotfiles(entries),
+    })
+    |> list.sort
+  if list.is_empty(names) then err("no bank tasks found under " + BANK_DIR)
+  else ok(names)
+}
+
+// The two bank verdicts that are NOT compile/test failures. They are marker
+// lines in the diagnostic so the classifier and the summary can count them
+// without a new record field; the hidden oracle's detail is never leaked.
+let SILENT_VIOLATION = "[bank] silent-violation: the visible tests pass but the hidden oracle rejected the change — an untouched behaviour listed under Preserve changed. No further detail is given; re-read the Preserve section."
+let TARGET_DIVERGENCE = "[bank] target-divergence: native and --target wasm disagree on this program. A compiler finding, not a repair target: the attempt is scored as failed and not retried."
 
 effect fn load_task_search(name: String, levels: List[String]) -> Result[Task, String] =
   if list.is_empty(levels) then
@@ -60,7 +121,7 @@ effect fn load_task_search(name: String, levels: List[String]) -> Result[Task, S
       err(_) => load_task_search(name, list.drop(levels, 1))
       ok(prompt) => match fs.read_text(dir + "/tests.almd") {
         err(_) => load_task_search(name, list.drop(levels, 1))
-        ok(tests) => ok(Task { name: name, prompt: prompt, tests: tests, dir: dir })
+        ok(tests) => ok(Task { name: name, prompt: prompt, tests: tests, dir: dir, kind: "write", baseline: "", hidden: "" })
       }
     }
   }
@@ -93,8 +154,29 @@ effect fn compile_and_test(task: Task, solution: String, attempt: Int) -> Result
         err(_) => {}
       }
       match process.exec("almide", ["test", tmp]) {
-        ok(_) => ok(AttemptResult { success: true, code: solution, diagnostic: "" })
+        ok(_) => if task.kind == "modify" then bank_oracles(task, tmp, solution)
+          else ok(AttemptResult { success: true, code: solution, diagnostic: "" })
         err(diag) => ok(AttemptResult { success: false, code: solution, diagnostic: diag })
+      }
+    }
+  }
+}
+
+// The bank's two extra legs, run only once the visible suite is green:
+//   hidden oracle (native)  → fail = silent violation (marker, no detail)
+//   the same file on wasm   → fail = target divergence (marker, not retried)
+// `tmp` already holds the `almide fix`-ed program + visible tests, so the
+// hidden suite is appended to THAT text — the model's program is judged as fixed.
+effect fn bank_oracles(task: Task, tmp: String, solution: String) -> Result[AttemptResult, String] = {
+  let all = tmp + ".all.almd"
+  let fixed = fs.read_text(tmp)!
+  match fs.write(all, fixed + "\n\n" + task.hidden) {
+    err(_) => err("failed to write temp file: " + all)
+    ok(_) => match process.exec("almide", ["test", all]) {
+      err(_) => ok(AttemptResult { success: false, code: solution, diagnostic: SILENT_VIOLATION })
+      ok(_) => match process.exec("almide", ["test", all, "--target", "wasm"]) {
+        err(_) => ok(AttemptResult { success: false, code: solution, diagnostic: TARGET_DIVERGENCE })
+        ok(_) => ok(AttemptResult { success: true, code: solution, diagnostic: "" })
       }
     }
   }
@@ -158,6 +240,15 @@ effect fn fix_loop_step(
             attempts: new_acc,
             reached: true, measurable: true, reason: "",
           })
+        else if result.diagnostic == TARGET_DIVERGENCE then
+          // A compiler finding: retrying the model cannot fix it, and a "repair"
+          // that happens to dodge it would score a compiler bug as writability.
+          ok(RunResult {
+            task: task.name, model: model, success: false,
+            retries: attempt, final_diagnostic: result.diagnostic, final_code: result.code,
+            attempts: new_acc,
+            reached: true, measurable: true, reason: "",
+          })
         else
           fix_loop_step(task, model, max_retries, attempt + 1, result.code, result.diagnostic, new_acc)
       }
@@ -208,6 +299,7 @@ effect fn print_usage() -> Unit = {
   println("Usage:")
   println("  almide run src/main.almd -- <task-name> [provider:model]")
   println("  almide run src/main.almd -- all [provider:model]")
+  println("  almide run src/main.almd -- bank [provider:model]   # the contract-preserving bank (tasks/bank/)")
   println("")
   println("Providers:")
   println("  cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast")
@@ -404,6 +496,65 @@ effect fn run_all(model: String) -> Unit = {
 //
 // 3 outranks 1 because a run that is missing tasks cannot be read as "N of M
 // failed" at all, whatever its measured cells did.
+
+// The bank lane. Same fix loop and the same typed cells as `all` (a task the
+// model never answered is `not-run`, never a zero), its own summary file, and
+// the extra counts the bank's scoring needs on top of pass/fail: silent
+// violations (compiled, visible-green, hidden-red) and target divergences
+// (compiler findings). Exit codes are `all`'s.
+fn bank_counts(date: String, results: List[RunResult]) -> String = {
+  let measured = results |> list.filter((r) => r.reached)
+  let silent = list.count(measured, (r) => r.final_diagnostic == SILENT_VIOLATION)
+  let diverged = list.count(measured, (r) => r.final_diagnostic == TARGET_DIVERGENCE)
+  let silent_any = list.count(measured, (r) => list.any(r.attempts, (a) => a.diagnostic == SILENT_VIOLATION))
+  "# Bank run " + date + "\n\n" +
+    "- **survived**: " + int.to_string(list.count(measured, (r) => r.success)) + "/" + int.to_string(list.len(results)) + " planned (" + int.to_string(list.len(measured)) + " reached the model)\n" +
+    "- **silent violations (final)**: " + int.to_string(silent) + "\n" +
+    "- **silent violations (any attempt)**: " + int.to_string(silent_any) + "\n" +
+    "- **target divergences**: " + int.to_string(diverged) + "\n\n" +
+    "Score = compile ∧ visible ∧ hidden ∧ cross-target, no partial credit; a refusal counts only if the repair survives within the retry budget.\n\n"
+}
+
+effect fn run_bank(model: String) -> Unit = {
+  match list_bank_tasks() {
+    err(e) => {
+      println("Failed to list bank tasks: " + e)
+      process.exit(1)
+    }
+    ok(tasks) => {
+      println("Running " + int.to_string(list.len(tasks)) + " bank tasks against " + model)
+      println("")
+      match run_all_loop(tasks, model, []) {
+        err(e) => {
+          println("Harness error: " + e)
+          process.exit(1)
+        }
+        ok(results) => {
+          if list.all(results, (r) => not r.reached) then {
+            println("Harness error: no bank task reached the model (" + int.to_string(list.len(results)) + " tasks, 0 answered); no summary written")
+            process.exit(2)
+          } else {
+            let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
+            let dir = "runs/" + date + "/" + model_slug(model)
+            fs.mkdir_p(dir)!
+            let path = dir + "/bank-summary.md"
+            let compiler = compiler_version() ?? ""
+            let timeout = http_timeout_secs() ?? ""
+            fs.write(path, bank_counts(date, results) + render.render_summary(date, model, compiler, timeout, results))!
+            println("Bank summary: " + path)
+            let v = render.daily_verdict(results)
+            println("verdict: " + v.id)
+            let passed = list.count(results, (r) => r.reached and r.success)
+            if not v.comparable then process.exit(3)
+            else if passed < list.len(results) then process.exit(1)
+            else {}
+          }
+        }
+      }
+    }
+  }
+}
+
 effect fn run_all_finish(date: String, model: String, results: List[RunResult]) -> Unit = {
   match write_summary(date, model, results) {
     ok(path) => {
@@ -452,6 +603,8 @@ effect fn main() -> Unit = {
     let model = list.get(args, 1) |> option.unwrap_or(DEFAULT_MODEL)
     if first == "all" then
       run_all(model)!
+    else if first == "bank" then
+      run_bank(model)!
     else if first == "backfill" then
       backfill.backfill_all()!
     else {

@@ -1,0 +1,7 @@
+test "render one decimal" {
+  assert_eq(render(reading("a", 125)), "a:12.5")
+  assert_eq(render(reading("a", 120)), "a:12.0")
+}
+test "hottest by tenths" {
+  assert_eq(hottest([reading("a", 125), reading("b", 130)]), some("b"))
+}

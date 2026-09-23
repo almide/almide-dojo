@@ -1,0 +1,10 @@
+test "hidden: exact negative message" {
+  assert_eq(parse_line("A1,-2,50"), err("negative qty: A1"))
+}
+test "hidden: first error wins across kinds" {
+  assert_eq(parse_all(["B2,-1,5", "A1,2"]) |> result.map((x) => total(x)), err("negative qty: B2"))
+  assert_eq(parse_all(["A1,2", "B2,-1,5"]) |> result.map((x) => total(x)), err("bad field count: A1,2"))
+}
+test "hidden: old messages untouched" {
+  assert_eq(parse_line("A1,x,5"), err("invalid digit found in string"))
+}

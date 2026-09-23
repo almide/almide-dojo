@@ -1,0 +1,7 @@
+test "hidden: empty group inside a batch" {
+  assert_eq(stats_batch([[], [5, -5]]), [(0, 0), (-5, 5)])
+  assert_eq(stats_batch([]), [])
+}
+test "hidden: stats unchanged" {
+  assert_eq(stats([4]), (4, 4))
+}

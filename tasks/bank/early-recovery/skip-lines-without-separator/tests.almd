@@ -1,0 +1,6 @@
+test "line without separator is skipped" {
+  assert_eq(load(["a=1", "junk", "b=2"]), ok(Config { entries: ["a": "1", "b": "2"], skipped: 1 }))
+}
+test "duplicate key still fatal" {
+  assert_eq(load(["a=1", "a=2"]), err("duplicate key: a"))
+}

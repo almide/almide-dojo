@@ -1,0 +1,5 @@
+// Min and max of a non-empty group, via a temporary sorted copy.
+fn stats(xs: List[Int]) -> (Int, Int) = {
+  let s = list.sort(xs)
+  (list.first(s) ?? 0, list.last(s) ?? 0)
+}

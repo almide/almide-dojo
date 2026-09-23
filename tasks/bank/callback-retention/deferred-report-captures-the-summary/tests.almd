@@ -1,0 +1,4 @@
+test "deferred report" {
+  let f = deferred([1, 2, 3])
+  assert_eq(f(), "sum=14")
+}
