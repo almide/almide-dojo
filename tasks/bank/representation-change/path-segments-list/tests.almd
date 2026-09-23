@@ -1,0 +1,10 @@
+test "paths are segments" {
+  assert_eq(entry("a/b/c", 5).path, ["a", "b", "c"])
+  assert_eq(depth(entry("a/b/c", 5)), 3)
+  assert_eq(parent(entry("a/b", 1)), some(["a"]))
+  assert_eq(render(entry("a//b/", 7)), "a/b 7")
+}
+test "usage by dir" {
+  let es = [entry("a", 1), entry("a/x", 2), entry("b/y", 4)]
+  assert_eq(usage(es, "a"), 3)
+}
