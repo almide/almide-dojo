@@ -1,0 +1,25 @@
+// Recipe quantities in cups, as whole cups only.
+type Ingredient: Eq, Repr = { name: String, cups: Int }
+
+fn ingredient(name: String, cups: Int) -> Ingredient = Ingredient { name: name, cups: cups }
+
+fn render_qty(q: Int) -> String = int.to_string(q)
+
+fn line(i: Ingredient) -> String = i.name + ": " + render_qty(i.cups)
+
+// Every quantity multiplied by `factor`.
+fn scale(recipe: List[Ingredient], factor: Int) -> List[Ingredient] =
+  recipe |> list.map((i) => Ingredient { ...i, cups: i.cups * factor })
+
+fn total(recipe: List[Ingredient]) -> Int = recipe |> list.fold(0, (acc, i) => acc + i.cups)
+
+// For every ingredient of `after` whose quantity differs from the same-named
+// ingredient in `before` (missing counts as 0): "name +q" or "name -q".
+fn changes(before: List[Ingredient], after: List[Ingredient]) -> List[String] =
+  after |> list.filter_map((a) => {
+    let old = before |> list.find((b) => b.name == a.name) |> option.map((b) => b.cups) ?? 0
+    let d = a.cups - old
+    if d == 0 then none
+    else if d > 0 then some(a.name + " +" + render_qty(d))
+    else some(a.name + " -" + render_qty(0 - d))
+  })
