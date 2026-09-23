@@ -1,0 +1,48 @@
+// Warehouse stock replay. Moves are applied in order to a map sku -> units.
+type Move = | Receive(String, Int) | Pick(String, Int) | Count(String, Int)
+type StockErr: Eq, Repr =
+  | UnknownSku(String)
+  | BadQty(String, Int)
+  | Short { sku: String, have: Int, want: Int }
+type Run: Eq, Repr = { stock: Map[String, Int], backorders: List[String], moves: Int }
+
+fn have(stock: Map[String, Int], sku: String) -> Int!StockErr =
+  match map.get(stock, sku) {
+    some(n) => ok(n),
+    none => err(UnknownSku(sku)),
+  }
+
+fn apply(stock: Map[String, Int], mv: Move) -> Map[String, Int]!StockErr =
+  match mv {
+    Receive(sku, n) => {
+      guard n > 0 else err(BadQty(sku, n))
+      let cur = map.get(stock, sku) ?? 0
+      ok(map.set(stock, sku, cur + n))
+    },
+    Pick(sku, n) => {
+      guard n > 0 else err(BadQty(sku, n))
+      let cur = have(stock, sku)!
+      guard cur >= n else err(Short { sku: sku, have: cur, want: n })
+      ok(map.set(stock, sku, cur - n))
+    },
+    Count(sku, n) => {
+      let _ = have(stock, sku)!
+      guard n >= 0 else err(BadQty(sku, n))
+      ok(map.set(stock, sku, n))
+    },
+  }
+
+fn replay(start: Map[String, Int], moves: List[Move]) -> Run!StockErr = {
+  var stock = start
+  for mv in moves {
+    stock = apply(stock, mv)!
+  }
+  Run { stock: stock, backorders: [], moves: list.len(moves) }
+}
+
+// "apple=0 pear=3 (4 moves) backorders: apple x2"
+fn summary(r: Run) -> String = {
+  let s = map.keys(r.stock) |> list.sort |> list.map((k) => "${k}=${int.to_string(map.get(r.stock, k) ?? 0)}") |> list.join(" ")
+  let b = if list.is_empty(r.backorders) then "" else " backorders: ${list.join(r.backorders, ", ")}"
+  "${s} (${int.to_string(r.moves)} moves)${b}"
+}
