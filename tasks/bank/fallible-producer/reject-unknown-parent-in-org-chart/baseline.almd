@@ -1,0 +1,47 @@
+// Org chart builder. Each line is "<id> <parent> <name...>"; the parent "-"
+// marks the single root. Children are listed in input order.
+type Node: Eq, Repr = { id: String, parent: String, name: String }
+
+fn parse_node(line: String) -> Node! = {
+  let words = string.split(string.trim(line), " ") |> list.filter((w) => w != "")
+  guard list.len(words) >= 3 else err("bad line: ${line}")
+  let id = list.get(words, 0) ?? ""
+  let parent = list.get(words, 1) ?? ""
+  guard id != "-" else err("bad id in: ${line}")
+  Node { id: id, parent: parent, name: list.drop(words, 2) |> list.join(" ") }
+}
+
+// One pass in list order: every line parsed, ids unique, exactly one root.
+fn collect(lines: List[String]) -> List[Node]! = {
+  var nodes: List[Node] = []
+  var root = ""
+  for line in lines {
+    let nd = parse_node(line)!
+    guard not list.any(nodes, (m) => m.id == nd.id) else err("duplicate id ${nd.id}")
+    guard nd.parent != "-" or root == "" else err("multiple roots: ${root} and ${nd.id}")
+    if nd.parent == "-" then { root = nd.id } else ()
+    nodes = nodes + [nd]
+  }
+  guard root != "" else err("no root")
+  nodes
+}
+
+fn children(nodes: List[Node], id: String) -> List[Node] =
+  nodes |> list.filter((n) => n.parent == id)
+
+fn render_from(nodes: List[Node], nd: Node, depth: Int) -> List[String] = {
+  let line = "${string.repeat("  ", depth)}${nd.name} (${nd.id})"
+  [line] + (children(nodes, nd.id) |> list.flat_map((c) => render_from(nodes, c, depth + 1)))
+}
+
+fn build(lines: List[String]) -> String! = {
+  let nodes = collect(lines)!
+  let roots = nodes |> list.filter((n) => n.parent == "-")
+  let out = roots |> list.flat_map((r) => render_from(nodes, r, 0))
+  list.join(out, "\n")
+}
+
+fn headcount(lines: List[String]) -> Int! = {
+  let nodes = collect(lines)!
+  list.len(nodes)
+}

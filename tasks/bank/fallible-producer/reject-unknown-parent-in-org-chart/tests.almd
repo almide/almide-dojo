@@ -1,0 +1,6 @@
+test "a parent that is never declared is an error" {
+  assert(result.is_err(build(["a - Ann", "b zz Bob"])))
+}
+test "a simple chart still renders" {
+  assert_eq(build(["a - Ann", "b a Bob", "c a Cy"]), ok("Ann (a)\n  Bob (b)\n  Cy (c)"))
+}
