@@ -1,0 +1,98 @@
+// Plausible wrong patch: recovers every BadTime with `prev`, which starts at 0,
+// so a garbled FIRST entry is silently given 00:00:00 instead of staying fatal.
+// Log loader. A line is "<HH:MM:SS> <LEVEL> <message...>"; entries must be in
+// non-decreasing time order. Blank lines are skipped with a warning.
+type Level: Eq, Repr = | Debug | Info | Warn | Error
+type Entry: Eq, Repr = { at: Int, level: Level, msg: String }
+type LogErr: Eq, Repr =
+  | Truncated(Int)
+  | BadTime(Int, String)
+  | BadLevel(Int, String)
+  | OutOfOrder(Int, Int, Int)
+type Loaded: Eq, Repr = { entries: List[Entry], warnings: List[String] }
+type Fields = { time: String, level: String, msg: String }
+
+fn split_fields(n: Int, line: String) -> Fields!LogErr = {
+  let words = string.split(line, " ")
+  guard list.len(words) >= 3 else err(Truncated(n))
+  let time = list.get(words, 0) ?? ""
+  let level = list.get(words, 1) ?? ""
+  Fields { time: time, level: level, msg: list.drop(words, 2) |> list.join(" ") }
+}
+
+fn two_digits(s: String) -> Int? =
+  if string.len(s) == 2 and string.is_digit(s) then int.parse(s)? else none
+
+fn parse_time(n: Int, tok: String) -> Int!LogErr = {
+  let parts = string.split(tok, ":")
+  let nums = parts |> list.filter_map((p) => two_digits(p))
+  guard list.len(parts) == 3 and list.len(nums) == 3 else err(BadTime(n, tok))
+  let h = list.get(nums, 0) ?? 0
+  let m = list.get(nums, 1) ?? 0
+  let s = list.get(nums, 2) ?? 0
+  guard h < 24 and m < 60 and s < 60 else err(BadTime(n, tok))
+  h * 3600 + m * 60 + s
+}
+
+fn parse_level(n: Int, tok: String) -> Level!LogErr =
+  match tok {
+    "DEBUG" => ok(Debug),
+    "INFO" => ok(Info),
+    "WARN" => ok(Warn),
+    "ERROR" => ok(Error),
+    _ => err(BadLevel(n, tok)),
+  }
+
+fn parse_line(n: Int, line: String) -> Entry!LogErr = {
+  let f = split_fields(n, line)!
+  let at = parse_time(n, f.time)!
+  let level = parse_level(n, f.level)!
+  Entry { at: at, level: level, msg: f.msg }
+}
+
+fn load(lines: List[String]) -> Loaded!LogErr = {
+  var entries: List[Entry] = []
+  var warnings: List[String] = []
+  var prev = 0
+  var n = 0
+  for line in lines {
+    n = n + 1
+    if string.trim(line) == "" then {
+      warnings = warnings + ["line ${int.to_string(n)}: blank line skipped"]
+    } else {
+      let f = split_fields(n, line)!
+      let at = match parse_time(n, f.time) {
+        ok(v) => ok(v),
+        err(BadTime(_, tok)) => {
+          warnings = warnings + ["line ${int.to_string(n)}: bad time ${tok}, reusing ${fmt_time(prev)}"]
+          ok(prev)
+        },
+        err(e) => err(e),
+      }!
+      let level = parse_level(n, f.level)!
+      guard at >= prev else err(OutOfOrder(n, prev, at))
+      entries = entries + [Entry { at: at, level: level, msg: f.msg }]
+      prev = at
+    }
+  }
+  Loaded { entries: entries, warnings: warnings }
+}
+
+fn fmt_time(t: Int) -> String = {
+  let p = (x: Int) => string.pad_start(int.to_string(x), 2, "0")
+  "${p(t / 3600)}:${p(t % 3600 / 60)}:${p(t % 60)}"
+}
+
+fn level_tag(l: Level) -> String =
+  match l {
+    Debug => "D",
+    Info => "I",
+    Warn => "W",
+    Error => "E",
+  }
+
+// "09:00:00 I boot; 09:00:05 W disk | line 2: blank line skipped"
+fn render(l: Loaded) -> String = {
+  let es = l.entries |> list.map((e) => "${fmt_time(e.at)} ${level_tag(e.level)} ${e.msg}") |> list.join("; ")
+  if list.is_empty(l.warnings) then es else "${es} | ${list.join(l.warnings, "; ")}"
+}
