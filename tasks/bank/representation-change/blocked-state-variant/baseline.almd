@@ -1,0 +1,45 @@
+// A task board read from lines "id|title|state". The state is one of
+// "todo", "doing", "done", or "blocked:<id>" naming the task that blocks it.
+type Task: Eq, Repr = { id: Int, title: String, state: String }
+
+fn blocker_text(s: String) -> String? = string.strip_prefix(s, "blocked:")
+
+fn valid_state(s: String) -> Bool =
+  match blocker_text(s) {
+    some(rest) => string.is_digit(rest),
+    none => s == "todo" or s == "doing" or s == "done",
+  }
+
+fn parse_task(line: String) -> Task! = {
+  let parts = string.split(line, "|")
+  guard list.len(parts) == 3 else err("bad line: " + line)
+  let id_text = list.get(parts, 0) ?? ""
+  let state = list.get(parts, 2) ?? ""
+  guard string.is_digit(id_text) else err("bad id: " + id_text)
+  guard valid_state(state) else err("bad state: " + state)
+  Task { id: int.parse(id_text)!, title: list.get(parts, 1) ?? "", state: state }
+}
+
+fn render(t: Task) -> String = "#" + int.to_string(t.id) + " " + t.title + " [" + t.state + "]"
+
+// The ids that block some task, first-seen order, each once.
+fn blockers(ts: List[Task]) -> List[Int] =
+  ts
+    |> list.filter_map((t) => blocker_text(t.state))
+    |> list.map((b) => int.parse(b) ?? 0)
+    |> list.unique
+
+// Marks task `id` done; every task blocked by `id` goes back to "todo".
+fn complete(ts: List[Task], id: Int) -> List[Task] =
+  ts |> list.map((t) =>
+    if t.id == id then Task { ...t, state: "done" }
+    else if t.state == "blocked:" + int.to_string(id) then Task { ...t, state: "todo" }
+    else t)
+
+fn summary(ts: List[Task]) -> String = {
+  let n = (p) => ts |> list.count((t) => p(t.state))
+  "todo=" + int.to_string(n((s) => s == "todo"))
+    + " doing=" + int.to_string(n((s) => s == "doing"))
+    + " done=" + int.to_string(n((s) => s == "done"))
+    + " blocked=" + int.to_string(n((s) => option.is_some(blocker_text(s))))
+}
