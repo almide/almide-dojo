@@ -43,6 +43,7 @@ fn classify_failure(diag: String) -> (String, String) = {
   // compiler output. They outrank everything — the program compiled and passed.
   if string.starts_with(diag, "[bank] silent-violation") then ("silent-violation", "")
   else if string.starts_with(diag, "[bank] target-divergence") then ("target-divergence", "")
+  else if string.starts_with(diag, "[bank] resource-violation") then ("resource-violation", "")
   else if string.contains(diag, "Lambda parameter must be wrapped") then ("parse-error", "")
   else if string.contains(diag, "Expected ") then ("parse-error", "")
   else {
@@ -88,7 +89,7 @@ fn category_order() -> List[String] = [
   cellstate.ST_NOT_RUN, cellstate.ST_HARNESS,
   "parse-error", "type-error", "name-error", "import-error",
   "compile-error", "runtime-error", "wrong-output", "timeout",
-  "silent-violation", "target-divergence", "unknown",
+  "silent-violation", "resource-violation", "target-divergence", "unknown",
 ]
 
 test "primary_diagnostic_code extracts E003" {

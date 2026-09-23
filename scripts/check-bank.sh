@@ -7,7 +7,11 @@
 #   solution.almd   a reference patch (proves a correct edit exists)
 #   wrong.almd      a plausible wrong patch: compiles, passes the visible tests,
 #                   fails the hidden oracle (proves the bank DISCRIMINATES)
-#                   — optional while meta says resource_oracle = "pending"
+#                   — optional when meta says resource_oracle = "pending" | "active"
+#   wrong_resource.almd, probe.almd   (resource_oracle = "active", almide-dojo#5)
+#                   a plausible wrong patch that passes the visible tests AND the
+#                   hidden oracle and fails the resource oracle
+#                   (scripts/resource-oracle.sh), and the probe that measures it
 #   tests.almd      the visible tests (the model may see their names, never hidden.almd)
 #   hidden.almd     the hidden oracle: untouched behaviour + adversarial inputs
 #   prompt.md       the requested edit AND the protected contract, in words
@@ -22,6 +26,11 @@
 #       visible suite), or wrong + hidden PASSES — the oracle does not discriminate;
 #   (e) the family slug in meta.toml is not the directory name, or is not a row of
 #       bank/families.txt (the pinned copy of almide's scripts/lib/dojo-families.txt);
+#   (g) resource_oracle = "active": wrong_resource + tests or + hidden FAILS (not
+#       behaviour-identical), and — when the compiler carries the allocation
+#       counters (`scripts/resource-oracle.sh --armed`) — the solution exceeds the
+#       resource bound or wrong_resource stays within it. Unarmed, the leg is
+#       reported off; BANK_REQUIRE_RESOURCE=1 makes that an error.
 #   (f) with wasmtime on PATH: solution + tests + hidden differ between native and
 #       wasm (cross-target agreement is part of the score).
 # Pure shell + the `almide` binary on PATH; every compile is a real compile.
@@ -35,6 +44,8 @@ FAMILIES="bank/families.txt"
 [ -f "$FAMILIES" ] || { echo "::error::$FAMILIES not found"; exit 2; }
 command -v almide >/dev/null || { echo "::error::almide not on PATH"; exit 2; }
 FAMILY_SLUGS="$(grep -vE '^[[:space:]]*(#|$)' "$FAMILIES" | cut -f1)"
+HAVE_RES=0; RES_STATE="$(bash scripts/resource-oracle.sh --armed 2>/dev/null)" && HAVE_RES=1
+if [ "$HAVE_RES" = 0 ] && [ "${BANK_REQUIRE_RESOURCE:-0}" = 1 ]; then echo "::error::BANK_REQUIRE_RESOURCE=1 but the compiler is $RES_STATE"; exit 2; fi
 HAVE_WASM=0; command -v wasmtime >/dev/null && HAVE_WASM=1
 if [ "$HAVE_WASM" = 0 ] && [ "${BANK_REQUIRE_WASM:-0}" = 1 ]; then echo "::error::BANK_REQUIRE_WASM=1 but wasmtime is not on PATH: the cross-target leg would be skipped"; exit 2; fi
 
@@ -71,7 +82,10 @@ for dir in "$BANK"/*/*/; do
   grep -qxF -- "$fam" <<<"$FAMILY_SLUGS" || err "$name: family '$fam' is not a row of $FAMILIES"
   res="$(meta "$dir" resource_oracle)"
   case "$res" in not-needed|pending|active) ;; *) err "$name: resource_oracle='$res' (not-needed | pending | active)" ;; esac
-  if [ ! -f "$dir/wrong.almd" ] && [ "$res" != "pending" ]; then err "$name: missing wrong.almd (required unless resource_oracle = \"pending\")"; fi
+  if [ ! -f "$dir/wrong.almd" ] && [ "$res" != "pending" ] && [ "$res" != "active" ]; then err "$name: missing wrong.almd (required unless resource_oracle = \"pending\" or \"active\")"; fi
+  if [ "$res" = "active" ]; then
+    for f in wrong_resource.almd "$(meta "$dir" resource_probe)"; do [ -f "$dir/$f" ] || err "$name: resource_oracle = \"active\" needs $f"; done
+  fi
   [ -f "$dir/baseline.almd" ] && [ -f "$dir/solution.almd" ] && [ -f "$dir/tests.almd" ] && [ -f "$dir/hidden.almd" ] || continue
   # (b) the edit is required
   if run_pair "$dir" baseline tests; then err "$name: baseline already passes the visible tests — the requested edit is not required"; fi
@@ -83,11 +97,21 @@ for dir in "$BANK"/*/*/; do
     run_pair "$dir" wrong tests || err "$name: wrong.almd does not pass the visible tests — not a plausible wrong patch"
     if run_pair "$dir" wrong hidden; then err "$name: wrong.almd passes the hidden oracle — the task does not discriminate"; fi
   fi
+  # (g) the resource oracle discriminates, and only on resources
+  if [ "$res" = "active" ] && [ -f "$dir/wrong_resource.almd" ]; then
+    run_pair "$dir" wrong_resource tests  || err "$name: wrong_resource.almd does not pass the visible tests"
+    run_pair "$dir" wrong_resource hidden || err "$name: wrong_resource.almd fails the hidden oracle — it must differ on resources only"
+    if [ "$HAVE_RES" = 1 ]; then
+      out="$(bash scripts/resource-oracle.sh "$dir" "$dir/solution.almd" 2>/dev/null)" || err "$name: the solution fails the resource oracle: $(echo $out)"
+      out="$(bash scripts/resource-oracle.sh "$dir" "$dir/wrong_resource.almd" 2>/dev/null)"; rc=$?
+      [ "$rc" = 1 ] || err "$name: wrong_resource.almd is not rejected by the resource oracle (exit $rc): $(echo $out)"
+    fi
+  fi
   # (f) cross-target agreement
   if [ "$HAVE_WASM" = 1 ]; then
     run_triple "$dir" solution --target wasm || err "$name: solution passes natively but not on --target wasm"
   fi
 done
 [ "$n" -gt 0 ] || err "no bank tasks found under $BANK"
-echo "bank gate: $n task(s), wasm leg $([ "$HAVE_WASM" = 1 ] && echo on || echo off)"
+echo "bank gate: $n task(s), wasm leg $([ "$HAVE_WASM" = 1 ] && echo on || echo off), resource leg $([ "$HAVE_RES" = 1 ] && echo on || echo "off ($RES_STATE)")"
 [ "$fail" = 0 ] && { echo "bank gate OK"; exit 0; } || { echo "bank gate FAILED"; exit 1; }
