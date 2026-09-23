@@ -118,6 +118,44 @@ effect fn probe_sampling(model: String, temperature: Float) -> Result[List[(Stri
 // records a harness error, which both lanes count as "not measured".
 fn is_empty_completion(content: String) -> Bool = string.trim(strip_code_fences(content)) == ""
 
+// WHY it was empty, from the response, instead of a list of things it might
+// have been.
+//
+// The message used to say "a credential, quota or model-name failure can
+// answer 200 with no completion" and stop there. Measured 2026-09-23: GLM
+// 5.3 Flash left 10 of 38 tasks unreached through this path, and **none of
+// those three guesses was the cause** — the credential was good (other
+// models ran on it in the same job) and the model name resolved. The message
+// named three causes it had not checked and omitted the one that applied.
+//
+// What the response actually carries is enough to tell them apart, and it
+// was already in scope:
+//
+//   finish_reason "length"  the generation hit the token cap. For a model
+//                           with a reasoning scratchpad this is the likely
+//                           shape — the budget goes to the scratchpad and
+//                           `content` comes back empty — and it is a
+//                           BUDGET problem, not a credential one.
+//   finish_reason ""        the provider reported none (see almai#12: "" is
+//                           "not reported", never the good case).
+//   completion_tokens 0     nothing was generated at all, which IS the
+//                           credential/quota/model-name shape.
+//   completion_tokens > 0   tokens were spent and none of them reached
+//                           `content`.
+//
+// This does not diagnose GLM here — it makes the next run say which it is,
+// rather than this file guessing on the model's behalf.
+fn empty_completion_reason(model: String, r: almai.LLMResponse) -> String = {
+  let fr = if r.finish_reason == "" then "not reported" else r.finish_reason
+  let spent = r.usage.completion_tokens
+  let shape =
+    if spent == 0 then "no tokens were generated at all — the credential, quota or model-name shape"
+    else "the provider generated " + int.to_string(spent) + " completion token(s), none of which reached `content`"
+  "empty completion from provider '" + provider_of(model) + "' (spec '" + model + "'): " + shape +
+  "; finish_reason: " + fr +
+  ". An empty file scored against the oracle would look like a model failure, so this is a harness error and the cell is not measured."
+}
+
 effect fn call(model: String, system: String, user_prompt: String, temperature: Float, max_attempts: Int) -> Result[String, String] = {
   let spec = to_almai_spec(model)
   let opts = opts_for(system, temperature)
@@ -125,8 +163,7 @@ effect fn call(model: String, system: String, user_prompt: String, temperature: 
   match almai.call_retry(spec, msgs, opts, max_attempts) {
     err(e) => err(e)
     ok(r) =>
-      if is_empty_completion(r.content) then
-        err("empty completion from provider '" + provider_of(model) + "' (spec '" + model + "'): a credential, quota or model-name failure can answer 200 with no completion, and an empty file scored against the oracle would look like a model failure")
+      if is_empty_completion(r.content) then err(empty_completion_reason(model, r))
       else ok(strip_code_fences(r.content))
   }
 }
@@ -139,6 +176,44 @@ test "an empty completion is a transport failure, never a scored attempt" {
   // ...and the same once the model replies with nothing but a fence.
   assert(is_empty_completion("```almide\n```"))
   assert(not is_empty_completion("fn f() = 1"))
+}
+
+// The three shapes an empty completion can have. They used to produce ONE
+// sentence naming three causes it had not checked; GLM 5.3 Flash then left 10
+// of 38 tasks unreached (2026-09-23) for a cause that sentence did not list.
+fn mk_response(content: String, finish: String, out_tokens: Int) -> almai.LLMResponse =
+  almai.LLMResponse {
+    content: content, model: "m", finish_reason: finish, tool_calls: [],
+    usage: almai.Usage { prompt_tokens: 0, completion_tokens: out_tokens, total_tokens: out_tokens },
+    sampling: almai.Sampling { },
+  }
+
+test "no tokens generated reads as the credential shape" {
+  let m = empty_completion_reason("cf:x", mk_response("", "", 0))
+  assert(string.contains(m, "no tokens were generated at all"), "expected the credential shape")
+  assert(string.contains(m, "finish_reason: not reported"), "an unreported finish reason must say so")
+}
+
+// The shape that actually happened: tokens were spent and none reached
+// `content`. A budget problem must not read as a credential problem.
+test "tokens spent with nothing in content does not read as a credential failure" {
+  let m = empty_completion_reason("cf:x", mk_response("", "length", 4096))
+  assert(string.contains(m, "4096 completion token(s)"), "the token count must be reported")
+  assert(string.contains(m, "finish_reason: length"), "the finish reason must be reported")
+  assert(not string.contains(m, "no tokens were generated"), "a budget failure must not read as a credential failure")
+}
+
+test "the two shapes are distinguishable, which is the whole point" {
+  let credential = empty_completion_reason("cf:x", mk_response("", "", 0))
+  let budget = empty_completion_reason("cf:x", mk_response("", "length", 4096))
+  assert(credential != budget, "two different causes must not print the same sentence")
+}
+
+// Whitespace and a bare fence are empty too — the refusal still fires, and
+// it is the reason text that changed, not what counts as empty.
+test "a fence-only completion is still refused" {
+  assert(is_empty_completion("```almide\n```"), "a bare fence is empty")
+  assert(not is_empty_completion("fn f() = 1"), "real source is not empty")
 }
 
 test "strip_code_fences removes triple backtick lines" {
