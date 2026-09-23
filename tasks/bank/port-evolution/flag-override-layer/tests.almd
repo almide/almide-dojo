@@ -1,0 +1,8 @@
+test "overrides win" {
+  let o = Overrides { base: Defaults { on: ["dark"], off: ["beta"] }, forced: ["beta": true] }
+  assert_eq(report_with(Forced(o), ["dark", "beta"]), "dark=on beta=on")
+  assert_eq(enabled_with(Forced(o), "beta"), true)
+}
+test "plain source" {
+  assert_eq(report_with(Plain(Defaults { on: ["a"], off: [] }), ["a", "b"]), "a=on b=unset")
+}

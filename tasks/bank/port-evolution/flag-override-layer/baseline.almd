@@ -1,0 +1,25 @@
+// A feature-flag port. `flag` answers some(true) / some(false) for a known flag
+// and none for a flag it has never heard of.
+protocol Flags {
+  fn flag(f: Self, name: String) -> Bool?
+}
+
+// Static defaults; a name listed in both lists is on.
+type Defaults: Flags = { on: List[String], off: List[String] }
+fn Defaults.flag(d: Defaults, name: String) -> Bool? =
+  if list.contains(d.on, name) then some(true)
+  else if list.contains(d.off, name) then some(false)
+  else none
+
+// Unknown flags are off.
+fn enabled[F: Flags](f: F, name: String) -> Bool = f.flag(name) ?? false
+
+// "name=on", "name=off" or "name=unset" for each name, space separated.
+fn report[F: Flags](f: F, names: List[String]) -> String =
+  names
+    |> list.map((n) => n + "=" + (match f.flag(n) {
+      some(true) => "on",
+      some(false) => "off",
+      none => "unset",
+    }))
+    |> list.join(" ")

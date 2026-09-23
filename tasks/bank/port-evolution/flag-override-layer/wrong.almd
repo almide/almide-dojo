@@ -1,0 +1,46 @@
+// Plausible wrong patch: collapses the lookups with `??`, so a flag unknown to
+// both layers turns into `off` instead of staying unset. Passes the visible tests.
+// A feature-flag port. `flag` answers some(true) / some(false) for a known flag
+// and none for a flag it has never heard of.
+protocol Flags {
+  fn flag(f: Self, name: String) -> Bool?
+}
+
+// Static defaults; a name listed in both lists is on.
+type Defaults: Flags = { on: List[String], off: List[String] }
+fn Defaults.flag(d: Defaults, name: String) -> Bool? =
+  if list.contains(d.on, name) then some(true)
+  else if list.contains(d.off, name) then some(false)
+  else none
+
+// Forced values first, then the base.
+type Overrides: Flags = { base: Defaults, forced: Map[String, Bool] }
+fn Overrides.flag(o: Overrides, name: String) -> Bool? =
+  some(map.get(o.forced, name) ?? (o.base.flag(name) ?? false))
+
+// Unknown flags are off.
+fn enabled[F: Flags](f: F, name: String) -> Bool = f.flag(name) ?? false
+
+// "name=on", "name=off" or "name=unset" for each name, space separated.
+fn report[F: Flags](f: F, names: List[String]) -> String =
+  names
+    |> list.map((n) => n + "=" + (match f.flag(n) {
+      some(true) => "on",
+      some(false) => "off",
+      none => "unset",
+    }))
+    |> list.join(" ")
+
+type Source = | Plain(Defaults) | Forced(Overrides)
+
+fn report_with(s: Source, names: List[String]) -> String =
+  match s {
+    Plain(d) => report(d, names),
+    Forced(o) => report(o, names),
+  }
+
+fn enabled_with(s: Source, name: String) -> Bool =
+  match s {
+    Plain(d) => enabled(d, name),
+    Forced(o) => enabled(o, name),
+  }
