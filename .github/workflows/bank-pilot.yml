@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
     inputs:
       models:
-        description: 'Comma-separated cf: model specs (empty = the daily set). anthropic:/openai: specs are refused.'
+        description: 'Comma-separated cf: model specs (empty = the three pilot families: Llama, GLM, Qwen). anthropic:/openai: specs are refused.'
         required: false
         default: ''
       clusters:
@@ -50,8 +50,13 @@ permissions:
   contents: read
 
 env:
-  DAILY_MODELS: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast,cf:@cf/meta/llama-3.1-8b-instruct'
   SMOKE_MODELS: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast'
+  # The pilot's three model families (ruled 2026-09-24): one keyless Cloudflare
+  # Workers AI model per family, general-purpose rather than code-specialised so
+  # the families are compared on the same footing. GLM passes nearly every task
+  # it answers on the daily bank (almide-dojo#12), so it is the family most
+  # likely to saturate — the verdict's INCONCLUSIVE_BANK_SATURATED guards that.
+  PILOT_MODELS: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast,cf:@cf/zai-org/glm-5.3-flash,cf:@cf/qwen/qwen3.8-27b'
   SMOKE_LIMIT: '4'
   # Same deadline as daily.yml / msr-cross.yml (derived in msr-cross.yml).
   ALMIDE_HTTP_TIMEOUT_SECS: '140'
@@ -93,7 +98,7 @@ jobs:
             MODELS="$SMOKE_MODELS"; REPS=1; SHARDS=1; LIMIT="$SMOKE_LIMIT"
             CLUSTERS=400; FAMILIES=3; REPETITIONS=3
           else
-            MODELS="${IN_MODELS:-$DAILY_MODELS}"; REPS="${IN_REPS:-3}"; SHARDS="${IN_SHARDS:-8}"; LIMIT="${IN_LIMIT:-0}"
+            MODELS="${IN_MODELS:-$PILOT_MODELS}"; REPS="${IN_REPS:-3}"; SHARDS="${IN_SHARDS:-8}"; LIMIT="${IN_LIMIT:-0}"
             CLUSTERS="${IN_CLUSTERS:-400}"; FAMILIES="${IN_FAMILIES:-3}"; REPETITIONS="${IN_REPS:-3}"
           fi
           BAD=$(printf '%s' "$MODELS" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | grep -v '^cf:' || true)
