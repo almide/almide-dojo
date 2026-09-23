@@ -1,0 +1,9 @@
+test "states are variants" {
+  assert_eq(parse_task("3|ship|blocked:7"), ok(Task { id: 3, title: "ship", state: Blocked(7) }))
+  assert_eq(parse_task("4|test|doing"), ok(Task { id: 4, title: "test", state: Doing }))
+  assert_eq(render(Task { id: 3, title: "ship", state: Blocked(7) }), "#3 ship [blocked:7]")
+}
+test "complete unblocks" {
+  let ts = [Task { id: 7, title: "a", state: Doing }, Task { id: 3, title: "b", state: Blocked(7) }]
+  assert_eq(complete(ts, 7), [Task { id: 7, title: "a", state: Done }, Task { id: 3, title: "b", state: Todo }])
+}

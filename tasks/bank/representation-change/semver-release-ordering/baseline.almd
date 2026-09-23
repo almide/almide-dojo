@@ -1,0 +1,34 @@
+// Package releases identified by a single build number.
+type Release: Eq, Repr = { pkg: String, build: Int }
+
+fn release(pkg: String, build: Int) -> Release = Release { pkg: pkg, build: build }
+
+fn label(r: Release) -> String = r.pkg + "@" + int.to_string(r.build)
+
+// True when `a` is strictly newer than `b`.
+fn newer(a: Release, b: Release) -> Bool = a.build > b.build
+
+// The newest release of `pkg`; the FIRST one listed when two are equally new.
+fn newest(rs: List[Release], pkg: String) -> Release? =
+  rs
+    |> list.filter((r) => r.pkg == pkg)
+    |> list.fold(none, (best, r) => match best {
+      none => some(r),
+      some(b) => if newer(r, b) then some(r) else some(b),
+    })
+
+// For every installed release (in installed order), the label of the newest
+// available release of the same package when it is strictly newer.
+fn upgrades(installed: List[Release], available: List[Release]) -> List[String] =
+  installed |> list.filter_map((cur) => match newest(available, cur.pkg) {
+    some(n) => if newer(n, cur) then some(label(n)) else none,
+    none => none,
+  })
+
+// Releases ordered by package name, then oldest to newest; equal entries keep
+// their input order (`list.sort_by` is stable, so the last sort is the primary key).
+fn catalogue(rs: List[Release]) -> List[String] =
+  rs
+    |> list.sort_by((r) => r.build)
+    |> list.sort_by((r) => r.pkg)
+    |> list.map(label)

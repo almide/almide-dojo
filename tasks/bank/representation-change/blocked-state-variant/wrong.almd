@@ -1,0 +1,61 @@
+// Plausible wrong patch: the blocker id is read with `int.parse`, which also
+// accepts a sign and leading spaces, so `blocked:-3` now parses. Passes the visible tests.
+// A task board read from lines "id|title|state". The state is one of
+// "todo", "doing", "done", or "blocked:<id>" naming the task that blocks it.
+type State: Eq, Repr = | Todo | Doing | Done | Blocked(Int)
+type Task: Eq, Repr = { id: Int, title: String, state: State }
+
+fn parse_state(s: String) -> State? =
+  match string.strip_prefix(s, "blocked:") {
+    some(rest) => option.map(int.parse(rest)?, (n) => Blocked(n)),
+    none => match s {
+      "todo" => some(Todo),
+      "doing" => some(Doing),
+      "done" => some(Done),
+      _ => none,
+    },
+  }
+
+fn parse_task(line: String) -> Task! = {
+  let parts = string.split(line, "|")
+  guard list.len(parts) == 3 else err("bad line: " + line)
+  let id_text = list.get(parts, 0) ?? ""
+  let state_text = list.get(parts, 2) ?? ""
+  guard string.is_digit(id_text) else err("bad id: " + id_text)
+  let state = option.to_result(parse_state(state_text), "bad state: " + state_text)!
+  Task { id: int.parse(id_text)!, title: list.get(parts, 1) ?? "", state: state }
+}
+
+fn state_text(s: State) -> String =
+  match s {
+    Todo => "todo",
+    Doing => "doing",
+    Done => "done",
+    Blocked(b) => "blocked:" + int.to_string(b),
+  }
+
+fn render(t: Task) -> String = "#" + int.to_string(t.id) + " " + t.title + " [" + state_text(t.state) + "]"
+
+fn blocker_of(t: Task) -> Int? =
+  match t.state {
+    Blocked(b) => some(b),
+    _ => none,
+  }
+
+// The ids that block some task, first-seen order, each once.
+fn blockers(ts: List[Task]) -> List[Int] = ts |> list.filter_map(blocker_of) |> list.unique
+
+// Marks task `id` done; every task blocked by `id` goes back to Todo.
+fn complete(ts: List[Task], id: Int) -> List[Task] =
+  ts |> list.map((t) =>
+    if t.id == id then Task { ...t, state: Done }
+    else if t.state == Blocked(id) then Task { ...t, state: Todo }
+    else t)
+
+fn summary(ts: List[Task]) -> String = {
+  let n = (p) => ts |> list.count((t) => p(t.state))
+  "todo=" + int.to_string(n((s) => s == Todo))
+    + " doing=" + int.to_string(n((s) => s == Doing))
+    + " done=" + int.to_string(n((s) => s == Done))
+    + " blocked=" + int.to_string(ts |> list.count((t) => option.is_some(blocker_of(t))))
+}

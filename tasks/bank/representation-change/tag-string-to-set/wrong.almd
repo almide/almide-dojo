@@ -1,0 +1,31 @@
+// Plausible wrong patch: renders the set in its own (insertion) order, so tags
+// given out of order print out of order. Passes the visible tests.
+// Catalogue items with tags: a set of lowercase, trimmed, non-empty tags.
+type Item: Eq, Repr = { name: String, tags: Set[String] }
+
+fn clean(t: String) -> String = string.to_lower(string.trim(t))
+
+fn tag_set(raw: List[String]) -> Set[String] =
+  raw |> list.map(clean) |> list.filter((t) => t != "") |> set.from_list
+
+fn item(name: String, raw: List[String]) -> Item = Item { name: name, tags: tag_set(raw) }
+
+fn has_tag(i: Item, t: String) -> Bool = set.contains(i.tags, clean(t))
+
+fn add_tag(i: Item, t: String) -> Item = Item { ...i, tags: set.union(i.tags, tag_set([t])) }
+
+fn same_tags(a: Item, b: Item) -> Bool = a.tags == b.tags
+
+fn tags_text(tags: Set[String]) -> String = set.to_list(tags) |> list.join(",")
+
+fn tag_line(i: Item) -> String = i.name + " [" + tags_text(i.tags) + "]"
+
+// Items grouped by identical tag sets: "<tags>: <names>" per group, groups in
+// first-seen order, names in list order.
+fn groups(items: List[Item]) -> List[String] = {
+  let keys = items |> list.map((i) => i.tags) |> list.unique
+  keys |> list.map((k) => {
+    let names = items |> list.filter((i) => i.tags == k) |> list.map((i) => i.name)
+    tags_text(k) + ": " + list.join(names, ",")
+  })
+}

@@ -1,0 +1,48 @@
+// Plausible wrong patch: validates each pair with `int.from_hex`, which also
+// accepts a sign or a space, so `-1` decodes instead of failing. Passes the visible tests.
+// A field codec port used to pack records into one ";"-separated line.
+protocol FieldCodec {
+  fn encode(c: Self, s: String) -> String
+  fn decode(c: Self, s: String) -> String!
+}
+
+// Rotates lowercase letters a..z forward by `shift` (any shift >= 0); every other
+// character is kept.
+type Caesar: FieldCodec = { shift: Int }
+fn Caesar.encode(c: Caesar, s: String) -> String =
+  string.chars(s) |> list.map((ch) => rotate(ch, c.shift)) |> list.join("")
+
+fn Caesar.decode(c: Caesar, s: String) -> String! =
+  ok(string.chars(s) |> list.map((ch) => rotate(ch, 26 - c.shift % 26)) |> list.join(""))
+
+fn rotate(ch: String, by: Int) -> String = {
+  let code = string.codepoint(ch) ?? 0
+  if code >= 97 and code <= 122 then string.from_codepoint(97 + (code - 97 + by) % 26) else ch
+}
+
+// Every byte as two lowercase hex digits.
+type Base16: FieldCodec = {}
+fn Base16.encode(c: Base16, s: String) -> String =
+  string.to_bytes(s) |> list.map((b) => string.pad_start(int.to_hex(b), 2, "0")) |> list.join("")
+
+fn Base16.decode(c: Base16, s: String) -> String! = {
+  let chars = string.chars(s)
+  guard list.len(chars) % 2 == 0 else err("odd length: " + s)
+  var bytes: List[Int] = []
+  for pair in list.chunk(chars, 2) {
+    let b = int.from_hex(list.join(pair, "")) |> result.map_err((_) => "bad hex: " + s)
+    bytes = bytes + [b!]
+  }
+  string.from_bytes(bytes)
+}
+
+fn pack[C: FieldCodec](c: C, fields: List[String]) -> String =
+  fields |> list.map((f) => c.encode(f)) |> list.join(";")
+
+fn unpack[C: FieldCodec](c: C, line: String) -> List[String]! = {
+  var out: List[String] = []
+  for field in string.split(line, ";") {
+    out = out + [c.decode(field)!]
+  }
+  out
+}

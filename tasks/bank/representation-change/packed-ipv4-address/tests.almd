@@ -1,0 +1,9 @@
+test "packed addresses" {
+  assert_eq(addr(10, 0, 0, 5), Addr { bits: 167772165 })
+  assert_eq(render(addr(192, 168, 1, 20)), "192.168.1.20")
+  assert_eq(next(addr(10, 0, 0, 255)), some(addr(10, 0, 1, 0)))
+}
+test "size of a range" {
+  assert_eq(size(addr(10, 0, 0, 0), addr(10, 0, 1, 255)), 512)
+  assert_eq(in_range(addr(10, 0, 0, 0), addr(10, 0, 0, 9), addr(10, 0, 0, 3)), true)
+}

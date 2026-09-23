@@ -1,0 +1,40 @@
+// Plausible wrong patch: the smallest edit — read the option back into the old
+// sentinel with `?? -1` and keep every old check, so a real deadline of day -1
+// is treated as "no deadline". Passes the visible tests.
+type Task: Eq, Repr = { title: String, due: Int? }
+
+fn task(title: String, due: Int?) -> Task = Task { title: title, due: due }
+
+fn due_or_sentinel(t: Task) -> Int = t.due ?? -1
+
+fn has_due(t: Task) -> Bool = due_or_sentinel(t) != -1
+
+fn render(t: Task) -> String =
+  if has_due(t) then t.title + " (day " + int.to_string(due_or_sentinel(t)) + ")" else t.title + " (someday)"
+
+// Titles of the tasks whose deadline is strictly before `today`, in list order.
+fn overdue(ts: List[Task], today: Int) -> List[String] =
+  ts |> list.filter((t) => has_due(t) and due_or_sentinel(t) < today) |> list.map((t) => t.title)
+
+// Every task, earliest deadline first, tasks without a deadline last; ties keep
+// list order.
+fn agenda(ts: List[Task]) -> List[String] = {
+  let dated = ts |> list.filter(has_due) |> list.sort_by(due_or_sentinel)
+  let undated = ts |> list.filter((t) => not has_due(t))
+  (dated + undated) |> list.map(render)
+}
+
+// The title of the task due first (the FIRST listed on a tie); none when no
+// task has a deadline.
+fn next_due(ts: List[Task]) -> String? =
+  ts
+    |> list.filter(has_due)
+    |> list.fold(none, (best, t) => match best {
+      none => some(t),
+      some(b) => if due_or_sentinel(t) < due_or_sentinel(b) then some(t) else some(b),
+    })
+    |> option.map((t) => t.title)
+
+// Moves a deadline by `days`; a task without a deadline stays without one.
+fn postpone(t: Task, days: Int) -> Task =
+  if has_due(t) then Task { ...t, due: some(due_or_sentinel(t) + days) } else t

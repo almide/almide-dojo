@@ -1,0 +1,23 @@
+// A field codec port used to pack records into one ";"-separated line.
+protocol FieldCodec {
+  fn encode(c: Self, s: String) -> String
+}
+
+// Rotates lowercase letters a..z forward by `shift` (any shift >= 0); every other
+// character is kept.
+type Caesar: FieldCodec = { shift: Int }
+fn Caesar.encode(c: Caesar, s: String) -> String =
+  string.chars(s) |> list.map((ch) => rotate(ch, c.shift)) |> list.join("")
+
+fn rotate(ch: String, by: Int) -> String = {
+  let code = string.codepoint(ch) ?? 0
+  if code >= 97 and code <= 122 then string.from_codepoint(97 + (code - 97 + by) % 26) else ch
+}
+
+// Every byte as two lowercase hex digits.
+type Base16: FieldCodec = {}
+fn Base16.encode(c: Base16, s: String) -> String =
+  string.to_bytes(s) |> list.map((b) => string.pad_start(int.to_hex(b), 2, "0")) |> list.join("")
+
+fn pack[C: FieldCodec](c: C, fields: List[String]) -> String =
+  fields |> list.map((f) => c.encode(f)) |> list.join(";")

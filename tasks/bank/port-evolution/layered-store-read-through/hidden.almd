@@ -1,0 +1,22 @@
+test "hidden: a miss in both layers is still a miss" {
+  let l = Layered { front: MemStore { rows: ["a": "1"] }, back: RemoteStore { rows: ["b": "2"], down: [] } }
+  assert_eq(l.get("zz"), ok(none))
+  assert_eq(describe(l, "zz"), ok("zz missing"))
+  assert_eq(fetch_all_via(Both(l), ["zz", "a", "q", "b"]), ok(["1", "2"]))
+}
+test "hidden: a back error passes through, first in key order" {
+  let l = Layered { front: MemStore { rows: ["a": "1"] }, back: RemoteStore { rows: ["b": "2"], down: ["x", "y"] } }
+  assert_eq(l.get("x"), err("remote timeout: x"))
+  assert_eq(fetch_all_via(Both(l), ["a", "y", "x"]), err("remote timeout: y"))
+  assert_eq(describe(l, "x"), err("remote timeout: x"))
+}
+test "hidden: front hits never touch a down back" {
+  let l = Layered { front: MemStore { rows: ["a": "1", "d": ""] }, back: RemoteStore { rows: ["a": "9"], down: ["a", "d"] } }
+  assert_eq(fetch_all_via(Both(l), ["a", "d"]), ok(["1", ""]))
+  assert_eq(describe(l, "a"), ok("a=1"))
+}
+test "hidden: old adapters unchanged" {
+  let r = RemoteStore { rows: ["a": "1"], down: ["b"] }
+  assert_eq(fetch_all_via(Remote(r), ["a", "b"]), err("remote timeout: b"))
+  assert_eq(fetch_all(MemStore { rows: ["a": ""] }, ["a", "c"]), ok([""]))
+}

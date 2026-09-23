@@ -1,0 +1,20 @@
+test "hidden: caesar wraps backwards" {
+  let c = Caesar { shift: 3 }
+  assert_eq(c.decode(c.encode("xyz abc!")), ok("xyz abc!"))
+  assert_eq(c.decode("a"), ok("x"))
+  let big = Caesar { shift: 55 }
+  assert_eq(big.decode(big.encode("zebra")), ok("zebra"))
+  assert_eq(unpack(c, pack(c, ["az", "", "Q-9"])), ok(["az", "", "Q-9"]))
+}
+test "hidden: hex is strict about digits" {
+  assert_eq(Base16 {}.decode("-1"), err("bad hex: -1"))
+  assert_eq(Base16 {}.decode("+a"), err("bad hex: +a"))
+  assert_eq(Base16 {}.decode(" a"), err("bad hex:  a"))
+  assert_eq(Base16 {}.decode("zzz"), err("odd length: zzz"))
+  assert_eq(Base16 {}.decode("4A4b"), ok("JK"))
+}
+test "hidden: unpack stops at the first bad field" {
+  assert_eq(unpack(Base16 {}, "68;7;zz"), err("odd length: 7"))
+  assert_eq(unpack(Base16 {}, "68;;69"), ok(["h", "", "i"]))
+  assert_eq(pack(Base16 {}, ["\n"]), "0a")
+}

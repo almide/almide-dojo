@@ -1,0 +1,8 @@
+test "all parts must agree" {
+  let p = AllOf { parts: [Grants { rules: ["ann:read", "ann:write"] }, Grants { rules: ["ann:read"] }] }
+  assert_eq(permitted_by(All(p), "ann", ["read", "write"]), ["read"])
+  assert_eq(audit_by(All(p), "ann", ["read", "write"]), "ann: read=yes, write=no")
+}
+test "single policy" {
+  assert_eq(permitted_by(Single(Grants { rules: ["bob:*"] }), "bob", ["x"]), ["x"])
+}

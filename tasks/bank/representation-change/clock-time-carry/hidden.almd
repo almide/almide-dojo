@@ -1,0 +1,21 @@
+test "hidden: backwards shifts borrow and wrap" {
+  assert_eq(shift(alarm("a", 0, 10), -20), alarm("a", 23, 50))
+  assert_eq(shift(alarm("a", 0, 10), -1460), alarm("a", 23, 50))
+  assert_eq(shift(alarm("a", 5, 0), -1), alarm("a", 4, 59))
+  assert_eq(render(shift(alarm("a", 1, 0), -61)), "23:59 a")
+}
+test "hidden: forward shifts carry and wrap" {
+  assert_eq(shift(alarm("a", 23, 59), 1), alarm("a", 0, 0))
+  assert_eq(shift(alarm("a", 22, 30), 3000), alarm("a", 0, 30))
+  assert_eq(shift(alarm("a", 3, 3), 0), alarm("a", 3, 3))
+}
+test "hidden: next_after edges" {
+  let al = [alarm("x", 6, 0), alarm("y", 9, 30), alarm("z", 9, 30), alarm("w", 5, 45)]
+  assert_eq(next_after(al, Clock { h: 9, m: 30 }), some("y"))
+  assert_eq(next_after(al, Clock { h: 9, m: 31 }), some("w"))
+  assert_eq(next_after(al, Clock { h: 5, m: 50 }), some("x"))
+  assert_eq(next_after([], Clock { h: 0, m: 0 }), none)
+}
+test "hidden: schedule ties and minutes" {
+  assert_eq(schedule([alarm("b", 10, 0), alarm("a", 9, 59), alarm("c", 10, 0), alarm("d", 0, 0)]), ["00:00 d", "09:59 a", "10:00 b", "10:00 c"])
+}

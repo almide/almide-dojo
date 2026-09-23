@@ -1,0 +1,9 @@
+test "decode is the inverse" {
+  assert_eq(Caesar { shift: 1 }.decode("ifmmp"), ok("hello"))
+  assert_eq(Base16 {}.decode("6869"), ok("hi"))
+  assert_eq(unpack(Base16 {}, pack(Base16 {}, ["ab", "c"])), ok(["ab", "c"]))
+}
+test "hex errors" {
+  assert_eq(Base16 {}.decode("abc"), err("odd length: abc"))
+  assert_eq(Base16 {}.decode("zz"), err("bad hex: zz"))
+}

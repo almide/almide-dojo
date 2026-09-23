@@ -1,0 +1,20 @@
+// Savings accounts. `rate` is a monthly percentage, e.g. 1.25 means 1.25 %.
+// A negative balance is an overdraft and is charged the same rate.
+type Account: Eq, Repr = { name: String, cents: Int, rate: Float }
+
+fn account(name: String, cents: Int, rate: Float) -> Account = Account { name: name, cents: cents, rate: rate }
+
+// One month of interest in cents: rounded to the nearest cent, halves away from
+// zero (so an overdraft is charged a negative amount).
+fn interest(a: Account) -> Int = float.to_int(float.round(int.to_float(a.cents) * a.rate / 100.0))
+
+fn accrue(accs: List[Account]) -> List[Account] =
+  accs |> list.map((a) => Account { ...a, cents: a.cents + interest(a) })
+
+fn total_interest(accs: List[Account]) -> Int = accs |> list.fold(0, (acc, a) => acc + interest(a))
+
+fn rate_label(a: Account) -> String = float.to_fixed(a.rate, 2) + "%"
+
+// Names of the accounts paying at least `min_rate` percent, in list order.
+fn at_least(accs: List[Account], min_rate: Float) -> List[String] =
+  accs |> list.filter((a) => a.rate >= min_rate) |> list.map((a) => a.name)

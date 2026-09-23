@@ -1,0 +1,9 @@
+test "retry rides out a timeout" {
+  let s = Scripted { pages: ["a": "A", "b": "B"], flaky: ["b": 1] }
+  assert_eq(get_all_with(Retry(Retrying { inner: s, max: 3 }), ["a", "b"]), ok(["A", "B"]))
+  assert_eq(get_all_with(Direct(s), ["a", "b"]), err(Transient("timeout b #1")))
+}
+test "missing pages" {
+  let s = Scripted { pages: ["a": "A"], flaky: [:] }
+  assert_eq(get_all_with(Retry(Retrying { inner: s, max: 2 }), ["a", "z"]), err(Missing("z")))
+}

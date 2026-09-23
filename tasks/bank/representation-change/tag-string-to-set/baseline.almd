@@ -1,0 +1,33 @@
+// Catalogue items with tags. `tags` is kept canonical: lowercase, trimmed,
+// unique, sorted, joined with "," ("" when there are none).
+type Item: Eq, Repr = { name: String, tags: String }
+
+fn canonical(raw: List[String]) -> String =
+  raw
+    |> list.map((t) => string.to_lower(string.trim(t)))
+    |> list.filter((t) => t != "")
+    |> list.unique
+    |> list.sort
+    |> list.join(",")
+
+fn item(name: String, raw: List[String]) -> Item = Item { name: name, tags: canonical(raw) }
+
+fn tag_list(i: Item) -> List[String] = if i.tags == "" then [] else string.split(i.tags, ",")
+
+fn has_tag(i: Item, t: String) -> Bool = list.contains(tag_list(i), string.to_lower(string.trim(t)))
+
+fn add_tag(i: Item, t: String) -> Item = Item { ...i, tags: canonical(tag_list(i) + [t]) }
+
+fn same_tags(a: Item, b: Item) -> Bool = a.tags == b.tags
+
+fn tag_line(i: Item) -> String = i.name + " [" + i.tags + "]"
+
+// Items grouped by identical tag sets: "<tags>: <names>" per group, groups in
+// first-seen order, names in list order.
+fn groups(items: List[Item]) -> List[String] = {
+  let keys = items |> list.map((i) => i.tags) |> list.unique
+  keys |> list.map((k) => {
+    let names = items |> list.filter((i) => i.tags == k) |> list.map((i) => i.name)
+    k + ": " + list.join(names, ",")
+  })
+}

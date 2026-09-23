@@ -1,0 +1,17 @@
+test "hidden: small negatives and padding" {
+  assert_eq(render(entry("fee", -5)), "fee -$0.05")
+  assert_eq(render(entry("x", 307)), "x $3.07")
+  assert_eq(render(entry("z", 0)), "z $0.00")
+  assert_eq(statement([entry("a", 10), entry("b", -15)]), ["a $0.10 = $0.10", "b -$0.15 = -$0.05"])
+}
+test "hidden: large keeps whole-dollar limits" {
+  let es = [entry("big", -10000), entry("near", 9999), entry("exact", 10000), entry("tiny", 150)]
+  assert_eq(large(es, 100), ["big", "exact"])
+  assert_eq(large(es, 1), ["big", "near", "exact", "tiny"])
+}
+test "hidden: biggest expense ties and zero" {
+  assert_eq(biggest_expense([entry("a", -700), entry("b", -700), entry("c", 5)]), some("a"))
+  assert_eq(biggest_expense([entry("a", 0), entry("b", 300)]), none)
+  assert_eq(biggest_expense([entry("a", 0), entry("b", -1)]), some("b"))
+  assert_eq(biggest_expense([]), none)
+}

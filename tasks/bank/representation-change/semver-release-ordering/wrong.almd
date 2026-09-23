@@ -1,0 +1,40 @@
+// Plausible wrong patch: compares and sorts versions by their rendered text, so
+// 1.10.0 sorts before 1.9.0. Passes the visible tests (single-digit components).
+type Version: Eq, Repr = { major: Int, minor: Int, patch: Int }
+type Release: Eq, Repr = { pkg: String, version: Version }
+
+fn release(pkg: String, major: Int, minor: Int, patch: Int) -> Release =
+  Release { pkg: pkg, version: Version { major: major, minor: minor, patch: patch } }
+
+fn render_version(v: Version) -> String =
+  int.to_string(v.major) + "." + int.to_string(v.minor) + "." + int.to_string(v.patch)
+
+fn label(r: Release) -> String = r.pkg + "@" + render_version(r.version)
+
+// True when `a` is strictly newer than `b`.
+fn newer(a: Release, b: Release) -> Bool = render_version(a.version) > render_version(b.version)
+
+// The newest release of `pkg`; the FIRST one listed when two are equally new.
+fn newest(rs: List[Release], pkg: String) -> Release? =
+  rs
+    |> list.filter((r) => r.pkg == pkg)
+    |> list.fold(none, (best, r) => match best {
+      none => some(r),
+      some(b) => if newer(r, b) then some(r) else some(b),
+    })
+
+// For every installed release (in installed order), the label of the newest
+// available release of the same package when it is strictly newer.
+fn upgrades(installed: List[Release], available: List[Release]) -> List[String] =
+  installed |> list.filter_map((cur) => match newest(available, cur.pkg) {
+    some(n) => if newer(n, cur) then some(label(n)) else none,
+    none => none,
+  })
+
+// Releases ordered by package name, then oldest to newest; equal entries keep
+// their input order.
+fn catalogue(rs: List[Release]) -> List[String] =
+  rs
+    |> list.sort_by((r) => render_version(r.version))
+    |> list.sort_by((r) => r.pkg)
+    |> list.map(label)

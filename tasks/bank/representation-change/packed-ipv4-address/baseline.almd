@@ -1,0 +1,34 @@
+// IPv4 addresses as four octets, each 0..255.
+type Addr: Eq, Repr = { a: Int, b: Int, c: Int, d: Int }
+
+fn addr(a: Int, b: Int, c: Int, d: Int) -> Addr = Addr { a: a, b: b, c: c, d: d }
+
+fn render(x: Addr) -> String =
+  [x.a, x.b, x.c, x.d] |> list.map((n) => int.to_string(n)) |> list.join(".")
+
+// -1, 0 or 1, comparing octet by octet.
+fn compare(x: Addr, y: Addr) -> Int = {
+  let diffs = [x.a - y.a, x.b - y.b, x.c - y.c, x.d - y.d] |> list.filter((n) => n != 0)
+  match list.first(diffs) {
+    some(n) => if n < 0 then -1 else 1,
+    none => 0,
+  }
+}
+
+// The following address; none after 255.255.255.255.
+fn next(x: Addr) -> Addr? =
+  if x.d < 255 then some(Addr { ...x, d: x.d + 1 })
+  else if x.c < 255 then some(Addr { ...x, c: x.c + 1, d: 0 })
+  else if x.b < 255 then some(Addr { ...x, b: x.b + 1, c: 0, d: 0 })
+  else if x.a < 255 then some(Addr { a: x.a + 1, b: 0, c: 0, d: 0 })
+  else none
+
+fn in_range(lo: Addr, hi: Addr, x: Addr) -> Bool = compare(lo, x) <= 0 and compare(x, hi) <= 0
+
+// The `n` addresses starting at `start`, stopping early at the end of the space.
+fn block(start: Addr, n: Int) -> List[String] =
+  if n <= 0 then []
+  else match next(start) {
+    some(nx) => [render(start)] + block(nx, n - 1),
+    none => [render(start)],
+  }

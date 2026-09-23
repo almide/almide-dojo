@@ -1,0 +1,47 @@
+// Checkout with a pluggable discount strategy. Money is in cents.
+protocol Discount {
+  fn off(d: Self, subtotal: Int) -> Int
+  fn name(d: Self) -> String
+}
+
+// A percentage of the subtotal, rounded down to the cent.
+type Percent: Discount = { pct: Int }
+fn Percent.off(d: Percent, subtotal: Int) -> Int = subtotal * d.pct / 100
+fn Percent.name(d: Percent) -> String = int.to_string(d.pct) + "% off"
+
+// A fixed amount, never more than the subtotal.
+type Fixed: Discount = { cents: Int }
+fn Fixed.off(d: Fixed, subtotal: Int) -> Int = int.min(d.cents, subtotal)
+fn Fixed.name(d: Fixed) -> String = int.to_string(d.cents) + "c off"
+
+// A percentage first, then a fixed amount off what is left.
+type Stacked: Discount = { pct: Percent, flat: Fixed }
+fn Stacked.off(d: Stacked, subtotal: Int) -> Int = {
+  let p = d.pct.off(subtotal)
+  p + d.flat.off(subtotal - p)
+}
+fn Stacked.name(d: Stacked) -> String = d.pct.name() + " then " + d.flat.name()
+
+type Item = { sku: String, cents: Int, qty: Int }
+
+fn subtotal(items: List[Item]) -> Int = items |> list.fold(0, (acc, i) => acc + i.cents * i.qty)
+
+fn checkout[D: Discount](d: D, items: List[Item]) -> Int = {
+  let sub = subtotal(items)
+  sub - d.off(sub)
+}
+
+fn receipt[D: Discount](d: D, items: List[Item]) -> String = {
+  let sub = subtotal(items)
+  "subtotal " + int.to_string(sub) + ", " + d.name() + ", total " + int.to_string(sub - d.off(sub))
+}
+
+type Promo = | NoPromo | Pct(Percent) | Flat(Fixed) | Combo(Stacked)
+
+fn total_for(p: Promo, items: List[Item]) -> Int =
+  match p {
+    NoPromo => subtotal(items),
+    Pct(d) => checkout(d, items),
+    Flat(d) => checkout(d, items),
+    Combo(d) => checkout(d, items),
+  }

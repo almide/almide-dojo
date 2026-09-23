@@ -1,0 +1,15 @@
+test "hidden: rejected requests are not recorded" {
+  assert_eq(admit_with(Sliding(sliding(10, 2)), [0, 1, 2, 3, 10]), [true, true, false, false, true])
+  assert_eq(admitted(sliding(4, 1), [0, 1, 2, 3, 4, 5]), 2)
+}
+test "hidden: a stamp exactly window old has expired" {
+  assert_eq(admit_with(Sliding(sliding(5, 1)), [0, 5, 9, 10]), [true, true, false, true])
+}
+test "hidden: same instant and zero capacity" {
+  assert_eq(admit_with(Sliding(sliding(3, 2)), [7, 7, 7, 9, 10]), [true, true, false, false, true])
+  assert_eq(admit_with(Sliding(sliding(3, 0)), [0, 10]), [false, false])
+}
+test "hidden: fixed window unchanged" {
+  assert_eq(admit_with(Fixed(fixed(10, 2)), [9, 9, 10, 10, 10, 25]), [true, true, true, true, false, true])
+  assert_eq(admit(fixed(10, 0), [1]), [false])
+}

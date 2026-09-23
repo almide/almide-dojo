@@ -1,0 +1,28 @@
+// Daily alarms. `at` is minutes since midnight, 0..1439.
+type Alarm: Eq, Repr = { label: String, at: Int }
+
+let DAY = 1440
+
+fn alarm(label: String, at: Int) -> Alarm = Alarm { label: label, at: at }
+
+fn pad2(n: Int) -> String = string.pad_start(int.to_string(n), 2, "0")
+
+fn render(a: Alarm) -> String = pad2(a.at / 60) + ":" + pad2(a.at % 60) + " " + a.label
+
+// Moves an alarm by `mins` (either sign), wrapping around midnight.
+fn shift(a: Alarm, mins: Int) -> Alarm = Alarm { ...a, at: ((a.at + mins) % DAY + DAY) % DAY }
+
+// The label of the next alarm at or after `now` today; when none is left today,
+// the earliest alarm tomorrow. Equal times: the first listed. none for no alarms.
+fn next_after(alarms: List[Alarm], now: Int) -> String? = {
+  let later = alarms |> list.filter((a) => a.at >= now)
+  let pool = if list.is_empty(later) then alarms else later
+  pool
+    |> list.sort_by((a) => a.at)
+    |> list.first
+    |> option.map((a) => a.label)
+}
+
+// All alarms by time of day; equal times keep list order.
+fn schedule(alarms: List[Alarm]) -> List[String] =
+  alarms |> list.sort_by((a) => a.at) |> list.map(render)

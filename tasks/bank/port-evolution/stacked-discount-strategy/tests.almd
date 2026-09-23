@@ -1,0 +1,12 @@
+test "stacked applies both" {
+  let s = Stacked { pct: Percent { pct: 10 }, flat: Fixed { cents: 100 } }
+  let items = [Item { sku: "a", cents: 1000, qty: 2 }]
+  assert_eq(total_for(Combo(s), items), 1700)
+  assert_eq(receipt(s, items), "subtotal 2000, 10% off then 100c off, total 1700")
+}
+test "promo selection" {
+  let items = [Item { sku: "a", cents: 500, qty: 1 }]
+  assert_eq(total_for(NoPromo, items), 500)
+  assert_eq(total_for(Pct(Percent { pct: 50 }), items), 250)
+  assert_eq(total_for(Flat(Fixed { cents: 100 }), items), 400)
+}

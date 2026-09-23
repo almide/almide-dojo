@@ -1,0 +1,23 @@
+test "hidden: blocker ids are digits only" {
+  assert_eq(parse_task("1|x|blocked:-3"), err("bad state: blocked:-3"))
+  assert_eq(parse_task("1|x|blocked:+3"), err("bad state: blocked:+3"))
+  assert_eq(parse_task("1|x|blocked: 3"), err("bad state: blocked: 3"))
+  assert_eq(parse_task("1|x|blocked:"), err("bad state: blocked:"))
+  assert_eq(parse_task("1|x|blocked:12"), ok(Task { id: 1, title: "x", state: Blocked(12) }))
+}
+test "hidden: parse error order unchanged" {
+  assert_eq(parse_task("x|y|nope"), err("bad id: x"))
+  assert_eq(parse_task("1|y|Todo"), err("bad state: Todo"))
+  assert_eq(parse_task("1|y"), err("bad line: 1|y"))
+  assert_eq(parse_task("2||done"), ok(Task { id: 2, title: "", state: Done }))
+}
+test "hidden: complete touches only its dependants" {
+  let ts = [Task { id: 1, title: "a", state: Blocked(2) }, Task { id: 2, title: "b", state: Todo }, Task { id: 3, title: "c", state: Blocked(1) }]
+  assert_eq(complete(ts, 2), [Task { id: 1, title: "a", state: Todo }, Task { id: 2, title: "b", state: Done }, Task { id: 3, title: "c", state: Blocked(1) }])
+}
+test "hidden: blockers and summary" {
+  let ts = [Task { id: 1, title: "a", state: Blocked(9) }, Task { id: 2, title: "b", state: Blocked(4) }, Task { id: 3, title: "c", state: Blocked(9) }, Task { id: 4, title: "d", state: Done }]
+  assert_eq(blockers(ts), [9, 4])
+  assert_eq(summary(ts), "todo=0 doing=0 done=1 blocked=3")
+  assert_eq(summary([]), "todo=0 doing=0 done=0 blocked=0")
+}

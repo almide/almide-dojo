@@ -1,0 +1,43 @@
+// Plausible wrong patch: the quiet window is a plain range check, so a window
+// that wraps past midnight is never quiet. Passes the visible tests.
+// A notification port. `at` is the minute of the day (0..1439) the message is
+// sent; `send` answers a receipt or an error.
+protocol Notifier {
+  fn send(n: Self, at: Int, to: String, msg: String) -> String!
+}
+
+// SMS gateway: messages longer than `max_len` characters are refused.
+type Sms: Notifier = { max_len: Int }
+fn Sms.send(n: Sms, at: Int, to: String, msg: String) -> String! = {
+  guard string.len(msg) <= n.max_len else err("too long: " + int.to_string(string.len(msg)))
+  "sms:" + to + "@" + int.to_string(at)
+}
+
+// Refuses during the quiet window [start, end), which may wrap past midnight.
+type QuietHours: Notifier = { inner: Sms, start: Int, end: Int }
+
+fn is_quiet(q: QuietHours, at: Int) -> Bool = at >= q.start and at < q.end
+
+fn QuietHours.send(q: QuietHours, at: Int, to: String, msg: String) -> String! = {
+  guard not is_quiet(q, at) else err("quiet hours")
+  q.inner.send(at, to, msg)
+}
+
+// One line per recipient, in order: "ok <receipt>" or "failed <to>: <error>".
+// A failure does not stop the broadcast.
+fn broadcast[N: Notifier](n: N, at: Int, recipients: List[String], msg: String) -> List[String] =
+  recipients |> list.map((to) => match n.send(at, to, msg) {
+    ok(receipt) => "ok " + receipt,
+    err(e) => "failed " + to + ": " + e,
+  })
+
+fn delivered[N: Notifier](n: N, at: Int, recipients: List[String], msg: String) -> Int =
+  broadcast(n, at, recipients, msg) |> list.count((line) => string.starts_with(line, "ok "))
+
+type Channel = | Plain(Sms) | Quiet(QuietHours)
+
+fn broadcast_via(c: Channel, at: Int, recipients: List[String], msg: String) -> List[String] =
+  match c {
+    Plain(s) => broadcast(s, at, recipients, msg),
+    Quiet(q) => broadcast(q, at, recipients, msg),
+  }

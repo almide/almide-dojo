@@ -1,0 +1,30 @@
+// IPv4 addresses packed into one number: a*2^24 + b*2^16 + c*2^8 + d.
+type Addr: Eq, Repr = { bits: Int }
+
+let LAST = 4294967295
+
+fn addr(a: Int, b: Int, c: Int, d: Int) -> Addr = Addr { bits: a * 16777216 + b * 65536 + c * 256 + d }
+
+fn render(x: Addr) -> String =
+  [x.bits / 16777216, x.bits / 65536 % 256, x.bits / 256 % 256, x.bits % 256]
+    |> list.map((n) => int.to_string(n))
+    |> list.join(".")
+
+// -1, 0 or 1.
+fn compare(x: Addr, y: Addr) -> Int =
+  if x.bits < y.bits then -1 else if x.bits > y.bits then 1 else 0
+
+// The following address; none after 255.255.255.255.
+fn next(x: Addr) -> Addr? = if x.bits < LAST then some(Addr { bits: x.bits + 1 }) else none
+
+fn in_range(lo: Addr, hi: Addr, x: Addr) -> Bool = compare(lo, x) <= 0 and compare(x, hi) <= 0
+
+fn size(lo: Addr, hi: Addr) -> Int = if hi.bits < lo.bits then 0 else hi.bits - lo.bits + 1
+
+// The `n` addresses starting at `start`, stopping early at the end of the space.
+fn block(start: Addr, n: Int) -> List[String] =
+  if n <= 0 then []
+  else match next(start) {
+    some(nx) => [render(start)] + block(nx, n - 1),
+    none => [render(start)],
+  }

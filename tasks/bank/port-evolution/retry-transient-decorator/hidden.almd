@@ -1,0 +1,16 @@
+test "hidden: max counts attempts, not retries" {
+  let s = Scripted { pages: ["u": "U"], flaky: ["u": 3] }
+  assert_eq(get_all_with(Retry(Retrying { inner: s, max: 3 }), ["u"]), err(Transient("timeout u #3")))
+  assert_eq(get_all_with(Retry(Retrying { inner: s, max: 4 }), ["u"]), ok(["U"]))
+  assert_eq(Retrying { inner: s, max: 1 }.fetch("u", 1), err(Transient("timeout u #1")))
+}
+test "hidden: missing after timeouts is returned unchanged" {
+  let s = Scripted { pages: [:], flaky: ["m": 2] }
+  assert_eq(Retrying { inner: s, max: 5 }.fetch("m", 1), err(Missing("m")))
+}
+test "hidden: first failing url wins" {
+  let s = Scripted { pages: ["a": "A", "c": "C"], flaky: ["a": 9, "c": 1] }
+  assert_eq(get_all_with(Retry(Retrying { inner: s, max: 2 }), ["c", "b", "a"]), err(Missing("b")))
+  assert_eq(get_all_with(Retry(Retrying { inner: s, max: 2 }), ["c", "a", "b"]), err(Transient("timeout a #2")))
+  assert_eq(get_all_with(Direct(s), []), ok([]))
+}

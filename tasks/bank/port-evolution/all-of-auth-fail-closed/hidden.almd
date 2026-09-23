@@ -1,0 +1,17 @@
+test "hidden: an empty AllOf allows nothing" {
+  let p = AllOf { parts: [] }
+  assert_eq(p.allows("ann", "read"), false)
+  assert_eq(permitted_by(All(p), "ann", ["read", "write"]), [])
+  assert_eq(audit_by(All(p), "ann", ["read"]), "ann: read=no")
+}
+test "hidden: wildcards and near misses" {
+  let p = AllOf { parts: [Grants { rules: ["bob:*"] }, Grants { rules: ["bob:rea", "bob:read"] }] }
+  assert_eq(permitted_by(All(p), "bob", ["rea", "read", "reads"]), ["rea", "read"])
+  assert_eq(permitted_by(Single(Grants { rules: ["bob:rea"] }), "bob", ["read"]), [])
+  assert_eq(permitted_by(Single(Grants { rules: ["*:read"] }), "bob", ["read"]), [])
+}
+test "hidden: order and duplicates kept" {
+  let g = Grants { rules: ["cy:a", "cy:b"] }
+  assert_eq(permitted_by(All(AllOf { parts: [g, g] }), "cy", ["b", "z", "a", "b"]), ["b", "a", "b"])
+  assert_eq(audit(g, "cy", []), "cy: ")
+}

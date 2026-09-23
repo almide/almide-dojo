@@ -1,0 +1,37 @@
+// A to-do list. `due` is a day number (days since the project start);
+// -1 means the task has no deadline.
+type Task: Eq, Repr = { title: String, due: Int }
+
+fn task(title: String, due: Int) -> Task = Task { title: title, due: due }
+
+fn has_due(t: Task) -> Bool = t.due != -1
+
+fn render(t: Task) -> String =
+  if has_due(t) then t.title + " (day " + int.to_string(t.due) + ")" else t.title + " (someday)"
+
+// Titles of the tasks whose deadline is strictly before `today`, in list order.
+fn overdue(ts: List[Task], today: Int) -> List[String] =
+  ts |> list.filter((t) => has_due(t) and t.due < today) |> list.map((t) => t.title)
+
+// Every task, earliest deadline first, tasks without a deadline last; ties keep
+// list order.
+fn agenda(ts: List[Task]) -> List[String] = {
+  let dated = ts |> list.filter(has_due) |> list.sort_by((t) => t.due)
+  let undated = ts |> list.filter((t) => not has_due(t))
+  (dated + undated) |> list.map(render)
+}
+
+// The title of the task due first (the FIRST listed on a tie); none when no
+// task has a deadline.
+fn next_due(ts: List[Task]) -> String? =
+  ts
+    |> list.filter(has_due)
+    |> list.fold(none, (best, t) => match best {
+      none => some(t),
+      some(b) => if t.due < b.due then some(t) else some(b),
+    })
+    |> option.map((t) => t.title)
+
+// Moves a deadline by `days`; a task without a deadline stays without one.
+fn postpone(t: Task, days: Int) -> Task =
+  if has_due(t) then Task { ...t, due: t.due + days } else t

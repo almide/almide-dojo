@@ -1,0 +1,8 @@
+test "clock times" {
+  assert_eq(render(alarm("tea", 7, 5)), "07:05 tea")
+  assert_eq(shift(alarm("a", 9, 50), 20), alarm("a", 10, 10))
+  assert_eq(next_after([alarm("a", 8, 0), alarm("b", 6, 0)], Clock { h: 7, m: 0 }), some("a"))
+}
+test "schedule by clock" {
+  assert_eq(schedule([alarm("late", 10, 30), alarm("early", 9, 5)]), ["09:05 early", "10:30 late"])
+}
