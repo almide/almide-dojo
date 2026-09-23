@@ -1,0 +1,14 @@
+test "hidden: an excused score leaves the average of the others" {
+  assert_eq(report(["name,a,b,c", "ann,90,-,71", "bob,50,60,70"]), ok("ann 80 (1 excused); bob 60"))
+}
+test "hidden: a student with every score excused has no average" {
+  assert_eq(report(["name,a,b", "cy, - ,", "dee,0,0"]), ok("cy n/a (2 excused); dee 0"))
+}
+test "hidden: other errors stay fatal with their row, wherever they are" {
+  assert_eq(report(["name,a,b", "ann,-,x"]), err("row 2: bad score x"))
+  assert_eq(report(["name,a,b", "ann,-,5", "bob,5"]), err("row 3: expected 2 scores, got 1"))
+  assert_eq(report(["name,a", "ann,-", "bob,-3"]), err("row 3: score out of range -3"))
+}
+test "hidden: boundary scores stay valid" {
+  assert_eq(report(["name,a,b,c", "ann,100,0,-"]), ok("ann 50 (1 excused)"))
+}
