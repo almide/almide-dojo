@@ -1,0 +1,52 @@
+// A page-fetching port. `attempt` numbers the try, starting at 1.
+type FetchError: Eq, Repr = | Transient(String) | Missing(String)
+
+protocol Fetcher {
+  fn fetch(f: Self, url: String, attempt: Int) -> String!FetchError
+}
+
+// A scripted remote: a url listed in `flaky` with count k times out on attempts
+// 1..k; after that it answers from `pages`, or reports the page missing.
+type Scripted: Fetcher = { pages: Map[String, String], flaky: Map[String, Int] }
+
+fn Scripted.fetch(s: Scripted, url: String, attempt: Int) -> String!FetchError = {
+  let k = map.get(s.flaky, url) ?? 0
+  if attempt <= k then err(Transient("timeout " + url + " #" + int.to_string(attempt)))
+  else match map.get(s.pages, url) {
+    some(body) => ok(body),
+    none => err(Missing(url)),
+  }
+}
+
+// Retries timeouts until `max` attempts in total have been made.
+type Retrying: Fetcher = { inner: Scripted, max: Int }
+
+fn Retrying.fetch(r: Retrying, url: String, attempt: Int) -> String!FetchError =
+  match r.inner.fetch(url, attempt) {
+    ok(body) => ok(body),
+    err(Transient(msg)) =>
+      if attempt < r.max then r.fetch(url, attempt + 1) else err(Transient(msg)),
+    err(e) => err(e),
+  }
+
+// Every page in url order, each fetched once starting at attempt 1; the first
+// error (in url order) is returned unchanged.
+fn get_all[F: Fetcher](f: F, urls: List[String]) -> List[String]!FetchError =
+  match urls {
+    [] => ok([]),
+    [u, ..rest] => match f.fetch(u, 1) {
+      ok(body) => match get_all(f, rest) {
+        ok(bodies) => ok([body] + bodies),
+        err(e) => err(e),
+      },
+      err(e) => err(e),
+    },
+  }
+
+type Client = | Direct(Scripted) | Retry(Retrying)
+
+fn get_all_with(c: Client, urls: List[String]) -> List[String]!FetchError =
+  match c {
+    Direct(s) => get_all(s, urls),
+    Retry(r) => get_all(r, urls),
+  }

@@ -1,0 +1,33 @@
+// A page-fetching port. `attempt` numbers the try, starting at 1.
+type FetchError: Eq, Repr = | Transient(String) | Missing(String)
+
+protocol Fetcher {
+  fn fetch(f: Self, url: String, attempt: Int) -> String!FetchError
+}
+
+// A scripted remote: a url listed in `flaky` with count k times out on attempts
+// 1..k; after that it answers from `pages`, or reports the page missing.
+type Scripted: Fetcher = { pages: Map[String, String], flaky: Map[String, Int] }
+
+fn Scripted.fetch(s: Scripted, url: String, attempt: Int) -> String!FetchError = {
+  let k = map.get(s.flaky, url) ?? 0
+  if attempt <= k then err(Transient("timeout " + url + " #" + int.to_string(attempt)))
+  else match map.get(s.pages, url) {
+    some(body) => ok(body),
+    none => err(Missing(url)),
+  }
+}
+
+// Every page in url order, each fetched once starting at attempt 1; the first
+// error (in url order) is returned unchanged.
+fn get_all[F: Fetcher](f: F, urls: List[String]) -> List[String]!FetchError =
+  match urls {
+    [] => ok([]),
+    [u, ..rest] => match f.fetch(u, 1) {
+      ok(body) => match get_all(f, rest) {
+        ok(bodies) => ok([body] + bodies),
+        err(e) => err(e),
+      },
+      err(e) => err(e),
+    },
+  }
