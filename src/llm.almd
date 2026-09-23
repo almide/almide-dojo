@@ -53,11 +53,31 @@ fn provider_of(model: String) -> String = {
 // model obeying it (see almai's Sampling doc).
 let SEED: Int = 20260922
 
+// The output-token cap a model is asked for.
+//
+// almai's default is 4096, and a reasoning model spends its scratchpad out
+// of the same cap before it writes a single character of the answer.
+// Measured on @cf/zai-org/glm-5.3-flash (daily lane, 38 tasks, 2026-09-23):
+// at 4096, 24 of 24 empty completions stopped at exactly 4096 completion
+// tokens with finish_reason `length`; at 16384 the empties went to 0. The
+// cap is raised only for the reasoning families, not for everyone: a Llama
+// on Workers AI has a context window smaller than 16384 (llama-3.1-8b's is
+// about 8k), so a global raise would trade a measured fix for an untested
+// rejection on the nightly lane.
+let REASONING_TOKEN_CAP: Int = 16384
+
+fn is_reasoning_model(model: String) -> Bool =
+  string.contains(model, "/glm-")
+
+fn token_cap_for(model: String) -> Int =
+  if is_reasoning_model(model) then REASONING_TOKEN_CAP else almai.defaults().max_tokens
+
 // ONE construction of the request options, used by every call this harness
 // makes and by the probe that reports them. Two expressions would be two
 // places to remember, and the manifest would describe a request nobody sent.
-fn opts_for(system: String, temperature: Float) -> almai.CallOptions =
+fn opts_for(model: String, system: String, temperature: Float) -> almai.CallOptions =
   almai.defaults()
+    |> almai.with_max_tokens(token_cap_for(model))
     |> almai.with_system(system)
     |> almai.with_temperature(temperature)
     |> almai.with_seed(SEED)
@@ -98,7 +118,7 @@ fn sampling_fields(s: almai.Sampling) -> List[(String, Value)] = [
 // credential preflight the empty-completion guard below exists for: a run
 // on a dead key fails here, before it has scored a single task as 0.
 effect fn probe_sampling(model: String, temperature: Float) -> Result[List[(String, Value)], String] = {
-  let opts = opts_for("Reply with the single word OK.", temperature)
+  let opts = opts_for(model, "Reply with the single word OK.", temperature)
   match almai.call_retry(to_almai_spec(model), [almai.user("OK")], opts, 2) {
     err(e) => err("sampling probe failed for '" + model + "': " + e)
     ok(r) => ok(sampling_fields(r.sampling))
@@ -158,7 +178,7 @@ fn empty_completion_reason(model: String, r: almai.LLMResponse) -> String = {
 
 effect fn call(model: String, system: String, user_prompt: String, temperature: Float, max_attempts: Int) -> Result[String, String] = {
   let spec = to_almai_spec(model)
-  let opts = opts_for(system, temperature)
+  let opts = opts_for(model, system, temperature)
   let msgs = [almai.user(user_prompt)]
   match almai.call_retry(spec, msgs, opts, max_attempts) {
     err(e) => err(e)
@@ -274,8 +294,14 @@ test "an echo that claims nothing records null, not zero" {
 test "every measured call and the probe share one options construction" {
   // Not a style point: the probe's echo is only evidence about the run if
   // the run's requests are built by the same expression.
-  let a = opts_for("sys", 0.0)
+  let a = opts_for("cf:@cf/meta/llama-3.1-8b-instruct", "sys", 0.0)
   assert(a.seed == SEED, "the run pins a seed")
   assert(a.temperature == 0.0, "the requested temperature is carried")
   assert(a.system == "sys", "the system prompt is carried")
+}
+
+test "only a reasoning model gets the raised token cap" {
+  assert(opts_for("cf:@cf/zai-org/glm-5.3-flash", "sys", 0.0).max_tokens == REASONING_TOKEN_CAP, "GLM spends its scratchpad out of the cap")
+  assert(opts_for("cf:@cf/meta/llama-3.1-8b-instruct", "sys", 0.0).max_tokens == almai.defaults().max_tokens, "a Llama keeps almai's default, which its context window accepts")
+  assert(opts_for("cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast", "sys", 0.0).max_tokens == 4096, "the nightly lane's request is unchanged")
 }
