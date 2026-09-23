@@ -1,0 +1,25 @@
+// Savings accounts. `bps` is a monthly rate in basis points, e.g. 125 = 1.25 %.
+// A negative balance is an overdraft and is charged the same rate.
+type Account: Eq, Repr = { name: String, cents: Int, bps: Int }
+
+fn account(name: String, cents: Int, bps: Int) -> Account = Account { name: name, cents: cents, bps: bps }
+
+// One month of interest in cents: rounded to the nearest cent, halves away from
+// zero (so an overdraft is charged a negative amount).
+fn interest(a: Account) -> Int = {
+  let p = a.cents * a.bps
+  let q = (int.abs(p) + 5000) / 10000
+  if p < 0 then 0 - q else q
+}
+
+fn accrue(accs: List[Account]) -> List[Account] =
+  accs |> list.map((a) => Account { ...a, cents: a.cents + interest(a) })
+
+fn total_interest(accs: List[Account]) -> Int = accs |> list.fold(0, (acc, a) => acc + interest(a))
+
+fn rate_label(a: Account) -> String =
+  int.to_string(a.bps / 100) + "." + string.pad_start(int.to_string(a.bps % 100), 2, "0") + "%"
+
+// Names of the accounts paying at least `min_bps` basis points, in list order.
+fn at_least(accs: List[Account], min_bps: Int) -> List[String] =
+  accs |> list.filter((a) => a.bps >= min_bps) |> list.map((a) => a.name)

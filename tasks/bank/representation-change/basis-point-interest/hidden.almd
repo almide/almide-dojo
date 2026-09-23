@@ -1,0 +1,23 @@
+test "hidden: halves round away from zero for both signs" {
+  assert_eq(interest(account("a", 200, 125)), 3)
+  assert_eq(interest(account("a", -200, 125)), -3)
+  assert_eq(interest(account("a", 199, 125)), 2)
+  assert_eq(interest(account("a", -199, 125)), -2)
+  assert_eq(interest(account("a", -40, 125)), -1)
+}
+test "hidden: accrue and totals use the same rounding" {
+  let accs = [account("x", -200, 125), account("y", 600, 25), account("z", 0, 900)]
+  assert_eq(total_interest(accs), -3 + 2 + 0)
+  assert_eq(accrue(accs), [account("x", -203, 125), account("y", 602, 25), account("z", 0, 900)])
+}
+test "hidden: labels keep two decimals" {
+  assert_eq(rate_label(account("a", 0, 5)), "0.05%")
+  assert_eq(rate_label(account("a", 0, 1200)), "12.00%")
+  assert_eq(rate_label(account("a", 0, 0)), "0.00%")
+  assert_eq(rate_label(account("a", 0, 1010)), "10.10%")
+}
+test "hidden: at_least is inclusive" {
+  let accs = [account("a", 0, 200), account("b", 0, 199), account("c", 0, 201)]
+  assert_eq(at_least(accs, 200), ["a", "c"])
+  assert_eq(at_least([], 0), [])
+}
