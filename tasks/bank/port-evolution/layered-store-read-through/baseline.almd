@@ -1,0 +1,36 @@
+// A key-value port. `get` answers ok(some(v)) on a hit, ok(none) on a miss,
+// and err(...) when the store could not answer at all.
+protocol Store {
+  fn get(s: Self, key: String) -> String?!
+}
+
+// In-process table: never fails.
+type MemStore: Store = { rows: Map[String, String] }
+fn MemStore.get(s: MemStore, key: String) -> String?! = ok(map.get(s.rows, key))
+
+// A remote table; keys listed in `down` are on an unreachable shard.
+type RemoteStore: Store = { rows: Map[String, String], down: List[String] }
+fn RemoteStore.get(s: RemoteStore, key: String) -> String?! = {
+  guard not list.contains(s.down, key) else err("remote timeout: " + key)
+  ok(map.get(s.rows, key))
+}
+
+// "key=value" or "key missing"; a store error propagates unchanged.
+fn describe[S: Store](s: S, key: String) -> String! =
+  match s.get(key)! {
+    some(v) => key + "=" + v,
+    none => key + " missing",
+  }
+
+// The values of the keys that are present, in key order; misses are skipped,
+// the first store error (in key order) propagates.
+fn fetch_all[S: Store](s: S, keys: List[String]) -> List[String]! = {
+  var out: List[String] = []
+  for k in keys {
+    match s.get(k)! {
+      some(v) => { out = out + [v] },
+      none => { out = out },
+    }
+  }
+  out
+}

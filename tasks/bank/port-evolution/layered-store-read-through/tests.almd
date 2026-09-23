@@ -1,0 +1,9 @@
+test "layered falls back to the remote" {
+  let l = Layered { front: MemStore { rows: ["a": "1"] }, back: RemoteStore { rows: ["b": "2"], down: [] } }
+  assert_eq(fetch_all_via(Both(l), ["a", "b"]), ok(["1", "2"]))
+  assert_eq(describe(l, "b"), ok("b=2"))
+}
+test "local and remote sources" {
+  assert_eq(fetch_all_via(Local(MemStore { rows: ["a": "1"] }), ["a", "z"]), ok(["1"]))
+  assert_eq(fetch_all_via(Remote(RemoteStore { rows: ["a": "1"], down: [] }), ["a"]), ok(["1"]))
+}
