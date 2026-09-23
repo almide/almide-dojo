@@ -1,0 +1,21 @@
+test "hidden: minus one is a real deadline" {
+  let ts = [task("x", some(-1)), task("y", none), task("z", some(0))]
+  assert_eq(render(task("x", some(-1))), "x (day -1)")
+  assert_eq(overdue(ts, 0), ["x"])
+  assert_eq(next_due(ts), some("x"))
+  assert_eq(postpone(task("x", some(-1)), 1), task("x", some(0)))
+}
+test "hidden: undated tasks go last" {
+  let ts = [task("u1", none), task("d", some(5)), task("u2", none), task("e", some(-7)), task("f", some(5))]
+  assert_eq(agenda(ts), ["e (day -7)", "d (day 5)", "f (day 5)", "u1 (someday)", "u2 (someday)"])
+}
+test "hidden: next_due ties and none" {
+  assert_eq(next_due([task("p", some(3)), task("q", some(3))]), some("p"))
+  assert_eq(next_due([task("p", none), task("q", none)]), none)
+  assert_eq(next_due([]), none)
+}
+test "hidden: boundaries" {
+  let ts = [task("today", some(4)), task("late", some(3)), task("never", none)]
+  assert_eq(overdue(ts, 4), ["late"])
+  assert_eq(postpone(task("n", none), 5), task("n", none))
+}

@@ -1,0 +1,11 @@
+test "optional deadlines" {
+  assert_eq(render(task("idea", none)), "idea (someday)")
+  assert_eq(render(task("prep", some(-3))), "prep (day -3)")
+  assert_eq(postpone(task("a", some(2)), 3), task("a", some(5)))
+}
+test "agenda and overdue with options" {
+  let ts = [task("b", some(4)), task("idea", none), task("a", some(2))]
+  assert_eq(agenda(ts), ["a (day 2)", "b (day 4)", "idea (someday)"])
+  assert_eq(overdue(ts, 3), ["a"])
+  assert_eq(next_due(ts), some("a"))
+}
