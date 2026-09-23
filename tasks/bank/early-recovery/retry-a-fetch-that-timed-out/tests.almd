@@ -1,0 +1,8 @@
+test "a timeout is retried" {
+  let net: Map[String, List[String]] = ["a": ["timeout", "ok:A"]]
+  assert_eq(fetch_all(net, ["a"]) |> result.map((r) => show(r)), ok("A (2 attempts)"))
+}
+test "an unknown url is still fatal" {
+  let net: Map[String, List[String]] = ["a": ["ok:A"]]
+  assert_eq(fetch_all(net, ["a", "b"]) |> result.map((r) => show(r)), err(NoRoute("b")))
+}
