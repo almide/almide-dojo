@@ -33,6 +33,10 @@
 #       reported off; BANK_REQUIRE_RESOURCE=1 makes that an error.
 #   (f) with wasmtime on PATH: solution + tests + hidden differ between native and
 #       wasm (cross-target agreement is part of the score).
+# Filter (authoring loop): check only some tasks, in seconds —
+#   bash scripts/check-bank.sh tasks/bank/<family>/<name> [more task or family dirs]
+#   BANK_ONLY=<family>/<name>,<family> bash scripts/check-bank.sh
+# A filter that matches no task is an error, never a silent green.
 # Pure shell + the `almide` binary on PATH; every compile is a real compile.
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
@@ -69,9 +73,21 @@ run_triple() {
 }
 meta() { grep -E "^[[:space:]]*$2[[:space:]]*=" "$1/meta.toml" | head -1 | sed -E 's/^[^=]*=[[:space:]]*//; s/"//g; s/#.*$//; s/[[:space:]]+$//'; }
 
+# The task list: every task, or the ones named by the arguments / BANK_ONLY.
+want=()
+for a in "$@"; do a="${a%/}"; want+=("${a#$BANK/}"); done
+if [ -n "${BANK_ONLY:-}" ]; then IFS=',' read -ra only <<<"$BANK_ONLY"; for a in "${only[@]}"; do a="${a%/}"; want+=("${a#$BANK/}"); done; fi
+selected() {
+  [ "${#want[@]}" = 0 ] && return 0
+  local name="$1" w
+  for w in "${want[@]}"; do [ "$name" = "$w" ] || [ "${name%%/*}" = "$w" ] && return 0; done
+  return 1
+}
+
 n=0
 for dir in "$BANK"/*/*/; do
   dir="${dir%/}"; [ -d "$dir" ] || continue
+  selected "${dir#$BANK/}" || continue
   n=$((n+1)); name="${dir#$BANK/}"; famdir="${name%%/*}"
   for f in baseline solution tests hidden; do [ -f "$dir/$f.almd" ] || err "$name: missing $f.almd"; done
   for f in prompt.md meta.toml; do [ -f "$dir/$f" ] || err "$name: missing $f"; done
@@ -112,6 +128,6 @@ for dir in "$BANK"/*/*/; do
     run_triple "$dir" solution --target wasm || err "$name: solution passes natively but not on --target wasm"
   fi
 done
-[ "$n" -gt 0 ] || err "no bank tasks found under $BANK"
+[ "$n" -gt 0 ] || err "no bank tasks found under $BANK${want:+ matching: ${want[*]}}"
 echo "bank gate: $n task(s), wasm leg $([ "$HAVE_WASM" = 1 ] && echo on || echo off), resource leg $([ "$HAVE_RES" = 1 ] && echo on || echo "off ($RES_STATE)")"
 [ "$fail" = 0 ] && { echo "bank gate OK"; exit 0; } || { echo "bank gate FAILED"; exit 1; }
