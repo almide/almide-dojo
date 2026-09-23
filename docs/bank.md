@@ -75,13 +75,46 @@ a contract's `challenge` array, and this file is what that link resolves to.
 | `nested-scopes` | a batch of temporary analyses | inner cleanup keeps outer data; repeats do not accumulate (resource) |
 | `helper-extraction` | extract a helper | a pure refactor: no new accepted or rejected inputs (+ allocation routing, resource) |
 
-Four families protect a RESOURCE observation (ownership outstanding at a
-boundary). That oracle needs the compiler's checked exit plan and boundary
-counter (almide/almide#1995, #1996); until they land those tasks carry
-`resource_oracle = "pending"`, score only their behavioural half, and are
-allowed to omit `wrong.almd`. The gate flips to requiring it the day the field
-becomes `active`. RSS is never the oracle: the counter is a side channel and
-must not alter stdout/stderr.
+Four families protect a RESOURCE observation. The resource oracle
+(`scripts/resource-oracle.sh`, almide-dojo#5) is the third oracle beside
+behaviour and cross-target:
+
+- A resource task ships `probe.almd`, an `effect fn main` that drives the
+  task's boundary `__K__` times and keeps every result live, and
+  `wrong_resource.almd`, a plausible patch that passes the visible tests AND the
+  hidden oracle and differs only in what it keeps or allocates.
+- The probe is appended to the program and run at two scales
+  (`resource_scales`) on both targets with the compiler's allocation counters
+  armed (`ALMIDE_ALLOC_COUNT` native, `ALMIDE_WASM_ALLOC_COUNT` wasm). The
+  metric is `peak` (native peak / wasm `heap_end`: live storage) or `allocs`
+  (allocation count: routing).
+- Bound: `candidate_growth <= reference_growth * resource_factor_pct / 100 +
+  resource_slack` on every target, the reference being the task's own
+  `solution.almd` measured by the same compiler in the same run — growth, not
+  level, so the probe's fixed costs cancel; the reference, not a pinned number,
+  so a compiler change moves both sides. This is almide-dojo#5's
+  `live_payload <= A * largest_batch + B` form. It is an allocator figure, not
+  RSS, and the counter lines never reach the behaviour oracle.
+- A violation is scored like a silent violation: the model is told only that a
+  resource listed under Preserve changed, and may repair within the budget.
+- A compiler that prints no counter line cannot judge a resource task: those
+  cells are `harness-limitation` (not asked, not scored) and the run is
+  `not-comparable`. The gate reports the resource leg off;
+  `BANK_REQUIRE_RESOURCE=1` makes that an error.
+
+| family | metric | `wrong_resource.almd` |
+|---|---|---|
+| `callback-retention` | peak | the closure computes the summary when it runs, so it captures `xs` |
+| `nested-scopes` | peak | every group sorted up front, all sorted copies live at once |
+| `helper-extraction` | allocs | the helper trims the line first (`int.parse` already accepts the whitespace) |
+| `scope-escape` | — | `pending` (below) |
+
+`scope-escape` stays `resource_oracle = "pending"`. Its observation is
+outstanding ownership AT the `diagnose` return, and `diagnose -> String` makes
+a model-side escape unrepresentable; what is left to observe is the compiler
+honouring the boundary, which needs a per-boundary read of the live set on a
+side channel — almide/almide#2581. The process-end totals above cannot express
+it.
 
 Every family also needs positive counterexamples to over-restriction (repeated
 reads inside a scope, legitimate long-lived outputs created outside it). A
