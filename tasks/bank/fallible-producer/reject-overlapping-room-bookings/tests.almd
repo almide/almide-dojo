@@ -1,0 +1,7 @@
+test "overlapping bookings in one room are an error" {
+  assert(result.is_err(book_all(["A 09:00-10:00 ann", "A 09:30-11:00 bob"])))
+}
+test "separate rooms and separate times still work" {
+  assert_eq(book_all(["A 09:00-10:00 ann", "B 09:00-10:00 bob", "A 11:00-12:00 cy"]) |> result.map((s) => agenda(s)),
+    ok("A: 09:00-10:00 ann, 11:00-12:00 cy / B: 09:00-10:00 bob"))
+}
