@@ -1,0 +1,11 @@
+test "hidden: earliest unclosed opener" {
+  assert_eq(check_lines(["(a[b", "{[()]", "a(b)c[d{e"]), ["open@0", "open@0", "open@5"])
+}
+test "hidden: lines never share state" {
+  assert_eq(check_lines(["((", "))", ""]), ["open@0", "bad@0", "ok"])
+  assert_eq(check_lines([]), [])
+}
+test "hidden: balanced unchanged" {
+  assert_eq(balanced("{[]}()"), true)
+  assert_eq(balanced("(}"), false)
+}

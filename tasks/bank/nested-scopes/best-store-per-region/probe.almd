@@ -1,0 +1,8 @@
+// Resource probe: __K__ regions of 2,000 one-sale stores. Each region's
+// (store, total) pairs belong to its own step, so the batch grows by the input
+// only; listing every region's pairs first keeps them all live.
+effect fn main() -> Unit = {
+  let regions = list.range(0, __K__) |> list.map((i) =>
+    Region { name: "r" + int.to_string(i), stores: list.range(0, 2000) |> list.map((j) => Store { name: "store-number-" + int.to_string(j) + "-of-region-" + int.to_string(i) + "-downtown", sales: [(j * 31 + i) % 1000] }) })
+  println(int.to_string(best_stores(regions) |> list.fold(0, (a, s) => a + string.len(s))))
+}

@@ -1,0 +1,7 @@
+// Resource probe: __K__ matrices of 60 x 60. Each transpose belongs to its own
+// step, so the batch grows by the input only; transposing every matrix first
+// keeps all the transposes live.
+effect fn main() -> Unit = {
+  let ms = list.range(0, __K__) |> list.map((i) => list.range(0, 60) |> list.map((r) => list.range(0, 60) |> list.map((c) => (r * c + i) % 10)))
+  println(int.to_string(column_sums_batch(ms) |> list.fold(0, (a, s) => a + string.len(s))))
+}

@@ -1,0 +1,40 @@
+// Bracket balance of one line over ()[]{}; other characters are ignored.
+fn closer_of(open: String) -> String = match open { "(" => ")", "[" => "]", _ => "}" }
+
+fn is_open(c: String) -> Bool = c == "(" or c == "[" or c == "{"
+
+fn is_close(c: String) -> Bool = c == ")" or c == "]" or c == "}"
+
+// The stack holds (position, opener). Returns the stack left at the end, or
+// the position of the first character that closes wrongly.
+fn scan(chars: List[String], i: Int, stack: List[(Int, String)]) -> Result[List[(Int, String)], Int] =
+  match list.get(chars, i) {
+    none => ok(stack),
+    some(c) =>
+      if is_open(c) then scan(chars, i + 1, stack + [(i, c)])
+      else if is_close(c) then match list.last(stack) {
+        some((_, o)) => if closer_of(o) == c then scan(chars, i + 1, list.drop_end(stack, 1)) else err(i),
+        none => err(i),
+      }
+      else scan(chars, i + 1, stack),
+  }
+
+fn balanced(line: String) -> Bool =
+  match scan(string.chars(line), 0, []) {
+    ok(st) => list.is_empty(st),
+    err(_) => false,
+  }
+
+// Plausible wrong patch: splits every line into characters first and scans
+// afterwards, so every line's character list is live at once.
+fn check_lines(lines: List[String]) -> List[String] = {
+  let split = lines |> list.map((l) => string.chars(l))
+  split |> list.map((cs) =>
+    match scan(cs, 0, []) {
+      err(i) => "bad@" + int.to_string(i),
+      ok(st) => match list.first(st) {
+        some((i, _)) => "open@" + int.to_string(i),
+        none => "ok",
+      },
+    })
+}

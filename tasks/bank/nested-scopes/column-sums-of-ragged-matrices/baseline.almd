@@ -1,0 +1,10 @@
+// Ragged matrices: rows may have different lengths; a missing cell counts as 0.
+fn width(rows: List[List[Int]]) -> Int = rows |> list.fold(0, (w, r) => int.max(w, list.len(r)))
+
+fn cell(rows: List[List[Int]], r: Int, c: Int) -> Int = list.get(rows, r) |> option.flat_map((row) => list.get(row, c)) ?? 0
+
+// The transpose, padded with zeros to a full rectangle.
+fn transpose(rows: List[List[Int]]) -> List[List[Int]] =
+  list.range(0, width(rows)) |> list.map((c) => list.range(0, list.len(rows)) |> list.map((r) => cell(rows, r, c)))
+
+fn row_sums(rows: List[List[Int]]) -> List[Int] = rows |> list.map((r) => list.sum(r))

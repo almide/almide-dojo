@@ -1,0 +1,4 @@
+test "best stores" {
+  let rs = [Region { name: "n", stores: [Store { name: "a", sales: [1, 2] }, Store { name: "b", sales: [5] }] }, Region { name: "s", stores: [] }]
+  assert_eq(best_stores(rs), ["n: b 5", "s: none"])
+}

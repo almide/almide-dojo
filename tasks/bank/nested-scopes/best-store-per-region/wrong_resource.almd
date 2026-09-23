@@ -1,0 +1,30 @@
+// Regions hold stores; each store has a list of daily sales. Store names are
+// only unique WITHIN a region: "central" in two regions is two stores.
+type Store = { name: String, sales: List[Int] }
+type Region = { name: String, stores: List[Store] }
+
+fn store_total(s: Store) -> Int = s.sales |> list.fold(0, (a, x) => a + x)
+
+fn region_total(r: Region) -> Int = r.stores |> list.fold(0, (a, s) => a + store_total(s))
+
+fn overview(regions: List[Region]) -> List[String] =
+  regions |> list.map((r) => r.name + "=" + int.to_string(region_total(r)))
+
+// Plausible wrong patch: lists every region's (store, total) pairs first and
+// picks the bests afterwards, so every region's pair list is live at once.
+fn best_stores(regions: List[Region]) -> List[String] = {
+  let ranked = regions |> list.map((r) => (r.name, r.stores |> list.map((s) => (s.name, store_total(s)))))
+  ranked |> list.map(((rname, pairs)) => {
+    let best = pairs |> list.fold(none, (acc, p) => {
+      let (_, t) = p
+      match acc {
+        some((_, bt)) => if t > bt then some(p) else acc,
+        none => some(p),
+      }
+    })
+    match best {
+      some((name, t)) => rname + ": " + name + " " + int.to_string(t),
+      none => rname + ": none",
+    }
+  })
+}

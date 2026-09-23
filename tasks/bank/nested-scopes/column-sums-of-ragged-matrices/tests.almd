@@ -1,0 +1,3 @@
+test "column sums" {
+  assert_eq(column_sums_batch([[[1, 2], [3, 4]], [[5]]]), ["4,6", "5"])
+}

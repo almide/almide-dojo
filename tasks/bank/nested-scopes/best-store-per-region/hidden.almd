@@ -1,0 +1,16 @@
+test "hidden: same name in two regions" {
+  let rs = [
+    Region { name: "n", stores: [Store { name: "central", sales: [4] }, Store { name: "dock", sales: [5] }] },
+    Region { name: "s", stores: [Store { name: "central", sales: [3] }, Store { name: "mall", sales: [6] }] },
+  ]
+  assert_eq(best_stores(rs), ["n: dock 5", "s: mall 6"])
+}
+test "hidden: repeated name inside a region, ties" {
+  let rs = [Region { name: "e", stores: [Store { name: "x", sales: [3] }, Store { name: "y", sales: [4] }, Store { name: "x", sales: [2] }] }]
+  assert_eq(best_stores(rs), ["e: y 4"])
+  let ts = [Region { name: "w", stores: [Store { name: "p", sales: [2, -1] }, Store { name: "q", sales: [1] }] }]
+  assert_eq(best_stores(ts), ["w: p 1"])
+}
+test "hidden: overview unchanged" {
+  assert_eq(overview([Region { name: "z", stores: [] }]), ["z=0"])
+}

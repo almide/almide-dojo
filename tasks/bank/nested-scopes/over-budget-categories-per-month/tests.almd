@@ -1,0 +1,5 @@
+test "budget report" {
+  let limits = map.from_list([("food", 100), ("rent", 900)])
+  let ms = [Month { name: "jan", expenses: [("food", 60), ("rent", 900), ("food", 50)] }, Month { name: "feb", expenses: [("food", 10)] }]
+  assert_eq(budget_report(limits, ms), ["jan: food", "feb: ok"])
+}

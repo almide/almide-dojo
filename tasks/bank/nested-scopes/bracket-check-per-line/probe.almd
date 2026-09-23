@@ -1,0 +1,7 @@
+// Resource probe: __K__ lines of 3,000 characters. Each line's character list
+// and stack belong to its own step, so the batch grows by the input only;
+// splitting every line first keeps all the character lists live.
+effect fn main() -> Unit = {
+  let lines = list.range(0, __K__) |> list.map((i) => string.repeat("(a)", 1000 + i))
+  println(int.to_string(list.len(check_lines(lines))))
+}

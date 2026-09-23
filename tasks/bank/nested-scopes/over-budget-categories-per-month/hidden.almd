@@ -1,0 +1,14 @@
+test "hidden: unlimited categories are never over" {
+  let limits = map.from_list([("food", 100)])
+  let ms = [Month { name: "mar", expenses: [("fun", 5), ("food", 101), ("gift", 1)] }, Month { name: "apr", expenses: [("fun", 999)] }]
+  assert_eq(budget_report(limits, ms), ["mar: food", "apr: ok"])
+}
+test "hidden: equal is ok, order of first expense" {
+  let limits = map.from_list([("a", 10), ("b", 0), ("c", 5)])
+  let ms = [Month { name: "m", expenses: [("c", 6), ("a", 10), ("b", 1)] }, Month { name: "n", expenses: [] }]
+  assert_eq(budget_report(limits, ms), ["m: c,b", "n: ok"])
+  assert_eq(budget_report(limits, []), [])
+}
+test "hidden: spent unchanged" {
+  assert_eq(spent(Month { name: "x", expenses: [("a", 3), ("b", -1)] }), 2)
+}

@@ -1,0 +1,11 @@
+test "hidden: isolated universe nodes count" {
+  assert_eq(components_batch(["a", "b", "c", "d"], [[("a", "b")], []]), [3, 4])
+  assert_eq(components_batch([], [[("x", "y")], []]), [1, 0])
+}
+test "hidden: edge nodes outside the universe" {
+  assert_eq(components_batch(["a"], [[("p", "q"), ("q", "r")], [("a", "z")]]), [2, 1])
+  assert_eq(components_batch(["a"], []), [])
+}
+test "hidden: components unchanged" {
+  assert_eq(components(["a", "b"], [("a", "c")]), 2)
+}
