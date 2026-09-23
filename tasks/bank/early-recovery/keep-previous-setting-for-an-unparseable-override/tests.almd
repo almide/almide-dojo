@@ -1,0 +1,7 @@
+test "an unparseable int override keeps the default" {
+  assert_eq(load(["port=http", "workers=8"]) |> result.map((s) => show(s)),
+    ok("debug=false name=app port=80 timeout=30 workers=8 | ignored port=http: not an int; set workers=8"))
+}
+test "an unknown setting is still fatal" {
+  assert_eq(load(["colour=red"]) |> result.map((s) => show(s)), err("unknown setting colour"))
+}

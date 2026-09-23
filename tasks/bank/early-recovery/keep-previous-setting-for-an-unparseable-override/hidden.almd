@@ -1,0 +1,20 @@
+test "hidden: an out-of-range int is still fatal with its exact message" {
+  assert_eq(load(["workers=2", "port=70000"]) |> result.map((s) => show(s)), err("bad value for port: 70000 not in 1..65535"))
+  assert_eq(load(["timeout=-1"]) |> result.map((s) => show(s)), err("bad value for timeout: -1 not in 0..3600"))
+}
+test "hidden: an unparseable bool keeps the default, with its own note" {
+  assert_eq(load(["debug=yes"]) |> result.map((s) => show(s)),
+    ok("debug=false name=app port=80 timeout=30 workers=4 | ignored debug=yes: not a bool"))
+}
+test "hidden: recovery keeps the value from an earlier override, not the default" {
+  assert_eq(load(["port=8080", "# comment", "port=eighty", "", "debug=true", "debug=1"]) |> result.map((s) => show(s)),
+    ok("debug=true name=app port=8080 timeout=30 workers=4 | set port=8080; ignored port=eighty: not an int; set debug=true; ignored debug=1: not a bool"))
+}
+test "hidden: boundary values and text settings stay valid" {
+  assert_eq(load(["timeout=0", "port=65535", "name=a=b"]) |> result.map((s) => show(s)),
+    ok("debug=false name=a=b port=65535 timeout=0 workers=4 | set timeout=0; set port=65535; set name=a=b"))
+}
+test "hidden: malformed lines and unknown keys stay fatal wherever they are" {
+  assert_eq(load(["port=x", "=3"]) |> result.map((s) => show(s)), err("malformed: =3"))
+  assert_eq(load(["debug=maybe", "colour=zz"]) |> result.map((s) => show(s)), err("unknown setting colour"))
+}
