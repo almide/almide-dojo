@@ -1,0 +1,255 @@
+// THE NEAR-DUPLICATE GATE for the contract-preserving bank (almide-dojo#3).
+//
+// A bank task counts as an independent cluster only when its code shape differs
+// from every other task of its family; a renamed copy (new identifiers, new
+// constants, new messages, a different domain noun) is NOT a new cluster
+// (docs/bank.md, "renamings and seeds do not add independent clusters").
+//
+// Every baseline.almd is reduced to a token stream in which identifiers become
+// `ID`, number literals `NUM` and string literals `STR`; keywords, type names,
+// stdlib modules and the member named after a stdlib module (`list.map`) stay
+// verbatim, so the stream is the program's SHAPE. Two baselines are compared by
+// the Jaccard similarity of their token 6-gram sets. A pair inside one family at
+// or above THRESHOLD_PCT is refused.
+//
+//   almide run scripts/bank_dedup.almd -- tasks/bank            gate (exit 1 on a near-duplicate)
+//   almide run scripts/bank_dedup.almd -- tasks/bank --matrix   every pair, every family (calibration)
+//   almide test scripts/bank_dedup.almd                         self-test: a renamed copy MUST be refused
+//
+// Calibration (2026-09-24, the 8 seed tasks, one per family, all 28 pairs):
+// the highest cross-task similarity is 26%; a renamed copy of a seed (every
+// identifier, constant and message changed, two functions swapped) scores 94%;
+// a seed's own solution posed as a second baseline ("a repeated edit to one
+// baseline") scores 90% / 75% for the one- and five-line edits and 48% / 41%
+// where the edit adds a new type and function (not refused: that is new code).
+// THRESHOLD_PCT sits between them with room on both sides: same-family tasks
+// legitimately share idioms (a parse loop, a `list.map(... !)!`), so the bar is
+// "most of the program is the same shape", not "some of it is".
+import fs
+import process
+
+let THRESHOLD_PCT = 60
+let SHINGLE = 6
+
+let KEEP = set.from_list([
+  "fn", "let", "var", "type", "match", "if", "then", "else", "guard", "for", "in",
+  "while", "effect", "test", "protocol", "some", "none", "ok", "err", "true", "false",
+  "and", "or", "not", "import", "mod", "local", "self", "Self", "mut",
+  "Int", "String", "Bool", "Float", "List", "Map", "Set", "Unit", "Option", "Result",
+  "Value", "Eq", "Repr", "Ord", "Hash", "Codec",
+  "string", "list", "map", "set", "int", "float", "option", "result", "math", "value",
+  "bytes", "json", "fs", "io", "process", "regex",
+])
+
+let MODULES = set.from_list([
+  "string", "list", "map", "set", "int", "float", "option", "result", "math", "value",
+  "bytes", "json", "fs", "io", "process", "regex",
+])
+
+fn is_ident_start(c: String) -> Bool = string.is_alpha(c) or c == "_"
+fn is_ident_char(c: String) -> Bool = string.is_alphanumeric(c) or c == "_"
+
+fn at(cs: List[String], i: Int) -> String = list.get(cs, i) ?? ""
+
+// Index just past the run of characters satisfying `pred` starting at `i`.
+fn scan_while(cs: List[String], i: Int, pred: (String) -> Bool) -> Int =
+  if i < list.len(cs) and pred(at(cs, i)) then scan_while(cs, i + 1, pred) else i
+
+// Index just past the end of the line starting at `i`.
+fn skip_line(cs: List[String], i: Int) -> Int = scan_while(cs, i, (c) => c != "\n")
+
+// Index just past a `"..."` literal whose opening quote is at `i`.
+fn skip_string(cs: List[String], i: Int) -> Int =
+  if i >= list.len(cs) then i
+  else match at(cs, i) {
+    "\\" => skip_string(cs, i + 2),
+    "\"" => i + 1,
+    _ => skip_string(cs, i + 1),
+  }
+
+// Index just past a `"""` heredoc whose body starts at `i`.
+fn skip_heredoc(cs: List[String], i: Int) -> Int =
+  if i >= list.len(cs) then i
+  else if at(cs, i) == "\"" and at(cs, i + 1) == "\"" and at(cs, i + 2) == "\"" then i + 3
+  else skip_heredoc(cs, i + 1)
+
+// The shape of a word: kept verbatim when it is language surface, `ID` otherwise.
+// A member access on a stdlib module (`list.map`) keeps the member name.
+fn classify(word: String, prev: List[String]) -> String = {
+  let n = list.len(prev)
+  let after_module = n >= 2 and at(prev, n - 1) == "." and set.contains(MODULES, at(prev, n - 2))
+  if set.contains(KEEP, word) or after_module then word else "ID"
+}
+
+fn tokens(src: String) -> List[String] = {
+  let cs = string.chars(src)
+  let n = list.len(cs)
+  var out: List[String] = []
+  var i = 0
+  while i < n {
+    let c = at(cs, i)
+    if string.is_whitespace(c) then { i = i + 1 }
+    else if c == "/" and at(cs, i + 1) == "/" then { i = skip_line(cs, i) }
+    else if c == "\"" and at(cs, i + 1) == "\"" and at(cs, i + 2) == "\"" then {
+      out = out + ["STR"]
+      i = skip_heredoc(cs, i + 3)
+    }
+    else if c == "\"" then {
+      out = out + ["STR"]
+      i = skip_string(cs, i + 1)
+    }
+    else if string.is_digit(c) then {
+      out = out + ["NUM"]
+      i = scan_while(cs, i, (d) => is_ident_char(d) or d == ".")
+    }
+    else if is_ident_start(c) then {
+      let j = scan_while(cs, i, is_ident_char)
+      let word = string.join(list.slice(cs, i, j), "")
+      out = out + [classify(word, out)]
+      i = j
+    }
+    else {
+      out = out + [c]
+      i = i + 1
+    }
+  }
+  out
+}
+
+fn shingles(toks: List[String]) -> Set[String] =
+  if list.len(toks) < SHINGLE then set.from_list([string.join(toks, " ")])
+  else
+    list.range(0, list.len(toks) - SHINGLE + 1)
+      |> list.map((i) => string.join(list.slice(toks, i, i + SHINGLE), " "))
+      |> set.from_list
+
+// Jaccard similarity of the two sources' shingle sets, in whole percent.
+fn jaccard_pct(sa: Set[String], sb: Set[String]) -> Int = {
+  let uni = set.len(set.union(sa, sb))
+  if uni == 0 then 100 else set.len(set.intersection(sa, sb)) * 100 / uni
+}
+
+fn similarity_pct(a: String, b: String) -> Int = jaccard_pct(shingles(tokens(a)), shingles(tokens(b)))
+
+type Baseline = { family: String, task: String, shape: Set[String] }
+
+type Pair = { a: Baseline, b: Baseline, pct: Int }
+
+effect fn load(root: String) -> List[Baseline] = {
+  let families = fs.list_dir(root)! |> list.sort |> list.filter((f) => fs.is_dir("${root}/${f}"))
+  var out: List[Baseline] = []
+  for fam in families {
+    let tasks = fs.list_dir("${root}/${fam}")! |> list.sort
+    for t in tasks {
+      let path = "${root}/${fam}/${t}/baseline.almd"
+      if fs.is_file(path) then {
+        let src = fs.read_text(path)!
+        out = out + [Baseline { family: fam, task: t, shape: shingles(tokens(src)) }]
+      } else { () }
+    }
+  }
+  out
+}
+
+fn pairs(bs: List[Baseline], same_family_only: Bool) -> List[Pair] =
+  bs |> list.enumerate |> list.flat_map(((i, a)) =>
+    bs |> list.drop(i + 1)
+      |> list.filter((b) => not same_family_only or a.family == b.family)
+      |> list.map((b) => Pair { a: a, b: b, pct: jaccard_pct(a.shape, b.shape) }))
+
+fn label(b: Baseline) -> String = "${b.family}/${b.task}"
+
+effect fn main() -> Unit = {
+  let args = process.args()
+  let root = list.get(args, 1) ?? "tasks/bank"
+  let matrix = list.contains(args, "--matrix")
+  let bs = load(root)!
+  let ps = pairs(bs, not matrix) |> list.sort_by((p) => 0 - p.pct)
+  if matrix then {
+    for p in ps { println("${int.to_string(p.pct)}%\t${label(p.a)}\t${label(p.b)}") }
+  } else { () }
+  let dups = ps |> list.filter((p) => p.pct >= THRESHOLD_PCT)
+  for p in dups {
+    println("::error::near-duplicate baselines (${int.to_string(p.pct)}% >= ${int.to_string(THRESHOLD_PCT)}% token-shape similarity): ${label(p.a)} and ${label(p.b)} — a renamed or re-constanted task is not an independent cluster")
+  }
+  let top = list.first(ps) |> option.map((p) => "${int.to_string(p.pct)}% (${label(p.a)} ~ ${label(p.b)})") ?? "no same-family pair"
+  println("bank dedup: ${int.to_string(list.len(bs))} baseline(s), ${int.to_string(list.len(ps))} pair(s) compared, highest ${top}, threshold ${int.to_string(THRESHOLD_PCT)}%")
+  if not list.is_empty(dups) then process.exit(1) else ()
+}
+
+// ---- self-test: the renamed copy of a seed MUST be refused, the seeds MUST pass ----
+
+let SEED = r"""
+// Inventory line parser. A line is "<sku>,<qty>,<unit_price>".
+type Line: Eq, Repr = { sku: String, qty: Int, unit_price: Int }
+
+fn parse_line(raw: String) -> Line! = {
+  let parts = string.split(raw, ",")
+  guard list.len(parts) == 3 else err("bad field count: " + raw)
+  let sku = list.get(parts, 0) ?? ""
+  let qty = int.parse(list.get(parts, 1) ?? "")!
+  let price = int.parse(list.get(parts, 2) ?? "")!
+  Line { sku: sku, qty: qty, unit_price: price }
+}
+
+fn parse_all(lines: List[String]) -> List[Line]! =
+  lines |> list.map((l) => parse_line(l)!)!
+
+fn total(lines: List[Line]) -> Int =
+  lines |> list.fold(0, (acc, l) => acc + l.qty * l.unit_price)
+"""
+
+// Every identifier, separator, constant and message changed, a new domain noun,
+// the two top-level functions swapped: the same program.
+let RENAMED = r"""
+// Payroll record reader. A record is "<emp>;<hours>;<rate>".
+type Shift: Eq, Repr = { employee: String, hours: Int, rate: Int }
+
+fn payroll(shifts: List[Shift]) -> Int =
+  shifts |> list.fold(0, (sum, s) => sum + s.hours * s.rate)
+
+fn read_shift(text: String) -> Shift! = {
+  let cols = string.split(text, ";")
+  guard list.len(cols) == 3 else err("wrong column count in " + text)
+  let emp = list.get(cols, 0) ?? "?"
+  let hours = int.parse(list.get(cols, 1) ?? "0")!
+  let rate = int.parse(list.get(cols, 2) ?? "0")!
+  Shift { employee: emp, hours: hours, rate: rate }
+}
+
+fn read_all(texts: List[String]) -> List[Shift]! =
+  texts |> list.map((t) => read_shift(t)!)!
+"""
+
+// The port-evolution seed: a different family shape entirely.
+let OTHER = r"""
+protocol Repo {
+  fn find(r: Self, id: String) -> String?
+}
+
+type MemRepo: Repo = { rows: Map[String, String] }
+fn MemRepo.find(r: MemRepo, id: String) -> String? = map.get(r.rows, id)
+
+fn greet[R: Repo](repo: R, id: String) -> String =
+  match repo.find(id) {
+    some(name) => "hi " + name,
+    none => "who?",
+  }
+"""
+
+test "a renamed copy of a seed is refused" {
+  assert(similarity_pct(SEED, RENAMED) >= THRESHOLD_PCT)
+}
+
+test "two different seeds are not near-duplicates" {
+  assert(similarity_pct(SEED, OTHER) < THRESHOLD_PCT)
+}
+
+test "identifiers, numbers and strings become placeholders" {
+  assert_eq(tokens("let qty = int.parse(\"7\")! + 42 // note"),
+    ["let", "ID", "=", "int", ".", "parse", "(", "STR", ")", "!", "+", "NUM"])
+}
+
+test "a file is identical to itself" {
+  assert_eq(similarity_pct(SEED, SEED), 100)
+}

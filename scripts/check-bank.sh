@@ -33,6 +33,11 @@
 #       reported off; BANK_REQUIRE_RESOURCE=1 makes that an error.
 #   (f) with wasmtime on PATH: solution + tests + hidden differ between native and
 #       wasm (cross-target agreement is part of the score).
+#   (h) two baselines of one family are near-duplicates (scripts/bank_dedup.almd:
+#       identifiers/literals normalised to placeholders, token 6-gram Jaccard at or
+#       above its calibrated threshold) — a renamed task is not an independent cluster.
+#       Always over the WHOLE bank, so a filtered run still sees every sibling.
+#
 # Filter (authoring loop): check only some tasks, in seconds —
 #   bash scripts/check-bank.sh tasks/bank/<family>/<name> [more task or family dirs]
 #   BANK_ONLY=<family>/<name>,<family> bash scripts/check-bank.sh
@@ -129,5 +134,9 @@ for dir in "$BANK"/*/*/; do
   fi
 done
 [ "$n" -gt 0 ] || err "no bank tasks found under $BANK${want:+ matching: ${want[*]}}"
+# (h) no two baselines of a family are near-duplicates (self-test first: a renamed
+# copy of a seed must be refused, or the gate itself is broken)
+almide test scripts/bank_dedup.almd >"$TMP/dedup-test.log" 2>&1 || err "scripts/bank_dedup.almd self-test failed ($(tail -5 "$TMP/dedup-test.log" | tr '\n' ' '))"
+almide run scripts/bank_dedup.almd -- "$BANK" || fail=1
 echo "bank gate: $n task(s), wasm leg $([ "$HAVE_WASM" = 1 ] && echo on || echo off), resource leg $([ "$HAVE_RES" = 1 ] && echo on || echo "off ($RES_STATE)")"
 [ "$fail" = 0 ] && { echo "bank gate OK"; exit 0; } || { echo "bank gate FAILED"; exit 1; }

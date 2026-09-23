@@ -57,6 +57,17 @@ requirements: everything the oracle checks is stated in words under Preserve.
 | wrong + hidden FAILS | the bank discriminates |
 | solution on `--target wasm` PASSES | cross-target agreement is scorable |
 | family slug = directory = a row of `bank/families.txt` | the family exists on both sides |
+| no two baselines of a family are near-duplicates (`scripts/bank_dedup.almd`) | each task is an independent cluster, not a renaming |
+
+The near-duplicate check reduces every `baseline.almd` to its token shape
+(identifiers → `ID`, numbers → `NUM`, strings → `STR`; keywords, types and
+stdlib calls kept) and refuses a same-family pair whose token 6-gram Jaccard
+similarity reaches the calibrated threshold (60%; the seeds top out at 26%, a
+renamed copy scores 94%). It always runs over the whole bank.
+
+While authoring, check one task in seconds:
+`bash scripts/check-bank.sh tasks/bank/<family>/<name>` (several task or family
+dirs may be named), or `BANK_ONLY=<family>/<name>,<family> bash scripts/check-bank.sh`.
 
 `bank/families.txt` is the pinned copy of the compiler repo's
 `scripts/lib/dojo-families.txt`; the compiler's contract ledger names a family in
