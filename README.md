@@ -186,6 +186,17 @@ CF_ACCOUNT_ID=... CLOUDFLARE_API_KEY=... CLOUDFLARE_EMAIL=... make msr   # Cloud
 # or  MODEL=cli:claude make msr    with a logged-in `claude` CLI, no key at all
 ```
 
+Every measured call is pinned at **seed `20260922`** and temperature 0, so a
+third party asks for the same sampling this repo's runs asked for — the
+constant is `SEED` in `src/llm.almd`, not a flag, precisely so it cannot
+differ between their run and ours. What the provider did with the request is
+a separate question the manifest answers honestly: `seed_sent` says the field
+reached the request body, never that the model honoured it. Whether a given
+model honours a seed is empirical — run the same (model, seed, task set)
+twice and compare — and no text-generation API reports it back. A provider
+that takes no seed (the `cli:` ones) records `seed_sent: false` and a null
+seed, so an unpinned run never looks like a pinned one.
+
 **No Anthropic key is required**, by ruling and by construction: the lane
 that produces the published number runs on CI, on the Cloudflare models
 (below). Cloudflare's Global API Key auth needs all three variables — a
@@ -207,8 +218,11 @@ so the table is a function of the machine, stated in the manifest.
 
 ```
 runs/msr/<date>/<model-slug>[-<label>]/
-  manifest.json   the verdict (below), model, provider, temperature (and whether the
-                  provider received it), seed (none: the transport has no seed option),
+  manifest.json   the verdict (below), model, provider, what was REQUESTED
+                  (temperature, seed) beside what the provider actually put ON
+                  THE WIRE (`temperature_sent` / `seed_sent` and the values,
+                  null when unsent) — measured by a preflight call with the
+                  run's own options, not described from this end,
                   the HTTP read timeout the run ran under, retries, task-set revision
                   + sha256, per-language toolchain versions and prompt hashes, compiler
                   pin + version, harness commit, the condition (see below)
