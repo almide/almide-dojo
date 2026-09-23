@@ -1,0 +1,36 @@
+// A household ledger. Amounts are whole dollars; an expense is negative.
+type Entry: Eq, Repr = { desc: String, amount: Int }
+
+fn entry(desc: String, dollars: Int) -> Entry = Entry { desc: desc, amount: dollars }
+
+fn money(dollars: Int) -> String =
+  if dollars < 0 then "-$" + int.to_string(0 - dollars) else "$" + int.to_string(dollars)
+
+fn render(e: Entry) -> String = e.desc + " " + money(e.amount)
+
+fn balance(es: List[Entry]) -> Int = es |> list.fold(0, (acc, e) => acc + e.amount)
+
+// One line per entry: the entry, then the running balance after it.
+fn statement(es: List[Entry]) -> List[String] = {
+  let (lines, _) = es |> list.fold(([], 0), ((out, bal), e) => {
+    let b = bal + e.amount
+    (out + [render(e) + " = " + money(b)], b)
+  })
+  lines
+}
+
+// The description of the biggest expense (most negative amount), the FIRST one
+// on a tie; none when nothing was spent.
+fn biggest_expense(es: List[Entry]) -> String? =
+  es
+    |> list.filter((e) => e.amount < 0)
+    |> list.fold(none, (best, e) => match best {
+      none => some(e),
+      some(b) => if e.amount < b.amount then some(e) else some(b),
+    })
+    |> option.map((e) => e.desc)
+
+// Descriptions of the entries whose size (either sign) is at least `limit`
+// whole dollars, in input order.
+fn large(es: List[Entry], limit: Int) -> List[String] =
+  es |> list.filter((e) => int.abs(e.amount) >= limit) |> list.map((e) => e.desc)

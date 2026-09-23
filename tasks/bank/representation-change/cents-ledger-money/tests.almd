@@ -1,0 +1,8 @@
+test "amounts are cents" {
+  assert_eq(render(entry("rent", -125000)), "rent -$1250.00")
+  assert_eq(render(entry("pay", 1205)), "pay $12.05")
+  assert_eq(balance([entry("a", 1250), entry("b", -250)]), Money { cents: 1000 })
+}
+test "statement in cents" {
+  assert_eq(statement([entry("pay", 1250), entry("tea", -350)]), ["pay $12.50 = $12.50", "tea -$3.50 = $9.00"])
+}
