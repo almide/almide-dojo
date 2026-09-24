@@ -1,0 +1,10 @@
+test "days are variants" {
+  assert_eq(day_name(Wed), "Wed")
+  assert_eq(next_workday(Tue), Wed)
+  assert_eq(days_until(Mon, Wed), 2)
+}
+test "agenda by week order" {
+  let ms = [meeting("b", Tue, 600), meeting("a", Mon, 900)]
+  assert_eq(agenda(ms), ["Mon a", "Tue b"])
+  assert_eq(weekend_titles([meeting("x", Sat, 0), meeting("y", Mon, 0)]), ["x"])
+}

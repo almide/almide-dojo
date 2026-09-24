@@ -1,0 +1,51 @@
+// Plausible wrong patch: with no numeric day left, the agenda sorts by the day
+// NAME, which is alphabetical (Fri before Mon). Passes the visible tests.
+// A weekly meeting planner. `at` is the minute of the day.
+type Day: Eq, Repr = | Mon | Tue | Wed | Thu | Fri | Sat | Sun
+type Meeting: Eq, Repr = { title: String, day: Day, at: Int }
+
+let WEEK = [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+
+fn meeting(title: String, day: Day, at: Int) -> Meeting = Meeting { title: title, day: day, at: at }
+
+fn index(d: Day) -> Int =
+  match d {
+    Mon => 0,
+    Tue => 1,
+    Wed => 2,
+    Thu => 3,
+    Fri => 4,
+    Sat => 5,
+    Sun => 6,
+  }
+
+fn day_at(i: Int) -> Day = list.get(WEEK, (i % 7 + 7) % 7) ?? Mon
+
+fn day_name(d: Day) -> String =
+  match d {
+    Mon => "Mon",
+    Tue => "Tue",
+    Wed => "Wed",
+    Thu => "Thu",
+    Fri => "Fri",
+    Sat => "Sat",
+    Sun => "Sun",
+  }
+
+fn is_weekend(d: Day) -> Bool = d == Sat or d == Sun
+
+// The next working day strictly after `d` (Friday, Saturday and Sunday lead to Monday).
+fn next_workday(d: Day) -> Day = if index(d) >= 4 then Mon else day_at(index(d) + 1)
+
+// Days from `from` forward to the next `to` (0 when they are the same day).
+fn days_until(from: Day, to: Day) -> Int = (index(to) - index(from) + 7) % 7
+
+// The week from Monday to Sunday, by time within a day; equal slots keep list order.
+fn agenda(ms: List[Meeting]) -> List[String] =
+  ms
+    |> list.sort_by((m) => m.at)
+    |> list.sort_by((m) => day_name(m.day))
+    |> list.map((m) => day_name(m.day) + " " + m.title)
+
+fn weekend_titles(ms: List[Meeting]) -> List[String] =
+  ms |> list.filter((m) => is_weekend(m.day)) |> list.map((m) => m.title)
