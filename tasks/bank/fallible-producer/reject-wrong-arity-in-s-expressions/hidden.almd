@@ -1,0 +1,21 @@
+test "hidden: parse itself rejects the form, at its opening paren" {
+  assert_eq(parse("(+ 1 (* 2))") |> result.map((e) => 0), err(Arity(5, "*", 1)))
+  assert_eq(parse("(- 1 2 3)") |> result.map((e) => 0), err(Arity(0, "-", 3)))
+  assert_eq(parse("(max)") |> result.map((e) => 0), err(Arity(0, "max", 0)))
+}
+test "hidden: the allowed counts stay valid" {
+  assert_eq(evaluate("(- 5)"), ok(-5))
+  assert_eq(evaluate("(- 5 7)"), ok(-2))
+  assert_eq(evaluate("(max 3)"), ok(3))
+  assert_eq(evaluate("(* 2 3 4)"), ok(24))
+}
+test "hidden: a form is checked when it closes, inner forms first" {
+  assert_eq(evaluate("(+ 1) )"), err(Arity(0, "+", 1)))
+  assert_eq(evaluate("(+ (* 2) (+"), err(Arity(3, "*", 1)))
+  assert_eq(evaluate("(+ 1 (+ 2 x))"), err(Unexpected(10, "x")))
+  assert_eq(evaluate("(+ (+ 1 2)"), err(Unclosed(0)))
+}
+test "hidden: old errors untouched" {
+  assert_eq(evaluate("(pow 2 3)"), err(UnknownOp(1, "pow")))
+  assert_eq(evaluate(")"), err(Unexpected(0, ")")))
+}
