@@ -446,7 +446,8 @@ effect fn list_all_tasks() -> Result[List[String], String] = {
 // Recorded in summary.md so a scorecard row can cite the exact version.
 effect fn compiler_version() -> String =
   match process.exec("almide", ["--version"]) {
-    ok(v) => string.trim(v)
+    // From 0.63.0 a second line names the verifier; the identity is the first.
+    ok(v) => string.trim(list.get(string.split(string.trim(v), "\n"), 0) ?? "")
     err(_) => ""
   }
 

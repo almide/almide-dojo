@@ -499,7 +499,7 @@ effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask
     ])),
     ("compiler", value.object([
       ("pin", value.str(compiler_pin()!)),
-      ("version", value.str(match process.exec("almide", ["--version"]) { ok(v) => string.trim(v), err(_) => "" })),
+      ("version", value.str(match process.exec("almide", ["--version"]) { ok(v) => string.trim(list.get(string.split(string.trim(v), "\n"), 0) ?? ""), err(_) => "" })),
     ])),
     // What was ASKED FOR, then what the provider actually wrote into the
     // request body. The second half is `sampling`, measured by a preflight

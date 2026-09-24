@@ -23,12 +23,15 @@ pin=$(sed -nE 's/^ref *= *"([^"]+)".*/\1/p' almide-pin.toml)
 [ -n "$pin" ] || { echo "almide-pin.toml has no [compiler] ref" >&2; exit 1; }
 want="almide ${pin#v}"
 export PATH="$HOME/.local/bin:$PATH"
-if ! command -v almide >/dev/null 2>&1 || [ "$(almide --version)" != "$want" ]; then
+# From 0.63.0 the first line carries the build ("almide 0.63.0 (release, <sha>)") and a
+# second line names the verifier; a local dev build ("(dev)") is NOT the pinned release.
+pinned() { case "$(almide --version 2>/dev/null | head -n1)" in "$want"|"$want (release, "*) return 0;; *) return 1;; esac; }
+if ! command -v almide >/dev/null 2>&1 || ! pinned; then
   echo "installing the pinned compiler $pin (tools/install.sh)" >&2
   curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "$pin" >&2
 fi
-got=$(almide --version)
-[ "$got" = "$want" ] || { echo "almide-pin.toml says $pin but the installed binary is '$got'" >&2; exit 1; }
+got=$(almide --version | head -n1)
+pinned || { echo "almide-pin.toml says $pin but the installed binary is '$got'" >&2; exit 1; }
 [ "$cmd" = "compiler" ] && exit 0
 
 # ── TypeScript: a pinned tsc, installed under .msr-tools/ when PATH has none ──

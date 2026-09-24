@@ -21,7 +21,7 @@ jobs:
           PIN=$(sed -nE 's/^ref *= *"([^"]+)".*/\1/p' almide-pin.toml)
           curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "$PIN"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          test "$("$HOME/.local/bin/almide" --version)" = "almide ${PIN#v}"
+          GOT=$("$HOME/.local/bin/almide" --version | head -n1); [[ "$GOT" == "almide ${PIN#v}" || "$GOT" == "almide ${PIN#v} (release, "* ]]
 
       - name: Test blocks
         run: almide test src/
