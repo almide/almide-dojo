@@ -1,0 +1,7 @@
+test "filtering by level" {
+  let f = AtLeast { inner: Console { prefix: "> " }, min: Info }
+  assert_eq(emit_with(Filtered(f), [(Debug, "a"), (Info, "b"), (Warn, "c")]), ["> INFO b", "> WARN c"])
+}
+test "everything" {
+  assert_eq(emit_with(Everything(Console { prefix: "" }), [(Debug, "x")]), ["DEBUG x"])
+}

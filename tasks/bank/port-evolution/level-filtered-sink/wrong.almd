@@ -1,0 +1,38 @@
+// Plausible wrong patch: compares the level NAMES, which orders ERROR before
+// WARN, so errors are dropped under a WARN minimum. Passes the visible tests.
+// A log-sink port: the lines a sink writes for one event (possibly none).
+type Level: Eq, Repr = | Debug | Info | Warn | Error
+
+fn level_name(l: Level) -> String =
+  match l {
+    Debug => "DEBUG",
+    Info => "INFO",
+    Warn => "WARN",
+    Error => "ERROR",
+  }
+
+protocol Sink {
+  fn write(s: Self, level: Level, msg: String) -> List[String]
+}
+
+// Writes every event as "<prefix>LEVEL msg".
+type Console: Sink = { prefix: String }
+fn Console.write(s: Console, level: Level, msg: String) -> List[String] =
+  [s.prefix + level_name(level) + " " + msg]
+
+// Passes events at or above `min` to `inner`.
+type AtLeast: Sink = { inner: Console, min: Level }
+fn AtLeast.write(s: AtLeast, level: Level, msg: String) -> List[String] =
+  if level_name(level) >= level_name(s.min) then s.inner.write(level, msg) else []
+
+// All lines for a sequence of events, in event order.
+fn emit_all[S: Sink](s: S, events: List[(Level, String)]) -> List[String] =
+  events |> list.flat_map((e) => s.write(e.0, e.1))
+
+type Output = | Everything(Console) | Filtered(AtLeast)
+
+fn emit_with(o: Output, events: List[(Level, String)]) -> List[String] =
+  match o {
+    Everything(c) => emit_all(c, events),
+    Filtered(f) => emit_all(f, events),
+  }

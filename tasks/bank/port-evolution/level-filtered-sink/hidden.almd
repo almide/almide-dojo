@@ -1,0 +1,11 @@
+test "hidden: severity is not alphabetical" {
+  let f = AtLeast { inner: Console { prefix: "" }, min: Warn }
+  assert_eq(emit_with(Filtered(f), [(Error, "boom"), (Info, "i"), (Warn, "w"), (Debug, "d")]), ["ERROR boom", "WARN w"])
+  let g = AtLeast { inner: Console { prefix: "" }, min: Error }
+  assert_eq(emit_with(Filtered(g), [(Warn, "w"), (Error, "e"), (Info, "i")]), ["ERROR e"])
+}
+test "hidden: debug minimum passes everything" {
+  let f = AtLeast { inner: Console { prefix: "#" }, min: Debug }
+  assert_eq(emit_with(Filtered(f), [(Info, "1"), (Debug, "2"), (Error, "3")]), ["#INFO 1", "#DEBUG 2", "#ERROR 3"])
+  assert_eq(emit_with(Filtered(f), []), [])
+}
