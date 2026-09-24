@@ -1,0 +1,45 @@
+// Plausible wrong patch: after all parts are read, rejects a unit that appears
+// twice. "30m1h" passes, and a later unknown unit is reported first.
+// Duration parser: "<n><unit>..." with units d, h, m, s, e.g. "1h30m" or "2d5s".
+// Parts are read left to right; the result is in seconds.
+type Part: Eq, Repr = { n: Int, unit: String }
+
+fn unit_seconds(u: String) -> Int =
+  match u {
+    "d" => 86400,
+    "h" => 3600,
+    "m" => 60,
+    "s" => 1,
+    _ => 0,
+  }
+
+fn digits_end(s: String, i: Int) -> Int =
+  if i < string.len(s) and string.is_digit(string.slice(s, i, i + 1)) then digits_end(s, i + 1) else i
+
+fn parts_from(s: String, i: Int, acc: List[Part]) -> List[Part]! = {
+  if i >= string.len(s) then ok(acc)
+  else {
+    let j = digits_end(s, i)
+    guard j > i else err("expected a number at ${int.to_string(i)} in ${s}")
+    guard j < string.len(s) else err("missing unit after ${string.slice(s, i, j)} in ${s}")
+    let u = string.slice(s, j, j + 1)
+    guard unit_seconds(u) > 0 else err("unknown unit ${u} in ${s}")
+    let n = int.parse(string.slice(s, i, j))!
+    parts_from(s, j + 1, acc + [Part { n: n, unit: u }])
+  }
+}
+
+fn seconds(s: String) -> Int! = {
+  let t = string.trim(s)
+  guard t != "" else err("empty duration")
+  let ps = parts_from(t, 0, [])!
+  let dup = ps |> list.enumerate |> list.find((p) => list.take(ps, p.0) |> list.any((q) => q.unit == p.1.unit))
+  match dup {
+    some(p) => err("unit ${p.1.unit} out of order in ${t}"),
+    none => ok(()),
+  }!
+  ps |> list.fold(0, (acc, p) => acc + p.n * unit_seconds(p.unit))
+}
+
+fn total(list_of: List[String]) -> Int! =
+  list_of |> list.fold(0, (acc, s) => acc + seconds(s)!)!
