@@ -1,0 +1,7 @@
+test "a rule with host bits set is rejected" {
+  assert(result.is_err(parse_rule("allow 10.0.0.5/24")))
+}
+test "rules still decide" {
+  assert_eq(decide(["deny 10.1.0.0/16", "allow 10.0.0.0/8"], "10.2.3.4"), ok("allow"))
+  assert_eq(decide(["deny 10.1.0.0/16", "allow 10.0.0.0/8"], "10.1.3.4"), ok("deny"))
+}
