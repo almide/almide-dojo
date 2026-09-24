@@ -1,0 +1,14 @@
+test "hidden: subtractive forms" {
+  assert_eq(render(edition("x", 4)), "x IV")
+  assert_eq(render(edition("x", 9)), "x IX")
+  assert_eq(render(edition("x", 14)), "x XIV")
+  assert_eq(render(edition("x", 40)), "x XL")
+  assert_eq(render(edition("x", 90)), "x XC")
+  assert_eq(render(edition("x", 400)), "x CD")
+  assert_eq(render(edition("x", 1994)), "x MCMXCIV")
+  assert_eq(render(edition("x", 3999)), "x MMMCMXCIX")
+}
+test "hidden: round trip and order" {
+  assert_eq(list.range(1, 60) |> list.all((n) => number(string.drop(render(edition("", n)), 1)) == n), true)
+  assert_eq(chronological([edition("p", 9), edition("q", 4), edition("r", 9)]), ["q IV", "p IX", "r IX"])
+}

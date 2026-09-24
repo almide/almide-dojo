@@ -1,0 +1,44 @@
+// Plausible wrong patch: writes numerals with the seven base symbols only, so 4
+// becomes "IIII" and 9 "VIIII". Passes the visible tests.
+// Film festival editions, numbered 1 .. 3999 and printed in Roman numerals.
+type Edition: Eq, Repr = { title: String, number: Int }
+
+fn value_of(ch: String) -> Int =
+  match ch {
+    "I" => 1,
+    "V" => 5,
+    "X" => 10,
+    "L" => 50,
+    "C" => 100,
+    "D" => 500,
+    "M" => 1000,
+    _ => 0,
+  }
+
+// Standard numerals: a smaller symbol before a larger one is subtracted.
+fn number(numeral: String) -> Int = {
+  let vs = string.chars(numeral) |> list.map(value_of)
+  vs |> list.enumerate |> list.fold(0, (acc, p) => {
+    let next = list.get(vs, p.0 + 1) ?? 0
+    if p.1 < next then acc - p.1 else acc + p.1
+  })
+}
+
+let SYMBOLS = [(1000, "M"), (500, "D"), (100, "C"), (50, "L"), (10, "X"), (5, "V"), (1, "I")]
+
+fn numeral_from(n: Int, syms: List[(Int, String)]) -> String =
+  match syms {
+    [] => "",
+    [s, ..rest] => if n >= s.0 then s.1 + numeral_from(n - s.0, syms) else numeral_from(n, rest),
+  }
+
+fn numeral(n: Int) -> String = numeral_from(n, SYMBOLS)
+
+fn edition(title: String, n: Int) -> Edition = Edition { title: title, number: n }
+
+fn render(e: Edition) -> String = e.title + " " + numeral(e.number)
+
+// Oldest edition first; equal numbers keep list order.
+fn chronological(es: List[Edition]) -> List[String] = es |> list.sort_by((e) => e.number) |> list.map(render)
+
+fn next_edition(e: Edition, title: String) -> Edition = edition(title, e.number + 1)

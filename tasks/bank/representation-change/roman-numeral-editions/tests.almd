@@ -1,0 +1,8 @@
+test "numbers render as numerals" {
+  assert_eq(render(edition("fest", 12)), "fest XII")
+  assert_eq(render(edition("fest", 2023)), "fest MMXXIII")
+  assert_eq(next_edition(edition("a", 7), "b"), edition("b", 8))
+}
+test "chronological" {
+  assert_eq(chronological([edition("b", 20), edition("a", 3)]), ["a III", "b XX"])
+}
