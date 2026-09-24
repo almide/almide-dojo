@@ -1,0 +1,16 @@
+test "hidden: an override replaces the base list" {
+  let none_: List[String] = []
+  let base = Index { packages: ["app": ["log", "http"], "http": ["log", "tls"], "log": none_, "tls": none_] }
+  let p = Pinned { base: base, overrides: ["http": none_] }
+  assert_eq(plan(Locked(p), "app"), ok("log > http > app"))
+  assert_eq(p.deps("http"), some([]))
+}
+test "hidden: cycles and unknowns through overrides" {
+  let none_: List[String] = []
+  let base = Index { packages: ["x": ["y"], "y": ["x"]] }
+  assert_eq(plan(Plain(base), "x"), err("cycle at x"))
+  assert_eq(plan(Locked(Pinned { base: base, overrides: ["y": none_] }), "x"), ok("y > x"))
+  let fine = Index { packages: ["m": ["n"], "n": none_] }
+  assert_eq(plan(Locked(Pinned { base: fine, overrides: ["n": ["m"]] }), "m"), err("cycle at m"))
+  assert_eq(plan(Locked(Pinned { base: fine, overrides: ["n": ["zz"]] }), "m"), err("unknown package: zz"))
+}

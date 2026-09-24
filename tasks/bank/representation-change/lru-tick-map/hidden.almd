@@ -1,0 +1,18 @@
+test "hidden: a hit counts as a use" {
+  let c = put(put(cache(2), "a", "1"), "b", "2")
+  let (v, c2) = get(c, "a")
+  assert_eq(v, some("1"))
+  let c3 = put(c2, "c", "3")
+  assert_eq(recency(c3), ["a", "c"])
+  assert_eq(get(c3, "b").0, none)
+}
+test "hidden: misses and re-puts" {
+  let c = put(put(cache(2), "a", "1"), "b", "2")
+  let (m, same) = get(c, "zz")
+  assert_eq(m, none)
+  assert_eq(same, c)
+  let r = put(c, "a", "9")
+  assert_eq(recency(r), ["b", "a"])
+  assert_eq(get(r, "a").0, some("9"))
+  assert_eq(map.len(r.values), 2)
+}

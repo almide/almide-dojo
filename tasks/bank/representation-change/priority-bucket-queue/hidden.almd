@@ -1,0 +1,13 @@
+test "hidden: emptied priorities give way" {
+  let q = push(push(push(push(queue(), 1, "a"), 5, "b"), 1, "c"), -2, "d")
+  assert_eq(drain(q), ["b", "a", "c", "d"])
+  let after = pop(q) |> option.map((p) => p.1) ?? queue()
+  assert_eq(after.buckets, [1: ["a", "c"], -2: ["d"]])
+  assert_eq(size(after), 3)
+}
+test "hidden: drained queues are empty" {
+  let q = push(push(queue(), 3, "x"), 3, "y")
+  let rest = pop(pop(q) |> option.map((p) => p.1) ?? queue()) |> option.map((p) => p.1) ?? q
+  assert_eq(rest, queue())
+  assert_eq(pop(queue()), none)
+}

@@ -1,0 +1,25 @@
+// A job queue: higher priority first, first-come first-served within a priority.
+type Queue: Eq, Repr = { jobs: List[(Int, String)] }
+
+fn queue() -> Queue = Queue { jobs: [] }
+
+fn push(q: Queue, priority: Int, name: String) -> Queue = Queue { jobs: q.jobs + [(priority, name)] }
+
+fn size(q: Queue) -> Int = list.len(q.jobs)
+
+// The next job and the queue without it; none when empty.
+fn pop(q: Queue) -> (String, Queue)? =
+  match list.max(q.jobs |> list.map((j) => j.0)) {
+    some(top) => {
+      let i = list.find_index(q.jobs, (j) => j.0 == top) ?? 0
+      some(((list.get(q.jobs, i) ?? (0, "")).1, Queue { jobs: list.remove_at(q.jobs, i) }))
+    },
+    none => none,
+  }
+
+// Every job in pop order.
+fn drain(q: Queue) -> List[String] =
+  match pop(q) {
+    some(p) => [p.0] + drain(p.1),
+    none => [],
+  }

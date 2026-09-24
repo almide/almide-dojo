@@ -1,0 +1,24 @@
+// Splitting a payout between partners by weight. Amounts are exact cents.
+type Payout: Eq, Repr = { cents: Int, partners: List[(String, Int)] }
+type Part = { name: String, base: Int, rem: Int }
+
+fn payout(cents: Int, partners: List[(String, Int)]) -> Payout = Payout { cents: cents, partners: partners }
+
+fn weight_sum(p: Payout) -> Int = p.partners |> list.fold(0, (acc, x) => acc + x.1)
+
+// Largest remainder: floors first, then one extra cent to the largest fractional
+// parts (list order breaks ties).
+fn shares(p: Payout) -> List[(String, Int)] = {
+  let sum = weight_sum(p)
+  let exact = p.partners |> list.map((x) => Part { name: x.0, base: p.cents * x.1 / sum, rem: p.cents * x.1 % sum })
+  let left = p.cents - (exact |> list.fold(0, (acc, e) => acc + e.base))
+  let winners = exact
+    |> list.enumerate
+    |> list.sort_by((ie) => 0 - (ie.1).rem)
+    |> list.take(left)
+    |> list.map((ie) => ie.0)
+  exact |> list.enumerate |> list.map((ie) => ((ie.1).name, (ie.1).base + (if list.contains(winners, ie.0) then 1 else 0)))
+}
+
+fn statement(p: Payout) -> List[String] =
+  shares(p) |> list.map((s) => s.0 + ": " + int.to_string(s.1 / 100) + "." + string.pad_start(int.to_string(s.1 % 100), 2, "0"))

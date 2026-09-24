@@ -1,0 +1,34 @@
+// Plausible wrong patch: finds the first point at or after the hash but does not
+// wrap around, so keys past the last point land nowhere. Passes the visible tests.
+// A placement port: which storage node holds a key.
+protocol Placement {
+  fn node_for(p: Self, key: String) -> String?
+}
+
+fn hash(key: String) -> Int = string.to_bytes(key) |> list.fold(0, (acc, b) => (acc * 31 + b) % 1000)
+
+// Nodes in turn by hash; none without nodes.
+type Modulo: Placement = { nodes: List[String] }
+fn Modulo.node_for(p: Modulo, key: String) -> String? =
+  if list.is_empty(p.nodes) then none else list.get(p.nodes, hash(key) % list.len(p.nodes))
+
+// The first point at or after the key's hash.
+type Ring: Placement = { points: List[(Int, String)] }
+fn Ring.node_for(p: Ring, key: String) -> String? = {
+  let h = hash(key)
+  let ordered = p.points |> list.sort_by((pt) => pt.0)
+  let hit = ordered |> list.find((pt) => pt.0 >= h)
+  hit |> option.map((pt) => pt.1)
+}
+
+// "key@node" or "key@-" per key, in order.
+fn place_all[P: Placement](p: P, keys: List[String]) -> List[String] =
+  keys |> list.map((k) => k + "@" + (p.node_for(k) ?? "-"))
+
+type Strategy = | Spread(Modulo) | Consistent(Ring)
+
+fn place_with(s: Strategy, keys: List[String]) -> List[String] =
+  match s {
+    Spread(m) => place_all(m, keys),
+    Consistent(r) => place_all(r, keys),
+  }

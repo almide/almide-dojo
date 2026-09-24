@@ -1,0 +1,6 @@
+test "durations" {
+  let s = session([653, 657])
+  assert_eq(marks(s), [653, 1310])
+  assert_eq(total(s), 1310)
+  assert_eq(list.first(table(s)), some("L1 1:05.3 (+1:05.3)"))
+}

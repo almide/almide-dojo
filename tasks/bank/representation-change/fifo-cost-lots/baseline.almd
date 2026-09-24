@@ -1,0 +1,18 @@
+// Stock of one item valued at its moving average cost (cents per unit, rounded down).
+type Stock: Eq, Repr = { sku: String, qty: Int, avg: Int }
+
+fn stock(sku: String) -> Stock = Stock { sku: sku, qty: 0, avg: 0 }
+
+// Receives `n` units (n >= 1) bought at `cost` cents each.
+fn receive(s: Stock, n: Int, cost: Int) -> Stock =
+  Stock { ...s, qty: s.qty + n, avg: (s.qty * s.avg + n * cost) / (s.qty + n) }
+
+// Ships `n` units (n >= 1): the new stock and the cost of what was shipped.
+fn ship(s: Stock, n: Int) -> (Stock, Int)! = {
+  guard n <= s.qty else err("short: have " + int.to_string(s.qty) + ", want " + int.to_string(n))
+  (Stock { ...s, qty: s.qty - n }, n * s.avg)
+}
+
+fn value(s: Stock) -> Int = s.qty * s.avg
+
+fn report(s: Stock) -> String = s.sku + ": " + int.to_string(s.qty) + " units worth " + int.to_string(value(s))

@@ -1,0 +1,25 @@
+// Plausible wrong patch: keeps the old "every group but the last" masking, which
+// shows fewer or more than four digits when the length is not a multiple of four.
+// Saved payment cards (12 to 19 digits); only the digits are stored.
+type Card: Eq, Repr = { holder: String, digits: String }
+
+fn card(holder: String, text: String) -> Card = Card { holder: holder, digits: string.replace(text, " ", "") }
+
+fn last4(c: Card) -> String = string.take_end(c.digits, 4)
+
+fn group4(s: String) -> String =
+  string.chars(s) |> list.chunk(4) |> list.map((g) => list.join(g, "")) |> list.join(" ")
+
+fn grouped(c: Card) -> String = group4(c.digits)
+
+// Every group but the last replaced by "****".
+fn masked(c: Card) -> String = {
+  let groups = string.split(grouped(c), " ")
+  groups |> list.enumerate |> list.map((p) => if p.0 < list.len(groups) - 1 then "****" else p.1) |> list.join(" ")
+}
+
+fn label(c: Card) -> String = c.holder + " " + masked(c)
+
+// Cards whose number ends with `tail`, in list order.
+fn ending_in(cs: List[Card], tail: String) -> List[String] =
+  cs |> list.filter((c) => string.ends_with(c.digits, tail)) |> list.map((c) => c.holder)

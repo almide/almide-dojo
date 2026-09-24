@@ -1,0 +1,17 @@
+test "hidden: a partly used lot stays first" {
+  let s = receive(receive(stock("pen"), 10, 100), 5, 130)
+  let (a, c1) = ship(s, 4)!
+  assert_eq(c1, 400)
+  assert_eq(a.lots, [Lot { qty: 6, cost: 100 }, Lot { qty: 5, cost: 130 }])
+  let (b, c2) = ship(a, 7)!
+  assert_eq(c2, 6 * 100 + 130)
+  assert_eq(b.lots, [Lot { qty: 4, cost: 130 }])
+}
+test "hidden: used-up lots disappear and failures change nothing" {
+  let s = receive(receive(stock("ink"), 3, 50), 2, 70)
+  let (a, c) = ship(s, 3)!
+  assert_eq(c, 150)
+  assert_eq(a.lots, [Lot { qty: 2, cost: 70 }])
+  assert_eq(ship(a, 5), err("short: have 2, want 5"))
+  assert_eq(report(stock("none")), "none: 0 units worth 0")
+}

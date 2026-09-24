@@ -1,0 +1,26 @@
+// Plausible wrong patch: stores the pair in the order it was given, so b-a and
+// a-b are two links. Passes the visible tests.
+// An undirected friendship graph: each link once, smaller name first; no self-links.
+type Graph: Eq, Repr = { edges: Set[(String, String)] }
+
+fn graph() -> Graph = Graph { edges: set.new() }
+
+fn key(a: String, b: String) -> (String, String) = if a < b then (a, b) else (b, a)
+
+// Links a and b; linking twice or linking a person to themself changes nothing.
+fn link(g: Graph, a: String, b: String) -> Graph =
+  if a == b then g else Graph { edges: set.insert(g.edges, (a, b)) }
+
+fn link_all(g: Graph, pairs: List[(String, String)]) -> Graph = pairs |> list.fold(g, (acc, p) => link(acc, p.0, p.1))
+
+fn friends(g: Graph, v: String) -> List[String] =
+  set.to_list(g.edges)
+    |> list.filter_map((e) => if e.0 == v then some(e.1) else if e.1 == v then some(e.0) else none)
+    |> list.sort
+
+fn degree(g: Graph, v: String) -> Int = list.len(friends(g, v))
+
+fn link_count(g: Graph) -> Int = set.len(g.edges)
+
+// Every link once as "a-b" with a < b, sorted.
+fn links(g: Graph) -> List[String] = set.to_list(g.edges) |> list.map((e) => key(e.0, e.1)) |> list.map((e) => e.0 + "-" + e.1) |> list.sort

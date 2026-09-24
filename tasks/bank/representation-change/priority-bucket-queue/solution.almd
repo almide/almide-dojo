@@ -1,0 +1,30 @@
+// A job queue: higher priority first, first-come first-served within a priority.
+// One bucket per priority that has jobs, in arrival order.
+type Queue: Eq, Repr = { buckets: Map[Int, List[String]] }
+
+fn queue() -> Queue = Queue { buckets: map.new() }
+
+fn push(q: Queue, priority: Int, name: String) -> Queue =
+  Queue { buckets: map.set(q.buckets, priority, (map.get(q.buckets, priority) ?? []) + [name]) }
+
+fn size(q: Queue) -> Int = map.values(q.buckets) |> list.fold(0, (acc, b) => acc + list.len(b))
+
+// The next job and the queue without it; none when empty.
+fn pop(q: Queue) -> (String, Queue)? =
+  match list.max(map.keys(q.buckets)) {
+    some(top) => match map.get(q.buckets, top) ?? [] {
+      [] => none,
+      [first, ..rest] => {
+        let buckets = if list.is_empty(rest) then map.remove(q.buckets, top) else map.set(q.buckets, top, rest)
+        some((first, Queue { buckets: buckets }))
+      },
+    },
+    none => none,
+  }
+
+// Every job in pop order.
+fn drain(q: Queue) -> List[String] =
+  match pop(q) {
+    some(p) => [p.0] + drain(p.1),
+    none => [],
+  }

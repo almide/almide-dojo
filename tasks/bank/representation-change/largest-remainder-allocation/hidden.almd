@@ -1,0 +1,11 @@
+test "hidden: largest remainder, not list order" {
+  assert_eq(shares(payout(101, [("a", 1), ("b", 1), ("c", 2)])), [("a", 25), ("b", 25), ("c", 51)])
+  assert_eq(shares(payout(10, [("x", 1), ("y", 2)])), [("x", 3), ("y", 7)])
+}
+test "hidden: ties, zero weights and totals" {
+  assert_eq(shares(payout(5, [("a", 1), ("z", 0), ("b", 1)])), [("a", 3), ("z", 0), ("b", 2)])
+  let s = shares(payout(997, [("a", 7), ("b", 3), ("c", 11), ("d", 5)]))
+  assert_eq(s |> list.fold(0, (acc, x) => acc + x.1), 997)
+  assert_eq(s, [("a", 268), ("b", 115), ("c", 422), ("d", 192)])
+  assert_eq(statement(payout(7, [("q", 1)])), ["q: 0.07"])
+}

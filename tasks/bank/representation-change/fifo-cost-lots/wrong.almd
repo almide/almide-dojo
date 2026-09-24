@@ -1,0 +1,36 @@
+// Plausible wrong patch: puts the rest of a partly used lot back at the END, so
+// the next shipment takes newer lots first. Passes the visible tests.
+// Stock of one item valued first-in first-out: lots oldest first.
+type Lot: Eq, Repr = { qty: Int, cost: Int }
+type Stock: Eq, Repr = { sku: String, lots: List[Lot] }
+
+fn stock(sku: String) -> Stock = Stock { sku: sku, lots: [] }
+
+// Receives `n` units (n >= 1) bought at `cost` cents each.
+fn receive(s: Stock, n: Int, cost: Int) -> Stock = Stock { ...s, lots: s.lots + [Lot { qty: n, cost: cost }] }
+
+fn quantity(s: Stock) -> Int = s.lots |> list.fold(0, (acc, l) => acc + l.qty)
+
+// Takes `n` units from the oldest lots: the lots left and the cost taken.
+fn take(lots: List[Lot], n: Int) -> (List[Lot], Int) =
+  if n <= 0 then (lots, 0)
+  else match lots {
+    [] => ([], 0),
+    [first, ..rest] =>
+      if first.qty > n then (rest + [Lot { ...first, qty: first.qty - n }], n * first.cost)
+      else {
+        let (left, cost) = take(rest, n - first.qty)
+        (left, first.qty * first.cost + cost)
+      },
+  }
+
+// Ships `n` units (n >= 1): the new stock and the cost of what was shipped.
+fn ship(s: Stock, n: Int) -> (Stock, Int)! = {
+  guard n <= quantity(s) else err("short: have " + int.to_string(quantity(s)) + ", want " + int.to_string(n))
+  let (left, cost) = take(s.lots, n)
+  (Stock { ...s, lots: left }, cost)
+}
+
+fn value(s: Stock) -> Int = s.lots |> list.fold(0, (acc, l) => acc + l.qty * l.cost)
+
+fn report(s: Stock) -> String = s.sku + ": " + int.to_string(quantity(s)) + " units worth " + int.to_string(value(s))

@@ -1,0 +1,27 @@
+// An undirected friendship graph as adjacency lists (kept symmetric; no self-links).
+type Graph: Eq, Repr = { adj: Map[String, List[String]] }
+
+fn graph() -> Graph = Graph { adj: map.new() }
+
+fn neighbours(g: Graph, v: String) -> List[String] = map.get(g.adj, v) ?? []
+
+fn link_one(adj: Map[String, List[String]], a: String, b: String) -> Map[String, List[String]] =
+  if list.contains(map.get(adj, a) ?? [], b) then adj else map.set(adj, a, (map.get(adj, a) ?? []) + [b])
+
+// Links a and b (both ways); linking twice or linking a person to themself changes nothing.
+fn link(g: Graph, a: String, b: String) -> Graph =
+  if a == b then g else Graph { adj: link_one(link_one(g.adj, a, b), b, a) }
+
+fn link_all(g: Graph, pairs: List[(String, String)]) -> Graph = pairs |> list.fold(g, (acc, p) => link(acc, p.0, p.1))
+
+fn degree(g: Graph, v: String) -> Int = list.len(neighbours(g, v))
+
+fn friends(g: Graph, v: String) -> List[String] = neighbours(g, v) |> list.sort
+
+fn link_count(g: Graph) -> Int = (map.values(g.adj) |> list.fold(0, (acc, ns) => acc + list.len(ns))) / 2
+
+// Every link once as "a-b" with a < b, sorted.
+fn links(g: Graph) -> List[String] =
+  map.entries(g.adj)
+    |> list.flat_map((e) => e.1 |> list.filter((n) => e.0 < n) |> list.map((n) => e.0 + "-" + n))
+    |> list.sort

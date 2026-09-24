@@ -1,0 +1,6 @@
+test "edge set" {
+  let g = link_all(graph(), [("ann", "bo"), ("bo", "cy")])
+  assert_eq(g.edges, set.from_list([("ann", "bo"), ("bo", "cy")]))
+  assert_eq(friends(g, "bo"), ["ann", "cy"])
+  assert_eq(link_count(g), 2)
+}

@@ -1,0 +1,38 @@
+// A key-value store port with fallible writes that return the next state.
+protocol Store {
+  fn put(s: Self, key: String, value: String) -> Self!
+  fn get(s: Self, key: String) -> String?
+}
+
+type Mem: Store = { data: Map[String, String] }
+fn Mem.put(s: Mem, key: String, value: String) -> Mem! = {
+  guard key != "" else err("empty key")
+  Mem { data: map.set(s.data, key, value) }
+}
+fn Mem.get(s: Mem, key: String) -> String? = map.get(s.data, key)
+
+// Writes only under the writable directories; reads go straight to `inner`.
+type Guarded: Store = { inner: Mem, writable: List[String] }
+fn Guarded.put(s: Guarded, key: String, value: String) -> Guarded! = {
+  guard list.any(s.writable, (dir) => string.starts_with(key, dir)) else err("read-only: " + key)
+  Guarded { ...s, inner: s.inner.put(key, value)! }
+}
+fn Guarded.get(s: Guarded, key: String) -> String? = s.inner.get(key)
+
+// Every write in order; the first failure aborts the whole batch.
+fn apply[S: Store](s: S, writes: List[(String, String)]) -> S! =
+  writes |> list.fold(ok(s), (acc, w) => match acc {
+    ok(cur) => cur.put(w.0, w.1),
+    err(e) => err(e),
+  })
+
+fn dump[S: Store](s: S, keys: List[String]) -> String =
+  keys |> list.map((k) => k + "=" + (s.get(k) ?? "-")) |> list.join(" ")
+
+type Mode = | Open(Mem) | Locked(Guarded)
+
+fn run(m: Mode, writes: List[(String, String)], keys: List[String]) -> String! =
+  match m {
+    Open(s) => dump(apply(s, writes)!, keys),
+    Locked(g) => dump(apply(g, writes)!, keys),
+  }

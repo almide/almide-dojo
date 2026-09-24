@@ -1,0 +1,9 @@
+test "grouped amounts" {
+  let us = Grouped { group: ",", decimal: "." }
+  assert_eq(us.parse("1,234,567.89"), ok(123456789))
+  assert_eq(Grouped { group: ".", decimal: "," }.parse("1.234,50"), ok(123450))
+  assert_eq(total_in(Local(us), ["1,000", "2.50"]), ok(100250))
+}
+test "plain locale" {
+  assert_eq(total_in(Simple(Plain {}), ["12", "x"]), err("bad amount: x"))
+}

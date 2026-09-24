@@ -1,0 +1,7 @@
+test "relaxed lookups" {
+  let r = Relaxed { inner: Exact { entries: [("bob", 12), ("ann", 7)] } }
+  assert_eq(lookup_with(Loose(r), ["BOB", " ann ", "cy"]), ["BOB: 12", " ann : 7", "cy: unknown"])
+}
+test "strict lookups" {
+  assert_eq(lookup_with(Strict(Exact { entries: [("bob", 12)] }), ["BOB", "bob"]), ["BOB: unknown", "bob: 12"])
+}

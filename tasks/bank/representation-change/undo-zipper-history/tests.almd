@@ -1,0 +1,6 @@
+test "zipper history" {
+  let d = edit(edit(doc("a"), "b"), "c")
+  assert_eq(d, Doc { past: ["b", "a"], now: "c", future: [] })
+  assert_eq(timeline(undo(d)), "a | [b] | c")
+  assert_eq(current(redo(undo(d))), "c")
+}

@@ -1,0 +1,10 @@
+test "hidden: the table shows running clock readings" {
+  assert_eq(table(session([653, 657, 600])), ["L1 1:05.3 (+1:05.3)", "L2 2:11.0 (+1:05.7)", "L3 3:11.0 (+1:00.0)"])
+}
+test "hidden: fastest and empty sessions" {
+  assert_eq(fastest(session([700, 650, 650, 800])), some(2))
+  assert_eq(fastest(session([])), none)
+  assert_eq(total(session([])), 0)
+  assert_eq(table(session([])), [])
+  assert_eq(laps(session([5, 6])), [5, 6])
+}

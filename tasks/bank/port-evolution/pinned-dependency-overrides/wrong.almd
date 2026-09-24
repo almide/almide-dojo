@@ -1,0 +1,41 @@
+// Plausible wrong patch: asks the base first and uses an override only for
+// packages the base does not know. Passes the visible tests.
+// A package-registry port: the direct dependencies of a package, none if unknown.
+protocol Registry {
+  fn deps(r: Self, pkg: String) -> List[String]?
+}
+
+type Index: Registry = { packages: Map[String, List[String]] }
+fn Index.deps(r: Index, pkg: String) -> List[String]? = map.get(r.packages, pkg)
+
+// The base first, then the overrides for packages the base does not know.
+type Pinned: Registry = { base: Index, overrides: Map[String, List[String]] }
+fn Pinned.deps(r: Pinned, pkg: String) -> List[String]? =
+  option.or_else(r.base.deps(pkg), () => map.get(r.overrides, pkg))
+
+// Depth-first: a package's dependencies (in listed order) before the package, each
+// package once. Unknown packages and cycles are errors.
+fn visit[R: Registry](r: R, pkg: String, path: List[String], done: List[String]) -> List[String]! = {
+  guard not list.contains(path, pkg) else err("cycle at " + pkg)
+  if list.contains(done, pkg) then ok(done)
+  else {
+    let ds = option.to_result(r.deps(pkg), "unknown package: " + pkg)!
+    var acc = done
+    for d in ds {
+      acc = visit(r, d, path + [pkg], acc)!
+    }
+    ok(acc + [pkg])
+  }
+}
+
+fn install_order[R: Registry](r: R, root: String) -> List[String]! = visit(r, root, [], [])
+
+type Source = | Plain(Index) | Locked(Pinned)
+
+fn plan(s: Source, root: String) -> String! = {
+  let order = match s {
+    Plain(i) => install_order(i, root)!,
+    Locked(p) => install_order(p, root)!,
+  }
+  list.join(order, " > ")
+}

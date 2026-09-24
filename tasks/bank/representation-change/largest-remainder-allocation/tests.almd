@@ -1,0 +1,5 @@
+test "exact cents" {
+  assert_eq(shares(payout(1000, [("a", 1), ("b", 3)])), [("a", 250), ("b", 750)])
+  assert_eq(statement(payout(1000, [("a", 1), ("b", 3)])), ["a: 2.50", "b: 7.50"])
+  assert_eq(shares(payout(100, [("a", 1), ("b", 1), ("c", 1)])), [("a", 34), ("b", 33), ("c", 33)])
+}

@@ -1,0 +1,12 @@
+test "hidden: wrap around past the last point" {
+  let r = Ring { points: [(100, "a"), (500, "b")] }
+  assert_eq(hash("zz"), 904)
+  assert_eq(r.node_for("zz"), some("a"))
+  assert_eq(place_with(Consistent(Ring { points: [] }), ["zz"]), ["zz@-"])
+}
+test "hidden: exact positions and point order" {
+  let r = Ring { points: [(900, "c"), (120, "exact"), (500, "b")] }
+  assert_eq(r.node_for("x"), some("exact"))
+  assert_eq(Ring { points: [(500, "b"), (130, "near")] }.node_for("x"), some("near"))
+  assert_eq(place_with(Consistent(r), ["x", "zz"]), ["x@exact", "zz@exact"])
+}

@@ -1,0 +1,4 @@
+test "unique slugs" {
+  assert_eq(slugs_with(Strict(Unique { inner: Basic {} }), ["Hello World", "hello, world!"], []), ["hello-world", "hello-world-2"])
+  assert_eq(slugs_with(Loose(Basic {}), ["A  B"], ["a-b"]), ["a-b"])
+}

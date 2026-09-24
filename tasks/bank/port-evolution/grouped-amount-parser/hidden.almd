@@ -1,0 +1,15 @@
+test "hidden: separators on thousands boundaries only" {
+  let us = Grouped { group: ",", decimal: "." }
+  assert_eq(us.parse("1,23,4.00"), err("bad amount: 1,23,4.00"))
+  assert_eq(us.parse("1234,567"), err("bad amount: 1234,567"))
+  assert_eq(us.parse(",123"), err("bad amount: ,123"))
+  assert_eq(us.parse("1,2345"), err("bad amount: 1,2345"))
+  assert_eq(us.parse("12,34.5"), err("bad amount: 12,34.5"))
+}
+test "hidden: plain whole parts and the first error" {
+  let eu = Grouped { group: ".", decimal: "," }
+  assert_eq(eu.parse("1234567"), ok(123456700))
+  assert_eq(eu.parse("999,00"), ok(99900))
+  assert_eq(total_in(Local(eu), ["1.000", "1.00.0", "x"]), err("bad amount: 1.00.0"))
+  assert_eq(total_in(Local(eu), []), ok(0))
+}

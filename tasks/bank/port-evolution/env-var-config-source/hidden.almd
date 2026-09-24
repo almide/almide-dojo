@@ -1,0 +1,12 @@
+test "hidden: empty variables are unset" {
+  let e = EnvConfig { prefix: "APP", vars: ["APP_PORT": ""] }
+  assert_eq(get_int(e, "port", 80), ok(80))
+  assert_eq(e.raw("port"), none)
+  assert_eq(summary_from(Env(e), ["port"]), ok("port=0"))
+}
+test "hidden: every separator and error text" {
+  let e = EnvConfig { prefix: "SVC", vars: ["SVC_A_B_C_D": "7", "SVC_X_Y": "abc"] }
+  assert_eq(get_int(e, "a.b-c.d", 0), ok(7))
+  assert_eq(summary_from(Env(e), ["a.b-c.d", "x-y", "q"]), err("bad int for x-y: abc"))
+  assert_eq(summary_from(File(FileConfig { entries: ["k": ""] }), ["k"]), err("bad int for k: "))
+}

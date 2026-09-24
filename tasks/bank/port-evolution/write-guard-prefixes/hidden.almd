@@ -1,0 +1,12 @@
+test "hidden: prefixes, not substrings" {
+  let g = Guarded { inner: Mem { data: [:] }, writable: ["tmp/", "cache/"] }
+  assert_eq(run(Locked(g), [("x/tmp/a", "1")], []), err("read-only: x/tmp/a"))
+  assert_eq(run(Locked(g), [("tmp", "1")], []), err("read-only: tmp"))
+  assert_eq(run(Locked(g), [("cache/k", "1"), ("tmp/", "2")], ["cache/k", "tmp/"]), ok("cache/k=1 tmp/=2"))
+}
+test "hidden: guard first, batches abort" {
+  let g = Guarded { inner: Mem { data: [:] }, writable: ["tmp/"] }
+  assert_eq(g.put("", "1") |> result.map((s) => 0), err("read-only: "))
+  assert_eq(run(Open(Mem { data: [:] }), [("a", "1"), ("", "2")], ["a"]), err("empty key"))
+  assert_eq(run(Locked(Guarded { inner: Mem { data: [:] }, writable: [] }), [], ["q"]), ok("q=-"))
+}

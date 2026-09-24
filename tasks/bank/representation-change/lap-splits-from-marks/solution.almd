@@ -1,0 +1,26 @@
+// A stopwatch session. `laps` are the lap durations in tenths of a second.
+type Session: Eq, Repr = { laps: List[Int] }
+
+fn session(laps: List[Int]) -> Session = Session { laps: laps }
+
+fn clock(t: Int) -> String =
+  int.to_string(t / 600) + ":" + string.pad_start(int.to_string(t / 10 % 60), 2, "0") + "." + int.to_string(t % 10)
+
+fn laps(s: Session) -> List[Int] = s.laps
+
+// The clock reading at the end of each lap.
+fn marks(s: Session) -> List[Int] = list.scan(s.laps, 0, (acc, l) => acc + l)
+
+fn total(s: Session) -> Int = list.sum(s.laps)
+
+// The 1-based number of the fastest lap; the first one on a tie.
+fn fastest(s: Session) -> Int? =
+  laps(s) |> list.enumerate |> list.fold(none, (best, p) => match best {
+    none => some(p),
+    some(b) => if p.1 < b.1 then some(p) else some(b),
+  }) |> option.map((p) => p.0 + 1)
+
+// "L<n> <clock at the end of the lap> (+<lap duration>)" per lap.
+fn table(s: Session) -> List[String] =
+  list.zip(marks(s), laps(s)) |> list.enumerate |> list.map((p) =>
+    "L" + int.to_string(p.0 + 1) + " " + clock((p.1).0) + " (+" + clock((p.1).1) + ")")
