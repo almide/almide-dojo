@@ -1,0 +1,3 @@
+test "search" {
+  assert_eq(search_all(["red fox", "blue fox", "red hen"], ["fox", "hen"]), ["0,1", "2"])
+}

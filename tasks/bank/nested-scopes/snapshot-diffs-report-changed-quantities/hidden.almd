@@ -1,0 +1,11 @@
+test "hidden: changed quantities are changes" {
+  assert_eq(diffs([("a=1;b=2", "a=3;b=2")]), ["~a"])
+  assert_eq(diffs([("p=1;q=2", "q=0;r=1;p=1")]), ["~q +r"])
+}
+test "hidden: empties" {
+  assert_eq(diffs([("", ""), ("", "z=1"), ("z=1", "")]), ["same", "+z", "-z"])
+  assert_eq(diffs([]), [])
+}
+test "hidden: helpers unchanged" {
+  assert_eq(quantity("a=1;a=4", "a"), 4)
+}

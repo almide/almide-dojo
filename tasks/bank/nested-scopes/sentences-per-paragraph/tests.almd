@@ -1,0 +1,3 @@
+test "sentence counts" {
+  assert_eq(sentence_counts(["One. Two.\n\nThree", "Hi!"]), ["2,1", "1"])
+}

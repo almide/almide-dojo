@@ -1,0 +1,11 @@
+test "hidden: triple bookings listed once" {
+  assert_eq(clashes(["cy: A B A A B C"]), ["cy: A,B"])
+  assert_eq(clashes(["di: X Y X", "ed: X"]), ["di: X", "ed: ok"])
+}
+test "hidden: empties" {
+  assert_eq(clashes(["fay:", "gus: Z"]), ["fay: ok", "gus: ok"])
+  assert_eq(clashes([]), [])
+}
+test "hidden: helpers unchanged" {
+  assert_eq(load("h: A  B"), 2)
+}

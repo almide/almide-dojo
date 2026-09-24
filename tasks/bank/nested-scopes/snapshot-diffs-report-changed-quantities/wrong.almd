@@ -1,0 +1,21 @@
+// Inventory snapshots as text: "item=qty" entries separated by ";".
+fn parse_snapshot(s: String) -> Map[String, Int] =
+  string.split(s, ";") |> list.filter((e) => e != "") |> list.fold(map.new(), (m, e) =>
+    match string.split(e, "=") {
+      [k, v] => map.set(m, k, int.parse(v) ?? 0),
+      _ => m,
+    })
+
+fn items(s: String) -> List[String] = map.keys(parse_snapshot(s))
+
+fn quantity(s: String, item: String) -> Int = map.get(parse_snapshot(s), item) ?? 0
+
+// Plausible wrong patch: compares the item SETS only, so a quantity change on
+// an item present on both sides goes unreported.
+fn diffs(pairs: List[(String, String)]) -> List[String] =
+  pairs |> list.map(((before, after)) => {
+    let b = items(before)
+    let a = items(after)
+    let all = (a |> list.filter((k) => not list.contains(b, k)) |> list.map((k) => "+" + k)) + (b |> list.filter((k) => not list.contains(a, k)) |> list.map((k) => "-" + k))
+    if list.is_empty(all) then "same" else list.join(all, " ")
+  })

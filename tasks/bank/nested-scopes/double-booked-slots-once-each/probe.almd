@@ -1,0 +1,7 @@
+// Resource probe: __K__ students with 3,000 slots each, one line per student.
+// Each student's slot list and counts belong to its own step, so the batch
+// grows by the input lines only; splitting every line first keeps them all.
+effect fn main() -> Unit = {
+  let lines = list.range(0, __K__) |> list.map((i) => "s" + int.to_string(i) + ": " + (list.range(0, 3000) |> list.map((j) => "D" + int.to_string(j % 40)) |> list.join(" ")))
+  println(int.to_string(clashes(lines) |> list.fold(0, (a, s) => a + string.len(s))))
+}

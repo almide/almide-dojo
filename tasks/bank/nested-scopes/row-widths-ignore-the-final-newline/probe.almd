@@ -1,0 +1,7 @@
+// Resource probe: __K__ files of 3,000 short rows, one text per file. Each
+// file's rows belong to its own step, so the batch grows by the input texts
+// only; splitting every file first keeps all the row lists live.
+effect fn main() -> Unit = {
+  let files = list.range(0, __K__) |> list.map((i) => string.repeat("1,2\n", 3000) + int.to_string(i) + ",x\n")
+  println(int.to_string(check_files("a,b", files) |> list.fold(0, (a, s) => a + string.len(s))))
+}

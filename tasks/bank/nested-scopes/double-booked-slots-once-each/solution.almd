@@ -1,0 +1,16 @@
+// Timetables: one line per student, "name: SLOT SLOT ...", e.g.
+// "ann: MON9 TUE10 MON9". Slots are separated by single spaces.
+fn name_of(line: String) -> String = string.split(line, ":") |> list.first ?? ""
+
+fn slots(line: String) -> List[String] =
+  string.split(string.drop(line, string.len(name_of(line)) + 1), " ") |> list.filter((s) => s != "")
+
+fn load(line: String) -> Int = list.len(slots(line))
+
+// Each student's counts are built and dropped inside its own step.
+fn clashes(lines: List[String]) -> List[String] =
+  lines |> list.map((line) => {
+    let counts = slots(line) |> list.fold(map.new(), (m, s) => map.set(m, s, (map.get(m, s) ?? 0) + 1))
+    let twice = map.entries(counts) |> list.filter(((_, n)) => n > 1) |> list.map(((s, _)) => s)
+    name_of(line) + ": " + (if list.is_empty(twice) then "ok" else list.join(twice, ","))
+  })

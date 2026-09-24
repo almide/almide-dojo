@@ -1,0 +1,12 @@
+// A tiny search engine. Documents are numbered from 0; words are lowercase,
+// separated by spaces. The index maps each word to the documents containing
+// it, in document order, each document once.
+fn doc_words(doc: String) -> List[String] = string.split(string.to_lower(doc), " ") |> list.filter((w) => w != "")
+
+fn build_index(docs: List[String]) -> Map[String, List[Int]] =
+  docs |> list.enumerate |> list.fold(map.new(), (m, p) => {
+    let (i, d) = p
+    doc_words(d) |> list.unique |> list.fold(m, (acc, w) => map.set(acc, w, (map.get(acc, w) ?? []) + [i]))
+  })
+
+fn docs_with(index: Map[String, List[Int]], word: String) -> List[Int] = map.get(index, string.to_lower(word)) ?? []

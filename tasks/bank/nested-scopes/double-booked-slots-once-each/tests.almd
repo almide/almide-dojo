@@ -1,0 +1,3 @@
+test "clashes" {
+  assert_eq(clashes(["ann: MON9 TUE10 MON9", "bob: WED1"]), ["ann: MON9", "bob: ok"])
+}

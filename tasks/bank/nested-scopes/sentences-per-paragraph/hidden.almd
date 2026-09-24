@@ -1,0 +1,10 @@
+test "hidden: runs of terminators end one sentence" {
+  assert_eq(sentence_counts(["Wait... what?! Yes.", "A. B!\n\n...\n\nC"]), ["3", "2,0,1"])
+}
+test "hidden: empty documents" {
+  assert_eq(sentence_counts(["", "\n\n  \n\n"]), ["", ""])
+  assert_eq(sentence_counts([]), [])
+}
+test "hidden: helpers unchanged" {
+  assert_eq(sentences("no end here"), 1)
+}

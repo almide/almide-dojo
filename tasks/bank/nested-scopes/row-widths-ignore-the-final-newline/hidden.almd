@@ -1,0 +1,11 @@
+test "hidden: the final newline is not a row" {
+  assert_eq(check_files("a,b", ["1,2\n3,4\n", ""]), ["ok", "ok"])
+  assert_eq(check_files("a", ["x\n\ny\n"]), ["ok"])
+}
+test "hidden: quoted commas" {
+  assert_eq(check_files("a,b", ["\"x,y\",z\n1,\"2,3\",4\n"]), ["row 2: 3 fields"])
+  assert_eq(check_files("a,b,c", []), [])
+}
+test "hidden: helpers unchanged" {
+  assert_eq(width("\"a,b\",c,"), 3)
+}

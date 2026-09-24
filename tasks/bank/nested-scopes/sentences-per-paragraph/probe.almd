@@ -1,0 +1,7 @@
+// Resource probe: __K__ documents of 2,000 short paragraphs, one text each.
+// Each document's paragraph list belongs to its own step, so the batch grows
+// by the input texts only; splitting every document first keeps them all.
+effect fn main() -> Unit = {
+  let docs = list.range(0, __K__) |> list.map((i) => string.repeat("Go.\n\n", 2000) + int.to_string(i))
+  println(int.to_string(sentence_counts(docs) |> list.fold(0, (a, s) => a + string.len(s))))
+}

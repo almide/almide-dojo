@@ -1,0 +1,8 @@
+// Timetables: one line per student, "name: SLOT SLOT ...", e.g.
+// "ann: MON9 TUE10 MON9". Slots are separated by single spaces.
+fn name_of(line: String) -> String = string.split(line, ":") |> list.first ?? ""
+
+fn slots(line: String) -> List[String] =
+  string.split(string.drop(line, string.len(name_of(line)) + 1), " ") |> list.filter((s) => s != "")
+
+fn load(line: String) -> Int = list.len(slots(line))
