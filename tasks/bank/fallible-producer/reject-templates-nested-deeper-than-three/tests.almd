@@ -1,0 +1,6 @@
+test "four nested blocks are too deep" {
+  assert(result.is_err(check("{{#if a}}{{#each b}}{{#with c}}{{#if d}}x{{/if}}{{/with}}{{/each}}{{/if}}")))
+}
+test "templates still summarize" {
+  assert_eq(summary("Hi {{name}}{{#if vip}}, star {{rank}}{{/if}}"), ok("1 blocks, vars name,rank"))
+}

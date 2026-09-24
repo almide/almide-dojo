@@ -1,0 +1,7 @@
+test "a count of 1 written out is rejected" {
+  assert(result.is_err(atoms("H2O1")))
+}
+test "formulas still count their atoms" {
+  assert_eq(census("Ca(OH)2"), ok("H=2 O=2 Ca=1"))
+  assert_eq(census("H2SO4"), ok("H=2 O=4 S=1"))
+}

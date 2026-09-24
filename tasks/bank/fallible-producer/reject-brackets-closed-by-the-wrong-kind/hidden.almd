@@ -1,0 +1,14 @@
+test "hidden: crossed pairs are wrong even when each kind is balanced" {
+  assert_eq(deepest("([)]"), err("expected ] but found ) at 2"))
+  assert_eq(deepest("{ a: [1, 2} ]"), err("expected ] but found } at 10"))
+}
+test "hidden: brackets inside strings, escaped quotes included, are ignored" {
+  assert_eq(deepest("say(\"(]\")"), ok(1))
+  assert_eq(deepest("say(\"a \\\" ]\")"), ok(1))
+}
+test "hidden: older messages and their order" {
+  assert_eq(deepest("x)"), err("unmatched ) at 1"))
+  assert_eq(deepest("(\"abc"), err("unterminated string at 1"))
+  assert_eq(deepest("(["), err("2 unclosed bracket(s)"))
+  assert_eq(deepest("(]\""), err("expected ) but found ] at 1"))
+}

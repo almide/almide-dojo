@@ -1,0 +1,55 @@
+// Version constraint combiner. A requirement is a space-separated list of
+// constraints like ">=1.2.0", "<2.0.0", "<=1.4.1", ">1.0.0"; all must hold.
+// The combined range keeps the tightest lower and upper bound.
+type Bound: Eq, Repr = { v: List[Int], inclusive: Bool }
+type Range: Eq, Repr = { lo: Bound?, hi: Bound? }
+
+fn version(s: String) -> List[Int]! = {
+  let p = string.split(s, ".")
+  guard list.len(p) == 3 else err("bad version ${s}")
+  p |> list.map((x) => int.parse(x) |> result.map_err((_) => "bad version ${s}")) |> list.map((r) => r!)!
+}
+
+fn cmp(a: List[Int], b: List[Int]) -> Int =
+  match list.zip(a, b) |> list.find((p) => p.0 != p.1) {
+    some(p) => if p.0 < p.1 then -1 else 1,
+    none => 0,
+  }
+
+fn tighter_lo(a: Bound?, b: Bound) -> Bound =
+  match a {
+    none => b,
+    some(x) => {
+      let c = cmp(x.v, b.v)
+      if c > 0 or (c == 0 and not x.inclusive) then x else b
+    },
+  }
+
+fn tighter_hi(a: Bound?, b: Bound) -> Bound =
+  match a {
+    none => b,
+    some(x) => {
+      let c = cmp(x.v, b.v)
+      if c < 0 or (c == 0 and not x.inclusive) then x else b
+    },
+  }
+
+fn add(r: Range, c: String) -> Range! = {
+  let op = if string.starts_with(c, ">=") or string.starts_with(c, "<=") then string.take(c, 2) else string.take(c, 1)
+  guard op == ">=" or op == "<=" or op == ">" or op == "<" else err("bad constraint ${c}")
+  let v = version(string.drop(c, string.len(op)))!
+  let b = Bound { v: v, inclusive: string.ends_with(op, "=") }
+  if string.starts_with(op, ">") then { ...r, lo: some(tighter_lo(r.lo, b)) } else { ...r, hi: some(tighter_hi(r.hi, b)) }
+}
+
+fn combine(req: String) -> Range! =
+  string.split(req, " ") |> list.filter((c) => c != "") |> list.fold(Range { lo: none, hi: none }, (r, c) => add(r, c)!)!
+
+fn show_v(v: List[Int]) -> String = v |> list.map((x) => int.to_string(x)) |> list.join(".")
+
+fn describe(req: String) -> String! = {
+  let r = combine(req)!
+  let lo = match r.lo { some(b) => "${if b.inclusive then "[" else "("}${show_v(b.v)}", none => "(*" }
+  let hi = match r.hi { some(b) => "${show_v(b.v)}${if b.inclusive then "]" else ")"}", none => "*)" }
+  "${lo}, ${hi}"
+}

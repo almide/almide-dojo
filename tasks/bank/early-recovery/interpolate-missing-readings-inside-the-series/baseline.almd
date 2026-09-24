@@ -1,0 +1,45 @@
+// Sensor series. Each line is "<t>=<value>" with increasing integer times; a
+// reading the sensor lost is written "<t>=?". Values are integers.
+type SeriesErr: Eq, Repr = | BadLine(String) | NotIncreasing(Int) | Missing(Int)
+type Reading = { t: Int, v: Int? }
+type Series: Eq, Repr = { points: List[String], notes: List[String] }
+
+fn parse_reading(line: String) -> Reading!SeriesErr = {
+  let p = string.split(line, "=")
+  guard list.len(p) == 2 else err(BadLine(line))
+  let t = match int.parse(list.get(p, 0) ?? "") {
+    ok(t) => ok(t),
+    err(_) => err(BadLine(line)),
+  }!
+  let raw = list.get(p, 1) ?? ""
+  if raw == "?" then ok(Reading { t: t, v: none })
+  else match int.parse(raw) {
+    ok(v) => ok(Reading { t: t, v: some(v) }),
+    err(_) => err(BadLine(line)),
+  }
+}
+
+fn readings(lines: List[String]) -> List[Reading]!SeriesErr = {
+  var acc: List[Reading] = []
+  for l in lines {
+    let r = parse_reading(l)!
+    let prev_t = list.last(acc) |> option.map((p) => p.t)
+    guard prev_t == none or r.t > (prev_t ?? 0) else err(NotIncreasing(r.t))
+    acc = acc + [r]
+  }
+  acc
+}
+
+fn series(lines: List[String]) -> Series!SeriesErr = {
+  let rs = readings(lines)!
+  let pts = rs |> list.map((r) => match r.v {
+    some(v) => ok("${int.to_string(r.t)}:${int.to_string(v)}"),
+    none => err(Missing(r.t)),
+  }) |> list.map((x) => x!)!
+  Series { points: pts, notes: [] }
+}
+
+fn show(s: Series) -> String = {
+  let p = list.join(s.points, " ")
+  if list.is_empty(s.notes) then p else "${p} | ${list.join(s.notes, "; ")}"
+}

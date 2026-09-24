@@ -1,0 +1,18 @@
+test "hidden: exact message at the position of the count, groups included" {
+  assert_eq(census("NaCl1"), err("count 1 must be omitted at 4"))
+  assert_eq(census("Ca(OH)1"), err("count 1 must be omitted at 6"))
+}
+test "hidden: counts that merely start with 1 are fine" {
+  assert_eq(census("C10H16"), ok("H=16 C=10"))
+  assert_eq(census("(CH2)12"), ok("H=24 C=12"))
+  assert_eq(census("H1"), err("count 1 must be omitted at 1"))
+}
+test "hidden: a leading-zero count of one is also written out" {
+  assert_eq(census("O01"), err("count 1 must be omitted at 1"))
+}
+test "hidden: problems are found left to right" {
+  assert_eq(census("Xy1"), err("unknown element Xy at 0"))
+  assert_eq(census("H1Xy"), err("count 1 must be omitted at 1"))
+  assert_eq(census("Fe0O1"), err("zero count at 2"))
+  assert_eq(census("(H1)0"), err("count 1 must be omitted at 2"))
+}

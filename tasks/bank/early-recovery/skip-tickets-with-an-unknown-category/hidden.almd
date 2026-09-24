@@ -1,0 +1,13 @@
+test "hidden: skipped lines take no ticket number" {
+  assert_eq(import_board(["misc p2 x", "bug p1 a", "", "todo p4 y", "docs p3 b"]) |> result.map((b) => show(b)),
+    ok("#1 bug:a (p1); #2 docs:b (p3) | skipped misc p2 x: unknown category misc; skipped todo p4 y: unknown category todo"))
+}
+test "hidden: an unknown category wins over a bad priority on the same line" {
+  assert_eq(import_board(["bug p1 a", "wish p0"]) |> result.map((b) => show(b)), ok("#1 bug:a (p1) | skipped wish p0: unknown category wish"))
+}
+test "hidden: other errors stay fatal after a skip" {
+  assert_eq(import_board(["wish p1 x", "chore p2"]) |> result.map((b) => show(b)), err(NoTitle("chore p2")))
+}
+test "hidden: everything skipped leaves an empty board" {
+  assert_eq(import_board(["x p1 a"]) |> result.map((b) => show(b)), ok(" | skipped x p1 a: unknown category x"))
+}

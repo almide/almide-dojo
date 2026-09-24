@@ -1,0 +1,6 @@
+test "a requirement nothing can satisfy is rejected" {
+  assert(result.is_err(combine(">=2.0.0 <1.5.0")))
+}
+test "ranges still combine" {
+  assert_eq(describe(">=1.2.0 <2.0.0 >1.0.0"), ok("[1.2.0, 2.0.0)"))
+}

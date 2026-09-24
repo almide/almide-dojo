@@ -1,0 +1,6 @@
+test "a lost reading between two known ones is interpolated" {
+  assert_eq(series(["0=10", "1=?", "2=20"]) |> result.map((s) => show(s)), ok("0:10 1:15 2:20 | interpolated 1 as 15"))
+}
+test "a malformed line is still fatal" {
+  assert_eq(series(["0=10", "1=abc"]) |> result.map((s) => show(s)), err(BadLine("1=abc")))
+}

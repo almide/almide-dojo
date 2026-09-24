@@ -1,0 +1,13 @@
+test "hidden: halves that are still too large are split again" {
+  assert_eq(upload([90, 40, 30, 5]) |> result.map((u) => show(u)), ok("[90] [40] [30,5]"))
+  assert_eq(upload([70, 60, 50, 1, 2]) |> result.map((u) => show(u)), ok("[70] [60] [50,1] [2]"))
+}
+test "hidden: an odd batch keeps the larger half first" {
+  assert_eq(upload([50, 40, 30]) |> result.map((u) => show(u)), ok("[50,40] [30]"))
+}
+test "hidden: a single record over the limit cannot be split and is fatal" {
+  assert_eq(upload([10, 120, 5]) |> result.map((u) => show(u)), err(TooLarge(1, 120)))
+}
+test "hidden: a bad record inside a batch that is also too large is reported" {
+  assert_eq(upload([90, 90, -1, 5]) |> result.map((u) => show(u)), err(BadRecord(-1)))
+}

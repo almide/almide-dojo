@@ -1,0 +1,65 @@
+// Plausible wrong patch: fills a lost reading with the midpoint of its known
+// neighbours, ignoring how far away in time they are.
+// Sensor series. Each line is "<t>=<value>" with increasing integer times; a
+// reading the sensor lost is written "<t>=?". Values are integers.
+type SeriesErr: Eq, Repr = | BadLine(String) | NotIncreasing(Int) | Missing(Int)
+type Reading = { t: Int, v: Int? }
+type Series: Eq, Repr = { points: List[String], notes: List[String] }
+
+fn parse_reading(line: String) -> Reading!SeriesErr = {
+  let p = string.split(line, "=")
+  guard list.len(p) == 2 else err(BadLine(line))
+  let t = match int.parse(list.get(p, 0) ?? "") {
+    ok(t) => ok(t),
+    err(_) => err(BadLine(line)),
+  }!
+  let raw = list.get(p, 1) ?? ""
+  if raw == "?" then ok(Reading { t: t, v: none })
+  else match int.parse(raw) {
+    ok(v) => ok(Reading { t: t, v: some(v) }),
+    err(_) => err(BadLine(line)),
+  }
+}
+
+fn readings(lines: List[String]) -> List[Reading]!SeriesErr = {
+  var acc: List[Reading] = []
+  for l in lines {
+    let r = parse_reading(l)!
+    let prev_t = list.last(acc) |> option.map((p) => p.t)
+    guard prev_t == none or r.t > (prev_t ?? 0) else err(NotIncreasing(r.t))
+    acc = acc + [r]
+  }
+  acc
+}
+
+fn fill(rs: List[Reading], r: Reading) -> Int?!SeriesErr = {
+  let before = rs |> list.filter((x) => x.t < r.t and x.v != none) |> list.last
+  let after = rs |> list.find((x) => x.t > r.t and x.v != none)
+  match (before, after) {
+    (some(a), some(b)) => ok(some(((a.v ?? 0) + (b.v ?? 0) + 1) / 2)),
+    _ => err(Missing(r.t)),
+  }
+}
+
+fn series(lines: List[String]) -> Series!SeriesErr = {
+  let rs = readings(lines)!
+  var pts: List[String] = []
+  var notes: List[String] = []
+  for r in rs {
+    let v = match r.v {
+      some(v) => v,
+      none => {
+        let f = fill(rs, r)! ?? 0
+        notes = notes + ["interpolated ${int.to_string(r.t)} as ${int.to_string(f)}"]
+        f
+      },
+    }
+    pts = pts + ["${int.to_string(r.t)}:${int.to_string(v)}"]
+  }
+  Series { points: pts, notes: notes }
+}
+
+fn show(s: Series) -> String = {
+  let p = list.join(s.points, " ")
+  if list.is_empty(s.notes) then p else "${p} | ${list.join(s.notes, "; ")}"
+}

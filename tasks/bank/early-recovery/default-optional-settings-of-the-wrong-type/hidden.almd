@@ -1,0 +1,15 @@
+test "hidden: a required setting of the wrong type is still fatal" {
+  assert_eq(load(["[server]", "host = a", "port = eighty"]) |> result.map((l) => show(l)), err(WrongType("server.port", "int", "eighty")))
+}
+test "hidden: several fallbacks, warnings in schema order" {
+  assert_eq(load(["[log]", "color = yes", "level = loud", "[server]", "port = 1", "host = h"]) |> result.map((l) => show(l)),
+    ok("server.host=h server.port=1 server.timeout=30 log.level=info log.color=false | log.level: loud is not level, using info; log.color: yes is not bool, using false"))
+}
+test "hidden: the last assignment of a key is the one checked" {
+  assert_eq(load(["[server]", "host = a", "port = 1", "timeout = x", "timeout = 5"]) |> result.map((l) => show(l)),
+    ok("server.host=a server.port=1 server.timeout=5 log.level=info log.color=false"))
+}
+test "hidden: missing required keys and syntax errors stay fatal" {
+  assert_eq(load(["[server]", "port = 1", "[log]", "level = x"]) |> result.map((l) => show(l)), err(Missing("server.host")))
+  assert_eq(load(["[server]", "host a"]) |> result.map((l) => show(l)), err(Syntax(2)))
+}

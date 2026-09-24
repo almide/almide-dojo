@@ -1,0 +1,47 @@
+// Weekly roster. Each line is "<worker> <day> <HH:MM>-<HH:MM>", day being
+// mon..sun; a shift ends on the day it starts. Lines may come in any order.
+type Shift: Eq, Repr = { worker: String, start: Int, stop: Int }
+
+let DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+
+fn minute(s: String) -> Int! = {
+  let p = string.split(s, ":")
+  guard list.len(p) == 2 else err("bad time ${s}")
+  let h = int.parse(list.get(p, 0) ?? "") |> result.map_err((_) => "bad time ${s}")!
+  let m = int.parse(list.get(p, 1) ?? "") |> result.map_err((_) => "bad time ${s}")!
+  guard h >= 0 and h <= 24 and m >= 0 and m < 60 and h * 60 + m <= 1440 else err("bad time ${s}")
+  h * 60 + m
+}
+
+fn parse_shift(line: String) -> Shift! = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) == 3 else err("bad line: ${line}")
+  let day = match list.index_of(DAYS, list.get(w, 1) ?? "") {
+    some(d) => ok(d),
+    none => err("bad day in: ${line}"),
+  }!
+  let span = string.split(list.get(w, 2) ?? "", "-")
+  guard list.len(span) == 2 else err("bad line: ${line}")
+  let a = minute(list.get(span, 0) ?? "")!
+  let b = minute(list.get(span, 1) ?? "")!
+  guard b > a else err("empty shift in: ${line}")
+  Shift { worker: list.get(w, 0) ?? "", start: day * 1440 + a, stop: day * 1440 + b }
+}
+
+fn stamp(t: Int) -> String = {
+  let d = list.get(DAYS, t / 1440) ?? "?"
+  let m = t % 1440
+  "${d} ${string.pad_start(int.to_string(m / 60), 2, "0")}:${string.pad_start(int.to_string(m % 60), 2, "0")}"
+}
+
+fn roster(lines: List[String]) -> List[Shift]! =
+  lines |> list.map((l) => parse_shift(l)!)!
+
+fn hours(lines: List[String]) -> String! = {
+  let ss = roster(lines)!
+  let names = ss |> list.map((s) => s.worker) |> list.unique |> list.sort
+  names |> list.map((n) => {
+    let mins = ss |> list.filter((s) => s.worker == n) |> list.fold(0, (a, s) => a + s.stop - s.start)
+    "${n} ${int.to_string(mins / 60)}h${string.pad_start(int.to_string(mins % 60), 2, "0")}"
+  }) |> list.join(", ")
+}

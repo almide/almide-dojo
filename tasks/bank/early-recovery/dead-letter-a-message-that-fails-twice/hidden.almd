@@ -1,0 +1,14 @@
+test "hidden: a first failure waits for the redelivery, which may succeed" {
+  assert_eq(consume(["m1 v2 user=a", "m1 v2 user=a;amount=5", "m2 v1 user=b"]) |> result.map((c) => show(c)), ok("m1:user=a;amount=5 m2:user=b"))
+}
+test "hidden: failures are counted per message id, not overall" {
+  assert_eq(consume(["a v1 x", "b v1 y", "a v1 user=1", "b v1 user=2"]) |> result.map((c) => show(c)), ok("a:user=1 b:user=2"))
+  assert_eq(consume(["a v1 x", "b v1 y", "b v1 z", "a v1 w"]) |> result.map((c) => show(c)), ok(" | dead: b,a"))
+}
+test "hidden: a dead message is not retried again" {
+  assert_eq(consume(["a v1 x", "a v1 x", "a v1 user=ok"]) |> result.map((c) => show(c)), ok(" | dead: a"))
+}
+test "hidden: bad deliveries stay fatal; a message never redelivered is simply not handled" {
+  assert_eq(consume(["a v1 x", "broken"]) |> result.map((c) => show(c)), err(BadDelivery("broken")))
+  assert_eq(consume(["a v1 x", "b v1 user=b"]) |> result.map((c) => show(c)), ok("b:user=b"))
+}

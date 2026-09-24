@@ -1,0 +1,49 @@
+// Melody reader. A piece is "<beats>/<unit> | <notes> | <notes> ...": a time
+// signature, then measures separated by "|". A note is w h q e s (whole, half,
+// quarter, eighth, sixteenth), optionally dotted ("q." = one and a half
+// quarters), optionally a rest ("r" prefix). Durations are counted in
+// sixteenths.
+fn note_len(k: Int, tok: String) -> Int! = {
+  let body = if string.starts_with(tok, "r") then string.drop(tok, 1) else tok
+  let dotted = string.ends_with(body, ".")
+  let base = match (if dotted then string.drop_end(body, 1) else body) {
+    "w" => ok(16),
+    "h" => ok(8),
+    "q" => ok(4),
+    "e" => ok(2),
+    "s" => ok(1),
+    _ => err("bad note ${tok} in measure ${int.to_string(k)}"),
+  }!
+  guard not dotted or base > 1 else err("bad note ${tok} in measure ${int.to_string(k)}")
+  if dotted then base + base / 2 else base
+}
+
+fn bar_len(sig: String) -> Int! = {
+  let p = string.split(string.trim(sig), "/")
+  guard list.len(p) == 2 else err("bad time signature ${sig}")
+  let beats = int.parse(list.get(p, 0) ?? "") |> result.map_err((_) => "bad time signature ${sig}")!
+  let unit = int.parse(list.get(p, 1) ?? "") |> result.map_err((_) => "bad time signature ${sig}")!
+  guard beats > 0 and (unit == 2 or unit == 4 or unit == 8) else err("bad time signature ${sig}")
+  beats * 16 / unit
+}
+
+fn measure_len(k: Int, text: String) -> Int! = {
+  let toks = string.split(string.trim(text), " ") |> list.filter((t) => t != "")
+  guard not list.is_empty(toks) else err("empty measure ${int.to_string(k)}")
+  let lens = toks |> list.map((t) => note_len(k, t)!)!
+  list.sum(lens)
+}
+
+fn measures(piece: String) -> List[Int]! = {
+  let parts = string.split(piece, "|")
+  let bar = bar_len(list.first(parts) ?? "")!
+  let body = list.drop(parts, 1)
+  guard not list.is_empty(body) else err("no measures")
+  body |> list.enumerate |> list.map((p) => measure_len(p.0 + 1, p.1)!)!
+}
+
+fn length(piece: String) -> String! = {
+  let ms = measures(piece)!
+  let bar = bar_len(list.first(string.split(piece, "|")) ?? "")!
+  "${int.to_string(list.len(ms))} measures of ${int.to_string(bar)}/16, ${int.to_string(list.sum(ms))}/16 in all"
+}

@@ -1,0 +1,14 @@
+test "hidden: the late event goes after every earlier-or-equal time, keeping arrival order for ties" {
+  assert_eq(read_stream(["10 a x", "12 b y", "12 c y", "14 d y", "12 e z"]) |> result.map((s) => show(s)), ok("10:a 12:b 12:c 12:e 14:d | line 5: moved back 2s"))
+}
+test "hidden: five seconds is the most that is tolerated" {
+  assert_eq(read_stream(["0 a x", "20 b y", "15 c z"]) |> result.map((s) => show(s)), ok("0:a 15:c 20:b | line 3: moved back 5s"))
+  assert_eq(read_stream(["0 a x", "20 b y", "14 c z"]) |> result.map((s) => show(s)), err(Backwards(3, 20, 14)))
+}
+test "hidden: the skew is measured from the latest event, not the previous line" {
+  assert_eq(read_stream(["50 a x", "48 b y", "44 c z"]) |> result.map((s) => show(s)), err(Backwards(3, 50, 44)))
+  assert_eq(read_stream(["50 a x", "48 b y", "46 c z"]) |> result.map((s) => show(s)), ok("46:c 48:b 50:a | line 2: moved back 2s; line 3: moved back 4s"))
+}
+test "hidden: bad lines stay fatal" {
+  assert_eq(read_stream(["5 a x", "3 b y", "zz c"]) |> result.map((s) => show(s)), err(BadLine("zz c")))
+}

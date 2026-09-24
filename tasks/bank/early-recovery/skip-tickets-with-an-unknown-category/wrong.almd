@@ -1,0 +1,43 @@
+// Plausible wrong patch: numbers tickets by their line position, so a skipped
+// line leaves a hole in the numbering.
+// Ticket import. Each line is "<category> p<1-4> <title...>"; tickets are
+// numbered #1, #2, ... in the order they are imported.
+type TicketErr: Eq, Repr = | UnknownCategory(String) | BadPriority(String) | NoTitle(String)
+type Ticket = { cat: String, prio: Int, title: String }
+type Board: Eq, Repr = { tickets: List[String], warnings: List[String] }
+
+let CATEGORIES = ["bug", "feature", "chore", "docs"]
+
+fn parse_ticket(line: String) -> Ticket!TicketErr = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  let cat = list.get(w, 0) ?? ""
+  guard list.contains(CATEGORIES, cat) else err(UnknownCategory(cat))
+  let p = list.get(w, 1) ?? ""
+  let prio = match int.parse(string.drop(p, 1)) {
+    ok(n) if string.starts_with(p, "p") and n >= 1 and n <= 4 => ok(n),
+    _ => err(BadPriority(p)),
+  }!
+  guard list.len(w) >= 3 else err(NoTitle(line))
+  Ticket { cat: cat, prio: prio, title: list.drop(w, 2) |> list.join(" ") }
+}
+
+fn import_board(lines: List[String]) -> Board!TicketErr = {
+  var shown: List[String] = []
+  var warnings: List[String] = []
+  for p in lines |> list.filter((l) => string.trim(l) != "") |> list.enumerate {
+    shown = match parse_ticket(p.1) {
+      ok(t) => ok(shown + ["#${int.to_string(p.0 + 1)} ${t.cat}:${t.title} (p${int.to_string(t.prio)})"]),
+      err(UnknownCategory(c)) => {
+        warnings = warnings + ["skipped ${p.1}: unknown category ${c}"]
+        ok(shown)
+      },
+      err(e) => err(e),
+    }!
+  }
+  Board { tickets: shown, warnings: warnings }
+}
+
+fn show(b: Board) -> String = {
+  let t = list.join(b.tickets, "; ")
+  if list.is_empty(b.warnings) then t else "${t} | ${list.join(b.warnings, "; ")}"
+}

@@ -1,0 +1,17 @@
+test "hidden: exact message, short measures too" {
+  assert_eq(length("4/4 | q q q q | h rq | q q q q"), err("measure 2 has 12/16, expected 16/16"))
+  assert_eq(length("6/8 | q. q. | q q q q"), err("measure 2 has 16/16, expected 12/16"))
+}
+test "hidden: the last measure may be short, but not long" {
+  assert_eq(length("4/4 | q q q q | q"), ok("2 measures of 16/16, 20/16 in all"))
+  assert_eq(length("4/4 | q q q q | w q"), err("measure 2 has 20/16, expected 16/16"))
+  assert_eq(length("2/4 | e"), ok("1 measures of 8/16, 2/16 in all"))
+}
+test "hidden: dotted notes and rests count" {
+  assert_eq(length("3/4 | q. e q | rh. | e. s rq q"), ok("3 measures of 12/16, 36/16 in all"))
+}
+test "hidden: note errors in a measure come first, measures in order" {
+  assert_eq(length("4/4 | q q | x"), err("measure 1 has 8/16, expected 16/16"))
+  assert_eq(length("4/4 | q q x | q"), err("bad note x in measure 1"))
+  assert_eq(length("4/4 | q q q q | |"), err("empty measure 2"))
+}

@@ -1,0 +1,37 @@
+// Catalog import from scanned ISBN-10 codes ("0-306-40615-2"). Dashes are
+// ignored; the last character may be "X" (ten). A code is valid when
+// sum((10 - i) * digit_i) over positions i = 0..9 is divisible by 11.
+type IsbnErr: Eq, Repr = | BadLength(String) | BadChar(String, Int) | BadChecksum(String)
+type Catalog: Eq, Repr = { books: List[String], notes: List[String] }
+
+fn value(c: String, i: Int) -> Int? =
+  if string.is_digit(c) then int.parse(c)? else if c == "X" and i == 9 then some(10) else none
+
+fn checksum_ok(vals: List[Int]) -> Bool =
+  (vals |> list.enumerate |> list.fold(0, (acc, p) => acc + (10 - p.0) * p.1)) % 11 == 0
+
+fn read_isbn(raw: String) -> String!IsbnErr = {
+  let cs = string.chars(raw) |> list.filter((c) => c != "-")
+  guard list.len(cs) == 10 else err(BadLength(raw))
+  let vals = cs |> list.enumerate |> list.map((p) => match value(p.1, p.0) {
+    some(v) => ok(v),
+    none => err(BadChar(raw, p.0)),
+  }) |> list.map((r) => r!)!
+  guard checksum_ok(vals) else err(BadChecksum(raw))
+  list.join(cs, "")
+}
+
+fn import_catalog(lines: List[String]) -> Catalog!IsbnErr = {
+  var books: List[String] = []
+  for line in lines {
+    let sp = string.index_of(line, " ") ?? string.len(line)
+    let code = read_isbn(string.slice(line, 0, sp))!
+    books = books + ["${code} ${string.trim(string.drop(line, sp))}"]
+  }
+  Catalog { books: books, notes: [] }
+}
+
+fn show(c: Catalog) -> String = {
+  let b = list.join(c.books, "; ")
+  if list.is_empty(c.notes) then b else "${b} | ${list.join(c.notes, "; ")}"
+}

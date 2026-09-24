@@ -1,0 +1,15 @@
+test "hidden: exact message names the hunk and both counts" {
+  assert_eq(stat(["@@ -1,2 +1,2 @@", " a", "-b", "+c", "@@ -5,1 +5,3 @@", " x", "+y"]), err("hunk 2 has 1/2 lines, header says 1/3"))
+}
+test "hidden: no-newline markers count on neither side" {
+  assert_eq(stat(["@@ -1,1 +1,1 @@", "-a", "\\ No newline at end of file", "+b", "\\ No newline at end of file"]), ok("1 hunks, +1 -1"))
+}
+test "hidden: an omitted count means 1, and a zero count is allowed" {
+  assert_eq(stat(["@@ -3 +3 @@", "-old", "+new"]), ok("1 hunks, +1 -1"))
+  assert_eq(stat(["@@ -0,0 +1,2 @@", "+a", "+b"]), ok("1 hunks, +2 -0"))
+  assert_eq(stat(["@@ -3 +3 @@", "-old"]), err("hunk 1 has 1/0 lines, header says 1/1"))
+}
+test "hidden: line errors anywhere come before count mismatches" {
+  assert_eq(stat(["@@ -1,5 +1,5 @@", " a", "@@ -9,1 +9,1 @@", "?x"]), err("bad line prefix in hunk 2: ?x"))
+  assert_eq(stat(["@@ -1,5 +1,5 @@", " a", "@@ bad @@"]), err("bad hunk header 2"))
+}

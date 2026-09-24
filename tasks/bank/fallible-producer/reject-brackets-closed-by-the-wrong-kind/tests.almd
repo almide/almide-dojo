@@ -1,0 +1,6 @@
+test "a bracket closed by the wrong kind is rejected" {
+  assert(result.is_err(deepest("f(x]")))
+}
+test "balanced code still reports its depth" {
+  assert_eq(deepest("f(a[1], {b: (2)})"), ok(3))
+}

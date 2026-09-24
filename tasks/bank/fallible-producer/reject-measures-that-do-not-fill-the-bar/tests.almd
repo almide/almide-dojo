@@ -1,0 +1,6 @@
+test "a measure that overfills the bar is rejected" {
+  assert(result.is_err(measures("4/4 | q q q q | h h q | q q q q")))
+}
+test "full measures still count" {
+  assert_eq(length("3/4 | q q q | h q"), ok("2 measures of 12/16, 24/16 in all"))
+}

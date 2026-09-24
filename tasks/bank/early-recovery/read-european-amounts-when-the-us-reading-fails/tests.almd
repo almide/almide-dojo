@@ -1,0 +1,6 @@
+test "an amount that only makes sense in European notation is read that way" {
+  assert_eq(total(["10.00", "1.234,50"]) |> result.map((t) => show(t)), ok("1244.50 | read 1.234,50 as European"))
+}
+test "an amount that is neither is still an error" {
+  assert_eq(total(["12.5.0"]) |> result.map((t) => show(t)), err("bad amount 12.5.0"))
+}

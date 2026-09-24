@@ -1,0 +1,53 @@
+// Plausible wrong patch: picks the notation up front from the last separator
+// (a "," near the end means European), so "1,234" is read as European and fails.
+// Expense amounts in US notation: digits with optional "," thousands
+// separators (groups of three) and an optional "." with exactly two decimals,
+// e.g. "1,234.50", "80", "0.99". Amounts are kept in cents.
+type Totals: Eq, Repr = { cents: Int, notes: List[String] }
+
+fn whole(raw: String, s: String, sep: String) -> Int! = {
+  let groups = string.split(s, sep)
+  let first = list.first(groups) ?? ""
+  let rest = list.drop(groups, 1)
+  guard first != "" and string.len(first) <= 3 or list.is_empty(rest) else err("bad amount ${raw}")
+  guard list.all(groups, (g) => g != "" and string.is_digit(g)) else err("bad amount ${raw}")
+  guard list.all(rest, (g) => string.len(g) == 3) else err("bad amount ${raw}")
+  int.parse(list.join(groups, "")) |> result.map_err((_) => "bad amount ${raw}")
+}
+
+// `sep` groups thousands, `dec` marks the decimals.
+fn parse_with(raw: String, sep: String, dec: String) -> Int! = {
+  let parts = string.split(raw, dec)
+  guard list.len(parts) <= 2 else err("bad amount ${raw}")
+  let units = whole(raw, list.first(parts) ?? "", sep)!
+  let cents = match list.get(parts, 1) {
+    none => ok(0),
+    some(d) => if string.len(d) == 2 and string.is_digit(d) then ok(int.parse(d) ?? 0) else err("bad amount ${raw}"),
+  }!
+  units * 100 + cents
+}
+
+fn parse_us(raw: String) -> Int! = parse_with(raw, ",", ".")
+
+fn total(amounts: List[String]) -> Totals! = {
+  var cents = 0
+  var notes: List[String] = []
+  for a in amounts {
+    let raw = string.trim(a)
+    let comma = string.last_index_of(raw, ",") ?? -1
+    let dot = string.last_index_of(raw, ".") ?? -1
+    let european = comma > dot
+    let v = match european {
+      true => parse_with(raw, ".", ","),
+      false => parse_us(raw),
+    }!
+    if european then { notes = notes + ["read ${raw} as European"] } else ()
+    cents = cents + v
+  }
+  Totals { cents: cents, notes: notes }
+}
+
+fn show(t: Totals) -> String = {
+  let s = "${int.to_string(t.cents / 100)}.${string.pad_start(int.to_string(t.cents % 100), 2, "0")}"
+  if list.is_empty(t.notes) then s else "${s} | ${list.join(t.notes, "; ")}"
+}

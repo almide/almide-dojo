@@ -1,0 +1,46 @@
+// Template checker. Tags are "{{name}}" (a variable), "{{#block arg}}" (opens
+// a block: if, each, with) and "{{/block}}" (closes it); everything else is
+// text. Blocks must close in order. Positions are 0-based offsets of "{{".
+type Tag = { pos: Int, text: String }
+type Summary: Eq, Repr = { blocks: Int, vars: List[String] }
+
+fn tags_from(src: String, i: Int, acc: List[Tag]) -> List[Tag]! =
+  match string.index_of(string.drop(src, i), "{{") {
+    none => ok(acc),
+    some(k) => {
+      let at = i + k
+      let rest = string.drop(src, at + 2)
+      let close = string.index_of(rest, "}}") ?? -1
+      guard close >= 0 else err("unclosed tag at ${int.to_string(at)}")
+      tags_from(src, at + 2 + close + 2, acc + [Tag { pos: at, text: string.trim(string.slice(rest, 0, close)) }])
+    },
+  }
+
+fn check(src: String) -> Summary! = {
+  let tags = tags_from(src, 0, [])!
+  var open: List[String] = []
+  var blocks = 0
+  var vars: List[String] = []
+  for t in tags {
+    if string.starts_with(t.text, "#") then {
+      let name = list.first(string.split(string.drop(t.text, 1), " ")) ?? ""
+      guard list.contains(["if", "each", "with"], name) else err("unknown block ${name} at ${int.to_string(t.pos)}")
+      open = open + [name]
+      blocks = blocks + 1
+    } else if string.starts_with(t.text, "/") then {
+      let name = string.drop(t.text, 1)
+      guard list.last(open) == some(name) else err("unexpected {{/${name}}} at ${int.to_string(t.pos)}")
+      open = list.drop_end(open, 1)
+    } else {
+      guard t.text != "" else err("empty tag at ${int.to_string(t.pos)}")
+      vars = vars + [t.text]
+    }
+  }
+  guard list.is_empty(open) else err("unclosed block ${list.last(open) ?? ""}")
+  Summary { blocks: blocks, vars: vars }
+}
+
+fn summary(src: String) -> String! = {
+  let s = check(src)!
+  "${int.to_string(s.blocks)} blocks, vars ${list.join(s.vars, ",")}"
+}

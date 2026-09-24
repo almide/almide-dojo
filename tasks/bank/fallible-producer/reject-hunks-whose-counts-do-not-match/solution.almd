@@ -1,0 +1,59 @@
+// Unified-diff hunk reader. A hunk starts with "@@ -<a>[,<b>] +<c>[,<d>] @@"
+// (a missing count means 1); its body lines start with " " (context), "-"
+// (removed), "+" (added) or "\" (a "\ No newline at end of file" marker).
+type Hunk: Eq, Repr = { old_start: Int, old_len: Int, new_start: Int, new_len: Int, body: List[String] }
+
+fn range(k: Int, s: String, sign: String) -> (Int, Int)! = {
+  guard string.starts_with(s, sign) else err("bad hunk header ${int.to_string(k)}")
+  let p = string.split(string.drop(s, 1), ",")
+  guard list.len(p) <= 2 else err("bad hunk header ${int.to_string(k)}")
+  let start = int.parse(list.get(p, 0) ?? "") |> result.map_err((_) => "bad hunk header ${int.to_string(k)}")!
+  let len = if list.len(p) == 2 then int.parse(list.get(p, 1) ?? "") |> result.map_err((_) => "bad hunk header ${int.to_string(k)}")! else 1
+  (start, len)
+}
+
+fn header(k: Int, line: String) -> Hunk! = {
+  let w = string.split(line, " ")
+  guard list.len(w) == 4 and list.first(w) == some("@@") and list.last(w) == some("@@") else err("bad hunk header ${int.to_string(k)}")
+  let o = range(k, list.get(w, 1) ?? "", "-")!
+  let n = range(k, list.get(w, 2) ?? "", "+")!
+  Hunk { old_start: o.0, old_len: o.1, new_start: n.0, new_len: n.1, body: [] }
+}
+
+fn add_line(acc: List[Hunk], line: String) -> List[Hunk]! =
+  if string.starts_with(line, "@@") then ok(acc + [header(list.len(acc) + 1, line)!])
+  else match list.last(acc) {
+    none => err("line outside hunk: ${line}"),
+    some(h) => {
+      let c = string.slice(line, 0, 1)
+      guard c == " " or c == "-" or c == "+" or c == "\\" else err("bad line prefix in hunk ${int.to_string(list.len(acc))}: ${line}")
+      ok(list.set(acc, list.len(acc) - 1, { ...h, body: h.body + [line] }))
+    },
+  }
+
+fn hunks(lines: List[String]) -> List[Hunk]! = {
+  let hs = lines |> list.fold([], (acc, line) => add_line(acc, line)!)!
+  let bad = hs |> list.enumerate |> list.find((p) => {
+    let h = p.1
+    let old = h.body |> list.count((l) => string.starts_with(l, " ") or string.starts_with(l, "-"))
+    let new = h.body |> list.count((l) => string.starts_with(l, " ") or string.starts_with(l, "+"))
+    old != h.old_len or new != h.new_len
+  })
+  match bad {
+    some(p) => {
+      let h = p.1
+      let old = h.body |> list.count((l) => string.starts_with(l, " ") or string.starts_with(l, "-"))
+      let new = h.body |> list.count((l) => string.starts_with(l, " ") or string.starts_with(l, "+"))
+      err("hunk ${int.to_string(p.0 + 1)} has ${int.to_string(old)}/${int.to_string(new)} lines, header says ${int.to_string(h.old_len)}/${int.to_string(h.new_len)}")
+    },
+    none => ok(hs),
+  }
+}
+
+fn stat(lines: List[String]) -> String! = {
+  let hs = hunks(lines)!
+  let body = hs |> list.flat_map((h) => h.body)
+  let added = body |> list.count((l) => string.starts_with(l, "+"))
+  let removed = body |> list.count((l) => string.starts_with(l, "-"))
+  "${int.to_string(list.len(hs))} hunks, +${int.to_string(added)} -${int.to_string(removed)}"
+}
