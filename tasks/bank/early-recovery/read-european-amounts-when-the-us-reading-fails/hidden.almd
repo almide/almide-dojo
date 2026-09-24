@@ -1,0 +1,12 @@
+test "hidden: a valid US amount is never re-read, even with a comma last" {
+  assert_eq(total(["1,234"]) |> result.map((t) => show(t)), ok("1234.00"))
+  assert_eq(total(["12,50"]) |> result.map((t) => show(t)), ok("12.50 | read 12,50 as European"))
+}
+test "hidden: when both readings fail, the US error is reported" {
+  assert_eq(total(["1,2,3"]) |> result.map((t) => show(t)), err("bad amount 1,2,3"))
+  assert_eq(total(["5", "9,999"]) |> result.map((t) => show(t)), ok("10004.00"))
+}
+test "hidden: notes in order, first failing amount wins" {
+  assert_eq(total(["0,99", "2.000,01", "x", "3,1"]) |> result.map((t) => show(t)), err("bad amount x"))
+  assert_eq(total(["0,99", "3", "2.000,01"]) |> result.map((t) => show(t)), ok("2004.00 | read 0,99 as European; read 2.000,01 as European"))
+}
