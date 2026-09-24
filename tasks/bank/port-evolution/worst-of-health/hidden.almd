@@ -1,0 +1,15 @@
+test "hidden: the first of equally bad parts" {
+  let g = Worst { parts: [Fixed { answer: Degraded("disk") }, Fixed { answer: Up }, Fixed { answer: Degraded("cpu") }] }
+  assert_eq(status_of(Group(g)), "degraded: disk")
+  let h = Worst { parts: [Fixed { answer: Down("a") }, Fixed { answer: Down("b") }] }
+  assert_eq(status_of(Group(h)), "down: a")
+}
+test "hidden: all up and empty groups" {
+  assert_eq(status_of(Group(Worst { parts: [Fixed { answer: Up }, Fixed { answer: Up }] })), "up")
+  assert_eq(status_of(Group(Worst { parts: [] })), "down: no probes")
+  assert_eq(healthy_target(Group(Worst { parts: [] })), false)
+}
+test "hidden: a single probe unchanged" {
+  assert_eq(status_of(Single(Fixed { answer: Degraded("") })), "degraded: ")
+  assert_eq(healthy(Fixed { answer: Degraded("x") }), false)
+}

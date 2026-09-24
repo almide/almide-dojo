@@ -1,0 +1,51 @@
+// A health-probe port.
+type Health: Eq, Repr = | Up | Degraded(String) | Down(String)
+
+protocol Probe {
+  fn check(p: Self) -> Health
+}
+
+// A probe with a fixed answer (a stand-in for a real check).
+type Fixed: Probe = { answer: Health }
+fn Fixed.check(p: Fixed) -> Health = p.answer
+
+fn severity(h: Health) -> Int =
+  match h {
+    Up => 0,
+    Degraded(_) => 1,
+    Down(_) => 2,
+  }
+
+// The worst part's health; the first among equally bad parts.
+type Worst: Probe = { parts: List[Fixed] }
+fn Worst.check(w: Worst) -> Health =
+  match w.parts {
+    [] => Down("no probes"),
+    [first, ..rest] => rest |> list.fold(first.check(), (worst, p) => {
+      let h = p.check()
+      if severity(h) > severity(worst) then h else worst
+    }),
+  }
+
+fn status_line[P: Probe](p: P) -> String =
+  match p.check() {
+    Up => "up",
+    Degraded(why) => "degraded: " + why,
+    Down(why) => "down: " + why,
+  }
+
+fn healthy[P: Probe](p: P) -> Bool = p.check() == Up
+
+type Target = | Single(Fixed) | Group(Worst)
+
+fn status_of(t: Target) -> String =
+  match t {
+    Single(f) => status_line(f),
+    Group(w) => status_line(w),
+  }
+
+fn healthy_target(t: Target) -> Bool =
+  match t {
+    Single(f) => healthy(f),
+    Group(w) => healthy(w),
+  }
