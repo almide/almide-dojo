@@ -1,0 +1,4 @@
+test "climbers" {
+  assert_eq(climbers(["a", "b", "c"], ["b", "a", "c"]), "b")
+  assert_eq(climbers(["a", "b"], ["a", "b"]), "none")
+}

@@ -1,0 +1,15 @@
+// Two leaderboard snapshots, each a list of names from first place down.
+fn rank_in(board: List[String], name: String) -> Int? = list.index_of(board, name) |> option.map((i) => i + 1)
+
+fn newcomers(before: List[String], after: List[String]) -> List[String] =
+  after |> list.filter((n) => not list.contains(before, n))
+
+fn dropped(before: List[String], after: List[String]) -> List[String] =
+  before |> list.filter((n) => not list.contains(after, n))
+
+// Plausible wrong patch: a missing old rank defaults to "last place + 1", so
+// every newcomer counts as having climbed.
+fn climbers(before: List[String], after: List[String]) -> String = {
+  let up = after |> list.filter((n) => (rank_in(after, n) ?? 0) < (rank_in(before, n) ?? (list.len(before) + 1)))
+  if list.is_empty(up) then "none" else list.join(up, ",")
+}

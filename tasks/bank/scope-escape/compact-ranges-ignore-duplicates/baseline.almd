@@ -1,0 +1,4 @@
+// Page lists for printing, as numbers in any order, possibly repeated.
+fn pages(spec: List[Int]) -> Int = list.len(list.unique(spec))
+
+fn in_list(spec: List[Int], p: Int) -> Bool = list.contains(spec, p)

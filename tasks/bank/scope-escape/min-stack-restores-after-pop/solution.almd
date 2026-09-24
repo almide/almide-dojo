@@ -1,0 +1,37 @@
+// A stack program: "push <n>", "pop", "min". "min" reports the smallest value
+// currently ON the stack; after a pop, values no longer on the stack do not
+// count.
+fn parse_op(s: String) -> Result[(String, Int), String] =
+  match string.split(s, " ") {
+    ["push", n] => int.parse(n) |> result.map((v) => ("push", v)) |> result.map_err((_) => "bad op: " + s),
+    ["pop"] => ok(("pop", 0)),
+    ["min"] => ok(("min", 0)),
+    _ => err("bad op: " + s),
+  }
+
+fn parse_program(ss: List[String]) -> Result[List[(String, Int)], String] = ss |> list.map((s) => parse_op(s)!)
+
+fn pushes(ss: List[String]) -> Result[Int, String] = {
+  let ops = parse_program(ss)!
+  ok(ops |> list.count(((o, _)) => o == "push"))
+}
+
+// The stack is a local list; min is taken over what is on it.
+fn run(ss: List[String]) -> String =
+  match parse_program(ss) {
+    err(e) => e,
+    ok(ops) => {
+      let (_, answers) = ops |> list.fold(([], []), (st, op) => {
+        let (stack, out) = st
+        match op {
+          ("push", v) => (stack + [v], out),
+          ("pop", _) => (list.drop_end(stack, 1), out),
+          _ => (stack, out + [match list.min(stack) {
+            some(m) => int.to_string(m),
+            none => "empty",
+          }]),
+        }
+      })
+      list.join(answers, ",")
+    },
+  }

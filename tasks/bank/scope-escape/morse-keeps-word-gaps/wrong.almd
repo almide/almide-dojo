@@ -1,0 +1,11 @@
+// Morse code: letters separated by one space, words separated by " / ".
+let CODE = [(".-", "A"), ("-...", "B"), ("-.-.", "C"), ("-..", "D"), (".", "E"), ("..-.", "F"), ("--.", "G"), ("....", "H"), ("..", "I"), (".---", "J"), ("-.-", "K"), (".-..", "L"), ("--", "M"), ("-.", "N"), ("---", "O"), (".--.", "P"), ("--.-", "Q"), (".-.", "R"), ("...", "S"), ("-", "T"), ("..-", "U"), ("...-", "V"), (".--", "W"), ("-..-", "X"), ("-.--", "Y"), ("--..", "Z")]
+
+fn letter(code: String) -> String? = CODE |> list.find(((c, _)) => c == code) |> option.map(((_, l)) => l)
+
+fn symbols(msg: String) -> Int = string.chars(msg) |> list.count((c) => c == "." or c == "-")
+
+// Plausible wrong patch: splits the message on spaces only, so the "/" word
+// separator is decoded as an unknown letter and the words run together.
+fn decode(msg: String) -> String =
+  string.split(msg, " ") |> list.filter((c) => c != "") |> list.map((c) => letter(c) ?? "?") |> list.join("")

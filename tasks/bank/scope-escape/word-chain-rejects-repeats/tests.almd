@@ -1,0 +1,4 @@
+test "referee" {
+  assert_eq(referee(["apple", "egg", "gate"]), "valid")
+  assert_eq(referee(["apple", "kiwi"]), "move 2: no link")
+}

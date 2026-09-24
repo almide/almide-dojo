@@ -1,0 +1,8 @@
+test "hidden: newcomers do not climb" {
+  assert_eq(climbers(["a", "b", "c"], ["x", "c", "a"]), "c")
+  assert_eq(climbers(["p"], ["q", "r"]), "none")
+}
+test "hidden: order of the new board" {
+  assert_eq(climbers(["a", "b", "c", "d"], ["d", "c", "a", "b"]), "d,c")
+  assert_eq(dropped(["a", "b"], ["b"]), ["a"])
+}

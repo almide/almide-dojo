@@ -1,0 +1,15 @@
+// A word-chain game: each word must start with the last letter of the
+// previous word, and a word may not be played twice (any case: "Apple" and
+// "apple" are the same word). Words are compared lowercase.
+fn first_letter(w: String) -> String = string.to_lower(string.take(w, 1))
+
+fn last_letter(w: String) -> String = string.to_lower(string.take_end(w, 1))
+
+fn links(a: String, b: String) -> Bool = last_letter(a) == first_letter(b)
+
+// Plausible wrong patch: checks the links only.
+fn referee(words: List[String]) -> String =
+  match list.zip(words, list.drop(words, 1)) |> list.find_index(((a, b)) => not links(a, b)) {
+    some(i) => "move " + int.to_string(i + 2) + ": no link",
+    none => "valid",
+  }

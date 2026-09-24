@@ -1,0 +1,11 @@
+// Page lists for printing, as numbers in any order, possibly repeated.
+fn pages(spec: List[Int]) -> Int = list.len(list.unique(spec))
+
+fn in_list(spec: List[Int], p: Int) -> Bool = list.contains(spec, p)
+
+// Runs over the sorted distinct pages; the list stays local.
+fn compact(spec: List[Int]) -> String =
+  list.sort(list.unique(spec)) |> list.fold([], (runs, p) => match list.last(runs) {
+    some((a, b)) => if p == b + 1 then list.drop_end(runs, 1) + [(a, p)] else runs + [(p, p)],
+    none => [(p, p)],
+  }) |> list.map(((a, b)) => if a == b then int.to_string(a) else int.to_string(a) + "-" + int.to_string(b)) |> list.join(",")
