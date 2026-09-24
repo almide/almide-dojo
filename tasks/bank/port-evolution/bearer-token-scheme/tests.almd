@@ -1,0 +1,7 @@
+test "bearer tokens" {
+  let b = Bearer { tokens: ["abc123": "ann"] }
+  assert_eq(audit_with(Tokens(b), ["Bearer abc123", "Bearer nope", ""]), ["ok ann", "denied: invalid token", "denied: missing credentials"])
+}
+test "api keys" {
+  assert_eq(audit_with(Keys(ApiKeys { keys: ["k1": "bo"] }), ["Key k1", "Key k2"]), ["ok bo", "denied: unknown key"])
+}

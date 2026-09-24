@@ -1,0 +1,5 @@
+test "minutes" {
+  assert_eq(entry("a", 1, 30).spent, 90)
+  assert_eq(line(entry("a", 1, 30)), "a 1h30m")
+  assert_eq(total([entry("a", 1, 30), entry("b", 0, 45)]), "2h15m")
+}

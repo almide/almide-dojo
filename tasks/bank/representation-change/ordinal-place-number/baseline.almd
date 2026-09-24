@@ -1,0 +1,14 @@
+// Race results; `place` is the finishing place as printed on the sheet ("1st", "22nd").
+type Result: Eq, Repr = { runner: String, place: String }
+
+fn result(runner: String, place: String) -> Result = Result { runner: runner, place: place }
+
+fn number(place: String) -> Int = int.parse(string.drop_end(place, 2)) ?? 0
+
+fn render(r: Result) -> String = r.place + " " + r.runner
+
+// Results by place; equal places (a tie) keep list order.
+fn ranking(rs: List[Result]) -> List[String] = rs |> list.sort_by((r) => number(r.place)) |> list.map(render)
+
+fn podium(rs: List[Result]) -> List[String] =
+  rs |> list.filter((r) => number(r.place) <= 3) |> list.sort_by((r) => number(r.place)) |> list.map((r) => r.runner)

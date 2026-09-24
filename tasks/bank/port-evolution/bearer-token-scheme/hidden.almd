@@ -1,0 +1,10 @@
+test "hidden: scheme is case-insensitive, token is not" {
+  let b = Bearer { tokens: ["AbC123": "ann"] }
+  assert_eq(audit_with(Tokens(b), ["bearer AbC123", "BEARER AbC123", "Bearer abc123"]), ["ok ann", "ok ann", "denied: invalid token"])
+}
+test "hidden: unsupported schemes as written" {
+  let b = Bearer { tokens: ["t": "ann"] }
+  assert_eq(b.principal("Basic dXNlcg=="), err("unsupported scheme: Basic"))
+  assert_eq(b.principal("Token"), err("unsupported scheme: Token"))
+  assert_eq(b.principal("   "), err("missing credentials"))
+}

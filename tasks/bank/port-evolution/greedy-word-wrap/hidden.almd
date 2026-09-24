@@ -1,0 +1,11 @@
+test "hidden: exact fits" {
+  assert_eq(WordWrap { width: 5 }.lines("ab cd"), ["ab cd"])
+  assert_eq(WordWrap { width: 9 }.lines("the quick brown"), ["the quick", "brown"])
+  assert_eq(WordWrap { width: 3 }.lines("abc de"), ["abc", "de"])
+}
+test "hidden: long words and spaces" {
+  assert_eq(WordWrap { width: 4 }.lines("abcdefghij kl"), ["abcd", "efgh", "ij", "kl"])
+  assert_eq(WordWrap { width: 6 }.lines("  a   b  "), ["a b"])
+  assert_eq(WordWrap { width: 6 }.lines("   "), [])
+  assert_eq(line_count(WordWrap { width: 2 }, ["a b c", ""]), 3)
+}

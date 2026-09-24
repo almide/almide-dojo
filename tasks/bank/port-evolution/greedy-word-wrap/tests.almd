@@ -1,0 +1,7 @@
+test "word wrap" {
+  assert_eq(WordWrap { width: 10 }.lines("the quick brown fox"), ["the quick", "brown fox"])
+  assert_eq(layout_with(Words(WordWrap { width: 6 }), ["aa bb", "cc"]), "aa bb\n\ncc")
+}
+test "hard cut" {
+  assert_eq(layout_with(Hard(HardCut { width: 3 }), ["abcdefg"]), "abc\ndef\ng")
+}

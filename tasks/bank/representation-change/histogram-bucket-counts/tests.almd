@@ -1,0 +1,6 @@
+test "bucket counts" {
+  let h = add_all(hist(10), [3, 7, 15])
+  assert_eq(h.counts, [0: 2, 10: 1])
+  assert_eq(render(h), ["0..9: 2", "10..19: 1"])
+  assert_eq(busiest(h), some(0))
+}

@@ -1,0 +1,26 @@
+// Chess squares as file (0 = a .. 7 = h) and rank (0 = 1 .. 7 = 8).
+type Sq: Eq, Repr = { file: Int, rank: Int }
+
+let FILES = "abcdefgh"
+
+fn sq(name: String) -> Sq =
+  Sq { file: string.index_of(FILES, string.take(name, 1)) ?? 0, rank: (int.parse(string.drop(name, 1)) ?? 1) - 1 }
+
+fn name(s: Sq) -> String = string.slice(FILES, s.file, s.file + 1) + int.to_string(s.rank + 1)
+
+fn on_board(f: Int, r: Int) -> Bool = f >= 0 and f < 8 and r >= 0 and r < 8
+
+// Targets reachable by the given (file, rank) steps, in step order.
+fn targets(s: Sq, steps: List[(Int, Int)]) -> List[String] =
+  steps
+    |> list.filter((d) => on_board(s.file + d.0, s.rank + d.1))
+    |> list.map((d) => name(Sq { file: s.file + d.0, rank: s.rank + d.1 }))
+
+let KNIGHT = [(1, 2), (2, 1), (2, -1), (1, -2), (-1, -2), (-2, -1), (-2, 1), (-1, 2)]
+let KING = [(0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1), (-1, 0), (-1, 1)]
+
+fn knight_moves(s: Sq) -> List[String] = targets(s, KNIGHT)
+fn king_moves(s: Sq) -> List[String] = targets(s, KING)
+
+// King steps between two squares.
+fn distance(a: Sq, b: Sq) -> Int = int.max(int.abs(a.file - b.file), int.abs(a.rank - b.rank))

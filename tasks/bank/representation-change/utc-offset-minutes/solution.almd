@@ -1,0 +1,24 @@
+// Meeting invitations across time zones; `offset` is minutes east of UTC.
+type Invite: Eq, Repr = { city: String, offset: Int }
+
+fn invite(city: String, offset: Int) -> Invite = Invite { city: city, offset: offset }
+
+fn pad2(n: Int) -> String = string.pad_start(int.to_string(n), 2, "0")
+
+// "+HH:MM" / "-HH:MM".
+fn offset_text(off: Int) -> String = {
+  let a = int.abs(off)
+  (if off < 0 then "-" else "+") + pad2(a / 60) + ":" + pad2(a % 60)
+}
+
+// The local wall-clock time "HH:MM" of a UTC minute-of-day, wrapping around midnight.
+fn local_time(i: Invite, utc_min: Int) -> String = {
+  let t = ((utc_min + i.offset) % 1440 + 1440) % 1440
+  pad2(t / 60) + ":" + pad2(t % 60)
+}
+
+fn line(i: Invite, utc_min: Int) -> String = i.city + " " + local_time(i, utc_min) + " (UTC" + offset_text(i.offset) + ")"
+
+// Cities from the westernmost offset to the easternmost; equal offsets keep list order.
+fn west_to_east(is: List[Invite]) -> List[String] =
+  is |> list.sort_by((i) => i.offset) |> list.map((i) => i.city)

@@ -1,0 +1,35 @@
+// Plausible wrong patch: clamps from the previous due date's day, so after a
+// short month the billing day drifts (Jan 31 -> Feb 29 -> Mar 29).
+// Monthly subscriptions. Due dates fall on the billing `day` of each month, or on
+// the last day of a shorter month; `next` is the next unpaid due date.
+type Date: Eq, Repr = { y: Int, m: Int, d: Int }
+type Sub: Eq, Repr = { name: String, next: Date, day: Int }
+
+fn leap(y: Int) -> Bool = y % 4 == 0 and (y % 100 != 0 or y % 400 == 0)
+
+fn month_len(y: Int, m: Int) -> Int =
+  match m {
+    2 => if leap(y) then 29 else 28,
+    4 | 6 | 9 | 11 => 30,
+    _ => 31,
+  }
+
+fn pad2(n: Int) -> String = string.pad_start(int.to_string(n), 2, "0")
+fn render(d: Date) -> String = int.to_string(d.y) + "-" + pad2(d.m) + "-" + pad2(d.d)
+
+fn sub(name: String, start: Date) -> Sub = Sub { name: name, next: start, day: start.d }
+
+// The next unpaid due date.
+fn due(s: Sub) -> Date = s.next
+
+// Pays the current period: the next due date is one month later, on the billing day.
+fn pay(s: Sub) -> Sub = {
+  let y = if s.next.m == 12 then s.next.y + 1 else s.next.y
+  let m = if s.next.m == 12 then 1 else s.next.m + 1
+  Sub { ...s, next: Date { y: y, m: m, d: int.min(s.next.d, month_len(y, m)) } }
+}
+
+fn schedule(s: Sub, n: Int) -> List[String] = {
+  let (out, _) = list.range(0, n) |> list.fold(([], s), (acc, _) => (acc.0 + [render(due(acc.1))], pay(acc.1)))
+  out
+}

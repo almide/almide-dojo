@@ -1,0 +1,7 @@
+test "parent pricing" {
+  let r = Regional { own: Card { prices: ["fr": 500] }, parents: ["fr-paris": "fr"], fallback: Card { prices: ["us": 900] } }
+  assert_eq(quote_with(Tiered(r), ["fr-paris", "fr", "us", "jp"]), ["fr-paris: 500", "fr: 500", "us: 900", "jp: n/a"])
+}
+test "flat card" {
+  assert_eq(quote_with(Flat(Card { prices: ["a": 1] }), ["a", "b"]), ["a: 1", "b: n/a"])
+}

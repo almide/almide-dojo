@@ -1,0 +1,17 @@
+test "hidden: negative halves mirror" {
+  assert_eq(statement_with(Bankers(HalfEven {}), [-25, -35, -45]), "-2 + -4 + -4 = -10")
+  assert_eq(HalfEven {}.cents(-26), -3)
+  assert_eq(HalfEven {}.cents(-24), -2)
+  assert_eq(HalfEven {}.cents(-5), 0)
+  assert_eq(HalfEven {}.cents(-15), -2)
+}
+test "hidden: small and zero amounts" {
+  assert_eq(HalfEven {}.cents(5), 0)
+  assert_eq(HalfEven {}.cents(15), 2)
+  assert_eq(HalfEven {}.cents(0), 0)
+  assert_eq(HalfEven {}.cents(4), 0)
+  assert_eq(HalfEven {}.cents(6), 1)
+}
+test "hidden: half up unchanged" {
+  assert_eq(statement(HalfUp {}, [-25, 5, -4]), "-3 + 1 + 0 = -2")
+}

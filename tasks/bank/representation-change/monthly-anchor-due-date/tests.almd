@@ -1,0 +1,6 @@
+test "next due date" {
+  let s = sub("gym", Date { y: 2024, m: 5, d: 15 })
+  assert_eq(s.next, Date { y: 2024, m: 5, d: 15 })
+  assert_eq(render(due(pay(s))), "2024-06-15")
+  assert_eq(schedule(s, 3), ["2024-05-15", "2024-06-15", "2024-07-15"])
+}

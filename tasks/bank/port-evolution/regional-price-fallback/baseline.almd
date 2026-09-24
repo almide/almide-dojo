@@ -1,0 +1,15 @@
+// A price-list port: the price in cents for a region code, if listed.
+protocol Prices {
+  fn price(p: Self, region: String) -> Int?
+}
+
+// One flat card.
+type Card: Prices = { prices: Map[String, Int] }
+fn Card.price(c: Card, region: String) -> Int? = map.get(c.prices, region)
+
+// "region: price" or "region: n/a", in order.
+fn quote_all[P: Prices](p: P, regions: List[String]) -> List[String] =
+  regions |> list.map((r) => r + ": " + (match p.price(r) {
+    some(c) => int.to_string(c),
+    none => "n/a",
+  }))

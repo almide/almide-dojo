@@ -1,0 +1,5 @@
+test "minute offsets" {
+  assert_eq(line(invite("delhi", 330), 600), "delhi 15:30 (UTC+05:30)")
+  assert_eq(line(invite("rio", -180), 600), "rio 07:00 (UTC-03:00)")
+  assert_eq(west_to_east([invite("a", 60), invite("b", -120)]), ["b", "a"])
+}

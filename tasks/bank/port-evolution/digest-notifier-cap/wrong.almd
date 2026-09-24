@@ -1,0 +1,35 @@
+// Plausible wrong patch: keeps `max` messages and adds the summary on top, so a
+// capped batch is max + 1 lines. Passes the visible tests.
+// A notification port: the lines actually delivered to one recipient for a batch.
+protocol Notifier {
+  fn deliver(n: Self, to: String, msgs: List[String]) -> List[String]
+}
+
+// One line per message.
+type Direct: Notifier = { channel: String }
+fn Direct.deliver(n: Direct, to: String, msgs: List[String]) -> List[String] =
+  msgs |> list.map((m) => n.channel + ":" + to + ": " + m)
+
+// At most `max` messages per recipient, then a summary.
+type Digest: Notifier = { inner: Direct, max: Int }
+fn Digest.deliver(n: Digest, to: String, msgs: List[String]) -> List[String] =
+  if list.len(msgs) <= n.max then n.inner.deliver(to, msgs)
+  else {
+    let shown = list.take(msgs, n.max)
+    let left = list.len(msgs) - list.len(shown)
+    n.inner.deliver(to, shown) + [n.inner.channel + ":" + to + ": (+" + int.to_string(left) + " more)"]
+  }
+
+// Delivers each recipient's messages, recipients in first-seen order of the queue.
+fn flush[N: Notifier](n: N, queue: List[(String, String)]) -> List[String] = {
+  let people = queue |> list.map((q) => q.0) |> list.unique
+  people |> list.flat_map((p) => n.deliver(p, queue |> list.filter((q) => q.0 == p) |> list.map((q) => q.1)))
+}
+
+type Mode = | Each(Direct) | Capped(Digest)
+
+fn flush_with(m: Mode, queue: List[(String, String)]) -> List[String] =
+  match m {
+    Each(d) => flush(d, queue),
+    Capped(g) => flush(g, queue),
+  }

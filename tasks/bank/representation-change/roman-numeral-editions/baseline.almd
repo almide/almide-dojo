@@ -1,0 +1,30 @@
+// Film festival editions, numbered with Roman numerals as printed ("XIV").
+type Edition: Eq, Repr = { title: String, numeral: String }
+
+fn value_of(ch: String) -> Int =
+  match ch {
+    "I" => 1,
+    "V" => 5,
+    "X" => 10,
+    "L" => 50,
+    "C" => 100,
+    "D" => 500,
+    "M" => 1000,
+    _ => 0,
+  }
+
+// Standard numerals: a smaller symbol before a larger one is subtracted.
+fn number(numeral: String) -> Int = {
+  let vs = string.chars(numeral) |> list.map(value_of)
+  vs |> list.enumerate |> list.fold(0, (acc, p) => {
+    let next = list.get(vs, p.0 + 1) ?? 0
+    if p.1 < next then acc - p.1 else acc + p.1
+  })
+}
+
+fn edition(title: String, numeral: String) -> Edition = Edition { title: title, numeral: numeral }
+
+fn render(e: Edition) -> String = e.title + " " + e.numeral
+
+// Oldest edition first; equal numbers keep list order.
+fn chronological(es: List[Edition]) -> List[String] = es |> list.sort_by((e) => number(e.numeral)) |> list.map(render)

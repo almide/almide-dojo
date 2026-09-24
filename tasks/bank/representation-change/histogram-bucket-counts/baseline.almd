@@ -1,0 +1,22 @@
+// A histogram over integer readings with buckets of `width` (width >= 1):
+// [0, width), [width, 2*width), ... and likewise below zero ([-width, 0), ...).
+type Hist: Eq, Repr = { width: Int, values: List[Int] }
+
+fn hist(width: Int) -> Hist = Hist { width: width, values: [] }
+
+fn add(h: Hist, v: Int) -> Hist = Hist { ...h, values: h.values + [v] }
+
+fn add_all(h: Hist, vs: List[Int]) -> Hist = vs |> list.fold(h, add)
+
+// The start of the bucket holding v.
+fn start_of(h: Hist, v: Int) -> Int = v - ((v % h.width) + h.width) % h.width
+
+fn count_in(h: Hist, v: Int) -> Int = h.values |> list.count((x) => start_of(h, x) == start_of(h, v))
+
+// "lo..hi: n" for every non-empty bucket, lowest bucket first (hi = lo + width - 1).
+fn render(h: Hist) -> List[String] =
+  h.values
+    |> list.map((v) => start_of(h, v))
+    |> list.unique
+    |> list.sort
+    |> list.map((lo) => int.to_string(lo) + ".." + int.to_string(lo + h.width - 1) + ": " + int.to_string(count_in(h, lo)))

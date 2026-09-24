@@ -1,0 +1,27 @@
+// Plausible wrong patch: a full buffer writes over the oldest slot but does not
+// move `start`, so the newest entry is read back as the oldest.
+// A bounded command history as a ring buffer: `slots` has `cap` entries,
+// `start` is the slot of the oldest entry, `len` how many entries there are.
+type History: Eq, Repr = { cap: Int, slots: List[String], start: Int, len: Int }
+
+fn history(cap: Int) -> History = History { cap: cap, slots: list.repeat("", cap), start: 0, len: 0 }
+
+// Adds a command; when full, the oldest entry is overwritten.
+fn push(h: History, cmd: String) -> History =
+  if h.len < h.cap then History { ...h, slots: list.set(h.slots, (h.start + h.len) % h.cap, cmd), len: h.len + 1 }
+  else History { ...h, slots: list.set(h.slots, (h.start + h.len) % h.cap, cmd) }
+
+fn push_all(h: History, cmds: List[String]) -> History = cmds |> list.fold(h, push)
+
+fn size(h: History) -> Int = h.len
+
+fn items(h: History) -> List[String] =
+  list.range(0, h.len) |> list.map((i) => list.get(h.slots, (h.start + i) % h.cap) ?? "")
+
+// Oldest to newest, joined with ",".
+fn render(h: History) -> String = list.join(items(h), ",")
+
+// The `n` newest entries, newest first.
+fn recent(h: History, n: Int) -> List[String] = items(h) |> list.reverse |> list.take(n)
+
+fn contains(h: History, cmd: String) -> Bool = list.contains(items(h), cmd)

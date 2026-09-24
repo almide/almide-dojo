@@ -1,0 +1,19 @@
+test "hidden: eleven to thirteen take th" {
+  assert_eq(render(result("a", 11)), "11th a")
+  assert_eq(render(result("a", 12)), "12th a")
+  assert_eq(render(result("a", 13)), "13th a")
+  assert_eq(render(result("a", 112)), "112th a")
+  assert_eq(render(result("a", 213)), "213th a")
+}
+test "hidden: other suffixes" {
+  assert_eq(render(result("a", 23)), "23rd a")
+  assert_eq(render(result("a", 101)), "101st a")
+  assert_eq(render(result("a", 102)), "102nd a")
+  assert_eq(render(result("a", 10)), "10th a")
+  assert_eq(render(result("a", 0)), "0th a")
+}
+test "hidden: numeric order and ties" {
+  let rs = [result("p", 10), result("q", 9), result("r", 2), result("s", 2), result("t", 1)]
+  assert_eq(ranking(rs), ["1st t", "2nd r", "2nd s", "9th q", "10th p"])
+  assert_eq(podium(rs), ["t", "r", "s"])
+}

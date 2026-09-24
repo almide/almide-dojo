@@ -1,0 +1,7 @@
+test "digest caps a flood" {
+  let d = Digest { inner: Direct { channel: "sms" }, max: 3 }
+  assert_eq(flush_with(Capped(d), [("ann", "a"), ("ann", "b")]), ["sms:ann: a", "sms:ann: b"])
+}
+test "each mode" {
+  assert_eq(flush_with(Each(Direct { channel: "mail" }), [("bo", "x"), ("cy", "y"), ("bo", "z")]), ["mail:bo: x", "mail:bo: z", "mail:cy: y"])
+}

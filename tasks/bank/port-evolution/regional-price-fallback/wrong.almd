@@ -1,0 +1,37 @@
+// Plausible wrong patch: looks one parent up instead of walking the whole chain,
+// so a grandparent's price is missed. Passes the visible tests.
+// A price-list port: the price in cents for a region code, if listed.
+protocol Prices {
+  fn price(p: Self, region: String) -> Int?
+}
+
+// One flat card.
+type Card: Prices = { prices: Map[String, Int] }
+fn Card.price(c: Card, region: String) -> Int? = map.get(c.prices, region)
+
+// The own price, then the parent's, then the fallback.
+type Regional: Prices = { own: Card, parents: Map[String, String], fallback: Card }
+
+fn up_chain(r: Regional, region: String) -> Int? =
+  match r.own.price(region) {
+    some(c) => some(c),
+    none => option.flat_map(map.get(r.parents, region), (p) => r.own.price(p)),
+  }
+
+fn Regional.price(r: Regional, region: String) -> Int? =
+  option.or_else(up_chain(r, region), () => r.fallback.price(region))
+
+// "region: price" or "region: n/a", in order.
+fn quote_all[P: Prices](p: P, regions: List[String]) -> List[String] =
+  regions |> list.map((r) => r + ": " + (match p.price(r) {
+    some(c) => int.to_string(c),
+    none => "n/a",
+  }))
+
+type Pricing = | Flat(Card) | Tiered(Regional)
+
+fn quote_with(p: Pricing, regions: List[String]) -> List[String] =
+  match p {
+    Flat(c) => quote_all(c, regions),
+    Tiered(r) => quote_all(r, regions),
+  }

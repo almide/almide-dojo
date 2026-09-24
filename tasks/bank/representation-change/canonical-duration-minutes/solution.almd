@@ -1,0 +1,20 @@
+// Timesheet entries; `spent` is in minutes.
+type Entry: Eq, Repr = { task: String, spent: Int }
+
+// Short form: "1h30m", "45m", "2h", "0m".
+fn dur(total: Int) -> String = {
+  let h = total / 60
+  let m = total % 60
+  if total == 0 then "0m"
+  else (if h > 0 then int.to_string(h) + "h" else "") + (if m > 0 then int.to_string(m) + "m" else "")
+}
+
+fn entry(task: String, h: Int, m: Int) -> Entry = Entry { task: task, spent: h * 60 + m }
+
+fn total(es: List[Entry]) -> String = dur(es |> list.fold(0, (acc, e) => acc + e.spent))
+
+fn line(e: Entry) -> String = e.task + " " + dur(e.spent)
+
+// Tasks that took longer than `limit_min` minutes, in list order.
+fn over(es: List[Entry], limit_min: Int) -> List[String] =
+  es |> list.filter((e) => e.spent > limit_min) |> list.map((e) => e.task)

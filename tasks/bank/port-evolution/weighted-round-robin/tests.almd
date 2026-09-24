@@ -1,0 +1,8 @@
+test "weighted cycle" {
+  let w = Weighted { backends: [("a", 2), ("b", 1)] }
+  assert_eq(assign(w, 6), ["a", "a", "b", "a", "a", "b"])
+  assert_eq(load_of(ByWeight(w), 6), "a=4 b=2")
+}
+test "even pool" {
+  assert_eq(load_of(Even(RoundRobin { backends: ["x", "y"] }), 3), "x=2 y=1")
+}

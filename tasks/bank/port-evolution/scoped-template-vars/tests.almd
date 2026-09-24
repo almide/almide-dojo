@@ -1,0 +1,7 @@
+test "scoped lookup" {
+  let s = Scoped { inner: MapVars { values: ["user": "ann"] }, outer: MapVars { values: ["user": "root", "host": "box"] } }
+  assert_eq(render(Nested(s), "{user}@{host}"), ok("ann@box"))
+}
+test "flat env" {
+  assert_eq(render(Flat(MapVars { values: ["a": "1"] }), "{{a} = {a}"), ok("{a} = 1"))
+}

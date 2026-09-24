@@ -1,0 +1,24 @@
+// A variable-lookup port for templates.
+protocol Vars {
+  fn get(v: Self, name: String) -> String?
+}
+
+type MapVars: Vars = { values: Map[String, String] }
+fn MapVars.get(v: MapVars, name: String) -> String? = map.get(v.values, name)
+
+// Replaces every "{name}" with its value; "{{" stands for a literal "{".
+// An unknown name, or a "{" without its "}", is an error.
+fn fill[V: Vars](v: V, tpl: String) -> String! = fill_from(v, string.chars(tpl), "")
+
+fn fill_from[V: Vars](v: V, cs: List[String], out: String) -> String! =
+  match cs {
+    [] => ok(out),
+    ["{", "{", ..rest] => fill_from(v, rest, out + "{"),
+    ["{", ..rest] => {
+      let name = rest |> list.take_while((c) => c != "}") |> list.join("")
+      guard list.len(rest) > string.len(name) else err("unclosed {" + name)
+      let value = option.to_result(v.get(name), "unknown variable: " + name)!
+      fill_from(v, list.drop(rest, string.len(name) + 1), out + value)
+    },
+    [c, ..rest] => fill_from(v, rest, out + c),
+  }

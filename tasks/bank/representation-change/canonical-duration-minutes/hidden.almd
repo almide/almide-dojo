@@ -1,0 +1,15 @@
+test "hidden: zero parts are left out" {
+  assert_eq(line(entry("a", 2, 0)), "a 2h")
+  assert_eq(line(entry("b", 0, 45)), "b 45m")
+  assert_eq(total([]), "0m")
+  assert_eq(total([entry("x", 0, 30), entry("y", 0, 30)]), "1h")
+}
+test "hidden: minutes carry" {
+  assert_eq(line(entry("x", 1, 75)), "x 2h15m")
+  assert_eq(line(entry("z", 0, 60)), "z 1h")
+}
+test "hidden: over is strict" {
+  let es = [entry("a", 1, 0), entry("b", 1, 1), entry("c", 0, 59)]
+  assert_eq(over(es, 60), ["b"])
+  assert_eq(over(es, 58), ["a", "b", "c"])
+}

@@ -1,0 +1,7 @@
+test "compact numbers" {
+  assert_eq(dashboard_as(Short(Compact {}), [("users", 1234), ("errors", 7), ("bytes", 2500000)], []), ["users: 1.2k", "errors: 7", "bytes: 2.5M"])
+  assert_eq(Compact {}.show(1250), "1.3k")
+}
+test "full digits" {
+  assert_eq(dashboard_as(Full(Digits {}), [("a", 1234), ("b", 5)], ["b"]), ["a: 1234"])
+}
