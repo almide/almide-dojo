@@ -1,0 +1,11 @@
+test "hidden: ties are alphabetical" {
+  assert_eq(top_words(["pear apple fig apple pear kiwi"]), ["apple,pear,fig"])
+  assert_eq(top_words(["z y x w"]), ["w,x,y"])
+}
+test "hidden: separators and empties" {
+  assert_eq(top_words(["Don't don't DON'T stop", "", "!!"]), ["don,t,stop", "", ""])
+  assert_eq(top_words([]), [])
+}
+test "hidden: helpers unchanged" {
+  assert_eq(word_count("a-b c"), 3)
+}

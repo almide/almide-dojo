@@ -1,0 +1,27 @@
+// A disk listing: one "path size" per file, e.g. "src/app/main.almd 120".
+// A file's directory is everything before its last "/"; a file at the top
+// level lives in the root directory "".
+type File = { path: String, size: Int }
+
+fn parse_line(line: String) -> Result[File, String] =
+  match string.split(string.trim(line), " ") {
+    [p, s] => match int.parse(s) {
+      ok(n) => if n >= 0 then ok(File { path: p, size: n }) else err("negative size: " + line),
+      err(_) => err("bad size: " + line),
+    },
+    _ => err("bad line: " + line),
+  }
+
+fn parse_listing(lines: List[String]) -> Result[List[File], String] =
+  lines |> list.map((l) => parse_line(l)!)
+
+fn dir_of(path: String) -> String =
+  match string.last_index_of(path, "/") {
+    some(i) => string.slice(path, 0, i),
+    none => "",
+  }
+
+fn total_size(lines: List[String]) -> Result[Int, String] = {
+  let files = parse_listing(lines)!
+  ok(files |> list.fold(0, (a, f) => a + f.size))
+}

@@ -1,0 +1,10 @@
+test "hidden: a bad result invalidates, it is not skipped" {
+  assert_eq(league([("cats", "3-0,1-,0-2"), ("dogs", "1-3,-1-0")]), ["cats: invalid (bad score: 1-)", "dogs: invalid (bad score: -1-0)"])
+}
+test "hidden: signs and empties" {
+  assert_eq(league([("eels", "0-2,1-1"), ("fish", ""), ("gnus", "2-2")]), ["eels: 1 pts, gd -2", "fish: 0 pts, gd 0", "gnus: 1 pts, gd 0"])
+  assert_eq(league([]), [])
+}
+test "hidden: team_points unchanged" {
+  assert_eq(team_points("1-0,1-1,0-1"), ok(4))
+}

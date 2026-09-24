@@ -1,0 +1,11 @@
+test "hidden: nearest rank for 20 and 40 values" {
+  let f = p95_label(list.range(1, 21))
+  assert_eq(f("/a"), "/a p95=19ms")
+  let g = p95_label(list.range(0, 40) |> list.map((i) => 100 - i))
+  assert_eq(g("/b"), "/b p95=98ms")
+}
+test "hidden: tiny inputs" {
+  assert_eq(p95_label([42])("/c"), "/c p95=42ms")
+  assert_eq(p95_label([3, 1])("/d"), "/d p95=3ms")
+  assert_eq(summary([3, 1, 2, 4]), "n=4 median=2")
+}

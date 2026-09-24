@@ -1,0 +1,9 @@
+test "hidden: a coupon alone is enough" {
+  assert_eq(eligible(Customer { age: 12, member: false, coupon: true }), true)
+  assert_eq(price(Customer { age: 12, member: true, coupon: true }, 1000), 900)
+  assert_eq(basket_total(Customer { age: 50, member: false, coupon: true }, [100, 200]), 270)
+}
+test "hidden: children without coupon" {
+  assert_eq(eligible(Customer { age: 17, member: true, coupon: false }), false)
+  assert_eq(price(Customer { age: 18, member: true, coupon: false }, 999), 899)
+}

@@ -1,0 +1,7 @@
+// Resource probe: the same 1,000 ranges measured __K__ times. The helper must
+// allocate no more per bound than the inline parsing did.
+effect fn main() -> Unit = {
+  let rs = list.range(0, 1000) |> list.map((i) => int.to_string(i) + ".." + int.to_string(i + 7))
+  let total = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (rs |> list.fold(0, (a, r) => a + (range_len(r) ?? 0))))
+  println(int.to_string(total))
+}

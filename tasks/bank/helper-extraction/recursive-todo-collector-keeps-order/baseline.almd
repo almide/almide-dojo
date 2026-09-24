@@ -1,0 +1,15 @@
+// TODO markers in source lines: "TODO: <text>" anywhere in a line. The text is
+// everything after the marker, trimmed; an empty text is still a TODO ("").
+fn todo_text(line: String) -> String? =
+  string.index_of(line, "TODO:") |> option.map((i) => string.trim(string.drop(line, i + 5)))
+
+fn todos(lines: List[String]) -> List[String] =
+  lines |> list.fold([], (acc, l) => match todo_text(l) {
+    some(t) => acc + [t],
+    none => acc,
+  })
+
+fn todo_report(lines: List[String]) -> String = {
+  let ts = todos(lines)
+  int.to_string(list.len(ts)) + " todo(s)" + (if list.is_empty(ts) then "" else ": " + list.join(ts, "; "))
+}

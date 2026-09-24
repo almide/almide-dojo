@@ -1,0 +1,9 @@
+// Plausible wrong patch: the helper lists the qualifying reasons and asks
+// whether any holds. Same answers — but a list is built on every call.
+type Customer = { age: Int, member: Bool, coupon: Bool }
+
+fn eligible(c: Customer) -> Bool = [c.age >= 18 and c.member, c.coupon] |> list.any((r) => r)
+
+fn price(c: Customer, cents: Int) -> Int = if eligible(c) then cents * 90 / 100 else cents
+
+fn basket_total(c: Customer, items: List[Int]) -> Int = items |> list.fold(0, (a, x) => a + price(c, x))

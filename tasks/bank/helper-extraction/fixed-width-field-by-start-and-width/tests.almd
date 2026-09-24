@@ -1,0 +1,4 @@
+test "field helper" {
+  assert_eq(field("AB  xyz", 0, 4), "AB")
+  assert_eq(parse_record("A1"), Record { code: "A1", qty: 0, name: "" })
+}

@@ -1,0 +1,6 @@
+test "spread helper" {
+  assert_eq(spread([3, 9, 4]), 6)
+  assert_eq(spread([]), 0)
+  assert_eq(within([3, 9, 4], 6), true)
+  assert_eq(summary([2, 2]), "min=2,max=2,spread=0")
+}

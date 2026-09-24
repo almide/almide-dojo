@@ -1,0 +1,11 @@
+test "hidden: void attempts are not scores" {
+  let cs = [Course { title: "art", attempts: [("cy", -1), ("di", 0), ("cy", -1), ("di", -1)] }, Course { title: "gym", attempts: [] }]
+  assert_eq(best_attempts(cs), ["art: cy=none, di=0", "gym: "])
+}
+test "hidden: courses do not share tables" {
+  let cs = [Course { title: "a", attempts: [("x", 90)] }, Course { title: "b", attempts: [("x", -1), ("y", 10)] }]
+  assert_eq(best_attempts(cs), ["a: x=90", "b: x=none, y=10"])
+}
+test "hidden: helpers unchanged" {
+  assert_eq(sat(Course { title: "c", attempts: [("a", -1), ("b", 0)] }), 1)
+}

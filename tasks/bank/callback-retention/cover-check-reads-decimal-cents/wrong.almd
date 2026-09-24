@@ -1,0 +1,46 @@
+// A ledger of signed amounts written with up to two decimals: "12.50",
+// "-3", "0.5" (fifty cents), "7.05". Amounts are kept in cents.
+fn cents(s: String) -> Result[Int, String] = {
+  let neg = string.starts_with(s, "-")
+  let body = if neg then string.drop(s, 1) else s
+  let parts = string.split(body, ".")
+  let whole = int.parse(list.first(parts) ?? "") |> result.map_err((_) => "bad amount: " + s)
+  let frac_text = if list.len(parts) > 1 then list.get(parts, 1) ?? "" else ""
+  guard list.len(parts) <= 2 and string.len(frac_text) <= 2 else err("bad amount: " + s)
+  let frac = if frac_text == "" then ok(0) else int.parse(string.pad_end(frac_text, 2, "0")) |> result.map_err((_) => "bad amount: " + s)
+  match whole {
+    ok(w) => match frac {
+      ok(f) => ok(if neg then 0 - (w * 100 + f) else w * 100 + f),
+      err(e) => err(e),
+    },
+    err(e) => err(e),
+  }
+}
+
+fn show(c: Int) -> String = {
+  let a = int.abs(c)
+  (if c < 0 then "-" else "") + int.to_string(a / 100) + "." + (if a % 100 < 10 then "0" else "") + int.to_string(a % 100)
+}
+
+// Plausible wrong patch: a quick "whole * 100 + fraction" parse of each
+// entry, so "0.5" becomes 5 cents instead of 50.
+fn quick_cents(s: String) -> Result[Int, String] = {
+  let neg = string.starts_with(s, "-")
+  let parts = string.split(if neg then string.drop(s, 1) else s, ".")
+  let w = int.parse(list.first(parts) ?? "") |> result.map_err((_) => "bad amount: " + s)
+  let f = int.parse(list.get(parts, 1) ?? "0") |> result.map_err((_) => "bad amount: " + s)
+  guard list.len(parts) <= 2 and string.len(list.get(parts, 1) ?? "") <= 2 else err("bad amount: " + s)
+  match w {
+    ok(wv) => match f {
+      ok(fv) => ok(if neg then 0 - (wv * 100 + fv) else wv * 100 + fv),
+      err(e) => err(e),
+    },
+    err(e) => err(e),
+  }
+}
+
+fn cover_check(entries: List[String]) -> Result[(Int) -> String, String] = {
+  let amounts = entries |> list.map((e) => quick_cents(e)!)!
+  let balance = amounts |> list.fold(0, (a, c) => a + c)
+  ok((w) => if balance >= w then "ok, " + show(balance - w) + " left" else "short by " + show(w - balance))
+}

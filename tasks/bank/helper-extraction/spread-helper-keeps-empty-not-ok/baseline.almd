@@ -1,0 +1,16 @@
+// Readings from a gauge. No readings means NO DATA: it is never "within
+// tolerance", and the summary says so.
+fn within(xs: List[Int], tolerance: Int) -> Bool =
+  match list.min(xs) {
+    some(lo) => (list.max(xs) ?? lo) - lo <= tolerance,
+    none => false,
+  }
+
+fn summary(xs: List[Int]) -> String =
+  match list.min(xs) {
+    some(lo) => {
+      let hi = list.max(xs) ?? lo
+      "min=" + int.to_string(lo) + ",max=" + int.to_string(hi) + ",spread=" + int.to_string(hi - lo)
+    },
+    none => "no data",
+  }

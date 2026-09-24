@@ -1,0 +1,15 @@
+// Fixed-width inventory records: columns 0-3 code, 4-7 quantity, 8-19 name.
+// Every field is trimmed; a quantity that does not parse counts as 0. Short
+// lines simply have empty trailing fields.
+type Record = { code: String, qty: Int, name: String }
+
+fn field(line: String, start: Int, width: Int) -> String = string.trim(string.slice(line, start, start + width))
+
+fn parse_record(line: String) -> Record =
+  Record {
+    code: field(line, 0, 4),
+    qty: int.parse(field(line, 4, 4)) ?? 0,
+    name: field(line, 8, 12),
+  }
+
+fn total_qty(lines: List[String]) -> Int = lines |> list.fold(0, (a, l) => a + parse_record(l).qty)

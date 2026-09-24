@@ -1,0 +1,23 @@
+// Word statistics per document. Words are lowercase letters only; every other
+// character separates words ("don't" is "don" and "t").
+fn words(text: String) -> List[String] =
+  string.chars(string.to_lower(text))
+    |> list.map((c) => if c >= "a" and c <= "z" then c else " ")
+    |> list.join("")
+    |> string.split(" ")
+    |> list.filter((w) => w != "")
+
+fn frequencies(text: String) -> Map[String, Int] =
+  words(text) |> list.fold(map.new(), (m, w) => map.set(m, w, (map.get(m, w) ?? 0) + 1))
+
+fn word_count(text: String) -> Int = list.len(words(text))
+
+// Each document's table is built and dropped in its own step.
+fn top_words(docs: List[String]) -> List[String] =
+  docs |> list.map((d) =>
+    map.entries(frequencies(d))
+      |> list.sort_by(((w, _)) => w)
+      |> list.sort_by(((_, n)) => 0 - n)
+      |> list.take(3)
+      |> list.map(((w, _)) => w)
+      |> list.join(","))

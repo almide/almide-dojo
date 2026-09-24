@@ -1,0 +1,23 @@
+// A build log. A line is an error when it starts with "error:"; the message
+// is the rest of the line, trimmed. Line numbers count EVERY line from 1,
+// blank lines included, as an editor shows them.
+fn error_message(line: String) -> String? =
+  string.strip_prefix(line, "error:") |> option.map((m) => string.trim(m))
+
+fn error_count(lines: List[String]) -> Int =
+  lines |> list.count((l) => option.is_some(error_message(l)))
+
+fn verdict(lines: List[String]) -> String =
+  match error_count(lines) {
+    0 => "clean",
+    1 => "1 error",
+    n => int.to_string(n) + " errors",
+  }
+
+// Plausible wrong patch: the closure searches the log when it runs, so it
+// captures `lines` and keeps the whole log alive.
+fn locator(lines: List[String]) -> (String) -> String =
+  (file) => match lines |> list.enumerate |> list.filter_map(((i, l)) => error_message(l) |> option.map((m) => (i + 1, m))) |> list.first {
+    some((n, m)) => file + ":" + int.to_string(n) + ": " + m,
+    none => file + ": clean",
+  }

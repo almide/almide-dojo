@@ -1,0 +1,6 @@
+test "cover check" {
+  let f = cover_check(["10.00", "-2.25"])!
+  assert_eq(f(500), "ok, 2.75 left")
+  assert_eq(f(1000), "short by 2.25")
+  assert_eq(result.is_err(cover_check(["1.234"])), true)
+}

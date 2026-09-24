@@ -1,0 +1,20 @@
+// Plausible wrong patch: the helper trims the text before parsing. int.parse
+// already accepts surrounding whitespace, so every range parses the same —
+// but each bound now allocates a trimmed copy.
+fn parse_bound(text: String, which: String) -> Result[Int, String] =
+  int.parse(string.trim(text)) |> result.map_err((_) => "bad " + which + ": " + text)
+
+fn parse_range(s: String) -> Result[(Int, Int), String] =
+  match string.index_of(s, "..") {
+    none => err("missing '..' in " + s),
+    some(i) => {
+      let lo = parse_bound(string.slice(s, 0, i), "start")!
+      let hi = parse_bound(string.drop(s, i + 2), "end")!
+      if lo <= hi then ok((lo, hi)) else err("empty range: " + s)
+    },
+  }
+
+fn range_len(s: String) -> Result[Int, String] = {
+  let (lo, hi) = parse_range(s)!
+  ok(hi - lo + 1)
+}

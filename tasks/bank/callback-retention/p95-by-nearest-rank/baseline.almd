@@ -1,0 +1,12 @@
+// Request latencies in milliseconds.
+fn sorted(ms: List[Int]) -> List[Int] = list.sort(ms)
+
+fn median(ms: List[Int]) -> Int? = list.get(sorted(ms), (list.len(ms) - 1) / 2)
+
+fn slow_count(ms: List[Int], limit: Int) -> Int = ms |> list.count((m) => m > limit)
+
+fn summary(ms: List[Int]) -> String =
+  match median(ms) {
+    some(m) => "n=" + int.to_string(list.len(ms)) + " median=" + int.to_string(m),
+    none => "n=0",
+  }

@@ -1,0 +1,23 @@
+// Warehouse stock per SKU, and orders made of (sku, quantity) lines. An order
+// may name the same SKU on several lines; they add up.
+type Order = { id: String, lines: List[(String, Int)] }
+
+// Quantity wanted per SKU (SKUs in order of first line).
+fn wanted(o: Order) -> Map[String, Int] =
+  list.group_by(o.lines, ((sku, _)) => sku) |> map.map((ls) => ls |> list.map(((_, q)) => q) |> list.sum)
+
+fn stock_of(stock: Map[String, Int], sku: String) -> Int = map.get_or(stock, sku, 0)
+
+fn total_units(o: Order) -> Int = o.lines |> list.map(((_, q)) => q) |> list.sum
+
+fn skus(o: Order) -> List[String] = map.keys(wanted(o))
+
+// Every order is checked against the same stock; its totals stay in its step.
+fn check_orders(stock: Map[String, Int], orders: List[Order]) -> List[String] =
+  orders |> list.map((o) => {
+    let need = wanted(o)
+    match map.keys(need) |> list.find((sku) => (map.get(need, sku) ?? 0) > stock_of(stock, sku)) {
+      some(sku) => o.id + ": short " + sku,
+      none => o.id + ": ok",
+    }
+  })

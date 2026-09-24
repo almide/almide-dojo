@@ -1,0 +1,9 @@
+// Resource probe: __K__ teams with 3,000 results each, one compact string per
+// team. Each team's parsed scores belong to its own step, so the batch grows
+// by the input strings only; parsing every team first keeps all the parsed
+// lists live.
+effect fn main() -> Unit = {
+  let teams = list.range(0, __K__) |> list.map((i) =>
+    ("t" + int.to_string(i), list.range(0, 3000) |> list.map((j) => int.to_string(j % 5) + "-" + int.to_string((j + i) % 4)) |> list.join(",")))
+  println(int.to_string(league(teams) |> list.fold(0, (a, s) => a + string.len(s))))
+}

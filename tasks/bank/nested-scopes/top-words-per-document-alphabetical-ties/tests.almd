@@ -1,0 +1,3 @@
+test "top words" {
+  assert_eq(top_words(["b b b a a c", "x"]), ["b,a,c", "x"])
+}

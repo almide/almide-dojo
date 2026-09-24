@@ -1,0 +1,21 @@
+// Integer ranges written "<start>..<end>", both ends inclusive, start <= end.
+fn parse_range(s: String) -> Result[(Int, Int), String] =
+  match string.index_of(s, "..") {
+    none => err("missing '..' in " + s),
+    some(i) => {
+      let a = string.slice(s, 0, i)
+      let b = string.drop(s, i + 2)
+      match int.parse(a) {
+        err(_) => err("bad start: " + a),
+        ok(lo) => match int.parse(b) {
+          err(_) => err("bad end: " + b),
+          ok(hi) => if lo <= hi then ok((lo, hi)) else err("empty range: " + s),
+        },
+      }
+    },
+  }
+
+fn range_len(s: String) -> Result[Int, String] = {
+  let (lo, hi) = parse_range(s)!
+  ok(hi - lo + 1)
+}

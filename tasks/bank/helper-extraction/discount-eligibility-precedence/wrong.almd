@@ -1,0 +1,9 @@
+// Plausible wrong patch: while moving the condition, parentheses are added
+// "for clarity" in the wrong place, so a coupon now needs an adult too.
+type Customer = { age: Int, member: Bool, coupon: Bool }
+
+fn eligible(c: Customer) -> Bool = c.age >= 18 and (c.member or c.coupon)
+
+fn price(c: Customer, cents: Int) -> Int = if eligible(c) then cents * 90 / 100 else cents
+
+fn basket_total(c: Customer, items: List[Int]) -> Int = items |> list.fold(0, (a, x) => a + price(c, x))

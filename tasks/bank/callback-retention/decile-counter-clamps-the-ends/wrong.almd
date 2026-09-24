@@ -1,0 +1,19 @@
+// Scores 0..100 grouped in ten deciles: 0-9, 10-19, ..., 90-100. The top
+// decile includes 100. Out-of-range scores are clamped first: below 0 counts
+// as 0, above 100 counts as 100.
+fn clamp_score(s: Int) -> Int = int.clamp(s, 0, 100)
+
+fn decile_label(d: Int) -> String =
+  if d == 9 then "90-100" else int.to_string(d * 10) + "-" + int.to_string(d * 10 + 9)
+
+fn in_range(scores: List[Int]) -> Int = scores |> list.count((s) => s >= 0 and s <= 100)
+
+// Plausible wrong patch: the decile is clamp / 10, which puts 100 in an
+// eleventh decile (10) that no count list slot holds.
+fn decile_counter(scores: List[Int]) -> (Int) -> String = {
+  let counts = list.range(0, 10) |> list.map((d) => scores |> list.count((s) => clamp_score(s) / 10 == d))
+  (score) => {
+    let d = int.min(clamp_score(score) / 10, 9)
+    decile_label(d) + ": " + int.to_string(list.get(counts, d) ?? 0)
+  }
+}

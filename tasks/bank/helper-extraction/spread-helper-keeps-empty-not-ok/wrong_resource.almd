@@ -1,0 +1,15 @@
+// Plausible wrong patch: the helper sorts the readings and takes both ends.
+// Same spread — but every call now allocates a sorted copy, where min/max
+// allocated nothing.
+fn spread(xs: List[Int]) -> Int = {
+  let s = list.sort(xs)
+  (list.last(s) ?? 0) - (list.first(s) ?? 0)
+}
+
+fn within(xs: List[Int], tolerance: Int) -> Bool = not list.is_empty(xs) and spread(xs) <= tolerance
+
+fn summary(xs: List[Int]) -> String =
+  match list.min(xs) {
+    some(lo) => "min=" + int.to_string(lo) + ",max=" + int.to_string(list.max(xs) ?? lo) + ",spread=" + int.to_string(spread(xs)),
+    none => "no data",
+  }

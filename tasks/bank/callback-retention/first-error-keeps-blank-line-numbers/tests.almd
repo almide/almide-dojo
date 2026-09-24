@@ -1,0 +1,5 @@
+test "locator" {
+  let f = locator(["ok", "error: boom", "error: again"])
+  assert_eq(f("a.log"), "a.log:2: boom")
+  assert_eq(locator(["fine"])("b.log"), "b.log: clean")
+}

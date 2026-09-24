@@ -1,0 +1,7 @@
+// Resource probe: the TODOs of the same 400 lines collected __K__ times. The
+// helper must allocate no more per line than the fold did.
+effect fn main() -> Unit = {
+  let lines = list.range(0, 400) |> list.map((i) => if i % 2 == 0 then "x = " + int.to_string(i) + " // TODO: item " + int.to_string(i) else "plain line")
+  let total = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + list.len(todos(lines)))
+  println(int.to_string(total))
+}

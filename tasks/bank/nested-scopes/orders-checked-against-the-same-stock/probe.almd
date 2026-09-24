@@ -1,0 +1,9 @@
+// Resource probe: __K__ orders of 2,000 distinct SKUs each. Each order's
+// totals table belongs to its own step, so the batch grows by the input only;
+// building every table first keeps them all live.
+effect fn main() -> Unit = {
+  let stock = map.from_list([("sku-1", 9)])
+  let orders = list.range(0, __K__) |> list.map((i) =>
+    Order { id: "o" + int.to_string(i), lines: list.range(0, 2000) |> list.map((j) => ("sku-" + int.to_string(j) + "-" + int.to_string(i), 0)) })
+  println(int.to_string(check_orders(stock, orders) |> list.fold(0, (a, s) => a + string.len(s))))
+}

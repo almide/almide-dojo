@@ -1,0 +1,8 @@
+// Resource probe: __K__ logs of 20,000 short lines, one text per log. Each
+// log's line list lives only inside its own step, so the batch grows by the
+// input texts only; splitting every log first keeps every line list live.
+effect fn main() -> Unit = {
+  let logs = list.range(0, __K__) |> list.map((i) =>
+    ("log" + int.to_string(i), list.range(0, 20000) |> list.map((j) => if (j + i) % 7 == 0 then "ERR" else "OK") |> list.join("\n")))
+  println(int.to_string(error_rates(logs) |> list.fold(0, (a, s) => a + string.len(s))))
+}

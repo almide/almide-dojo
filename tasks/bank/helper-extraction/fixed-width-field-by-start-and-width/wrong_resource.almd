@@ -1,0 +1,16 @@
+// Plausible wrong patch: the helper cuts the columns out character by
+// character. Same fields — but it allocates a character list and a joined
+// string per field, where the inline code sliced once.
+type Record = { code: String, qty: Int, name: String }
+
+fn field(line: String, start: Int, width: Int) -> String =
+  string.trim(string.chars(line) |> list.drop(start) |> list.take(width) |> list.join(""))
+
+fn parse_record(line: String) -> Record =
+  Record {
+    code: field(line, 0, 4),
+    qty: int.parse(field(line, 4, 4)) ?? 0,
+    name: field(line, 8, 12),
+  }
+
+fn total_qty(lines: List[String]) -> Int = lines |> list.fold(0, (a, l) => a + parse_record(l).qty)

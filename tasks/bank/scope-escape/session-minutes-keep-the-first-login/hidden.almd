@@ -1,0 +1,12 @@
+test "hidden: a repeated in keeps the first start" {
+  assert_eq(usage(["0 ann in", "10 ann in", "30 ann out"]), "ann=30")
+  assert_eq(usage(["0 z in", "5 z out", "7 z in", "8 z in", "9 z out"]), "z=7")
+}
+test "hidden: stray outs and open sessions" {
+  assert_eq(usage(["3 bo out", "4 bo in", "9 cy in", "10 bo out"]), "bo=6")
+  assert_eq(usage(["1 q in"]), "")
+  assert_eq(usage([]), "")
+}
+test "hidden: users unchanged" {
+  assert_eq(users(["1 b in", "2 a in", "3 b out"]), ok(["b", "a"]))
+}

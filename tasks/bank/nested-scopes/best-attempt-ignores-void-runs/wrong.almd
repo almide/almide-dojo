@@ -1,0 +1,21 @@
+// Exam attempts per course: (student, score). A score of -1 marks a VOID
+// attempt (the student did not sit it); it is never a result.
+type Course = { title: String, attempts: List[(String, Int)] }
+
+fn is_void(score: Int) -> Bool = score == -1
+
+fn sat(c: Course) -> Int = c.attempts |> list.count(((_, s)) => not is_void(s))
+
+fn students(c: Course) -> List[String] =
+  c.attempts |> list.map(((n, _)) => n) |> list.unique |> list.sort
+
+// Plausible wrong patch: takes the plain maximum over all attempts, so a
+// student with only void attempts shows -1.
+fn best_attempts(courses: List[Course]) -> List[String] =
+  courses |> list.map((c) => {
+    let best = c.attempts |> list.fold(map.new(), (m, a) => {
+      let (n, s) = a
+      map.set(m, n, int.max(s, map.get(m, n) ?? s))
+    })
+    c.title + ": " + (students(c) |> list.map((n) => n + "=" + int.to_string(map.get(best, n) ?? -1)) |> list.join(", "))
+  })

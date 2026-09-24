@@ -1,0 +1,14 @@
+// Plausible wrong patch: passes the width where string.slice expects the END
+// index. The first field starts at 0, so it looks right; the others do not.
+type Record = { code: String, qty: Int, name: String }
+
+fn field(line: String, start: Int, width: Int) -> String = string.trim(string.slice(line, start, width))
+
+fn parse_record(line: String) -> Record =
+  Record {
+    code: field(line, 0, 4),
+    qty: int.parse(field(line, 4, 4)) ?? 0,
+    name: field(line, 8, 12),
+  }
+
+fn total_qty(lines: List[String]) -> Int = lines |> list.fold(0, (a, l) => a + parse_record(l).qty)

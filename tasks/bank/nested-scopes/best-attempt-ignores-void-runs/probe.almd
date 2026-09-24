@@ -1,0 +1,8 @@
+// Resource probe: __K__ courses with 2,000 students each. Each course's
+// best-score table belongs to its own step, so the batch grows by the input
+// only; building every table first keeps them all live.
+effect fn main() -> Unit = {
+  let courses = list.range(0, __K__) |> list.map((i) =>
+    Course { title: "c" + int.to_string(i), attempts: list.range(0, 2000) |> list.map((j) => ("student-" + int.to_string(j) + "-" + int.to_string(i), (j * 13 + i) % 101 - 1)) })
+  println(int.to_string(best_attempts(courses) |> list.fold(0, (a, s) => a + string.len(s))))
+}

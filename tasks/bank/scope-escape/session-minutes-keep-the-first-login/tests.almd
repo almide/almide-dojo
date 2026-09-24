@@ -1,0 +1,4 @@
+test "usage" {
+  assert_eq(usage(["0 ann in", "5 bob in", "30 ann out", "35 bob out"]), "ann=30,bob=30")
+  assert_eq(usage(["1 x on"]), "bad kind: 1 x on")
+}

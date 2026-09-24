@@ -1,0 +1,25 @@
+// Exam attempts per course: (student, score). A score of -1 marks a VOID
+// attempt (the student did not sit it); it is never a result.
+type Course = { title: String, attempts: List[(String, Int)] }
+
+fn is_void(score: Int) -> Bool = score == -1
+
+fn sat(c: Course) -> Int = c.attempts |> list.count(((_, s)) => not is_void(s))
+
+fn students(c: Course) -> List[String] =
+  c.attempts |> list.map(((n, _)) => n) |> list.unique |> list.sort
+
+// Plausible wrong patch: builds every course's best-score table first and
+// formats afterwards, so every table is live at once.
+fn best_attempts(courses: List[Course]) -> List[String] = {
+  let tables = courses |> list.map((c) => (c, c.attempts |> list.fold(map.new(), (m, a) => {
+    let (n, s) = a
+    if is_void(s) then (if map.contains(m, n) then m else map.set(m, n, none))
+    else map.set(m, n, some(int.max(s, (map.get(m, n) ?? none) ?? s)))
+  })))
+  tables |> list.map(((c, best)) =>
+    c.title + ": " + (students(c) |> list.map((n) => n + "=" + (match (map.get(best, n) ?? none) {
+      some(s) => int.to_string(s),
+      none => "none",
+    })) |> list.join(", ")))
+}

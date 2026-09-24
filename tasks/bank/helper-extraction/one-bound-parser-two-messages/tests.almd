@@ -1,0 +1,5 @@
+test "bound helper" {
+  assert_eq(parse_bound("12", "start"), ok(12))
+  assert_eq(parse_range("1..5"), ok((1, 5)))
+  assert_eq(parse_range("x..5"), err("bad start: x"))
+}

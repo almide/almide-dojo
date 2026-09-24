@@ -1,0 +1,10 @@
+test "hidden: the end keeps its own message" {
+  assert_eq(parse_range("1..y"), err("bad end: y"))
+  assert_eq(parse_bound("q", "end"), err("bad end: q"))
+  assert_eq(parse_range("a..b"), err("bad start: a"))
+}
+test "hidden: other messages and length" {
+  assert_eq(parse_range("5..1"), err("empty range: 5..1"))
+  assert_eq(parse_range("5-1"), err("missing '..' in 5-1"))
+  assert_eq(range_len("-2..2"), ok(5))
+}

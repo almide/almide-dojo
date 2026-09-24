@@ -1,0 +1,20 @@
+// Plausible wrong patch: the classic accumulator walk prepends each found
+// TODO, so the result comes out in reverse source order.
+fn todo_text(line: String) -> String? =
+  string.index_of(line, "TODO:") |> option.map((i) => string.trim(string.drop(line, i + 5)))
+
+fn collect(lines: List[String], i: Int, acc: List[String]) -> List[String] =
+  match list.get(lines, i) {
+    none => acc,
+    some(l) => match todo_text(l) {
+      some(t) => collect(lines, i + 1, [t] + acc),
+      none => collect(lines, i + 1, acc),
+    },
+  }
+
+fn todos(lines: List[String]) -> List[String] = collect(lines, 0, [])
+
+fn todo_report(lines: List[String]) -> String = {
+  let ts = todos(lines)
+  int.to_string(list.len(ts)) + " todo(s)" + (if list.is_empty(ts) then "" else ": " + list.join(ts, "; "))
+}

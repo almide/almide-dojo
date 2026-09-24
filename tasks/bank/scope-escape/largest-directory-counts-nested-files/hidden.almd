@@ -1,0 +1,14 @@
+test "hidden: nested files count for every ancestor" {
+  assert_eq(largest_dir(["a/b/x 5", "a/y 1", "c/z 5"]), "a=6")
+  assert_eq(largest_dir(["p/q/r/f 3"]), "p=3")
+}
+test "hidden: ties, root only, errors" {
+  assert_eq(largest_dir(["m/x 2", "k/y 2"]), "k=2")
+  assert_eq(largest_dir(["f 1", "g 2"]), "none")
+  assert_eq(largest_dir([]), "none")
+  assert_eq(largest_dir(["ok/a 1", "broken"]), "bad line: broken")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(dir_of("a/b/c"), "a/b")
+  assert_eq(total_size(["x 1", "y/z 2"]), ok(3))
+}

@@ -1,0 +1,13 @@
+// Word statistics per document. Words are lowercase letters only; every other
+// character separates words ("don't" is "don" and "t").
+fn words(text: String) -> List[String] =
+  string.chars(string.to_lower(text))
+    |> list.map((c) => if c >= "a" and c <= "z" then c else " ")
+    |> list.join("")
+    |> string.split(" ")
+    |> list.filter((w) => w != "")
+
+fn frequencies(text: String) -> Map[String, Int] =
+  words(text) |> list.fold(map.new(), (m, w) => map.set(m, w, (map.get(m, w) ?? 0) + 1))
+
+fn word_count(text: String) -> Int = list.len(words(text))
