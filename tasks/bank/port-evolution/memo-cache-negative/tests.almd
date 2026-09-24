@@ -1,0 +1,10 @@
+test "cache hits skip the directory" {
+  let d = Directory { rows: ["a": "1", "b": "2"], calls: 0 }
+  assert_eq(resolve_cached(d, ["a", "b", "a"]), (["1", "2", "1"], 2, 1))
+}
+test "uncached directory" {
+  let d = Directory { rows: ["a": "1"], calls: 0 }
+  let (vals, after) = resolve_all(d, ["a", "a"])
+  assert_eq(vals, ["1", "1"])
+  assert_eq(after.calls, 2)
+}
