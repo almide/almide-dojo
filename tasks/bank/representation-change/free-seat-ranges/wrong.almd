@@ -1,0 +1,41 @@
+// Plausible wrong patch: `release` inserts the freed run without joining it to
+// adjacent runs, so equal rows compare unequal and blocks across runs are missed.
+// One row of theatre seats, numbered from 0, stored as canonical runs of free
+// seats: (start, length), increasing, never overlapping or touching.
+type Row: Eq, Repr = { size: Int, free: List[(Int, Int)] }
+
+fn to_seats(r: Row) -> List[Bool] =
+  list.range(0, r.size) |> list.map((i) => list.any(r.free, (run) => i >= run.0 and i < run.0 + run.1))
+
+// Maximal runs of free seats.
+fn from_seats(seats: List[Bool]) -> Row = {
+  let runs = seats |> list.enumerate |> list.fold([], (acc, p) =>
+    if not p.1 then acc
+    else match list.last(acc) {
+      some(run) => if run.0 + run.1 == p.0 then list.drop_end(acc, 1) + [(run.0, run.1 + 1)] else acc + [(p.0, 1)],
+      none => [(p.0, 1)],
+    })
+  Row { size: list.len(seats), free: runs }
+}
+
+fn empty_row(size: Int) -> Row = Row { size: size, free: if size > 0 then [(0, size)] else [] }
+
+fn free_count(r: Row) -> Int = r.free |> list.fold(0, (acc, run) => acc + run.1)
+
+fn is_free(r: Row, i: Int) -> Bool = list.any(r.free, (run) => i >= run.0 and i < run.0 + run.1)
+
+// The lowest seat number where `n` consecutive free seats start.
+fn first_block(r: Row, n: Int) -> Int? = r.free |> list.find((run) => run.1 >= n) |> option.map((run) => run.0)
+
+fn set_range(r: Row, start: Int, n: Int, free: Bool) -> Row =
+  from_seats(to_seats(r) |> list.enumerate |> list.map((p) => if p.0 >= start and p.0 < start + n then free else p.1))
+
+fn book(r: Row, start: Int, n: Int) -> Row = set_range(r, start, n, false)
+// Adds the released run to the list, keeping it sorted.
+fn release(r: Row, start: Int, n: Int) -> Row = {
+  let kept = r.free |> list.filter((run) => run.0 + run.1 <= start or run.0 >= start + n)
+  Row { ...r, free: (kept + [(start, n)]) |> list.sort_by((run) => run.0) }
+}
+
+// "." for a free seat, "X" for a taken one.
+fn render(r: Row) -> String = to_seats(r) |> list.map((s) => if s then "." else "X") |> list.join("")

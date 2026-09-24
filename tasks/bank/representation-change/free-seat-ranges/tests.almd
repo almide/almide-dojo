@@ -1,0 +1,11 @@
+test "free runs" {
+  let r = book(empty_row(8), 2, 3)
+  assert_eq(r, Row { size: 8, free: [(0, 2), (5, 3)] })
+  assert_eq(render(r), "..XXX...")
+  assert_eq(first_block(r, 3), some(5))
+}
+test "release a middle seat" {
+  let r = release(book(empty_row(6), 0, 6), 4, 1)
+  assert_eq(r.free, [(4, 1)])
+  assert_eq(free_count(r), 1)
+}

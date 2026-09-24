@@ -1,0 +1,22 @@
+// One row of theatre seats, numbered from 0; true = free.
+type Row: Eq, Repr = { seats: List[Bool] }
+
+fn empty_row(size: Int) -> Row = Row { seats: list.repeat(true, size) }
+
+fn free_count(r: Row) -> Int = r.seats |> list.count((s) => s)
+
+fn is_free(r: Row, i: Int) -> Bool = list.get(r.seats, i) ?? false
+
+// The lowest seat number where `n` consecutive free seats start.
+fn first_block(r: Row, n: Int) -> Int? =
+  list.range(0, list.len(r.seats))
+    |> list.find((start) => start + n <= list.len(r.seats) and list.all(list.range(start, start + n), (i) => is_free(r, i)))
+
+fn set_range(r: Row, start: Int, n: Int, free: Bool) -> Row =
+  Row { seats: r.seats |> list.enumerate |> list.map((p) => if p.0 >= start and p.0 < start + n then free else p.1) }
+
+fn book(r: Row, start: Int, n: Int) -> Row = set_range(r, start, n, false)
+fn release(r: Row, start: Int, n: Int) -> Row = set_range(r, start, n, true)
+
+// "." for a free seat, "X" for a taken one.
+fn render(r: Row) -> String = r.seats |> list.map((s) => if s then "." else "X") |> list.join("")
