@@ -1,0 +1,6 @@
+test "a reference to an empty cell reads as 0 with a warning" {
+  assert_eq(sheet(["A1": "5", "B1": "=A1+A2"], ["B1"]) |> result.map((s) => show(s)), ok("B1=5 | B1: A2 is empty, using 0"))
+}
+test "full formulas still add up" {
+  assert_eq(sheet(["A1": "5", "A2": "=A1+2", "B1": "=A1+A2+1"], ["B1", "A2"]) |> result.map((s) => show(s)), ok("B1=13 A2=7"))
+}

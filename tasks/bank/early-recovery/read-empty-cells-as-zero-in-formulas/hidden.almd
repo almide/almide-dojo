@@ -1,0 +1,15 @@
+test "hidden: a bad literal in a referenced cell is still fatal" {
+  assert_eq(sheet(["A1": "x", "B1": "=A1+1"], ["B1"]) |> result.map((s) => show(s)), err(BadLiteral("A1")))
+  assert_eq(sheet(["B1": "=2+zz+C9"], ["B1"]) |> result.map((s) => show(s)), err(BadLiteral("B1")))
+}
+test "hidden: the warning names the cell whose formula has the reference" {
+  let g = ["A1": "=B1+B2", "B1": "=C1+3", "B2": "4"]
+  assert_eq(sheet(g, ["A1", "B1"]) |> result.map((s) => show(s)), ok("A1=7 B1=3 | B1: C1 is empty, using 0; B1: C1 is empty, using 0"))
+}
+test "hidden: a cycle through a formula with an empty reference is still fatal" {
+  assert_eq(sheet(["A1": "=Z1+B1", "B1": "=A1"], ["A1"]) |> result.map((s) => show(s)), err(Cycle("A1")))
+}
+test "hidden: every empty reference warns, in evaluation order" {
+  assert_eq(sheet(["A1": "=Q1+Q2+Q1", "B1": " "], ["A1"]) |> result.map((s) => show(s)), ok("A1=0 | A1: Q1 is empty, using 0; A1: Q2 is empty, using 0; A1: Q1 is empty, using 0"))
+  assert_eq(sheet(["A1": "=B1"], ["A1", "C1"]) |> result.map((s) => show(s)), err(BadLiteral("C1")))
+}
