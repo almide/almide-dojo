@@ -1,0 +1,30 @@
+// Warehouse stock per SKU, and orders made of (sku, quantity) lines. An order
+// may name the same SKU on several lines; they add up.
+type Order = { id: String, lines: List[(String, Int)] }
+
+// Quantity wanted per SKU (SKUs in order of first line).
+fn wanted(o: Order) -> Map[String, Int] =
+  list.group_by(o.lines, ((sku, _)) => sku) |> map.map((ls) => ls |> list.map(((_, q)) => q) |> list.sum)
+
+fn stock_of(stock: Map[String, Int], sku: String) -> Int = map.get_or(stock, sku, 0)
+
+fn total_units(o: Order) -> Int = o.lines |> list.map(((_, q)) => q) |> list.sum
+
+fn skus(o: Order) -> List[String] = map.keys(wanted(o))
+
+// Plausible wrong patch: walks the orders like a fulfilment run and deducts
+// each accepted order from the stock, so later orders see less stock.
+fn check_orders(stock: Map[String, Int], orders: List[Order]) -> List[String] = {
+  let (_, out) = orders |> list.fold((stock, []), (st, o) => {
+    let (left, acc) = st
+    let need = wanted(o)
+    match map.keys(need) |> list.find((sku) => (map.get(need, sku) ?? 0) > stock_of(left, sku)) {
+      some(sku) => (left, acc + [o.id + ": short " + sku]),
+      none => (map.entries(need) |> list.fold(left, (m, e) => {
+        let (sku, q) = e
+        map.set(m, sku, stock_of(m, sku) - q)
+      }), acc + [o.id + ": ok"]),
+    }
+  })
+  out
+}

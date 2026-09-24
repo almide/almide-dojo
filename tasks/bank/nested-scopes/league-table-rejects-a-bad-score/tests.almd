@@ -1,0 +1,3 @@
+test "league" {
+  assert_eq(league([("ants", "2-1,0-0"), ("bees", "x")]), ["ants: 4 pts, gd +1", "bees: invalid (bad score: x)"])
+}

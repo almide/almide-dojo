@@ -1,0 +1,4 @@
+test "check orders" {
+  let stock = map.from_list([("pen", 5), ("ink", 1)])
+  assert_eq(check_orders(stock, [Order { id: "o1", lines: [("pen", 2)] }, Order { id: "o2", lines: [("ink", 2)] }]), ["o1: ok", "o2: short ink"])
+}

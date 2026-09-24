@@ -1,0 +1,13 @@
+test "hidden: orders do not consume each other's stock" {
+  let stock = map.from_list([("pen", 5)])
+  let os = [Order { id: "a", lines: [("pen", 4)] }, Order { id: "b", lines: [("pen", 4)] }, Order { id: "c", lines: [("pen", 5)] }]
+  assert_eq(check_orders(stock, os), ["a: ok", "b: ok", "c: ok"])
+}
+test "hidden: repeated lines add up, unknown and first short" {
+  let stock = map.from_list([("pen", 5), ("cap", 1)])
+  let os = [Order { id: "d", lines: [("pen", 3), ("cap", 1), ("pen", 3)] }, Order { id: "e", lines: [("cap", 2), ("zip", 1)] }, Order { id: "f", lines: [] }]
+  assert_eq(check_orders(stock, os), ["d: short pen", "e: short cap", "f: ok"])
+}
+test "hidden: helpers unchanged" {
+  assert_eq(total_units(Order { id: "x", lines: [("a", 2), ("a", 3)] }), 5)
+}

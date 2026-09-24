@@ -1,0 +1,10 @@
+// Exam attempts per course: (student, score). A score of -1 marks a VOID
+// attempt (the student did not sit it); it is never a result.
+type Course = { title: String, attempts: List[(String, Int)] }
+
+fn is_void(score: Int) -> Bool = score == -1
+
+fn sat(c: Course) -> Int = c.attempts |> list.count(((_, s)) => not is_void(s))
+
+fn students(c: Course) -> List[String] =
+  c.attempts |> list.map(((n, _)) => n) |> list.unique |> list.sort

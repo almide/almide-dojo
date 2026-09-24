@@ -1,0 +1,49 @@
+// Match results per team, one comma-separated string per team: "2-1,0-0,1-3"
+// (goals for - goals against). An empty string means no matches yet.
+// A win is worth 3 points, a draw 1, a loss 0.
+fn parse_score(s: String) -> Result[(Int, Int), String] =
+  match string.split(s, "-") {
+    [a, b] => match int.parse(a) {
+      ok(f) => match int.parse(b) {
+        ok(g) => if f >= 0 and g >= 0 then ok((f, g)) else err("bad score: " + s),
+        err(_) => err("bad score: " + s),
+      },
+      err(_) => err("bad score: " + s),
+    },
+    _ => err("bad score: " + s),
+  }
+
+fn parse_results(results: String) -> Result[List[(Int, Int)], String] =
+  if results == "" then ok([]) else string.split(results, ",") |> list.map((r) => parse_score(r)!)
+
+fn points(f: Int, g: Int) -> Int = if f > g then 3 else if f == g then 1 else 0
+
+fn team_points(results: String) -> Result[Int, String] = {
+  let scores = parse_results(results)!
+  ok(scores |> list.fold(0, (a, s) => {
+    let (f, g) = s
+    a + points(f, g)
+  }))
+}
+
+fn line_for(name: String, scores: List[(Int, Int)]) -> String = {
+  let (pts, gd) = scores |> list.fold((0, 0), (acc, s) => {
+    let (p, d) = acc
+    let (f, g) = s
+    (p + points(f, g), d + f - g)
+  })
+  name + ": " + int.to_string(pts) + " pts, gd " + (if gd > 0 then "+" else "") + int.to_string(gd)
+}
+
+// Plausible wrong patch: keeps the results that parse (filter_map) and only
+// calls a team invalid when NONE of its results parse, so a team with one bad
+// result is scored on the rest.
+fn league(teams: List[(String, String)]) -> List[String] =
+  teams |> list.map(((name, results)) => {
+    let parts = if results == "" then [] else string.split(results, ",")
+    let good = parts |> list.filter_map((r) => result.to_option(parse_score(r)))
+    match parts |> list.find((r) => result.is_err(parse_score(r))) {
+      some(bad) => if list.is_empty(good) then name + ": invalid (bad score: " + bad + ")" else line_for(name, good),
+      none => line_for(name, good),
+    }
+  })

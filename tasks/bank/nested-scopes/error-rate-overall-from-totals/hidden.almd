@@ -1,0 +1,10 @@
+test "hidden: combined counts, not averaged percents" {
+  assert_eq(error_rates([("a", "ERR x"), ("b", "OK\nOK 1\nOK 2\nOK 3")]), ["a: 100%", "b: 0%", "all: 25%"])
+  assert_eq(error_rates([("c", "noise"), ("d", "ERR 1\nOK 1\nOK 2")]), ["c: n/a", "d: 33%", "all: 33%"])
+}
+test "hidden: no logs" {
+  assert_eq(error_rates([]), ["all: n/a"])
+}
+test "hidden: tally unchanged" {
+  assert_eq(tally("ERR\nERR a\nOK b"), (1, 2))
+}

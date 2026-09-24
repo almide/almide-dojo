@@ -1,0 +1,4 @@
+test "best attempts" {
+  let cs = [Course { title: "math", attempts: [("bo", 40), ("al", 70), ("bo", 65)] }]
+  assert_eq(best_attempts(cs), ["math: al=70, bo=65"])
+}

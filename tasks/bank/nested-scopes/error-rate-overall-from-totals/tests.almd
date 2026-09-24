@@ -1,0 +1,3 @@
+test "error rates" {
+  assert_eq(error_rates([("a", "OK 1\nERR 2"), ("b", "OK 3\nERR 4")]), ["a: 50%", "b: 50%", "all: 50%"])
+}
