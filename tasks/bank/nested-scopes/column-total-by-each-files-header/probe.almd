@@ -1,0 +1,7 @@
+// Resource probe: __K__ files of 3,000 rows, one text each. Each file's rows
+// belong to its own step, so the batch grows by the input texts only;
+// splitting every file first keeps all the rows live.
+effect fn main() -> Unit = {
+  let files = list.range(0, __K__) |> list.map((i) => "id,qty\n" + string.repeat("1,2\n", 3000) + int.to_string(i) + ",1")
+  println(int.to_string(column_totals(files, "qty") |> list.fold(0, (a, s) => a + string.len(s))))
+}

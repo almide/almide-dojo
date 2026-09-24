@@ -1,0 +1,5 @@
+test "last words" {
+  let f = last_words(["start", "working", "done"])
+  assert_eq(f("-"), "done")
+  assert_eq(last_words([])("none"), "none")
+}

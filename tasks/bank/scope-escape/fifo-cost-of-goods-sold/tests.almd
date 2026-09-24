@@ -1,0 +1,4 @@
+test "cogs" {
+  assert_eq(cogs(["buy 10 5", "sell 4"]), "cogs=20,left=6")
+  assert_eq(cogs(["buy 1 5", "sell 2"]), "short")
+}

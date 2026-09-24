@@ -1,0 +1,8 @@
+test "hidden: runs do not cross sequences" {
+  assert_eq(longest_rises(["1 2", "3 4 5"]), [2, 3])
+  assert_eq(longest_rises(["7 8 9", "10 11"]), [3, 2])
+}
+test "hidden: empty and single" {
+  assert_eq(longest_rises(["", "4", "2 2 2"]), [0, 1, 1])
+  assert_eq(rises("1 3 2 4"), 2)
+}

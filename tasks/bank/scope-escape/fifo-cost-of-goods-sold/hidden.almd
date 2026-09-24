@@ -1,0 +1,9 @@
+test "hidden: oldest units go first" {
+  assert_eq(cogs(["buy 5 10", "buy 5 20", "sell 7"]), "cogs=90,left=3")
+  assert_eq(cogs(["buy 2 1", "sell 1", "buy 2 9", "sell 2", "sell 1"]), "cogs=20,left=0")
+}
+test "hidden: errors and empties" {
+  assert_eq(cogs([]), "cogs=0,left=0")
+  assert_eq(cogs(["buy 1 1", "hold 3"]), "bad line: hold 3")
+  assert_eq(units_on_hand(["buy 3 1", "sell 1"]), ok(2))
+}

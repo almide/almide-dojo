@@ -1,0 +1,9 @@
+test "hidden: one fee per crossing" {
+  assert_eq(statement([-100, -100, -100])("a"), "a: balance -800, fees 500")
+  assert_eq(statement([-100, 1000, -2000])("b"), "b: balance -2100, fees 1000")
+  assert_eq(statement([])("c"), "c: balance 0, fees 0")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(apply_fee(-5, -10), -10)
+  assert_eq(withdrawals([5, -3, -4]), -7)
+}

@@ -1,0 +1,3 @@
+test "tag summary" {
+  assert_eq(tag_summary(["go", "rust", "go"])("post"), "post: 2 tags")
+}

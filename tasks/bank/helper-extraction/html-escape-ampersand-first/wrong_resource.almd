@@ -1,0 +1,14 @@
+// Plausible wrong patch: the helper escapes character by character. Same text
+// — but one allocation per character.
+fn esc(s: String) -> String =
+  string.chars(s) |> list.map((c) => match c {
+    "&" => "&amp;",
+    "<" => "&lt;",
+    ">" => "&gt;",
+    "\"" => "&quot;",
+    _ => c,
+  }) |> list.join("")
+
+fn text_node(s: String) -> String = esc(s)
+
+fn attribute(name: String, value: String) -> String = name + "=\"" + esc(value) + "\""

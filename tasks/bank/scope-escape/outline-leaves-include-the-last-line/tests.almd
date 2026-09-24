@@ -1,0 +1,3 @@
+test "outline" {
+  assert_eq(outline_stats("a\n  b\nc\n"), "items=3,leaves=2")
+}

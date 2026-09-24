@@ -1,0 +1,8 @@
+test "hidden: case and spaces fold" {
+  assert_eq(tag_summary(["Rust", " rust ", "RUST", "Go"])("a"), "a: 2 tags")
+  assert_eq(tag_summary(["", "  ", "x"])("b"), "b: 1 tags")
+  assert_eq(tag_summary([])("c"), "c: 0 tags")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(tagged(["A "], "a"), true)
+}

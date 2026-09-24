@@ -1,0 +1,7 @@
+// Resource probe: __K__ days of 3,000 distinct visitors, one text per day.
+// Each day's set belongs to its own step, so the batch grows by the input
+// texts only; building every day's set first keeps them all live.
+effect fn main() -> Unit = {
+  let days = list.range(0, __K__) |> list.map((i) => list.range(0, 3000) |> list.map((j) => "v" + int.to_string(j)) |> list.join(","))
+  println(int.to_string(daily_uniques(days) |> list.fold(0, (a, n) => a + n)))
+}

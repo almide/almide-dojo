@@ -1,0 +1,8 @@
+// Resource probe: __K__ services with 2,000 override lines each, one text
+// per service. Each resolved map belongs to its own step, so the batch grows
+// by the input texts only; resolving every service first keeps every map.
+effect fn main() -> Unit = {
+  let d = map.from_list([("port", "80")])
+  let services = list.range(0, __K__) |> list.map((i) => list.range(0, 2000) |> list.map((j) => "k" + int.to_string(j) + "=" + int.to_string(i)) |> list.join("\n"))
+  println(int.to_string(resolve_all(d, services, "k7") |> list.fold(0, (a, s) => a + string.len(s))))
+}

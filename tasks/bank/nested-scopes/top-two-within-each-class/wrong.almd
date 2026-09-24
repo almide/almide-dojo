@@ -1,0 +1,16 @@
+// Exam results as text per class: "name=score" entries separated by ";".
+fn entries(class_text: String) -> List[(String, Int)] =
+  string.split(class_text, ";") |> list.filter_map((e) => match string.split(e, "=") {
+    [n, s] => int.parse(s)? |> option.map((v) => (n, v)),
+    _ => none,
+  })
+
+fn class_size(class_text: String) -> Int = list.len(entries(class_text))
+
+fn best_score(class_text: String) -> Int? = entries(class_text) |> list.map(((_, s)) => s) |> list.max
+
+// Plausible wrong patch: sorts by score only; the sort is stable, so tied
+// students stay in entry order instead of name order.
+fn podiums(classes: List[String]) -> List[String] =
+  classes |> list.map((c) =>
+    entries(c) |> list.sort_by(((_, s)) => 0 - s) |> list.take(2) |> list.map(((n, _)) => n) |> list.join(","))

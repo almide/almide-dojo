@@ -1,0 +1,7 @@
+// Resource probe: __K__ classes of 2,000 students, one text each. Each
+// class's ranking belongs to its own step, so the batch grows by the input
+// texts only; ranking every class first keeps all the rankings live.
+effect fn main() -> Unit = {
+  let classes = list.range(0, __K__) |> list.map((i) => list.range(0, 2000) |> list.map((j) => "s" + int.to_string(j) + "=" + int.to_string((j * 37 + i) % 100)) |> list.join(";"))
+  println(int.to_string(podiums(classes) |> list.fold(0, (a, s) => a + string.len(s))))
+}

@@ -1,0 +1,14 @@
+// Deployment configs: shared defaults plus, per service, an override text of
+// "key=value" lines. A service's settings are the defaults with ITS OWN
+// overrides applied on top; later lines win.
+fn overrides(text: String) -> List[(String, String)] =
+  string.lines(text) |> list.filter_map((l) => match string.index_of(l, "=") {
+    some(i) => some((string.slice(l, 0, i), string.drop(l, i + 1))),
+    none => none,
+  })
+
+fn apply(base: Map[String, String], text: String) -> Map[String, String] =
+  overrides(text) |> list.fold(base, (m, kv) => {
+    let (k, v) = kv
+    map.set(m, k, v)
+  })

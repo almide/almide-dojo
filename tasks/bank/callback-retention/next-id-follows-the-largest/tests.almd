@@ -1,0 +1,4 @@
+test "allocator" {
+  assert_eq(allocator(["T-1", "T-2"])("new "), "new T-3")
+  assert_eq(allocator([])(""), "T-1")
+}

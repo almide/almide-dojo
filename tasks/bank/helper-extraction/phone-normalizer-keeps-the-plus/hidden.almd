@@ -1,0 +1,5 @@
+test "hidden: the plus stays" {
+  assert_eq(clean("+44 (20) 7946"), "+44207946")
+  assert_eq(same_number("+44 20", "44 20"), false)
+  assert_eq(dial_string("+1-555"), "tel:+1555")
+}

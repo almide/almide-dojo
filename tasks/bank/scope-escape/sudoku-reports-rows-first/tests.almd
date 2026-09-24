@@ -1,0 +1,4 @@
+test "first conflict" {
+  assert_eq(first_conflict(["1234", "3412", "2143", "4321"]), "ok")
+  assert_eq(first_conflict(["1..1", "....", "....", "...."]), "row 1")
+}

@@ -1,0 +1,9 @@
+// Phone numbers as typed. Spaces, dashes and parentheses are cosmetic and are
+// removed; EVERYTHING else is kept, including a leading "+" (an international
+// number is not the same as a local one).
+fn same_number(a: String, b: String) -> Bool =
+  string.replace(string.replace(string.replace(string.replace(a, " ", ""), "-", ""), "(", ""), ")", "")
+    == string.replace(string.replace(string.replace(string.replace(b, " ", ""), "-", ""), "(", ""), ")", "")
+
+fn dial_string(n: String) -> String =
+  "tel:" + string.replace(string.replace(string.replace(string.replace(n, " ", ""), "-", ""), "(", ""), ")", "")

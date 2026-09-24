@@ -1,0 +1,12 @@
+// A 4x4 sudoku as four strings of digits 1-4, "." for an empty cell. A unit
+// (row, column or 2x2 box) is valid when no digit repeats in it.
+fn cell(grid: List[String], r: Int, c: Int) -> String = list.get(grid, r) |> option.flat_map((row) => string.get(row, c)) ?? "."
+
+fn repeats(cells: List[String]) -> Bool = {
+  let digits = cells |> list.filter((x) => x != ".")
+  list.len(digits) != list.len(list.unique(digits))
+}
+
+fn row_cells(grid: List[String], r: Int) -> List[String] = list.range(0, 4) |> list.map((c) => cell(grid, r, c))
+
+fn filled(grid: List[String]) -> Int = list.range(0, 16) |> list.count((i) => cell(grid, i / 4, i % 4) != ".")

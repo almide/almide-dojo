@@ -1,0 +1,10 @@
+// Writing CSV. A field is quoted when it contains a comma, a double quote or a
+// newline; inside quotes a double quote is doubled. Other fields are written
+// as they are.
+fn escape(field: String) -> String =
+  if string.contains(field, ",") or string.contains(field, "\"") or string.contains(field, "\n") then "\"" + string.replace(field, "\"", "\"\"") + "\""
+  else field
+
+fn to_line(fields: List[String]) -> String = fields |> list.map((f) => escape(f)) |> list.join(",")
+
+fn to_csv(rows: List[List[String]]) -> String = rows |> list.map((r) => to_line(r)) |> list.join("\n")

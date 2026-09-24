@@ -1,0 +1,4 @@
+// Page numbers cited in a chapter, in citation order.
+fn cited(pages: List[Int], p: Int) -> Bool = list.contains(pages, p)
+
+fn citation_count(pages: List[Int]) -> Int = list.len(pages)

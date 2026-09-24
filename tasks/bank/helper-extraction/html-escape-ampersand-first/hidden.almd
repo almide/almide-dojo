@@ -1,0 +1,5 @@
+test "hidden: every character escaped once" {
+  assert_eq(esc("<b>"), "&lt;b&gt;")
+  assert_eq(text_node("1 < 2 & \"x\""), "1 &lt; 2 &amp; &quot;x&quot;")
+  assert_eq(attribute("title", "a<b"), "title=\"a&lt;b\"")
+}

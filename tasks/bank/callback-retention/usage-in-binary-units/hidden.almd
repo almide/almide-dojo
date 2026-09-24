@@ -1,0 +1,10 @@
+test "hidden: binary units throughout" {
+  let f = quota_meter([1000, 500])
+  assert_eq(f(1500), "1.4 KiB of 1.4 KiB")
+  assert_eq(f(1499), "1.4 KiB of 1.4 KiB over")
+  assert_eq(quota_meter([3 * 1024 * 1024 / 2])(1048576), "1.5 MiB of 1.0 MiB over")
+}
+test "hidden: empty and largest" {
+  assert_eq(quota_meter([])(0), "0 B of 0 B")
+  assert_eq(largest([1023, 1025]), "1.0 KiB")
+}

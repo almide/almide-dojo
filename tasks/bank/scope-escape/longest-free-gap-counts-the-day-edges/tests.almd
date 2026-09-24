@@ -1,0 +1,4 @@
+test "longest free" {
+  assert_eq(longest_free(["540-600", "660-1020"]), "free=60")
+  assert_eq(longest_free(["600-590"]), "empty block: 600-590")
+}

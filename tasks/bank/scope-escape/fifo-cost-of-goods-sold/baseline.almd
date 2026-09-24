@@ -1,0 +1,27 @@
+// A stock ledger: "buy <qty> <unit price>" and "sell <qty>" lines, in time
+// order. Stock is sold FIRST IN, FIRST OUT: a sale takes units from the
+// oldest remaining purchase first.
+type Line = | Buy(Int, Int) | Sell(Int)
+
+fn parse_line(s: String) -> Result[Line, String] =
+  match string.split(s, " ") {
+    ["buy", q, p] => match (int.parse(q), int.parse(p)) {
+      (ok(qv), ok(pv)) => ok(Buy(qv, pv)),
+      _ => err("bad line: " + s),
+    },
+    ["sell", q] => match int.parse(q) {
+      ok(qv) => ok(Sell(qv)),
+      err(_) => err("bad line: " + s),
+    },
+    _ => err("bad line: " + s),
+  }
+
+fn parse_ledger(ss: List[String]) -> Result[List[Line], String] = ss |> list.map((s) => parse_line(s)!)
+
+fn units_on_hand(ss: List[String]) -> Result[Int, String] = {
+  let ls = parse_ledger(ss)!
+  ok(ls |> list.fold(0, (a, l) => match l {
+    Buy(q, _) => a + q,
+    Sell(q) => a - q,
+  }))
+}

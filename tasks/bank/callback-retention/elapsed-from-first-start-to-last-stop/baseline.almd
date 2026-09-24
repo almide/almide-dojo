@@ -1,0 +1,9 @@
+// A machine log, "<second> START" / "<second> STOP" lines in time order,
+// possibly several of each (restarts). Other lines are ignored.
+fn parse(line: String) -> (Int, String)? =
+  match string.split(line, " ") {
+    [t, kind] => int.parse(t)? |> option.map((s) => (s, kind)),
+    _ => none,
+  }
+
+fn starts(log: List[String]) -> Int = log |> list.count((l) => parse(l) |> option.map(((_, k)) => k == "START") ?? false)

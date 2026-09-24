@@ -1,0 +1,7 @@
+// Resource probe: the latest of the same 300 versions found __K__ times. The
+// helper must allocate no more per comparison than the inline code did.
+effect fn main() -> Unit = {
+  let vs = list.range(0, 300) |> list.map((i) => "1." + int.to_string(i % 17) + "." + int.to_string(i % 5))
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + string.len(latest(vs)))
+  println(int.to_string(t))
+}

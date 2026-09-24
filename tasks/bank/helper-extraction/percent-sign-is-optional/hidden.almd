@@ -1,0 +1,7 @@
+test "hidden: the sign is optional" {
+  assert_eq(pct("15"), some(15))
+  assert_eq(pct(" 20 % "), some(20))
+  assert_eq(valid_pct("0"), true)
+  assert_eq(apply_discount(1000, "50"), some(500))
+  assert_eq(valid_pct("%"), false)
+}

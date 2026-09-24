@@ -1,0 +1,7 @@
+// Resource probe: the same 200 snippets escaped __K__ times. The helper must
+// allocate no more per snippet than the inline replacements did.
+effect fn main() -> Unit = {
+  let snippets = list.range(0, 200) |> list.map((i) => "row " + int.to_string(i) + " & <tag> value")
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (snippets |> list.fold(0, (a, s) => a + string.len(text_node(s)))))
+  println(int.to_string(t))
+}

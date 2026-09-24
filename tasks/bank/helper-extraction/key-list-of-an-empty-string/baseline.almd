@@ -1,0 +1,7 @@
+// Required-field lists written "a, b, c". An empty or all-space list names NO
+// fields (not one empty field).
+fn require(spec: String, field: String) -> Bool =
+  (if string.trim(spec) == "" then [] else string.split(spec, ",") |> list.map((k) => string.trim(k))) |> list.contains(field)
+
+fn count_required(spec: String) -> Int =
+  list.len(if string.trim(spec) == "" then [] else string.split(spec, ",") |> list.map((k) => string.trim(k)))

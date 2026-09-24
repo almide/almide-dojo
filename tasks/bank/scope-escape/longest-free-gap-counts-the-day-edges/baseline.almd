@@ -1,0 +1,17 @@
+// Busy blocks in a working day from minute 540 (09:00) to 1020 (17:00), as
+// "start-end" minute pairs, half-open, possibly overlapping, in any order.
+fn parse_block(s: String) -> Result[(Int, Int), String] =
+  match string.split(s, "-") {
+    [a, b] => match (int.parse(a), int.parse(b)) {
+      (ok(x), ok(y)) => if x < y then ok((x, y)) else err("empty block: " + s),
+      _ => err("bad block: " + s),
+    },
+    _ => err("bad block: " + s),
+  }
+
+fn parse_blocks(ss: List[String]) -> Result[List[(Int, Int)], String] = ss |> list.map((s) => parse_block(s)!)
+
+fn busy_count(ss: List[String]) -> Result[Int, String] = {
+  let bs = parse_blocks(ss)!
+  ok(list.len(bs))
+}

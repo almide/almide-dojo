@@ -1,0 +1,7 @@
+// Plausible wrong patch: the helper is the obvious split-and-trim, which turns
+// an empty spec into one empty field.
+fn fields(spec: String) -> List[String] = string.split(spec, ",") |> list.map((k) => string.trim(k))
+
+fn require(spec: String, field: String) -> Bool = list.contains(fields(spec), field)
+
+fn count_required(spec: String) -> Int = list.len(fields(spec))

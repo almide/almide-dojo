@@ -1,0 +1,11 @@
+// Page numbers cited in a chapter, in citation order.
+fn cited(pages: List[Int], p: Int) -> Bool = list.contains(pages, p)
+
+fn citation_count(pages: List[Int]) -> Int = list.len(pages)
+
+// Both ends are found now; the closure keeps only them.
+fn page_label(pages: List[Int]) -> (String) -> String =
+  match option.zip(list.min(pages), list.max(pages)) {
+    some((lo, hi)) => (prefix) => prefix + (if lo == hi then int.to_string(lo) else int.to_string(lo) + "-" + int.to_string(hi)),
+    none => (prefix) => prefix + "none",
+  }

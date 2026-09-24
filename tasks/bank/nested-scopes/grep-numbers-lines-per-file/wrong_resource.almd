@@ -1,0 +1,16 @@
+// Searching text files. A file is (name, text); its lines are separated by
+// "\n" and numbered from 1 within that file.
+fn lines_of(text: String) -> List[String] = string.split(text, "\n")
+
+fn matches(line: String, needle: String) -> Bool = string.contains(line, needle)
+
+fn count_in(text: String, needle: String) -> Int = lines_of(text) |> list.count((l) => matches(l, needle))
+
+// Plausible wrong patch: splits every file into lines first and searches
+// afterwards, so every file's line list is live at once.
+fn grep(files: List[(String, String)], needle: String) -> List[String] = {
+  let split = files |> list.map(((name, text)) => (name, lines_of(text)))
+  split |> list.flat_map(((name, ls)) =>
+    ls |> list.enumerate |> list.filter_map(((i, l)) =>
+      if matches(l, needle) then some(name + ":" + int.to_string(i + 1) + ":" + l) else none))
+}

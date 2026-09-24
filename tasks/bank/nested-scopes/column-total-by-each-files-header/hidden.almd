@@ -1,0 +1,8 @@
+test "hidden: each file has its own header" {
+  assert_eq(column_totals(["id,qty\n1,5", "qty,id\n4,9\n6,9"], "qty"), ["5", "10"])
+  assert_eq(column_totals(["a,b\n1,2", "b\n3"], "a"), ["1", "missing"])
+}
+test "hidden: bad cells and empties" {
+  assert_eq(column_totals(["n\nx\n4\n"], "n"), ["4"])
+  assert_eq(column_totals([], "n"), [])
+}

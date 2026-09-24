@@ -1,0 +1,7 @@
+// Resource probe: __K__ closures over fresh 5,000-line transcripts, all held
+// live. Capturing one line grows by a few bytes each; capturing `lines`
+// grows by the whole transcript.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) => last_words(list.range(0, 5000) |> list.map((j) => "output line " + int.to_string(j + i))))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("")))))
+}

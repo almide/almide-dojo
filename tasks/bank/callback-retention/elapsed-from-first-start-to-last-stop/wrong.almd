@@ -1,0 +1,22 @@
+// A machine log, "<second> START" / "<second> STOP" lines in time order,
+// possibly several of each (restarts). Other lines are ignored.
+fn parse(line: String) -> (Int, String)? =
+  match string.split(line, " ") {
+    [t, kind] => int.parse(t)? |> option.map((s) => (s, kind)),
+    _ => none,
+  }
+
+fn starts(log: List[String]) -> Int = log |> list.count((l) => parse(l) |> option.map(((_, k)) => k == "START") ?? false)
+
+// Plausible wrong patch: pairs the LAST start with the last stop, so after a
+// restart only the final run is measured.
+fn uptime(log: List[String]) -> (String) -> String = {
+  let evs = log |> list.filter_map((l) => parse(l))
+  let last_start = evs |> list.filter(((_, k)) => k == "START") |> list.map(((t, _)) => t) |> list.max
+  let last_stop = evs |> list.filter(((_, k)) => k == "STOP") |> list.map(((t, _)) => t) |> list.max
+  let span = option.zip(last_start, last_stop) |> option.filter(((a, b)) => b >= a) |> option.map(((a, b)) => b - a)
+  (unit) => match span {
+    some(s) => if unit == "min" then int.to_string(s / 60) + "min" else int.to_string(s) + "s",
+    none => "n/a",
+  }
+}

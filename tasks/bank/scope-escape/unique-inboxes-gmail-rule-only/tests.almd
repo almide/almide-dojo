@@ -1,0 +1,3 @@
+test "inboxes" {
+  assert_eq(inboxes(["a.b@gmail.com", "ab@gmail.com", "c@x.org", "bad"]), "unique=2,invalid=1")
+}

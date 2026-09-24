@@ -1,0 +1,3 @@
+test "grep" {
+  assert_eq(grep([("a.txt", "x\nhit one\ny")], "hit"), ["a.txt:2:hit one"])
+}

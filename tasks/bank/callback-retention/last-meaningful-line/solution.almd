@@ -1,0 +1,12 @@
+// Console transcripts. Blank lines and lines of only spaces carry nothing.
+fn meaningful(line: String) -> Bool = string.trim(line) != ""
+
+fn line_count(lines: List[String]) -> Int = lines |> list.count((l) => meaningful(l))
+
+fn first_line(lines: List[String]) -> String = lines |> list.find((l) => meaningful(l)) ?? ""
+
+// The last meaningful line is found now; the closure keeps only it.
+fn last_words(lines: List[String]) -> (String) -> String = {
+  let found = lines |> list.filter((l) => meaningful(l)) |> list.last |> option.map((l) => string.trim(l))
+  (fallback) => found ?? fallback
+}

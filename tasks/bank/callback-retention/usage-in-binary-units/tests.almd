@@ -1,0 +1,5 @@
+test "quota meter" {
+  let f = quota_meter([512, 512])
+  assert_eq(f(2048), "1.0 KiB of 2.0 KiB")
+  assert_eq(f(900), "1.0 KiB of 900 B over")
+}

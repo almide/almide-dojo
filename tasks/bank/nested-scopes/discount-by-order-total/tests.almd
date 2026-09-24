@@ -1,0 +1,3 @@
+test "charges" {
+  assert_eq(charges(["20000", "500+500"]), [19000, 1000])
+}

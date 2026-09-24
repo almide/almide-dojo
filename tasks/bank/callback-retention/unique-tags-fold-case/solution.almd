@@ -1,0 +1,13 @@
+// Tags typed by users. Tags are case-insensitive ("Rust" and "rust" are the
+// same tag) and surrounding spaces do not matter.
+fn norm(tag: String) -> String = string.to_lower(string.trim(tag))
+
+fn same_tag(a: String, b: String) -> Bool = norm(a) == norm(b)
+
+fn tagged(tags: List[String], t: String) -> Bool = tags |> list.any((x) => same_tag(x, t))
+
+// The count is computed now over normalized tags; the closure keeps it.
+fn tag_summary(tags: List[String]) -> (String) -> String = {
+  let n = tags |> list.map((t) => norm(t)) |> list.filter((t) => t != "") |> list.unique |> list.len
+  (label) => label + ": " + int.to_string(n) + " tags"
+}

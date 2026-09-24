@@ -1,0 +1,7 @@
+// Resource probe: __K__ orders of 5,000 one-digit lines, one text each. Each
+// order's line list belongs to its own step, so the batch grows by the input
+// texts only; parsing every order first keeps all the line lists live.
+effect fn main() -> Unit = {
+  let orders = list.range(0, __K__) |> list.map((i) => string.repeat("7+", 5000) + int.to_string(i))
+  println(int.to_string(charges(orders) |> list.fold(0, (a, n) => a + n)))
+}

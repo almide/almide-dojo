@@ -1,0 +1,17 @@
+// Versions "MAJOR.MINOR.PATCH" with an optional pre-release "-tag"
+// ("1.0.0-rc1"). A pre-release comes BEFORE the release with the same
+// numbers; two pre-releases of the same numbers compare by tag text.
+fn newer(a: String, b: String) -> Bool = {
+  let pa = string.split(a, "-")
+  let pb = string.split(b, "-")
+  let na = string.split(list.first(pa) ?? "", ".") |> list.map((x) => int.parse(x) ?? 0)
+  let nb = string.split(list.first(pb) ?? "", ".") |> list.map((x) => int.parse(x) ?? 0)
+  let ta = list.get(pa, 1) ?? ""
+  let tb = list.get(pb, 1) ?? ""
+  if na != nb then list.zip(na, nb) |> list.find(((x, y)) => x != y) |> option.map(((x, y)) => x > y) ?? (list.len(na) > list.len(nb))
+  else if ta == "" then tb != ""
+  else if tb == "" then false
+  else ta > tb
+}
+
+fn latest(vs: List[String]) -> String = vs |> list.fold("", (best, v) => if best == "" or newer(v, best) then v else best)

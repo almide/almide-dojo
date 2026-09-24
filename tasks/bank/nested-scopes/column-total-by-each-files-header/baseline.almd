@@ -1,0 +1,8 @@
+// CSV exports from different tools: each file's FIRST line is its own header,
+// and tools order their columns differently. Values are integers; a missing
+// or bad cell counts as 0.
+fn header_of(text: String) -> List[String] = string.split(string.lines(text) |> list.first ?? "", ",")
+
+fn column_index(header: List[String], name: String) -> Int? = list.index_of(header, name)
+
+fn rows_of(text: String) -> List[List[String]] = string.lines(text) |> list.drop(1) |> list.map((l) => string.split(l, ","))

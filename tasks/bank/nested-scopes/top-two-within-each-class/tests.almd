@@ -1,0 +1,3 @@
+test "podiums" {
+  assert_eq(podiums(["ann=90;bob=80;cy=70", "di=50"]), ["ann,bob", "di"])
+}

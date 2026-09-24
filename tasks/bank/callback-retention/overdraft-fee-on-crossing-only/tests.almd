@@ -1,0 +1,4 @@
+test "statement" {
+  assert_eq(statement([1000, -300])("acct"), "acct: balance 700, fees 0")
+  assert_eq(statement([100, -200])("acct"), "acct: balance -600, fees 500")
+}

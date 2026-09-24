@@ -1,0 +1,7 @@
+// Resource probe: the same 300 numbers compared __K__ times. The helper must
+// allocate no more per number than the inline replacements did.
+effect fn main() -> Unit = {
+  let ns = list.range(0, 300) |> list.map((i) => "+44 (20) 7946-" + int.to_string(1000 + i))
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (ns |> list.count((n) => same_number(n, "+44 20 7946 1005"))))
+  println(int.to_string(t))
+}

@@ -1,0 +1,7 @@
+// Resource probe: __K__ allocators over fresh 5,000-id lists, all held live.
+// Capturing the next number grows by a few bytes each; capturing `ids` grows
+// by every id string.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) => allocator(list.range(0, 5000) |> list.map((j) => "T-" + int.to_string(j * 3 + i))))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("")))))
+}

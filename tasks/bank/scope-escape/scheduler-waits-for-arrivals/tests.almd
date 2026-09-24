@@ -1,0 +1,4 @@
+test "run order" {
+  assert_eq(run_order(["a:1:0", "b:5:0", "c:3:0"]), "order=b,c,a")
+  assert_eq(run_order(["x:1"]), "bad job: x:1")
+}

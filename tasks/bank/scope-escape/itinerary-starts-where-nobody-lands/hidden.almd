@@ -1,0 +1,9 @@
+test "hidden: the start is where nobody lands" {
+  assert_eq(route(["LHR-CDG", "JFK-LHR", "CDG-FCO"]), "JFK>LHR>CDG>FCO")
+  assert_eq(route(["BBB-CCC", "AAA-BBB"]), "AAA>BBB>CCC")
+}
+test "hidden: broken chains and empties" {
+  assert_eq(route(["AAA-BBB", "CCC-DDD"]), "broken")
+  assert_eq(route([]), "")
+  assert_eq(airports(["AAA-BBB", "BBB-AAA"]), ok(2))
+}

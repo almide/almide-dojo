@@ -1,0 +1,18 @@
+// Discount percentages as typed: "15%", "15 %", " 15" or "15" all mean 15.
+// Valid values are 0-100.
+fn apply_discount(cents: Int, typed: String) -> Int? = {
+  let t = string.trim(typed)
+  let digits = string.trim(if string.ends_with(t, "%") then string.drop_end(t, 1) else t)
+  let p = int.parse(digits)?!
+  guard p >= 0 and p <= 100 else none
+  some(cents - cents * p / 100)
+}
+
+fn valid_pct(typed: String) -> Bool = {
+  let t = string.trim(typed)
+  let digits = string.trim(if string.ends_with(t, "%") then string.drop_end(t, 1) else t)
+  match int.parse(digits) {
+    ok(p) => p >= 0 and p <= 100,
+    err(_) => false,
+  }
+}

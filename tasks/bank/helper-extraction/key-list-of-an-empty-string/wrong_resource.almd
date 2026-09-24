@@ -1,0 +1,15 @@
+// Plausible wrong patch: the helper builds each name character by character.
+// Same names — but one allocation per character.
+fn fields(spec: String) -> List[String] =
+  if string.trim(spec) == "" then []
+  else {
+    let (done, cur) = string.chars(spec) |> list.fold(([], ""), (st, c) => {
+      let (out, part) = st
+      if c == "," then (out + [string.trim(part)], "") else (out, part + c)
+    })
+    done + [string.trim(cur)]
+  }
+
+fn require(spec: String, field: String) -> Bool = list.contains(fields(spec), field)
+
+fn count_required(spec: String) -> Int = list.len(fields(spec))

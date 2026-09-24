@@ -1,0 +1,10 @@
+test "hidden: next after the largest, gaps kept" {
+  assert_eq(allocator(["T-1", "T-7", "T-3"])(""), "T-8")
+  assert_eq(allocator(["T-9", "x", "T-"])("#"), "#T-10")
+}
+test "hidden: repeated calls and helpers" {
+  let f = allocator(["T-4"])
+  assert_eq(f("a"), "aT-5")
+  assert_eq(f("b"), "bT-5")
+  assert_eq(valid(["T-1", "T-x"]), 1)
+}

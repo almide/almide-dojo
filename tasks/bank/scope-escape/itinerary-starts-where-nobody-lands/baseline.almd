@@ -1,0 +1,14 @@
+// Flight tickets "FROM-TO", one per leg of a single trip, in random order.
+// Every airport is left at most once.
+fn parse_ticket(s: String) -> Result[(String, String), String] =
+  match string.split(s, "-") {
+    [a, b] => if string.len(a) == 3 and string.len(b) == 3 then ok((a, b)) else err("bad ticket: " + s),
+    _ => err("bad ticket: " + s),
+  }
+
+fn parse_tickets(ss: List[String]) -> Result[List[(String, String)], String] = ss |> list.map((s) => parse_ticket(s)!)
+
+fn airports(ss: List[String]) -> Result[Int, String] = {
+  let ts = parse_tickets(ss)!
+  ok(ts |> list.flat_map(((a, b)) => [a, b]) |> list.unique |> list.len)
+}
