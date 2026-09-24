@@ -1,0 +1,4 @@
+test "alarm panel" {
+  assert_eq(alarm_panel([60, 85])("s1"), "s1: ALARM")
+  assert_eq(alarm_panel([85, 65])("s1"), "s1: ok")
+}

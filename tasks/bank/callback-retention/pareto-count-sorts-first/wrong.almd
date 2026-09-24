@@ -1,0 +1,21 @@
+// Revenue per product line, as (name, amount) pairs in catalogue order.
+fn total(lines: List[(String, Int)]) -> Int = lines |> list.fold(0, (a, l) => {
+  let (_, x) = l
+  a + x
+})
+
+fn biggest(lines: List[(String, Int)]) -> String =
+  lines |> list.sort_by(((_, x)) => 0 - x) |> list.first |> option.map(((n, _)) => n) ?? "-"
+
+// Plausible wrong patch: accumulates in catalogue order, so a big line near
+// the end is counted too late.
+fn pareto(lines: List[(String, Int)]) -> (String) -> String = {
+  let t = total(lines)
+  let (k, _) = lines |> list.fold((0, 0), (st, l) => {
+    let (count, sum) = st
+    let (_, x) = l
+    if t == 0 or sum * 100 >= t * 80 then st else (count + 1, sum + x)
+  })
+  let n = list.len(lines)
+  (title) => title + ": " + int.to_string(k) + " of " + int.to_string(n) + " lines make 80%"
+}

@@ -1,0 +1,16 @@
+// HTTP status codes from an access log. Every 2xx code is a success; 3xx, 4xx
+// and 5xx are not.
+fn is_success(code: Int) -> Bool = code >= 200 and code < 300
+
+fn success_rate(codes: List[Int]) -> Int =
+  if list.is_empty(codes) then 0 else (codes |> list.count((c) => is_success(c))) * 100 / list.len(codes)
+
+// Plausible wrong patch: filters out 200 only, so a flood of 204s is reported
+// as the top failure.
+fn top_failure(codes: List[Int]) -> (String) -> String = {
+  let counts = codes |> list.filter((c) => c != 200) |> list.fold(map.new(), (m, c) => map.set(m, c, (map.get(m, c) ?? 0) + 1))
+  match map.entries(counts) |> list.sort_by(((c, _)) => c) |> list.sort_by(((_, n)) => 0 - n) |> list.first {
+    some((c, n)) => (service) => service + ": " + int.to_string(c) + " x" + int.to_string(n),
+    none => (service) => service + ": all good",
+  }
+}

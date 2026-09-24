@@ -1,0 +1,24 @@
+// Offers "<units> for <cents>" ("3 for 250"). Malformed offers are skipped.
+fn parse_offer(s: String) -> (Int, Int)? =
+  match string.split(s, " for ") {
+    [u, c] => option.zip(int.parse(u)?, int.parse(c)?) |> option.filter(((uu, _)) => uu > 0),
+    _ => none,
+  }
+
+fn valid_offers(offers: List[String]) -> Int = offers |> list.count((o) => option.is_some(parse_offer(o)))
+
+// Plausible wrong patch: parses the offers up front and chooses inside the
+// closure, so the closure captures every parsed offer.
+fn best_offer(offers: List[String]) -> (String) -> String = {
+  let parsed = offers |> list.filter_map((o) => parse_offer(o) |> option.map((p) => (o, p)))
+  (product) => match parsed |> list.fold(none, (acc, x) => {
+    let (_, (u, c)) = x
+    match acc {
+      some((_, (bu, bc))) => if c * bu < bc * u then some(x) else acc,
+      none => some(x),
+    }
+  }) {
+    some((text, _)) => product + ": " + text,
+    none => product + ": no offers",
+  }
+}

@@ -1,0 +1,7 @@
+// Keyword statistics. Stop words ("the", "a", "an", "of", "and") are ignored
+// whatever their case: "The" and "THE" are stop words too.
+let STOP = ["the", "a", "an", "of", "and"]
+
+fn is_stop(w: String) -> Bool = list.contains(STOP, string.to_lower(w))
+
+fn words(text: String) -> List[String] = string.split(text, " ") |> list.filter((w) => w != "")

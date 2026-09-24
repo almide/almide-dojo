@@ -1,0 +1,4 @@
+test "drawdown" {
+  assert_eq(drawdown_note([10, 4, 7])("f"), "f: max drawdown 6")
+  assert_eq(drawdown_note([])("f"), "f: max drawdown 0")
+}

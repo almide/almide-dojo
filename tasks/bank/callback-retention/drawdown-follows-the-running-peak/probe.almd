@@ -1,0 +1,7 @@
+// Resource probe: __K__ notes over fresh 20,000-price series, all held live.
+// Capturing one number grows by a few bytes each; capturing `prices` grows by
+// the whole series.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) => drawdown_note(list.range(0, 20000 + i) |> list.map((j) => 1000 + (j * 37) % 200)))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("x")))))
+}

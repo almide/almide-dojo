@@ -1,0 +1,4 @@
+test "best offer" {
+  assert_eq(best_offer(["1 for 100", "2 for 150"])("tea"), "tea: 2 for 150")
+  assert_eq(best_offer(["bad"])("tea"), "tea: no offers")
+}

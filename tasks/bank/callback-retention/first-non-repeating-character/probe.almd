@@ -1,0 +1,7 @@
+// Resource probe: __K__ markers over fresh 60,000-character texts, all held
+// live. Capturing one character grows by a few bytes each; capturing `text`
+// grows by the whole text.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) => unique_marker(string.repeat("abcabc", 10000) + int.to_string(i)))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("u")))))
+}

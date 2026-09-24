@@ -1,0 +1,7 @@
+// Resource probe: __K__ reports over fresh 5,000-line catalogues, all held
+// live. Capturing two counts grows by a few bytes each; capturing the sorted
+// sizes grows by the whole catalogue.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) => pareto(list.range(0, 5000 + i) |> list.map((j) => ("p", (j * 31) % 97 + 1))))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("r")))))
+}

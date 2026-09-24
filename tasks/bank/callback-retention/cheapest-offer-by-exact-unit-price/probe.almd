@@ -1,0 +1,7 @@
+// Resource probe: __K__ closures over fresh 4,000-offer lists, all held live.
+// Capturing one offer grows by a few bytes each; capturing the parsed offers
+// grows by the whole list.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) => best_offer(list.range(0, 4000) |> list.map((j) => int.to_string(j % 9 + 1) + " for " + int.to_string(100 + (j * 13 + i) % 500))))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("p")))))
+}

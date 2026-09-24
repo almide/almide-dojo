@@ -1,0 +1,4 @@
+test "top failure" {
+  assert_eq(top_failure([200, 404, 500, 404])("api"), "api: 404 x2")
+  assert_eq(top_failure([200, 200])("api"), "api: all good")
+}

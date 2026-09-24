@@ -1,0 +1,3 @@
+test "keywords" {
+  assert_eq(keyword_count("the cat and the hat")("t"), "t: 2 keywords")
+}

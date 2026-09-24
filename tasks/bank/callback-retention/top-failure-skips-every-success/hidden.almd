@@ -1,0 +1,8 @@
+test "hidden: every 2xx is a success" {
+  assert_eq(top_failure([204, 204, 204, 500])("a"), "a: 500 x1")
+  assert_eq(top_failure([201, 299])("b"), "b: all good")
+  assert_eq(top_failure([503, 301, 503, 301])("c"), "c: 301 x2")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(success_rate([200, 302]), 50)
+}

@@ -1,0 +1,16 @@
+// A temperature alarm with hysteresis: it switches ON when a reading is at or
+// above 80, and back OFF only when a reading is at or below 70. Readings in
+// between leave the state as it was. It starts OFF.
+let ON_AT = 80
+let OFF_AT = 70
+
+fn step(on: Bool, reading: Int) -> Bool =
+  if reading >= ON_AT then true else if reading <= OFF_AT then false else on
+
+fn peak(readings: List[Int]) -> Int = list.max(readings) ?? 0
+
+// The final state is computed now; the closure keeps one Bool.
+fn alarm_panel(readings: List[Int]) -> (String) -> String = {
+  let on = readings |> list.fold(false, (st, r) => step(st, r))
+  (name) => name + (if on then ": ALARM" else ": ok")
+}

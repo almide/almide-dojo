@@ -1,0 +1,24 @@
+// Offers "<units> for <cents>" ("3 for 250"). Malformed offers are skipped.
+fn parse_offer(s: String) -> (Int, Int)? =
+  match string.split(s, " for ") {
+    [u, c] => option.zip(int.parse(u)?, int.parse(c)?) |> option.filter(((uu, _)) => uu > 0),
+    _ => none,
+  }
+
+fn valid_offers(offers: List[String]) -> Int = offers |> list.count((o) => option.is_some(parse_offer(o)))
+
+// Plausible wrong patch: compares whole-cent unit prices (cents / units), so
+// 250/3 rounds down to 83 and ties with an offer that is really cheaper.
+fn best_offer(offers: List[String]) -> (String) -> String = {
+  let best = offers |> list.filter_map((o) => parse_offer(o) |> option.map((p) => (o, p))) |> list.fold(none, (acc, x) => {
+    let (_, (u, c)) = x
+    match acc {
+      some((_, (bu, bc))) => if c / u < bc / bu then some(x) else acc,
+      none => some(x),
+    }
+  })
+  match best {
+    some((text, _)) => (product) => product + ": " + text,
+    none => (product) => product + ": no offers",
+  }
+}

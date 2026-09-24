@@ -1,0 +1,8 @@
+test "hidden: stop words in any case" {
+  assert_eq(keyword_count("The Cat OF the Hat")("a"), "a: 2 keywords")
+  assert_eq(keyword_count("AN apple A day")("b"), "b: 2 keywords")
+  assert_eq(keyword_count("")("c"), "c: 0 keywords")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(is_stop("And"), true)
+}

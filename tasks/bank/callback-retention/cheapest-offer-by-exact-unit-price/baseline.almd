@@ -1,0 +1,8 @@
+// Offers "<units> for <cents>" ("3 for 250"). Malformed offers are skipped.
+fn parse_offer(s: String) -> (Int, Int)? =
+  match string.split(s, " for ") {
+    [u, c] => option.zip(int.parse(u)?, int.parse(c)?) |> option.filter(((uu, _)) => uu > 0),
+    _ => none,
+  }
+
+fn valid_offers(offers: List[String]) -> Int = offers |> list.count((o) => option.is_some(parse_offer(o)))

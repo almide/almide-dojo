@@ -1,0 +1,8 @@
+test "hidden: order matters" {
+  assert_eq(drawdown_note([1, 9])("a"), "a: max drawdown 0")
+  assert_eq(drawdown_note([2, 10, 7, 12, 3])("b"), "b: max drawdown 9")
+  assert_eq(drawdown_note([5, 1, 8, 6])("c"), "c: max drawdown 4")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(range_of([3, 1, 4]), 3)
+}
