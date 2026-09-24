@@ -1,0 +1,18 @@
+// Splitting shared expenses. Amounts are Float dollars; a refund is negative.
+type Expense: Eq, Repr = { what: String, amount: Float, people: List[String] }
+
+fn expense(what: String, amount: Float, people: List[String]) -> Expense =
+  Expense { what: what, amount: amount, people: people }
+
+// Each person's share of one expense, in the order the people are listed.
+fn shares(e: Expense) -> List[(String, Float)] =
+  e.people |> list.map((p) => (p, e.amount / int.to_float(list.len(e.people))))
+
+// What each person owes over all expenses, in first-seen order of the people.
+fn balances(es: List[Expense]) -> List[(String, Float)] = {
+  let all = es |> list.flat_map(shares)
+  let names = all |> list.map((s) => s.0) |> list.unique
+  names |> list.map((n) => (n, all |> list.filter((s) => s.0 == n) |> list.fold(0.0, (acc, s) => acc + s.1)))
+}
+
+fn line(b: (String, Float)) -> String = b.0 + " " + float.to_fixed(b.1, 2)
