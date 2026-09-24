@@ -1,0 +1,35 @@
+// Polynomials with integer coefficients, sparse: exponent -> non-zero coefficient.
+type Poly: Eq, Repr = { terms: Map[Int, Int] }
+
+fn from_pairs(pairs: List[(Int, Int)]) -> Poly = {
+  let summed = pairs |> list.fold(map.new(), (m, p) => map.set(m, p.0, (map.get(m, p.0) ?? 0) + p.1))
+  Poly { terms: map.filter(summed, (k, v) => v != 0) }
+}
+
+fn poly(cs: List[Int]) -> Poly = from_pairs(list.enumerate(cs))
+
+fn coeff(p: Poly, i: Int) -> Int = map.get(p.terms, i) ?? 0
+
+fn add(a: Poly, b: Poly) -> Poly = from_pairs(map.entries(a.terms) + map.entries(b.terms))
+
+fn mul(a: Poly, b: Poly) -> Poly =
+  from_pairs(map.entries(a.terms) |> list.flat_map((x) => map.entries(b.terms) |> list.map((y) => (x.0 + y.0, x.1 * y.1))))
+
+fn degree(p: Poly) -> Int? = list.max(map.keys(p.terms))
+
+fn term(c: Int, i: Int) -> String = {
+  let a = int.abs(c)
+  let num = if a == 1 and i > 0 then "" else int.to_string(a)
+  num + (if i == 0 then "" else if i == 1 then "x" else "x^" + int.to_string(i))
+}
+
+// Highest power first: "3x^2 - x + 5"; the zero polynomial is "0".
+fn render(p: Poly) -> String = {
+  let terms = map.keys(p.terms) |> list.sort |> list.reverse
+  match terms {
+    [] => "0",
+    [first, ..rest] =>
+      (if coeff(p, first) < 0 then "-" else "") + term(coeff(p, first), first)
+        + (rest |> list.map((i) => (if coeff(p, i) < 0 then " - " else " + ") + term(coeff(p, i), i)) |> list.join("")),
+  }
+}

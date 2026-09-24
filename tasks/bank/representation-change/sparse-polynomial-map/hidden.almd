@@ -1,0 +1,19 @@
+test "hidden: highest power first regardless of build order" {
+  assert_eq(render(add(poly([-1]), add(poly([0, 2]), poly([0, 0, 0, -1])))), "-x^3 + 2x - 1")
+  assert_eq(render(add(poly([0, 0, 0, 0, 1]), poly([7]))), "x^4 + 7")
+  assert_eq(render(add(poly([0, 0, 0, 1]), poly([0, 2]))), "x^3 + 2x")
+  assert_eq(render(poly([0, 1])), "x")
+}
+test "hidden: cancellation leaves no zero terms" {
+  let p = poly([3, 0, -2])
+  let z = add(p, poly([-3, 0, 2]))
+  assert_eq(z, poly([]))
+  assert_eq(degree(z), none)
+  assert_eq(render(z), "0")
+  assert_eq(add(poly([1, 1]), poly([0, -1])), poly([1]))
+}
+test "hidden: products" {
+  assert_eq(mul(poly([1, -1]), poly([1, 1])), poly([1, 0, -1]))
+  assert_eq(mul(poly([2]), poly([])), poly([]))
+  assert_eq(render(mul(poly([0, 0, 1]), poly([0, -3]))), "-3x^3")
+}

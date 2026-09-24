@@ -1,0 +1,9 @@
+test "sparse terms" {
+  let p = poly([5, 0, 3])
+  assert_eq(p.terms, [0: 5, 2: 3])
+  assert_eq(render(p), "3x^2 + 5")
+  assert_eq(degree(add(p, poly([1, 1]))), some(2))
+}
+test "multiply" {
+  assert_eq(render(mul(poly([1, 1]), poly([1, 1]))), "x^2 + 2x + 1")
+}
