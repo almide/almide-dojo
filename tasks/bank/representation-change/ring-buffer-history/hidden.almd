@@ -1,0 +1,20 @@
+test "hidden: a full buffer replaces the oldest" {
+  let h = push_all(history(3), ["a", "b", "c", "d"])
+  assert_eq(render(h), "b,c,d")
+  assert_eq(recent(h, 1), ["d"])
+  assert_eq(size(h), 3)
+  let w = push_all(history(3), ["1", "2", "3", "4", "5", "6", "7"])
+  assert_eq(render(w), "5,6,7")
+  assert_eq(recent(w, 2), ["7", "6"])
+}
+test "hidden: contains current entries only" {
+  let h = push_all(history(2), ["ls", "cd", "pwd"])
+  assert_eq(contains(h, "ls"), false)
+  assert_eq(contains(h, "pwd"), true)
+  assert_eq(contains(history(2), ""), false)
+  assert_eq(contains(push(history(2), ""), ""), true)
+}
+test "hidden: empty history" {
+  assert_eq(render(history(4)), "")
+  assert_eq(recent(history(4), 3), [])
+}

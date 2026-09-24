@@ -1,0 +1,9 @@
+test "ring buffer" {
+  let h = push_all(history(3), ["a", "b"])
+  assert_eq(h, History { cap: 3, slots: ["a", "b", ""], start: 0, len: 2 })
+  assert_eq(render(h), "a,b")
+  assert_eq(recent(h, 5), ["b", "a"])
+}
+test "capacity one" {
+  assert_eq(render(push_all(history(1), ["x", "y"])), "y")
+}

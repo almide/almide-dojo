@@ -1,0 +1,22 @@
+// A bounded command history: at most `cap` entries (cap >= 1), oldest first.
+type History: Eq, Repr = { cap: Int, items: List[String] }
+
+fn history(cap: Int) -> History = History { cap: cap, items: [] }
+
+// Adds a command; when full, the oldest entry is dropped.
+fn push(h: History, cmd: String) -> History = {
+  let items = h.items + [cmd]
+  History { ...h, items: if list.len(items) > h.cap then list.drop(items, 1) else items }
+}
+
+fn push_all(h: History, cmds: List[String]) -> History = cmds |> list.fold(h, push)
+
+fn size(h: History) -> Int = list.len(h.items)
+
+// Oldest to newest, joined with ",".
+fn render(h: History) -> String = list.join(h.items, ",")
+
+// The `n` newest entries, newest first.
+fn recent(h: History, n: Int) -> List[String] = h.items |> list.reverse |> list.take(n)
+
+fn contains(h: History, cmd: String) -> Bool = list.contains(h.items, cmd)
