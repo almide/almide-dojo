@@ -1,0 +1,30 @@
+// Plausible wrong patch: builds the reports index with `map.set(boss, [name])`,
+// so each boss keeps only the last report listed. Passes the visible tests.
+// An org chart indexed both ways.
+type Emp: Eq, Repr = { name: String, boss: String? }
+type Org: Eq, Repr = { boss: Map[String, String], reports: Map[String, List[String]] }
+
+fn org(emps: List[Emp]) -> Org =
+  emps |> list.fold(Org { boss: map.new(), reports: map.new() }, (o, e) => match e.boss {
+    some(b) => Org {
+      boss: map.set(o.boss, e.name, b),
+      reports: map.set(o.reports, b, [e.name]),
+    },
+    none => o,
+  })
+
+fn boss_of(o: Org, name: String) -> String? = map.get(o.boss, name)
+
+// Direct reports in list order.
+fn reports(o: Org, name: String) -> List[String] = map.get(o.reports, name) ?? []
+
+// Everyone below `name`, at any depth.
+fn team_size(o: Org, name: String) -> Int =
+  reports(o, name) |> list.fold(0, (acc, r) => acc + 1 + team_size(o, r))
+
+// From `name` up to the top: "cy < bo < ann".
+fn chain(o: Org, name: String) -> String =
+  match boss_of(o, name) {
+    some(b) => name + " < " + chain(o, b),
+    none => name,
+  }

@@ -1,0 +1,23 @@
+// An org chart as a flat list; `boss` is none for the top of a tree.
+type Emp: Eq, Repr = { name: String, boss: String? }
+type Org: Eq, Repr = { emps: List[Emp] }
+
+fn org(emps: List[Emp]) -> Org = Org { emps: emps }
+
+fn boss_of(o: Org, name: String) -> String? =
+  o.emps |> list.find((e) => e.name == name) |> option.flat_map((e) => e.boss)
+
+// Direct reports in list order.
+fn reports(o: Org, name: String) -> List[String] =
+  o.emps |> list.filter((e) => e.boss == some(name)) |> list.map((e) => e.name)
+
+// Everyone below `name`, at any depth.
+fn team_size(o: Org, name: String) -> Int =
+  reports(o, name) |> list.fold(0, (acc, r) => acc + 1 + team_size(o, r))
+
+// From `name` up to the top: "cy < bo < ann".
+fn chain(o: Org, name: String) -> String =
+  match boss_of(o, name) {
+    some(b) => name + " < " + chain(o, b),
+    none => name,
+  }

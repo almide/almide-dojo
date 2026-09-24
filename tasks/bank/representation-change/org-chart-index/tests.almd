@@ -1,0 +1,6 @@
+test "indexed org" {
+  let o = org([Emp { name: "ann", boss: none }, Emp { name: "bo", boss: some("ann") }, Emp { name: "cy", boss: some("bo") }])
+  assert_eq(o.boss, ["bo": "ann", "cy": "bo"])
+  assert_eq(chain(o, "cy"), "cy < bo < ann")
+  assert_eq(team_size(o, "ann"), 2)
+}
