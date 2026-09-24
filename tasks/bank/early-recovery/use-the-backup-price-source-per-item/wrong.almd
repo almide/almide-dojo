@@ -1,0 +1,43 @@
+// Plausible wrong patch: once the primary is down it switches to the backup
+// for good, so the skus after an outage never go back to the primary.
+// Price sync. Every sku is priced from the primary feed; the feed's scripted
+// answer per sku is "<cents>", "missing" or "down". A backup feed with the same
+// format exists for outages.
+type FeedErr: Eq, Repr = | Missing(String, String) | Down(String, String) | Garbled(String, String)
+type PriceRun: Eq, Repr = { prices: List[String], backup_used: Int }
+
+fn ask(feed_name: String, feed: Map[String, String], sku: String) -> Int!FeedErr = {
+  let answer = map.get(feed, sku) ?? "missing"
+  match answer {
+    "missing" => err(Missing(feed_name, sku)),
+    "down" => err(Down(feed_name, sku)),
+    _ => match int.parse(answer) {
+      ok(c) => ok(c),
+      err(_) => err(Garbled(feed_name, sku)),
+    },
+  }
+}
+
+fn sync(primary: Map[String, String], backup: Map[String, String], skus: List[String]) -> PriceRun!FeedErr = {
+  var prices: List[String] = []
+  var used = 0
+  var on_backup = false
+  for sku in skus {
+    let c = if on_backup then {
+      used = used + 1
+      ask("backup", backup, sku)!
+    } else match ask("primary", primary, sku) {
+      ok(c) => ok(c),
+      err(Down(_, _)) => {
+        on_backup = true
+        used = used + 1
+        ask("backup", backup, sku)
+      },
+      err(e) => err(e),
+    }!
+    prices = prices + ["${sku}=${int.to_string(c)}"]
+  }
+  PriceRun { prices: prices, backup_used: used }
+}
+
+fn show(s: PriceRun) -> String = "${list.join(s.prices, " ")} (backup ${int.to_string(s.backup_used)})"

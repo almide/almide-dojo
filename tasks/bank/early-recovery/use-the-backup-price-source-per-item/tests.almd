@@ -1,0 +1,6 @@
+test "a sku the primary feed cannot answer (down) is priced from the backup" {
+  assert_eq(sync(["a": "down"], ["a": "120"], ["a"]) |> result.map((s) => show(s)), ok("a=120 (backup 1)"))
+}
+test "a sku missing from the primary is still an error" {
+  assert_eq(sync(["a": "missing"], ["a": "120"], ["a"]) |> result.map((s) => show(s)), err(Missing("primary", "a")))
+}
