@@ -1,0 +1,7 @@
+test "scores are records" {
+  assert_eq(team("red", 3, 50).score, Score { correct: 3, seconds: 50 })
+  assert_eq(standings([team("blue", 2, 10), team("red", 3, 50)]), ["1. red 3/50s", "2. blue 2/10s"])
+}
+test "winners" {
+  assert_eq(winners([team("a", 1, 5), team("b", 4, 90)]), ["b"])
+}
