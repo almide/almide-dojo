@@ -1,0 +1,9 @@
+// Resource probe: the same 1,000-item basket priced __K__ times. The inline
+// condition allocated nothing per item, so the allocation count must not
+// grow with the repetitions.
+effect fn main() -> Unit = {
+  let items = list.range(0, 1000) |> list.map((i) => 100 + i)
+  let c = Customer { age: 30, member: true, coupon: false }
+  let total = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + basket_total(c, items))
+  println(int.to_string(total))
+}

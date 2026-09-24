@@ -1,0 +1,16 @@
+// HTTP-style headers as (name, value) pairs. Names match case-insensitively;
+// the FIRST matching header wins. A header may be present with an empty value
+// ("X-Flag: ") — that is different from absent.
+fn same_name(a: String, b: String) -> Bool = string.to_lower(a) == string.to_lower(b)
+
+fn get_header(hs: List[(String, String)], name: String) -> String? =
+  hs |> list.find(((n, _)) => same_name(n, name)) |> option.map(((_, v)) => v)
+
+fn has_header(hs: List[(String, String)], name: String) -> Bool =
+  option.is_some(hs |> list.find(((n, _)) => same_name(n, name)))
+
+fn content_length(hs: List[(String, String)]) -> Int =
+  match hs |> list.find(((n, _)) => same_name(n, "content-length")) {
+    some((_, v)) => int.parse(v) ?? 0,
+    none => 0,
+  }

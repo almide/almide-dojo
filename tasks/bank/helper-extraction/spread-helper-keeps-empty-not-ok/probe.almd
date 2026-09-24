@@ -1,0 +1,7 @@
+// Resource probe: the same 200 gauges checked __K__ times. The helper must
+// allocate no more per call than the inline min/max did.
+effect fn main() -> Unit = {
+  let gauges = list.range(0, 200) |> list.map((g) => list.range(0, 20) |> list.map((i) => (i * 7 + g) % 13))
+  let total = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (gauges |> list.count((xs) => within(xs, 10))))
+  println(int.to_string(total))
+}

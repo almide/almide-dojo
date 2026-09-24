@@ -1,0 +1,7 @@
+test "header value" {
+  let hs = [("Content-Length", "12"), ("Host", "a")]
+  assert_eq(header_value(hs, "host"), "a")
+  assert_eq(header_value(hs, "nope"), "")
+  assert_eq(content_length(hs), 12)
+  assert_eq(has_header(hs, "HOST"), true)
+}

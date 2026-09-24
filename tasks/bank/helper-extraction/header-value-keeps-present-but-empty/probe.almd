@@ -1,0 +1,8 @@
+// Resource probe: the content length of the same 30-header request read
+// __K__ times x 100. The Content-Length header comes first, so the inline
+// search stopped at once; the helper must not allocate more than that.
+effect fn main() -> Unit = {
+  let hs = [("Content-Length", "42")] + (list.range(0, 29) |> list.map((i) => ("X-Header-" + int.to_string(i), "v")))
+  let total = list.range(0, __K__ * 100) |> list.fold(0, (acc, _) => acc + content_length(hs))
+  println(int.to_string(total))
+}

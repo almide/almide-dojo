@@ -1,0 +1,9 @@
+test "hidden: every column range" {
+  assert_eq(field("0123456789", 4, 3), "456")
+  assert_eq(parse_record("AB12  17blue widget   extra"), Record { code: "AB12", qty: 17, name: "blue widget" })
+  assert_eq(total_qty(["X     3", "Y      4name"]), 7)
+}
+test "hidden: short and odd lines" {
+  assert_eq(parse_record("CODE12"), Record { code: "CODE", qty: 12, name: "" })
+  assert_eq(parse_record("C   x9  n"), Record { code: "C", qty: 0, name: "n" })
+}

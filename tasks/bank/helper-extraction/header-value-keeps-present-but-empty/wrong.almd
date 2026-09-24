@@ -1,0 +1,15 @@
+// Plausible wrong patch: every accessor goes through header_value, and "" is
+// read as "absent", so a header present with an empty value disappears.
+fn same_name(a: String, b: String) -> Bool = string.to_lower(a) == string.to_lower(b)
+
+fn header_value(hs: List[(String, String)], name: String) -> String =
+  hs |> list.find(((n, _)) => same_name(n, name)) |> option.map(((_, v)) => v) ?? ""
+
+fn get_header(hs: List[(String, String)], name: String) -> String? = {
+  let v = header_value(hs, name)
+  if v == "" then none else some(v)
+}
+
+fn has_header(hs: List[(String, String)], name: String) -> Bool = header_value(hs, name) != ""
+
+fn content_length(hs: List[(String, String)]) -> Int = int.parse(header_value(hs, "content-length")) ?? 0

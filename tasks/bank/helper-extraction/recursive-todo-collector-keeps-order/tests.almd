@@ -1,0 +1,5 @@
+test "collect" {
+  assert_eq(todos(["x", "// TODO: fix"]), ["fix"])
+  assert_eq(collect([], 0, ["a"]), ["a"])
+  assert_eq(todo_report([]), "0 todo(s)")
+}

@@ -1,0 +1,6 @@
+test "hidden: source order" {
+  assert_eq(todos(["TODO: one", "no", "a TODO: two", "TODO:three"]), ["one", "two", "three"])
+  assert_eq(collect(["TODO: z"], 0, ["y"]), ["y", "z"])
+  assert_eq(collect(["TODO: a", "TODO: b", "TODO: c"], 1, []), ["b", "c"])
+  assert_eq(todo_report(["TODO: a", "TODO:"]), "2 todo(s): a; ")
+}

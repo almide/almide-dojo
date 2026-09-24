@@ -1,0 +1,11 @@
+test "hidden: present but empty is still present" {
+  let hs = [("X-Flag", ""), ("x-flag", "later")]
+  assert_eq(has_header(hs, "x-flag"), true)
+  assert_eq(get_header(hs, "X-FLAG"), some(""))
+  assert_eq(header_value(hs, "x-flag"), "")
+}
+test "hidden: absent and bad lengths" {
+  assert_eq(get_header([], "a"), none)
+  assert_eq(has_header([("b", "1")], "a"), false)
+  assert_eq(content_length([("content-length", "x")]), 0)
+}

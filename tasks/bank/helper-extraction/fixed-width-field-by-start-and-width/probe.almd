@@ -1,0 +1,7 @@
+// Resource probe: the same 500 records totalled __K__ times. The helper must
+// allocate no more per field than the inline slicing did.
+effect fn main() -> Unit = {
+  let lines = list.range(0, 500) |> list.map((i) => "C" + string.pad_start(int.to_string(i % 1000), 3, "0") + string.pad_start(int.to_string(i), 4, " ") + "item name   ")
+  let total = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + total_qty(lines))
+  println(int.to_string(total))
+}

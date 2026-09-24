@@ -1,0 +1,10 @@
+test "hidden: no data is never within tolerance" {
+  assert_eq(within([], 0), false)
+  assert_eq(within([], 100), false)
+  assert_eq(summary([]), "no data")
+}
+test "hidden: edges" {
+  assert_eq(within([5, -5], 9), false)
+  assert_eq(within([5, -5], 10), true)
+  assert_eq(within([7], 0), true)
+}

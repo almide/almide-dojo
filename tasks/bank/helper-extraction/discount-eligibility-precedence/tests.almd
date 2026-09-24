@@ -1,0 +1,5 @@
+test "eligible" {
+  assert_eq(eligible(Customer { age: 30, member: true, coupon: false }), true)
+  assert_eq(eligible(Customer { age: 30, member: false, coupon: false }), false)
+  assert_eq(price(Customer { age: 40, member: true, coupon: true }, 1000), 900)
+}
