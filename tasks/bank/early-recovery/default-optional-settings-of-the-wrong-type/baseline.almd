@@ -1,0 +1,65 @@
+// Sectioned config checked against a schema. "[section]" lines open a
+// section, "key = value" lines set "section.key". Keys not set take their
+// schema default when optional; required keys must be set.
+type Spec = { path: String, kind: String, required: Bool, default: String }
+type CfgErr: Eq, Repr =
+  | Syntax(Int)
+  | UnknownKey(String)
+  | WrongType(String, String, String)
+  | Missing(String)
+type Assign = { path: String, raw: String }
+type Loaded: Eq, Repr = { values: List[String], warnings: List[String] }
+
+let SCHEMA = [
+  Spec { path: "server.host", kind: "text", required: true, default: "" },
+  Spec { path: "server.port", kind: "int", required: true, default: "" },
+  Spec { path: "server.timeout", kind: "int", required: false, default: "30" },
+  Spec { path: "log.level", kind: "level", required: false, default: "info" },
+  Spec { path: "log.color", kind: "bool", required: false, default: "false" },
+]
+
+fn coerce(spec: Spec, raw: String) -> String!CfgErr = {
+  let fits = match spec.kind {
+    "int" => result.is_ok(int.parse(raw)),
+    "bool" => raw == "true" or raw == "false",
+    "level" => list.contains(["debug", "info", "warn"], raw),
+    _ => raw != "",
+  }
+  guard fits else err(WrongType(spec.path, spec.kind, raw))
+  raw
+}
+
+fn assignments(lines: List[String]) -> List[Assign]!CfgErr = {
+  var section = ""
+  var out: List[Assign] = []
+  for p in list.enumerate(lines) {
+    let t = string.trim(p.1)
+    if t == "" or string.starts_with(t, "#") then ()
+    else if string.starts_with(t, "[") and string.ends_with(t, "]") then { section = string.slice(t, 1, string.len(t) - 1) }
+    else {
+      let i = string.index_of(t, "=") ?? -1
+      guard i > 0 else err(Syntax(p.0 + 1))
+      out = out + [Assign { path: "${section}.${string.trim(string.slice(t, 0, i))}", raw: string.trim(string.drop(t, i + 1)) }]
+    }
+  }
+  out
+}
+
+fn load(lines: List[String]) -> Loaded!CfgErr = {
+  let sets = assignments(lines)!
+  match list.find(sets, (a) => not list.any(SCHEMA, (s) => s.path == a.path)) {
+    some(a) => err(UnknownKey(a.path)),
+    none => ok(()),
+  }!
+  let values = SCHEMA |> list.map((s) =>
+    match list.filter(sets, (a) => a.path == s.path) |> list.last {
+      some(a) => coerce(s, a.raw) |> result.map((v) => "${s.path}=${v}"),
+      none => if s.required then err(Missing(s.path)) else ok("${s.path}=${s.default}"),
+    }) |> list.map((r) => r!)!
+  Loaded { values: values, warnings: [] }
+}
+
+fn show(l: Loaded) -> String = {
+  let v = list.join(l.values, " ")
+  if list.is_empty(l.warnings) then v else "${v} | ${list.join(l.warnings, "; ")}"
+}

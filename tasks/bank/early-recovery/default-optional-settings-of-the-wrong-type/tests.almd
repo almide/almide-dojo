@@ -1,0 +1,7 @@
+test "an optional setting of the wrong type falls back to its default" {
+  assert_eq(load(["[server]", "host = a", "port = 80", "timeout = soon"]) |> result.map((l) => show(l)),
+    ok("server.host=a server.port=80 server.timeout=30 log.level=info log.color=false | server.timeout: soon is not int, using 30"))
+}
+test "an unknown key is still fatal" {
+  assert_eq(load(["[server]", "host = a", "port = 80", "tls = on"]) |> result.map((l) => show(l)), err(UnknownKey("server.tls")))
+}
