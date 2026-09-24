@@ -1,0 +1,36 @@
+// An authentication port: who is calling, from the Authorization header text.
+protocol Authenticator {
+  fn principal(a: Self, header: String) -> String!
+}
+
+// "Key <key>" with a known key.
+type ApiKeys: Authenticator = { keys: Map[String, String] }
+fn ApiKeys.principal(a: ApiKeys, header: String) -> String! = {
+  guard string.trim(header) != "" else err("missing credentials")
+  let key = string.strip_prefix(header, "Key ") ?? ""
+  option.to_result(map.get(a.keys, key), "unknown key")
+}
+
+// "<scheme> <token>" with scheme Bearer in any case and a known token.
+type Bearer: Authenticator = { tokens: Map[String, String] }
+fn Bearer.principal(a: Bearer, header: String) -> String! = {
+  guard string.trim(header) != "" else err("missing credentials")
+  let (scheme, token) = string.split_once(header, " ") ?? (header, "")
+  guard string.to_lower(scheme) == "bearer" else err("unsupported scheme: " + scheme)
+  option.to_result(map.get(a.tokens, token), "invalid token")
+}
+
+// "ok <user>" or "denied: <why>" per request header, in order.
+fn audit[A: Authenticator](a: A, headers: List[String]) -> List[String] =
+  headers |> list.map((h) => match a.principal(h) {
+    ok(user) => "ok " + user,
+    err(why) => "denied: " + why,
+  })
+
+type Scheme = | Keys(ApiKeys) | Tokens(Bearer)
+
+fn audit_with(s: Scheme, headers: List[String]) -> List[String] =
+  match s {
+    Keys(k) => audit(k, headers),
+    Tokens(t) => audit(t, headers),
+  }
