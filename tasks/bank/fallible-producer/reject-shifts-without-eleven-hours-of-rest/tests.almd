@@ -1,0 +1,6 @@
+test "a shift too soon after the previous one is rejected" {
+  assert(result.is_err(roster(["ann mon 14:00-23:00", "ann tue 06:00-14:00"])))
+}
+test "a rested roster still adds up" {
+  assert_eq(hours(["ann mon 09:00-17:00", "bob mon 22:00-24:00", "ann tue 09:00-17:30"]), ok("ann 16h30, bob 2h00"))
+}

@@ -1,0 +1,14 @@
+test "hidden: exact message with the rest actually had" {
+  assert_eq(hours(["ann mon 14:00-23:00", "ann tue 06:00-14:00"]), err("ann needs 11h rest before tue 06:00 (had 7h00)"))
+}
+test "hidden: shifts are compared in time order, not line order" {
+  assert_eq(hours(["ann wed 09:00-17:00", "ann mon 09:00-17:00", "ann tue 02:00-05:00"]), err("ann needs 11h rest before tue 02:00 (had 9h00)"))
+  assert_eq(hours(["ann tue 06:00-10:00", "bob mon 20:00-23:00", "ann mon 08:00-19:00"]), ok("ann 15h00, bob 3h00"))
+}
+test "hidden: exactly eleven hours is enough, other workers do not count" {
+  assert_eq(hours(["ann mon 12:00-20:00", "ann tue 07:00-12:00", "bob tue 06:00-07:00"]), ok("ann 13h00, bob 1h00"))
+}
+test "hidden: two shifts on one day need the rest too; line errors come first" {
+  assert_eq(hours(["cy fri 06:00-10:00", "cy fri 18:00-22:00"]), err("cy needs 11h rest before fri 18:00 (had 8h00)"))
+  assert_eq(hours(["ann mon 14:00-23:00", "ann tue 06:00-14:00", "x"]), err("bad line: x"))
+}
