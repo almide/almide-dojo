@@ -1,0 +1,17 @@
+// Received packet ids per stream, one text per stream: ids separated by " ",
+// in ARRIVAL order (packets arrive out of order).
+fn ids(stream: String) -> List[Int] = string.split(stream, " ") |> list.filter_map((x) => int.parse(x)?)
+
+fn received(stream: String) -> Int = list.len(list.unique(ids(stream)))
+
+fn first_arrival(stream: String) -> Int? = list.first(ids(stream))
+
+// Each stream's ids are parsed and measured inside its own step.
+fn gaps(streams: List[String]) -> List[Int] =
+  streams |> list.map((s) => {
+    let xs = ids(s)
+    match option.zip(list.min(xs), list.max(xs)) {
+      some((lo, hi)) => hi - lo + 1 - list.len(list.unique(xs)),
+      none => 0,
+    }
+  })

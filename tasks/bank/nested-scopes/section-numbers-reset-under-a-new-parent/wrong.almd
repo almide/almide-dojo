@@ -1,0 +1,20 @@
+// Documents as heading-level texts: one level (1 or 2) per line, e.g.
+// "1\n2\n2\n1\n2". Numbering is "1", "1.1", "1.2", "2", "2.1": a level-2
+// counter restarts under every new level-1 heading.
+fn levels(doc: String) -> List[Int] = string.split(doc, "\n") |> list.filter_map((l) => int.parse(l)?)
+
+fn chapters(doc: String) -> Int = levels(doc) |> list.count((l) => l == 1)
+
+fn well_formed(doc: String) -> Bool = levels(doc) |> list.all((l) => l == 1 or l == 2)
+
+// Plausible wrong patch: keeps one running sub-counter per document and never
+// resets it, so "1.1, 1.2, 2, 2.3".
+fn last_numbers(docs: List[String]) -> List[String] =
+  docs |> list.map((d) => {
+    let (_, _, last) = levels(d) |> list.fold((0, 0, ""), (st, l) => {
+      let (major, minor, _) = st
+      if l == 1 then (major + 1, minor, int.to_string(major + 1))
+      else (major, minor + 1, int.to_string(major) + "." + int.to_string(minor + 1))
+    })
+    last
+  })

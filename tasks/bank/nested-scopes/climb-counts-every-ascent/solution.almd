@@ -1,0 +1,20 @@
+// Hiking routes, one text per route: elevations in metres along the path,
+// separated by ";".
+fn heights(route: String) -> List[Int] = string.split(route, ";") |> list.filter_map((h) => int.parse(string.trim(h))?)
+
+fn highest(route: String) -> Int? = list.max(heights(route))
+
+fn net_change(route: String) -> Int = {
+  let hs = heights(route)
+  (list.last(hs) ?? 0) - (list.first(hs) ?? 0)
+}
+
+// Each route's heights are parsed and summed inside its own step.
+fn total_climbs(routes: List[String]) -> List[Int] =
+  routes |> list.map((r) => {
+    let hs = heights(r)
+    list.zip(hs, list.drop(hs, 1)) |> list.fold(0, (a, p) => {
+      let (x, y) = p
+      if y > x then a + y - x else a
+    })
+  })

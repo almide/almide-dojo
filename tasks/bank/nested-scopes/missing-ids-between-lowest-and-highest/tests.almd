@@ -1,0 +1,3 @@
+test "gaps" {
+  assert_eq(gaps(["1 2 4 5", "7"]), [1, 0])
+}

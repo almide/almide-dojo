@@ -1,0 +1,7 @@
+// Resource probe: __K__ channels of 3,000 short lines, one text each. Each
+// post list belongs to its own step, so the batch grows by the input texts
+// only; parsing every channel first keeps all the post lists live.
+effect fn main() -> Unit = {
+  let cs = list.range(0, __K__) |> list.map((i) => string.repeat("a|x\nb|y\n", 1500) + "c|" + int.to_string(i))
+  println(int.to_string(spammers(cs) |> list.fold(0, (a, s) => a + string.len(s))))
+}

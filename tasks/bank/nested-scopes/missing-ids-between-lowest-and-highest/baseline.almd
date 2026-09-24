@@ -1,0 +1,7 @@
+// Received packet ids per stream, one text per stream: ids separated by " ",
+// in ARRIVAL order (packets arrive out of order).
+fn ids(stream: String) -> List[Int] = string.split(stream, " ") |> list.filter_map((x) => int.parse(x)?)
+
+fn received(stream: String) -> Int = list.len(list.unique(ids(stream)))
+
+fn first_arrival(stream: String) -> Int? = list.first(ids(stream))

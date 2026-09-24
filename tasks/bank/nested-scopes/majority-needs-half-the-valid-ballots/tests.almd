@@ -1,0 +1,3 @@
+test "results" {
+  assert_eq(results(["ann,ann,bob", "bob"]), ["ann", "bob"])
+}

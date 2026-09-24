@@ -1,0 +1,8 @@
+test "hidden: repeats must be consecutive" {
+  assert_eq(spammers(["bob|hi\nann|yo\nbob|hi\nbob|hi"]), [""])
+  assert_eq(spammers(["cy|a\ncy|a\ncy|a\ncy|a\ndi|b\ndi|b\ndi|b\ncy|a\ncy|a\ncy|a"]), ["cy,di"])
+}
+test "hidden: empty channels" {
+  assert_eq(spammers(["", "x"]), ["", ""])
+  assert_eq(authors("a|1\nb|2\na|3"), ["a", "b"])
+}

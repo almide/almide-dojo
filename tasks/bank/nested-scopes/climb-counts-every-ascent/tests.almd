@@ -1,0 +1,3 @@
+test "total climbs" {
+  assert_eq(total_climbs(["100;200;350", "5"]), [250, 0])
+}

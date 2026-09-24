@@ -1,0 +1,13 @@
+// Checkout queues, one text per queue: customers "arrival:service" (seconds)
+// separated by ",", in arrival order. One cashier serves them in order; a
+// customer starts when they have arrived AND the previous one is done.
+fn fields(q: String) -> List[List[Int]] =
+  string.split(q, ",")
+    |> list.map((c) => string.split(c, ":") |> list.filter_map((x) => int.parse(x)?))
+    |> list.filter((f) => list.len(f) == 2)
+
+fn customers(q: String) -> List[(Int, Int)] = fields(q) |> list.map((f) => (list.get(f, 0) ?? 0, list.get(f, 1) ?? 0))
+
+fn busy_time(q: String) -> Int = customers(q) |> list.map(((_, s)) => s) |> list.sum
+
+fn longest_service(q: String) -> Int = customers(q) |> list.map(((_, s)) => s) |> list.max ?? 0

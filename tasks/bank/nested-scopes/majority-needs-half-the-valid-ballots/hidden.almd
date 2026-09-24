@@ -1,0 +1,7 @@
+test "hidden: plurality is not majority" {
+  assert_eq(results(["ann,ann,bob,cy,dee", "x,x,y,y"]), ["no majority", "no majority"])
+}
+test "hidden: spoilt ballots are not counted" {
+  assert_eq(results(["ann,ann,,,bob", ",,"]), ["ann", "no majority"])
+  assert_eq(turnout("a,,b"), 3)
+}
