@@ -1,0 +1,33 @@
+// Plausible wrong patch: reads the character at the offset directly, so the
+// cursor on a line break reports "\n" instead of the end of the line.
+// A text cursor in a document given as its lines (no newline characters inside),
+// stored as the 0-based offset into the lines joined with "\n".
+type Cursor: Eq, Repr = { offset: Int }
+
+fn text(doc: List[String]) -> String = list.join(doc, "\n")
+
+fn at(doc: List[String], line: Int, col: Int) -> Cursor =
+  Cursor { offset: (list.take(doc, line - 1) |> list.fold(0, (acc, l) => acc + string.len(l) + 1)) + col - 1 }
+
+// 1-based line and column of an offset.
+fn line_col(doc: List[String], off: Int) -> (Int, Int) = {
+  let parts = string.split(string.take(text(doc), off), "\n")
+  (list.len(parts), string.len(list.last(parts) ?? "") + 1)
+}
+
+fn render(doc: List[String], c: Cursor) -> String = {
+  let (l, col) = line_col(doc, c.offset)
+  int.to_string(l) + ":" + int.to_string(col)
+}
+
+// One step right; the end of the last line does not move.
+fn right(doc: List[String], c: Cursor) -> Cursor =
+  if c.offset < string.len(text(doc)) then Cursor { offset: c.offset + 1 } else c
+
+fn right_by(doc: List[String], c: Cursor, n: Int) -> Cursor = if n <= 0 then c else right_by(doc, right(doc, c), n - 1)
+
+// The character under the cursor; none at the end of a line.
+fn char_at(doc: List[String], c: Cursor) -> String? = string.get(text(doc), c.offset)
+
+// The text from `a` up to (not including) `b`, lines joined with "\n"; a is before b.
+fn between(doc: List[String], a: Cursor, b: Cursor) -> String = string.slice(text(doc), a.offset, b.offset)
