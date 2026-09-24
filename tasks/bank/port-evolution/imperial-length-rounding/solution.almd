@@ -1,0 +1,54 @@
+// A length-unit port: a quantity in some unit as whole millimetres, none for a
+// unit it does not know.
+protocol Units {
+  fn to_mm(u: Self, qty: Int, unit: String) -> Int?
+}
+
+type Metric: Units = {}
+fn Metric.to_mm(u: Metric, qty: Int, unit: String) -> Int? =
+  match unit {
+    "mm" => some(qty),
+    "cm" => some(qty * 10),
+    "m" => some(qty * 1000),
+    _ => none,
+  }
+
+// Tenths of a millimetre per unit, rounded to the nearest mm, halves away from zero.
+fn round_tenths(tenths: Int) -> Int = {
+  let a = (int.abs(tenths) + 5) / 10
+  if tenths < 0 then 0 - a else a
+}
+
+type Imperial: Units = {}
+fn Imperial.to_mm(u: Imperial, qty: Int, unit: String) -> Int? =
+  match unit {
+    "in" => some(round_tenths(qty * 254)),
+    "ft" => some(round_tenths(qty * 3048)),
+    "yd" => some(round_tenths(qty * 9144)),
+    _ => none,
+  }
+
+// Metric when it knows the unit, imperial otherwise.
+type Either: Units = { metric: Metric, imperial: Imperial }
+fn Either.to_mm(u: Either, qty: Int, unit: String) -> Int? =
+  option.or_else(u.metric.to_mm(qty, unit), () => u.imperial.to_mm(qty, unit))
+
+// The total length of a cut list (quantities may be negative corrections);
+// none as soon as one unit is unknown.
+fn total_mm[U: Units](u: U, parts: List[(Int, String)]) -> Int? =
+  parts |> list.fold(some(0), (acc, p) => option.flat_map(acc, (t) => option.map(u.to_mm(p.0, p.1), (mm) => t + mm)))
+
+fn describe[U: Units](u: U, parts: List[(Int, String)]) -> String =
+  match total_mm(u, parts) {
+    some(t) => int.to_string(t) + " mm",
+    none => "unknown unit",
+  }
+
+type System = | Si(Metric) | Us(Imperial) | Any(Either)
+
+fn describe_in(s: System, parts: List[(Int, String)]) -> String =
+  match s {
+    Si(m) => describe(m, parts),
+    Us(i) => describe(i, parts),
+    Any(e) => describe(e, parts),
+  }

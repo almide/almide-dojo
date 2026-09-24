@@ -1,0 +1,13 @@
+test "hidden: nearest millimetre, both signs" {
+  let i = Imperial {}
+  assert_eq(i.to_mm(7, "in"), some(178))
+  assert_eq(i.to_mm(-7, "in"), some(-178))
+  assert_eq(i.to_mm(1, "in"), some(25))
+  assert_eq(i.to_mm(3, "yd"), some(2743))
+  assert_eq(i.to_mm(5, "ft"), some(1524))
+}
+test "hidden: rounding is per quantity" {
+  assert_eq(describe_in(Us(Imperial {}), [(1, "in"), (1, "in")]), "50 mm")
+  assert_eq(describe_in(Any(Either { metric: Metric {}, imperial: Imperial {} }), [(7, "in"), (-2, "cm"), (1, "yd")]), "1072 mm")
+  assert_eq(describe_in(Any(Either { metric: Metric {}, imperial: Imperial {} }), [(1, "furlong")]), "unknown unit")
+}

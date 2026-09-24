@@ -1,0 +1,7 @@
+test "imperial units" {
+  assert_eq(describe_in(Us(Imperial {}), [(5, "in"), (5, "ft")]), "1651 mm")
+  assert_eq(describe_in(Any(Either { metric: Metric {}, imperial: Imperial {} }), [(1, "m"), (10, "in")]), "1254 mm")
+}
+test "metric only" {
+  assert_eq(describe_in(Si(Metric {}), [(2, "cm"), (1, "in")]), "unknown unit")
+}
