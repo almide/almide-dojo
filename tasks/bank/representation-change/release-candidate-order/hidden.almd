@@ -1,0 +1,17 @@
+test "hidden: the final release follows its candidates" {
+  let bs = [build(1, 4, 0), candidate(1, 4, 1, 1), candidate(1, 4, 0, 2), candidate(1, 4, 0, 1)]
+  assert_eq(ordered(bs), ["1.4.0-rc1", "1.4.0-rc2", "1.4.0", "1.4.1-rc1"])
+  assert_eq(newest([build(2, 0, 0), candidate(2, 0, 0, 5)]), some("2.0.0"))
+  assert(is_after(build(1, 0, 0), candidate(1, 0, 0, 9)))
+  assert(not is_after(candidate(1, 0, 0, 9), build(1, 0, 0)))
+}
+test "hidden: candidate numbers compare as numbers" {
+  assert_eq(ordered([candidate(3, 0, 0, 10), candidate(3, 0, 0, 9)]), ["3.0.0-rc9", "3.0.0-rc10"])
+  assert(is_after(candidate(3, 0, 0, 10), candidate(3, 0, 0, 9)))
+}
+test "hidden: ties and empty" {
+  let bs = [candidate(1, 0, 0, 1), build(0, 9, 9), candidate(1, 0, 0, 1)]
+  assert_eq(ordered(bs), ["0.9.9", "1.0.0-rc1", "1.0.0-rc1"])
+  assert_eq(newest([]), none)
+  assert(not is_after(build(1, 2, 3), build(1, 2, 3)))
+}

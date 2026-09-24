@@ -1,0 +1,24 @@
+// Room readings, all in tenths of a degree Celsius (215 = 21.5C).
+type Reading: Eq, Repr = { room: String, tenths: Int }
+
+fn reading(room: String, tenths: Int) -> Reading = Reading { room: room, tenths: tenths }
+
+fn tenths_text(t: Int) -> String = {
+  let a = int.abs(t)
+  (if t < 0 then "-" else "") + int.to_string(a / 10) + "." + int.to_string(a % 10)
+}
+
+fn render(r: Reading) -> String = r.room + " " + tenths_text(r.tenths) + "C"
+
+// The warmest room; the first listed on a tie; none for no readings.
+fn warmest(rs: List[Reading]) -> String? =
+  rs
+    |> list.fold(none, (best, r) => match best {
+      none => some(r),
+      some(b) => if r.tenths > b.tenths then some(r) else some(b),
+    })
+    |> option.map((r) => r.room)
+
+// Rooms strictly colder than `limit` tenths of a degree Celsius, in list order.
+fn too_cold(rs: List[Reading], limit: Int) -> List[String] =
+  rs |> list.filter((r) => r.tenths < limit) |> list.map((r) => r.room)

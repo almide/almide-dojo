@@ -1,0 +1,7 @@
+test "offsets" {
+  let doc = ["hello", "world"]
+  assert_eq(at(doc, 2, 3), Cursor { offset: 8 })
+  assert_eq(render(doc, at(doc, 2, 3)), "2:3")
+  assert_eq(char_at(doc, at(doc, 1, 2)), some("e"))
+  assert_eq(right_by(doc, at(doc, 1, 1), 2), Cursor { offset: 2 })
+}

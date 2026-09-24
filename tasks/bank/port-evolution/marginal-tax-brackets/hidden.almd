@@ -1,0 +1,18 @@
+test "hidden: round once on the total" {
+  let b = Brackets { bands: [(1, 5000), (2, 5000)], top_bps: 0 }
+  assert_eq(b.tax(2), 1)
+  let c = Brackets { bands: [(3, 5000)], top_bps: 5000 }
+  assert_eq(c.tax(4), 2)
+  assert_eq(Brackets { bands: [(1, 3333), (2, 3333), (3, 3334)], top_bps: 0 }.tax(3), 1)
+}
+test "hidden: band edges and small incomes" {
+  let b = Brackets { bands: [(100000, 1000), (300000, 2000)], top_bps: 4000 }
+  assert_eq(b.tax(100000), 10000)
+  assert_eq(b.tax(300000), 50000)
+  assert_eq(b.tax(0), 0)
+  assert_eq(payslips_under(Progressive(b), [-500, 50]), ["-500: 0 / -500", "50: 5 / 45"])
+}
+test "hidden: no bands means the top rate" {
+  assert_eq(Brackets { bands: [], top_bps: 2500 }.tax(1000), 250)
+  assert_eq(payslips(FlatTax { bps: 1000 }, [0, 999]), ["0: 0 / 0", "999: 99 / 900"])
+}

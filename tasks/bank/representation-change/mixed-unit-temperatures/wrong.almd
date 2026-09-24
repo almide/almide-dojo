@@ -1,0 +1,38 @@
+// Plausible wrong patch: converts Fahrenheit to tenths of a Celsius degree with
+// integer division before comparing, so close readings tie or flip.
+// Room readings in tenths of a degree, Celsius or Fahrenheit.
+type Temp: Eq, Repr = | C(Int) | F(Int)
+type Reading: Eq, Repr = { room: String, temp: Temp }
+
+fn reading(room: String, temp: Temp) -> Reading = Reading { room: room, temp: temp }
+
+fn tenths_text(t: Int) -> String = {
+  let a = int.abs(t)
+  (if t < 0 then "-" else "") + int.to_string(a / 10) + "." + int.to_string(a % 10)
+}
+
+fn render(r: Reading) -> String =
+  match r.temp {
+    C(t) => r.room + " " + tenths_text(t) + "C",
+    F(t) => r.room + " " + tenths_text(t) + "F",
+  }
+
+// Tenths of a degree Celsius.
+fn key(t: Temp) -> Int =
+  match t {
+    C(c) => c,
+    F(f) => (f - 320) * 5 / 9,
+  }
+
+// The warmest room; the first listed on a tie; none for no readings.
+fn warmest(rs: List[Reading]) -> String? =
+  rs
+    |> list.fold(none, (best, r) => match best {
+      none => some(r),
+      some(b) => if key(r.temp) > key(b.temp) then some(r) else some(b),
+    })
+    |> option.map((r) => r.room)
+
+// Rooms strictly colder than `limit` tenths of a degree Celsius, in list order.
+fn too_cold(rs: List[Reading], limit: Int) -> List[String] =
+  rs |> list.filter((r) => key(r.temp) < limit) |> list.map((r) => r.room)

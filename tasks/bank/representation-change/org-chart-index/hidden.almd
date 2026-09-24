@@ -1,0 +1,18 @@
+test "hidden: every direct report, in list order" {
+  let o = org([Emp { name: "d1", boss: some("ann") }, Emp { name: "ann", boss: none }, Emp { name: "d2", boss: some("ann") }, Emp { name: "d3", boss: some("ann") }])
+  assert_eq(reports(o, "ann"), ["d1", "d2", "d3"])
+  assert_eq(team_size(o, "ann"), 3)
+}
+test "hidden: depth and leaves" {
+  let o = org([Emp { name: "a", boss: none }, Emp { name: "b", boss: some("a") }, Emp { name: "c", boss: some("a") }, Emp { name: "d", boss: some("b") }, Emp { name: "e", boss: some("b") }])
+  assert_eq(team_size(o, "a"), 4)
+  assert_eq(team_size(o, "e"), 0)
+  assert_eq(reports(o, "b"), ["d", "e"])
+}
+test "hidden: unknown names and unlisted bosses" {
+  let o = org([Emp { name: "x", boss: some("ghost") }])
+  assert_eq(chain(o, "x"), "x < ghost")
+  assert_eq(reports(o, "ghost"), ["x"])
+  assert_eq(team_size(o, "nobody"), 0)
+  assert_eq(boss_of(o, "nobody"), none)
+}

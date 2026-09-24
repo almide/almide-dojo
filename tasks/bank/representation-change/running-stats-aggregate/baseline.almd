@@ -1,0 +1,26 @@
+// Sensor readings kept in full.
+type Sensor: Eq, Repr = { name: String, samples: List[Int] }
+
+fn sensor(name: String) -> Sensor = Sensor { name: name, samples: [] }
+
+fn record(s: Sensor, v: Int) -> Sensor = Sensor { ...s, samples: s.samples + [v] }
+
+fn record_all(s: Sensor, vs: List[Int]) -> Sensor = vs |> list.fold(s, (acc, v) => record(acc, v))
+
+fn count(s: Sensor) -> Int = list.len(s.samples)
+fn low(s: Sensor) -> Int? = list.min(s.samples)
+fn high(s: Sensor) -> Int? = list.max(s.samples)
+
+// Mean truncated toward zero; none without samples.
+fn mean(s: Sensor) -> Int? = if list.is_empty(s.samples) then none else some(list.sum(s.samples) / count(s))
+
+// Both sensors' readings under the first one's name.
+fn merge(a: Sensor, b: Sensor) -> Sensor = Sensor { ...a, samples: a.samples + b.samples }
+
+fn show(o: Int?) -> String = match o {
+  some(v) => int.to_string(v),
+  none => "-",
+}
+
+fn summary(s: Sensor) -> String =
+  s.name + " n=" + int.to_string(count(s)) + " lo=" + show(low(s)) + " hi=" + show(high(s)) + " mean=" + show(mean(s))

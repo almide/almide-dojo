@@ -1,0 +1,18 @@
+// A command-line lexer port: the tokens of one input line, or why it cannot be split.
+protocol Lexer {
+  fn tokens(l: Self, line: String) -> List[String]!
+}
+
+// Tokens are separated by one or more spaces.
+type Spaces: Lexer = {}
+fn Spaces.tokens(l: Spaces, line: String) -> List[String]! =
+  string.split(line, " ") |> list.filter((t) => t != "")
+
+// "name(arg1|arg2)"; a line without tokens is an error, lexer errors pass through.
+fn command[L: Lexer](l: L, line: String) -> String! = {
+  let ts = l.tokens(line)!
+  match ts {
+    [] => err("empty line"),
+    [name, ..args] => ok(name + "(" + list.join(args, "|") + ")"),
+  }
+}

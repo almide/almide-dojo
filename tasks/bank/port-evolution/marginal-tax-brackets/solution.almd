@@ -1,0 +1,38 @@
+// A tax-rule port. Amounts are cents; rates are basis points (1% = 100).
+protocol TaxRule {
+  fn tax(t: Self, income: Int) -> Int
+}
+
+// One rate on the whole income, rounded down; no tax on zero or negative income.
+type FlatTax: TaxRule = { bps: Int }
+fn FlatTax.tax(t: FlatTax, income: Int) -> Int = if income <= 0 then 0 else income * t.bps / 10000
+
+// Marginal rates: each slice of the income at its own band's rate.
+type Brackets: TaxRule = { bands: List[(Int, Int)], top_bps: Int }
+
+// The exact tax in 1/10000 of a cent.
+fn scaled(bands: List[(Int, Int)], top_bps: Int, lower: Int, income: Int) -> Int =
+  match bands {
+    [] => if income > lower then (income - lower) * top_bps else 0,
+    [band, ..rest] => {
+      let slice = int.max(0, int.min(income, band.0) - lower)
+      slice * band.1 + scaled(rest, top_bps, band.0, income)
+    },
+  }
+
+fn Brackets.tax(t: Brackets, income: Int) -> Int =
+  if income <= 0 then 0 else scaled(t.bands, t.top_bps, 0, income) / 10000
+
+fn net[T: TaxRule](t: T, income: Int) -> Int = income - t.tax(income)
+
+// "income: tax / net" per income, in order.
+fn payslips[T: TaxRule](t: T, incomes: List[Int]) -> List[String] =
+  incomes |> list.map((i) => int.to_string(i) + ": " + int.to_string(t.tax(i)) + " / " + int.to_string(net(t, i)))
+
+type Regime = | Simple(FlatTax) | Progressive(Brackets)
+
+fn payslips_under(r: Regime, incomes: List[Int]) -> List[String] =
+  match r {
+    Simple(f) => payslips(f, incomes),
+    Progressive(b) => payslips(b, incomes),
+  }

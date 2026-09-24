@@ -1,0 +1,7 @@
+test "doubling delays" {
+  assert_eq(schedule(Grow(Doubling { base: 100, cap: 1000, attempts: 5 })), [100, 200, 400, 800, 1000])
+  assert_eq(waited(Grow(Doubling { base: 100, cap: 1000, attempts: 5 })), 2500)
+}
+test "flat policy" {
+  assert_eq(schedule(Flat(Steady { ms: 50, attempts: 3 })), [50, 50, 50])
+}

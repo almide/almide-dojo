@@ -1,0 +1,5 @@
+test "worst of the parts" {
+  let g = Worst { parts: [Fixed { answer: Up }, Fixed { answer: Down("db") }, Fixed { answer: Degraded("slow") }] }
+  assert_eq(status_of(Group(g)), "down: db")
+  assert_eq(healthy_target(Single(Fixed { answer: Up })), true)
+}

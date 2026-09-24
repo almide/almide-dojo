@@ -1,0 +1,20 @@
+test "hidden: long schedules stay at the cap" {
+  let d = Doubling { base: 100, cap: 30000, attempts: 120 }
+  let s = schedule(Grow(d))
+  assert_eq(list.len(s), 120)
+  assert_eq(list.last(s), some(30000))
+  assert_eq(d.delay(64), some(30000))
+  assert_eq(d.delay(90), some(30000))
+  assert_eq(waited(Grow(d)), 100 + 200 + 400 + 800 + 1600 + 3200 + 6400 + 12800 + 25600 + 30000 * 111)
+}
+test "hidden: attempt bounds" {
+  let d = Doubling { base: 7, cap: 7, attempts: 2 }
+  assert_eq(schedule(Grow(d)), [7, 7])
+  assert_eq(d.delay(0), none)
+  assert_eq(d.delay(3), none)
+  assert_eq(schedule(Grow(Doubling { base: 1, cap: 9, attempts: 0 })), [])
+}
+test "hidden: steady unchanged" {
+  assert_eq(total_wait(Steady { ms: 10, attempts: 250 }), 2000)
+  assert_eq(waited(Flat(Steady { ms: 5, attempts: 0 })), 0)
+}

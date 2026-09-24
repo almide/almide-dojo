@@ -1,0 +1,14 @@
+test "hidden: empty quoted tokens are kept" {
+  assert_eq(run(Shell(Quoted {}), "set \"\" x"), ok("set(|x)"))
+  assert_eq(Quoted {}.tokens("\"\""), ok([""]))
+  assert_eq(run(Shell(Quoted {}), ""), err("empty line"))
+}
+test "hidden: escapes and spaces inside quotes" {
+  assert_eq(Quoted {}.tokens("a \" x \" b"), ok(["a", " x ", "b"]))
+  assert_eq(Quoted {}.tokens("q \"say \\\"hi\\\"\""), ok(["q", "say \"hi\""]))
+  assert_eq(Quoted {}.tokens("p \"c:\\\\dir\""), ok(["p", "c:\\dir"]))
+}
+test "hidden: adjacent quoted parts join" {
+  assert_eq(Quoted {}.tokens("a\"b c\"d e"), ok(["ab cd", "e"]))
+  assert_eq(Quoted {}.tokens("x \"a\\\""), err("unterminated quote"))
+}

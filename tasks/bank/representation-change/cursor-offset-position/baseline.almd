@@ -1,0 +1,23 @@
+// A text cursor in a document given as its lines (no newline characters inside).
+// `line` and `col` are 1-based; col = length + 1 is the end of that line.
+type Cursor: Eq, Repr = { line: Int, col: Int }
+
+fn line_len(doc: List[String], line: Int) -> Int = string.len(list.get(doc, line - 1) ?? "")
+
+fn render(c: Cursor) -> String = int.to_string(c.line) + ":" + int.to_string(c.col)
+
+// One step right; from the end of a line to the start of the next; the end of the
+// last line does not move.
+fn right(doc: List[String], c: Cursor) -> Cursor =
+  if c.col <= line_len(doc, c.line) then Cursor { ...c, col: c.col + 1 }
+  else if c.line < list.len(doc) then Cursor { line: c.line + 1, col: 1 }
+  else c
+
+fn right_by(doc: List[String], c: Cursor, n: Int) -> Cursor = if n <= 0 then c else right_by(doc, right(doc, c), n - 1)
+
+// The character under the cursor; none at the end of a line.
+fn char_at(doc: List[String], c: Cursor) -> String? = string.get(list.get(doc, c.line - 1) ?? "", c.col - 1)
+
+// The text from `a` up to (not including) `b`, lines joined with "\n"; a is before b.
+fn between(doc: List[String], a: Cursor, b: Cursor) -> String =
+  if a == b then "" else (if char_at(doc, a) == none then "\n" else char_at(doc, a) ?? "") + between(doc, right(doc, a), b)

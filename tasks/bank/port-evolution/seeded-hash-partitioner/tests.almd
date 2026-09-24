@@ -1,0 +1,8 @@
+test "hashed buckets" {
+  let h = Hashed { seed: 7 }
+  assert_eq(h.bucket("a", 10), (7 * 31 + 97) % 10)
+  assert_eq(histogram_with(Hash(h), ["a", "b", "c"], 2), "b0=2 b1=1")
+}
+test "length scheme" {
+  assert_eq(histogram_with(Length(ByLength {}), ["ab", "c", "de"], 3), "b0=0 b1=1 b2=2")
+}

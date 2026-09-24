@@ -1,0 +1,8 @@
+kind = "modify"
+family = "dojo:representation-change"
+contracts = []
+oracles = ["behaviour", "cross-target"]
+resource_oracle = "not-needed"
+difficulty = "hard"
+expected_loc = 28
+timeout_sec = 60

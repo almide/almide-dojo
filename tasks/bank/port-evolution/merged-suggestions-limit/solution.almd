@@ -1,0 +1,30 @@
+// A spelling-suggestion port: candidate corrections for a word, best first.
+protocol Speller {
+  fn suggest(s: Self, word: String) -> List[String]
+}
+
+// Suggestions from a fixed table.
+type Table: Speller = { entries: Map[String, List[String]] }
+fn Table.suggest(t: Table, word: String) -> List[String] = map.get(t.entries, word) ?? []
+
+// `main` then `extra`, repeats and the word itself removed, at most `limit`.
+type Combined: Speller = { main: Table, extra: Table, limit: Int }
+fn Combined.suggest(c: Combined, word: String) -> List[String] =
+  (c.main.suggest(word) + c.extra.suggest(word))
+    |> list.filter((w) => w != word)
+    |> list.unique
+    |> list.take(c.limit)
+
+// "word: a, b" with at most `n` suggestions, or "word: (none)".
+fn hint[S: Speller](s: S, word: String, n: Int) -> String = {
+  let top = list.take(s.suggest(word), n)
+  word + ": " + (if list.is_empty(top) then "(none)" else list.join(top, ", "))
+}
+
+type Checker = | Plain(Table) | Both(Combined)
+
+fn hints(c: Checker, words: List[String], n: Int) -> List[String] =
+  words |> list.map((w) => match c {
+    Plain(t) => hint(t, w, n),
+    Both(m) => hint(m, w, n),
+  })

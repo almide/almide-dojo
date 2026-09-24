@@ -1,0 +1,14 @@
+test "hidden: repeats are removed before the limit" {
+  let c = Combined { main: Table { entries: ["teh": ["the", "ten"]] }, extra: Table { entries: ["teh": ["ten", "the", "tea", "tech"]] }, limit: 3 }
+  assert_eq(c.suggest("teh"), ["the", "ten", "tea"])
+  assert_eq(hints(Both(c), ["teh", "zz"], 10), ["teh: the, ten, tea", "zz: (none)"])
+}
+test "hidden: the word itself and repeats inside one table" {
+  let c = Combined { main: Table { entries: ["form": ["form", "from", "from", "foam"]] }, extra: Table { entries: ["form": ["farm", "form"]] }, limit: 5 }
+  assert_eq(c.suggest("form"), ["from", "foam", "farm"])
+}
+test "hidden: zero limit and plain order" {
+  let c = Combined { main: Table { entries: ["a": ["b"]] }, extra: Table { entries: [:] }, limit: 0 }
+  assert_eq(hints(Both(c), ["a"], 3), ["a: (none)"])
+  assert_eq(hint(Table { entries: ["a": ["x", "a", "x"]] }, "a", 2), "a: x, a")
+}

@@ -1,0 +1,9 @@
+test "best of two" {
+  let a = Gazetteer { known: ["paris": Hit { place: "Paris, FR", conf: 90 }] }
+  let b = Gazetteer { known: ["austin": Hit { place: "Austin, US", conf: 80 }] }
+  let g = BestOf { first: a, second: b, min_conf: 50 }
+  assert_eq(resolve_with(Both(g), ["paris", "austin", "zz"]), ["paris -> Paris, FR (90)", "austin -> Austin, US (80)", "zz -> ?"])
+}
+test "single gazetteer" {
+  assert_eq(resolve_with(One(Gazetteer { known: [:] }), ["x"]), ["x -> ?"])
+}

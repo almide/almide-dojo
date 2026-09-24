@@ -1,0 +1,19 @@
+// A health-probe port.
+type Health: Eq, Repr = | Up | Degraded(String) | Down(String)
+
+protocol Probe {
+  fn check(p: Self) -> Health
+}
+
+// A probe with a fixed answer (a stand-in for a real check).
+type Fixed: Probe = { answer: Health }
+fn Fixed.check(p: Fixed) -> Health = p.answer
+
+fn status_line[P: Probe](p: P) -> String =
+  match p.check() {
+    Up => "up",
+    Degraded(why) => "degraded: " + why,
+    Down(why) => "down: " + why,
+  }
+
+fn healthy[P: Probe](p: P) -> Bool = p.check() == Up
