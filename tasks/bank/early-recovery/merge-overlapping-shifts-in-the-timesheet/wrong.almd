@@ -1,0 +1,69 @@
+// Plausible wrong patch: merges the new shift with the one existing shift named
+// in the Overlap error only, so a shift bridging two shifts leaves them
+// overlapping instead of making one.
+// Timesheet. Each line is "<worker> <HH:MM>-<HH:MM>" for a shift on one day
+// (no shift crosses midnight). A worker's shifts may not overlap; shifts that
+// only touch (10:00-11:00 and 11:00-12:00) are fine.
+type Shift: Eq, Repr = { start: Int, stop: Int }
+type ShiftErr: Eq, Repr =
+  | BadLine(String)
+  | BadTime(String)
+  | Overlap(String, Shift, Shift)
+type Sheet: Eq, Repr = { shifts: Map[String, List[Shift]], notes: List[String] }
+
+fn clock(s: String) -> Int!ShiftErr = {
+  let p = string.split(s, ":")
+  match (int.parse(list.get(p, 0) ?? ""), int.parse(list.get(p, 1) ?? "")) {
+    (ok(h), ok(m)) if list.len(p) == 2 and h >= 0 and h < 24 and m >= 0 and m < 60 => ok(h * 60 + m),
+    _ => err(BadTime(s)),
+  }
+}
+
+fn hhmm(t: Int) -> String = "${string.pad_start(int.to_string(t / 60), 2, "0")}:${string.pad_start(int.to_string(t % 60), 2, "0")}"
+
+fn parse_shift(line: String) -> (String, Shift)!ShiftErr = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) == 2 else err(BadLine(line))
+  let span = string.split(list.get(w, 1) ?? "", "-")
+  guard list.len(span) == 2 else err(BadLine(line))
+  let a = clock(list.get(span, 0) ?? "")!
+  let b = clock(list.get(span, 1) ?? "")!
+  guard b > a else err(BadLine(line))
+  (list.get(w, 0) ?? "", Shift { start: a, stop: b })
+}
+
+fn overlaps(x: Shift, y: Shift) -> Bool = x.start < y.stop and y.start < x.stop
+
+fn add_shift(sheet: Sheet, worker: String, s: Shift) -> Sheet!ShiftErr = {
+  let mine = map.get(sheet.shifts, worker) ?? []
+  match list.find(mine, (o) => overlaps(o, s)) {
+    some(o) => err(Overlap(worker, o, s)),
+    none => ok({ ...sheet, shifts: map.set(sheet.shifts, worker, mine + [s]) }),
+  }
+}
+
+fn load(lines: List[String]) -> Sheet!ShiftErr = {
+  var sh = Sheet { shifts: [:], notes: [] }
+  for l in lines {
+    let p = parse_shift(l)!
+    sh = match add_shift(sh, p.0, p.1) {
+      ok(next) => ok(next),
+      err(Overlap(w, o, s)) => {
+        let span = Shift { start: int.min(o.start, s.start), stop: int.max(o.stop, s.stop) }
+        let mine = (map.get(sh.shifts, w) ?? []) |> list.filter((x) => x != o)
+        ok(Sheet { shifts: map.set(sh.shifts, w, mine + [span]), notes: sh.notes + ["merged ${w} into ${hhmm(span.start)}-${hhmm(span.stop)}"] })
+      },
+      err(e) => err(e),
+    }!
+  }
+  sh
+}
+
+// "ann 09:00-12:00 13:00-14:00; bob ..." workers by name, shifts by start.
+fn report(sh: Sheet) -> String = {
+  let ws = map.keys(sh.shifts) |> list.sort |> list.map((w) => {
+    let ss = (map.get(sh.shifts, w) ?? []) |> list.sort_by((s) => s.start) |> list.map((s) => "${hhmm(s.start)}-${hhmm(s.stop)}") |> list.join(" ")
+    "${w} ${ss}"
+  }) |> list.join("; ")
+  if list.is_empty(sh.notes) then ws else "${ws} | ${list.join(sh.notes, "; ")}"
+}

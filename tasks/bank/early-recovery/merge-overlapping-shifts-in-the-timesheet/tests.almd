@@ -1,0 +1,6 @@
+test "an overlapping shift is merged into the one it overlaps" {
+  assert_eq(load(["ann 09:00-11:00", "ann 10:00-12:00"]) |> result.map((s) => report(s)), ok("ann 09:00-12:00 | merged ann into 09:00-12:00"))
+}
+test "a bad time is still fatal" {
+  assert_eq(load(["ann 09:00-11:00", "ann 25:00-26:00"]) |> result.map((s) => report(s)), err(BadTime("25:00")))
+}
