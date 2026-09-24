@@ -1,0 +1,19 @@
+// Plausible wrong patch: the helper builds a zero-padded sort key for each
+// side and compares the keys. Same order — but every comparison pads and
+// joins fresh strings for every part.
+fn key(v: String) -> String = {
+  let p = string.split(v, "-")
+  let nums = string.split(list.first(p) ?? "", ".") |> list.map((x) => string.pad_start(x, 10, "0")) |> list.join(".")
+  let tag = list.get(p, 1) ?? ""
+  nums + (if tag == "" then "~" else "-" + tag)
+}
+
+fn compare(a: String, b: String) -> Int = {
+  let ka = key(a)
+  let kb = key(b)
+  if ka == kb then 0 else if ka > kb then 1 else -1
+}
+
+fn newer(a: String, b: String) -> Bool = compare(a, b) == 1
+
+fn latest(vs: List[String]) -> String = vs |> list.fold("", (best, v) => if best == "" or newer(v, best) then v else best)

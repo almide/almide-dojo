@@ -1,0 +1,9 @@
+test "hidden: an empty spec has no fields" {
+  assert_eq(fields(""), [])
+  assert_eq(fields("   "), [])
+  assert_eq(count_required(""), 0)
+  assert_eq(require("", ""), false)
+}
+test "hidden: inner empties stay" {
+  assert_eq(count_required("a,,b"), 3)
+}

@@ -1,0 +1,18 @@
+// Plausible wrong patch: the helper numbers the sorted values and finds the
+// middle position. Same median — but it allocates a numbered copy too.
+fn median(xs: List[Int]) -> Int? = {
+  let mid = (list.len(xs) - 1) / 2
+  list.sort(xs) |> list.enumerate |> list.find(((i, _)) => i == mid) |> option.map(((_, v)) => v)
+}
+
+fn report(xs: List[Int]) -> String =
+  match median(xs) {
+    some(m) => "median=" + int.to_string(m),
+    none => "median=none",
+  }
+
+fn above_median(xs: List[Int], x: Int) -> Bool =
+  match median(xs) {
+    some(m) => x > m,
+    none => false,
+  }

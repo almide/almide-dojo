@@ -1,0 +1,7 @@
+// Resource probe: the same 200 specs counted __K__ times. The helper must
+// allocate no more per spec than the inline code did.
+effect fn main() -> Unit = {
+  let specs = list.range(0, 200) |> list.map((i) => "id, name, email, field" + int.to_string(i))
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (specs |> list.fold(0, (a, s) => a + count_required(s))))
+  println(int.to_string(t))
+}

@@ -1,0 +1,7 @@
+// Resource probe: the same 500 typed values validated __K__ times. The helper
+// must allocate no more per value than the inline code did.
+effect fn main() -> Unit = {
+  let typed = list.range(0, 500) |> list.map((i) => int.to_string(i % 120) + " %")
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (typed |> list.count((x) => valid_pct(x))))
+  println(int.to_string(t))
+}

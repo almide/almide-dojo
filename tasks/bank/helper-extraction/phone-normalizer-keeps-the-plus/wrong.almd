@@ -1,0 +1,7 @@
+// Plausible wrong patch: the helper keeps only the digits, which also drops
+// the leading "+".
+fn clean(n: String) -> String = string.chars(n) |> list.filter((c) => string.is_digit(c)) |> list.join("")
+
+fn same_number(a: String, b: String) -> Bool = clean(a) == clean(b)
+
+fn dial_string(n: String) -> String = "tel:" + clean(n)

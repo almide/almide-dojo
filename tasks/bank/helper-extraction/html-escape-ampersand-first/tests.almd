@@ -1,0 +1,4 @@
+test "esc" {
+  assert_eq(esc("a & b"), "a &amp; b")
+  assert_eq(text_node("plain"), "plain")
+}

@@ -1,0 +1,5 @@
+test "hidden: quotes and newlines are escaped too" {
+  assert_eq(escape("say \"hi\""), "\"say \"\"hi\"\"\"")
+  assert_eq(escape("two\nlines"), "\"two\nlines\"")
+  assert_eq(to_csv([["a\"b"], ["c"]]), "\"a\"\"b\"\nc")
+}

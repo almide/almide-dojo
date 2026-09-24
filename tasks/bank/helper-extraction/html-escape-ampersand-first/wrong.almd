@@ -1,0 +1,8 @@
+// Plausible wrong patch: the helper lists the replacements in "reading" order
+// (<, >, ", &), so the "&" of every entity is escaped a second time.
+fn esc(s: String) -> String =
+  string.replace(string.replace(string.replace(string.replace(s, "<", "&lt;"), ">", "&gt;"), "\"", "&quot;"), "&", "&amp;")
+
+fn text_node(s: String) -> String = esc(s)
+
+fn attribute(name: String, value: String) -> String = name + "=\"" + esc(value) + "\""

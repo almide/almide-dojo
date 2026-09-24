@@ -1,0 +1,5 @@
+test "clean" {
+  assert_eq(clean("(020) 7946-0018"), "02079460018")
+  assert_eq(same_number("020 7946", "0207-946"), true)
+  assert_eq(dial_string("555 01"), "tel:55501")
+}

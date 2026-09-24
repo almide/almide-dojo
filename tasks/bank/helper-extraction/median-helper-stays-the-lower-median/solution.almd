@@ -1,0 +1,15 @@
+// Response sizes. The service reports the LOWER median: for an even count,
+// the smaller of the two middle values (never an average).
+fn median(xs: List[Int]) -> Int? = list.get(list.sort(xs), (list.len(xs) - 1) / 2)
+
+fn report(xs: List[Int]) -> String =
+  match median(xs) {
+    some(m) => "median=" + int.to_string(m),
+    none => "median=none",
+  }
+
+fn above_median(xs: List[Int], x: Int) -> Bool =
+  match median(xs) {
+    some(m) => x > m,
+    none => false,
+  }

@@ -1,0 +1,5 @@
+test "pct" {
+  assert_eq(pct("15%"), some(15))
+  assert_eq(pct("150%"), none)
+  assert_eq(apply_discount(1000, "10%"), some(900))
+}

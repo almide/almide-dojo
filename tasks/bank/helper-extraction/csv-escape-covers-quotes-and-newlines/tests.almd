@@ -1,0 +1,5 @@
+test "escape" {
+  assert_eq(escape("a,b"), "\"a,b\"")
+  assert_eq(escape("plain"), "plain")
+  assert_eq(to_line(["x", "1,2"]), "x,\"1,2\"")
+}

@@ -1,0 +1,7 @@
+// Resource probe: the same 500 plain rows written __K__ times. Escaping a
+// plain field allocated nothing, so the helper must not add allocations.
+effect fn main() -> Unit = {
+  let rows = list.range(0, 500) |> list.map((i) => ["id" + int.to_string(i), "name", "value"])
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + string.len(to_csv(rows)))
+  println(int.to_string(t))
+}

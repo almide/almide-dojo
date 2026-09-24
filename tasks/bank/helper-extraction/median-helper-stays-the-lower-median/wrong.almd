@@ -1,0 +1,21 @@
+// Plausible wrong patch: the helper returns the textbook median, averaging the
+// two middle values for an even count.
+fn median(xs: List[Int]) -> Int? = {
+  let s = list.sort(xs)
+  let n = list.len(s)
+  if n == 0 then none
+  else if n % 2 == 1 then list.get(s, n / 2)
+  else some(((list.get(s, n / 2 - 1) ?? 0) + (list.get(s, n / 2) ?? 0)) / 2)
+}
+
+fn report(xs: List[Int]) -> String =
+  match median(xs) {
+    some(m) => "median=" + int.to_string(m),
+    none => "median=none",
+  }
+
+fn above_median(xs: List[Int], x: Int) -> Bool =
+  match median(xs) {
+    some(m) => x > m,
+    none => false,
+  }

@@ -1,0 +1,7 @@
+// Escaping text for HTML. "&" must be replaced FIRST, otherwise the "&" of
+// an already produced entity would be escaped again.
+fn text_node(s: String) -> String =
+  string.replace(string.replace(string.replace(string.replace(s, "&", "&amp;"), "<", "&lt;"), ">", "&gt;"), "\"", "&quot;")
+
+fn attribute(name: String, value: String) -> String =
+  name + "=\"" + string.replace(string.replace(string.replace(string.replace(value, "&", "&amp;"), "<", "&lt;"), ">", "&gt;"), "\"", "&quot;") + "\""

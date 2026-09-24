@@ -1,0 +1,16 @@
+// Plausible wrong patch: the helper splits on "%" and parses the first part.
+// Same answers for these inputs — but a parts list is allocated per call.
+fn pct(typed: String) -> Int? = {
+  let parts = string.split(string.trim(typed), "%")
+  guard list.len(parts) <= 2 and (list.get(parts, 1) ?? "") == "" else none
+  let p = int.parse(string.trim(list.first(parts) ?? ""))?!
+  guard p >= 0 and p <= 100 else none
+  some(p)
+}
+
+fn apply_discount(cents: Int, typed: String) -> Int? = {
+  let p = pct(typed)!
+  some(cents - cents * p / 100)
+}
+
+fn valid_pct(typed: String) -> Bool = option.is_some(pct(typed))

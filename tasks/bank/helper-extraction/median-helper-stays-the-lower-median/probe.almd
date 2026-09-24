@@ -1,0 +1,7 @@
+// Resource probe: the medians of the same 300 small samples checked __K__
+// times. The helper must allocate no more per sample than the inline code.
+effect fn main() -> Unit = {
+  let samples = list.range(0, 300) |> list.map((i) => [i % 7, i % 5, i % 3, i % 11])
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (samples |> list.count((s) => above_median(s, 2))))
+  println(int.to_string(t))
+}

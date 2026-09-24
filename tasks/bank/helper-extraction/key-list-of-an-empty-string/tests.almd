@@ -1,0 +1,5 @@
+test "fields" {
+  assert_eq(fields("a, b"), ["a", "b"])
+  assert_eq(count_required("x,y,z"), 3)
+  assert_eq(require("id, name", "name"), true)
+}
