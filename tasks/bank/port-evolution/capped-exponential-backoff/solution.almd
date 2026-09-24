@@ -1,0 +1,46 @@
+// A retry-delay port: how long to wait (ms) before retry number `attempt`
+// (1-based), or none to give up.
+protocol Backoff {
+  fn delay(b: Self, attempt: Int) -> Int?
+}
+
+// The same pause every time, for at most `attempts` retries.
+type Steady: Backoff = { ms: Int, attempts: Int }
+fn Steady.delay(b: Steady, attempt: Int) -> Int? =
+  if attempt < 1 or attempt > b.attempts then none else some(b.ms)
+
+// base, 2*base, 4*base, ... never above `cap`, for `attempts` retries.
+type Doubling: Backoff = { base: Int, cap: Int, attempts: Int }
+
+// Doubles `d` up to `n` times, stopping at `cap` (so it cannot overflow).
+fn doubled(d: Int, n: Int, cap: Int) -> Int =
+  if d >= cap then cap else if n <= 0 then d else doubled(d * 2, n - 1, cap)
+
+fn Doubling.delay(b: Doubling, attempt: Int) -> Int? =
+  if attempt < 1 or attempt > b.attempts then none else some(doubled(b.base, attempt - 1, b.cap))
+
+// Every delay from attempt 1 until the policy gives up (at most 200 retries).
+fn plan[B: Backoff](b: B) -> List[Int] = collect(b, 1)
+
+fn collect[B: Backoff](b: B, attempt: Int) -> List[Int] =
+  if attempt > 200 then []
+  else match b.delay(attempt) {
+    some(d) => [d] + collect(b, attempt + 1),
+    none => [],
+  }
+
+fn total_wait[B: Backoff](b: B) -> Int = list.sum(plan(b))
+
+type Policy = | Flat(Steady) | Grow(Doubling)
+
+fn schedule(p: Policy) -> List[Int] =
+  match p {
+    Flat(s) => plan(s),
+    Grow(d) => plan(d),
+  }
+
+fn waited(p: Policy) -> Int =
+  match p {
+    Flat(s) => total_wait(s),
+    Grow(d) => total_wait(d),
+  }
