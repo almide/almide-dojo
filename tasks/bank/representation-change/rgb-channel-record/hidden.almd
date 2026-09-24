@@ -1,0 +1,14 @@
+test "hidden: leading zeros are kept" {
+  assert_eq(render(swatch("a", "#0A00FF")), "a #0a00ff")
+  assert_eq(render(swatch("k", "#000")), "k #000000")
+  assert_eq(render(mix(swatch("a", "#000000"), swatch("b", "#1f0203"), "m")), "m #0f0101")
+}
+test "hidden: short form and case" {
+  assert_eq(swatch("x", "#ABC"), swatch("x", "#aabbcc"))
+  assert_eq(palette([swatch("one", "#FFF"), swatch("two", "#ffffff"), swatch("three", "#fffffe")]), ["one #ffffff", "three #fffffe"])
+}
+test "hidden: brightness unchanged" {
+  assert_eq(brightness(swatch("w", "#fff")), 255)
+  assert_eq(brightness(swatch("g", "#0a00ff")), 32)
+  assert_eq(brightness(swatch("b", "#000")), 0)
+}

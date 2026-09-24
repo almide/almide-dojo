@@ -1,0 +1,22 @@
+// Theme colors kept as canonical text: "#" and six lowercase hex digits.
+type Swatch: Eq, Repr = { name: String, hex: String }
+
+fn hexval(s: String) -> Int = int.from_hex(s) ?? 0
+
+// Accepts "#RGB" or "#RRGGBB" in any case and stores the canonical form.
+fn swatch(name: String, text: String) -> Swatch = {
+  let t = string.to_lower(string.drop(text, 1))
+  let six = if string.len(t) == 3 then string.chars(t) |> list.map((c) => c + c) |> list.join("") else t
+  Swatch { name: name, hex: "#" + six }
+}
+
+fn channel(s: Swatch, i: Int) -> Int = hexval(string.slice(s.hex, 1 + 2 * i, 3 + 2 * i))
+
+// Perceived brightness 0..255 (integer weights, rounded down).
+fn brightness(s: Swatch) -> Int = (channel(s, 0) * 299 + channel(s, 1) * 587 + channel(s, 2) * 114) / 1000
+
+fn render(s: Swatch) -> String = s.name + " " + s.hex
+
+// Distinct colors in first-seen order (the first name wins).
+fn palette(ss: List[Swatch]) -> List[String] =
+  ss |> list.unique_by((s) => s.hex) |> list.map(render)
