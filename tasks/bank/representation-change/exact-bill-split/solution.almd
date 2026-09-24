@@ -1,0 +1,30 @@
+// Splitting shared expenses. Amounts are cents; a refund is negative.
+type Expense: Eq, Repr = { what: String, cents: Int, people: List[String] }
+
+fn expense(what: String, cents: Int, people: List[String]) -> Expense =
+  Expense { what: what, cents: cents, people: people }
+
+// Each person's share of one expense, in the order the people are listed. The
+// shares add up exactly; the first-listed people take the extra cents.
+fn shares(e: Expense) -> List[(String, Int)] = {
+  let n = list.len(e.people)
+  let a = int.abs(e.cents)
+  let base = a / n
+  let extra = a % n
+  let sign = if e.cents < 0 then -1 else 1
+  e.people
+    |> list.enumerate
+    |> list.map(((i, p)) => (p, sign * (base + (if i < extra then 1 else 0))))
+}
+
+// What each person owes over all expenses, in first-seen order of the people.
+fn balances(es: List[Expense]) -> List[(String, Int)] = {
+  let all = es |> list.flat_map(shares)
+  let names = all |> list.map((s) => s.0) |> list.unique
+  names |> list.map((n) => (n, all |> list.filter((s) => s.0 == n) |> list.fold(0, (acc, s) => acc + s.1)))
+}
+
+fn line(b: (String, Int)) -> String = {
+  let a = int.abs(b.1)
+  b.0 + " " + (if b.1 < 0 then "-" else "") + int.to_string(a / 100) + "." + string.pad_start(int.to_string(a % 100), 2, "0")
+}

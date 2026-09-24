@@ -1,0 +1,17 @@
+test "hidden: a later deny still wins" {
+  let g = DenyOverrides { rules: [Rule { user: "ann", prefix: "", allow: true }, Rule { user: "*", prefix: "secret/", allow: false }] }
+  assert_eq(explain_with(Many(g), "ann", "secret/k"), "ann is denied secret/k")
+  assert_eq(permitted_with(Many(g), "ann", "secret/k"), false)
+}
+test "hidden: abstaining rules and the empty list" {
+  let g = DenyOverrides { rules: [Rule { user: "bo", prefix: "", allow: false }, Rule { user: "*", prefix: "pub/", allow: true }] }
+  assert_eq(explain_with(Many(g), "ann", "pub/x"), "ann may use pub/x")
+  assert_eq(explain_with(Many(g), "ann", "priv/x"), "no rule for ann on priv/x")
+  assert_eq(explain_with(Many(DenyOverrides { rules: [] }), "ann", "x"), "no rule for ann on x")
+  assert_eq(permitted_with(Many(DenyOverrides { rules: [] }), "ann", "x"), false)
+}
+test "hidden: single rules unchanged" {
+  let r = Rule { user: "*", prefix: "tmp/", allow: false }
+  assert_eq(explain(r, "zed", "tmp/q"), "zed is denied tmp/q")
+  assert_eq(permitted_with(One(Rule { user: "zed", prefix: "a", allow: true }), "zed", "abc"), true)
+}

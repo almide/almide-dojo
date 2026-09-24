@@ -1,0 +1,18 @@
+// An address book keyed by phone number, stored as typed.
+type Contact: Eq, Repr = { name: String, phone: String }
+
+fn contact(name: String, phone: String) -> Contact = Contact { name: name, phone: string.trim(phone) }
+
+// Adds `c` unless a contact with the same phone is already there (the old entry wins).
+fn add(book: List[Contact], c: Contact) -> List[Contact] =
+  if list.any(book, (o) => o.phone == c.phone) then book else book + [c]
+
+fn lookup(book: List[Contact], phone: String) -> String? =
+  book |> list.find((c) => c.phone == string.trim(phone)) |> option.map((c) => c.name)
+
+fn render(c: Contact) -> String = c.name + " <" + c.phone + ">"
+
+fn import_all(names_and_phones: List[(String, String)]) -> List[String] =
+  names_and_phones
+    |> list.fold([], (book, p) => add(book, contact(p.0, p.1)))
+    |> list.map(render)

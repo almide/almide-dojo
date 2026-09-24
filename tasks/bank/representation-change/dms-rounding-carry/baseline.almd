@@ -1,0 +1,21 @@
+// Survey bearings in whole arc-seconds (3600 per degree); negative bearings are
+// measured the other way round.
+type Bearing: Eq, Repr = { label: String, arcsec: Int }
+
+fn bearing(label: String, arcsec: Int) -> Bearing = Bearing { label: label, arcsec: arcsec }
+
+fn pad2(n: Int) -> String = string.pad_start(int.to_string(n), 2, "0")
+
+// "12d30m05s", with a leading "-" for a negative bearing.
+fn dms(b: Bearing) -> String = {
+  let a = int.abs(b.arcsec)
+  let sign = if b.arcsec < 0 then "-" else ""
+  sign + int.to_string(a / 3600) + "d" + pad2(a / 60 % 60) + "m" + pad2(a % 60) + "s"
+}
+
+fn render(b: Bearing) -> String = b.label + " " + dms(b)
+
+// The bearings rendered, smallest angle first; equal angles keep list order.
+fn table(bs: List[Bearing]) -> List[String] = bs |> list.sort_by((b) => b.arcsec) |> list.map(render)
+
+fn turn(b: Bearing, delta: Int) -> Bearing = Bearing { ...b, arcsec: b.arcsec + delta }

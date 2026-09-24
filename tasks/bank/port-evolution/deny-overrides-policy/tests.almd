@@ -1,0 +1,8 @@
+test "deny overrides" {
+  let g = DenyOverrides { rules: [Rule { user: "*", prefix: "tmp/", allow: false }, Rule { user: "ann", prefix: "", allow: true }] }
+  assert_eq(explain_with(Many(g), "ann", "tmp/x"), "ann is denied tmp/x")
+  assert_eq(permitted_with(Many(g), "ann", "docs/a"), true)
+}
+test "single rule" {
+  assert_eq(explain_with(One(Rule { user: "bo", prefix: "a/", allow: true }), "cy", "a/1"), "no rule for cy on a/1")
+}

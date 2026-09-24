@@ -1,0 +1,8 @@
+test "grouped amounts" {
+  let us = Grouped { group: ",", decimal: "." }
+  assert_eq(invoice_in(Local(us), [("desk", 123456789), ("pen", 250)]), ["desk: 1,234,567.89", "pen: 2.50", "total: 1,234,570.39"])
+  assert_eq(Grouped { group: ".", decimal: "," }.format(123456789), "1.234.567,89")
+}
+test "raw locale" {
+  assert_eq(invoice_in(Raw(PlainFormat {}), [("a", 123456)]), ["a: 1234.56", "total: 1234.56"])
+}

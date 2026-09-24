@@ -1,0 +1,9 @@
+test "normalized phones" {
+  assert_eq(contact("ann", "090-1234-5678").phone, Phone { cc: 81, number: "9012345678" })
+  assert_eq(contact("bo", "+44 20 7946 0000").phone, Phone { cc: 44, number: "2079460000" })
+  assert_eq(render(contact("ann", "090-1234-5678")), "ann <+81 9012345678>")
+}
+test "lookup normalizes" {
+  let book = add([], contact("ann", "090-1234-5678"))
+  assert_eq(lookup(book, "090 1234 5678"), some("ann"))
+}

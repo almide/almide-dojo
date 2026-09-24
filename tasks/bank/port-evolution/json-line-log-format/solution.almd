@@ -1,0 +1,38 @@
+// An access-log format port.
+type Hit = { method: String, path: String, status: Int, agent: String }
+
+protocol LogFormat {
+  fn line(f: Self, h: Hit) -> String
+}
+
+// "GET /a 200 curl/8" (fields separated by single spaces).
+type Common: LogFormat = {}
+fn Common.line(f: Common, h: Hit) -> String =
+  h.method + " " + h.path + " " + int.to_string(h.status) + " " + h.agent
+
+fn escape(s: String) -> String =
+  s
+    |> string.replace("\\", "\\\\")
+    |> string.replace("\"", "\\\"")
+    |> string.replace("\n", "\\n")
+    |> string.replace("\t", "\\t")
+
+fn quoted(s: String) -> String = "\"" + escape(s) + "\""
+
+// One JSON object per hit.
+type JsonLine: LogFormat = {}
+fn JsonLine.line(f: JsonLine, h: Hit) -> String =
+  "{\"method\":" + quoted(h.method) + ",\"path\":" + quoted(h.path)
+    + ",\"status\":" + int.to_string(h.status) + ",\"agent\":" + quoted(h.agent) + "}"
+
+// One line per hit; hits with a status below `min_status` are left out.
+fn dump[F: LogFormat](f: F, hits: List[Hit], min_status: Int) -> String =
+  hits |> list.filter((h) => h.status >= min_status) |> list.map((h) => f.line(h)) |> list.join("\n")
+
+type Output = | Text(Common) | Json(JsonLine)
+
+fn dump_as(o: Output, hits: List[Hit], min_status: Int) -> String =
+  match o {
+    Text(c) => dump(c, hits, min_status),
+    Json(j) => dump(j, hits, min_status),
+  }

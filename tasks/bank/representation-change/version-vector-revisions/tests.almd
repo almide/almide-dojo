@@ -1,0 +1,11 @@
+test "vectors order edits" {
+  let base = note("plan", [("a", 1)])
+  assert_eq(relation(base, edit(base, "b")), "before")
+  assert_eq(relation(edit(base, "a"), edit(base, "b")), "concurrent")
+  assert_eq(stamp(edit(edit(base, "a"), "b")), "plan@a:2,b:1")
+}
+test "reconcile takes the maximum" {
+  let x = note("n", [("a", 2), ("b", 1)])
+  let y = note("n", [("b", 3)])
+  assert_eq(stamp(reconcile(x, y)), "n@a:2,b:3")
+}

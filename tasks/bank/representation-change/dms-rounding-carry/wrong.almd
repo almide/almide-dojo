@@ -1,0 +1,30 @@
+// Plausible wrong patch: rounds only the seconds field after splitting, so 59.6s
+// prints "60s" with no carry, and the sign comes from the unrounded value.
+// Survey bearings in milli-arc-seconds (1000 per arc-second, 3600 arc-seconds
+// per degree); negative bearings are measured the other way round.
+type Bearing: Eq, Repr = { label: String, mas: Int }
+
+fn bearing(label: String, mas: Int) -> Bearing = Bearing { label: label, mas: mas }
+
+fn pad2(n: Int) -> String = string.pad_start(int.to_string(n), 2, "0")
+
+// Whole arc-seconds, halves rounded away from zero.
+fn rounded_seconds(mas: Int) -> Int = {
+  let a = (int.abs(mas) + 500) / 1000
+  if mas < 0 then 0 - a else a
+}
+
+// "12d30m05s", with a leading "-" for a negative bearing.
+fn dms(b: Bearing) -> String = {
+  let a = int.abs(b.mas) / 1000
+  let sign = if b.mas < 0 then "-" else ""
+  let secs = rounded_seconds(int.abs(b.mas) % 60000)
+  sign + int.to_string(a / 3600) + "d" + pad2(a / 60 % 60) + "m" + pad2(secs) + "s"
+}
+
+fn render(b: Bearing) -> String = b.label + " " + dms(b)
+
+// The bearings rendered, smallest angle first; equal angles keep list order.
+fn table(bs: List[Bearing]) -> List[String] = bs |> list.sort_by((b) => b.mas) |> list.map(render)
+
+fn turn(b: Bearing, delta: Int) -> Bearing = Bearing { ...b, mas: b.mas + delta }

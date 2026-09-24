@@ -1,0 +1,8 @@
+test "exact shares" {
+  assert_eq(shares(expense("taxi", 100, ["ann", "bo", "cy"])), [("ann", 34), ("bo", 33), ("cy", 33)])
+  assert_eq(line(("ann", 34)), "ann 0.34")
+}
+test "balances in cents" {
+  let es = [expense("a", 1000, ["ann", "bo"]), expense("b", 300, ["bo", "cy"])]
+  assert_eq(balances(es), [("ann", 500), ("bo", 650), ("cy", 150)])
+}

@@ -1,0 +1,21 @@
+// A merge-strategy port for settings edited on two sides of a sync.
+// `merge(base, ours, theirs)` answers the merged value or refuses.
+protocol Merge {
+  fn merge(m: Self, base: String, ours: String, theirs: String) -> String!
+}
+
+// Our side always wins.
+type KeepOurs: Merge = {}
+fn KeepOurs.merge(m: KeepOurs, base: String, ours: String, theirs: String) -> String! = ours
+
+type Field = { name: String, base: String, ours: String, theirs: String }
+
+// "name=value" per field in order; the first refusal is reported as "<name>: <error>".
+fn merge_all[M: Merge](m: M, fields: List[Field]) -> List[String]! = {
+  var out: List[String] = []
+  for f in fields {
+    let v = m.merge(f.base, f.ours, f.theirs) |> result.map_err((e) => f.name + ": " + e)
+    out = out + [f.name + "=" + v!]
+  }
+  out
+}

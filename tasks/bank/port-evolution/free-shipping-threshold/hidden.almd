@@ -1,0 +1,17 @@
+test "hidden: free shipping never takes an oversized parcel" {
+  let p = FreeOver { inner: ByWeight { per_kg: 500, max_grams: 20000 }, threshold: 5000 }
+  assert_eq(quote_with(Promo(p), 20001, 9000), "cannot ship")
+  assert_eq(p.cost(25000, 5000), none)
+}
+test "hidden: the threshold is inclusive" {
+  let p = FreeOver { inner: ByWeight { per_kg: 500, max_grams: 20000 }, threshold: 5000 }
+  assert_eq(quote_with(Promo(p), 1000, 5000), "free shipping")
+  assert_eq(quote_with(Promo(p), 1000, 4999), "shipping 500")
+  assert_eq(quote_with(Promo(p), 0, 0), "free shipping")
+}
+test "hidden: started kilograms and zero costs" {
+  let w = ByWeight { per_kg: 400, max_grams: 3000 }
+  assert_eq(quote_with(Weight(w), 1001, 0), "shipping 800")
+  assert_eq(quote_with(Weight(w), 3000, 0), "shipping 1200")
+  assert_eq(quote(FlatRate { cents: 0, max_grams: 10 }, 5, 0), "free shipping")
+}

@@ -1,0 +1,32 @@
+// A message catalog port: the template for `key` given a count `n`, if any.
+// Templates may contain "{n}", replaced by the count.
+protocol Catalog {
+  fn template(c: Self, key: String, n: Int) -> String?
+}
+
+// One template per key, whatever the count.
+type Flat: Catalog = { entries: Map[String, String] }
+fn Flat.template(c: Flat, key: String, n: Int) -> String? = map.get(c.entries, key)
+
+// A (singular, plural) pair per key: singular for exactly 1 or -1.
+type Plural: Catalog = { forms: Map[String, (String, String)] }
+fn Plural.template(c: Plural, key: String, n: Int) -> String? =
+  map.get(c.forms, key) |> option.map((f) => if n == 1 or n == -1 then f.0 else f.1)
+
+// The message, or "[key]" when the catalog has no template.
+fn say[C: Catalog](c: C, key: String, n: Int) -> String =
+  match c.template(key, n) {
+    some(t) => string.replace(t, "{n}", int.to_string(n)),
+    none => "[" + key + "]",
+  }
+
+fn say_all[C: Catalog](c: C, items: List[(String, Int)]) -> List[String] =
+  items |> list.map((it) => say(c, it.0, it.1))
+
+type Messages = | Simple(Flat) | Counted(Plural)
+
+fn render_all(m: Messages, items: List[(String, Int)]) -> List[String] =
+  match m {
+    Simple(f) => say_all(f, items),
+    Counted(p) => say_all(p, items),
+  }

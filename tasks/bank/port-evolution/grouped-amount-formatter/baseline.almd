@@ -1,0 +1,19 @@
+// An amount-formatting port for invoices. Amounts are cents; credits are negative.
+protocol AmountFormat {
+  fn format(f: Self, cents: Int) -> String
+}
+
+fn pad2(n: Int) -> String = string.pad_start(int.to_string(n), 2, "0")
+
+// "1234.56", "-0.50".
+type PlainFormat: AmountFormat = {}
+fn PlainFormat.format(f: PlainFormat, cents: Int) -> String = {
+  let a = int.abs(cents)
+  (if cents < 0 then "-" else "") + int.to_string(a / 100) + "." + pad2(a % 100)
+}
+
+// One line per item, then the total line.
+fn invoice[F: AmountFormat](f: F, lines: List[(String, Int)]) -> List[String] = {
+  let total = lines |> list.fold(0, (acc, l) => acc + l.1)
+  (lines |> list.map((l) => l.0 + ": " + f.format(l.1))) + ["total: " + f.format(total)]
+}

@@ -1,0 +1,21 @@
+test "hidden: sequences are independent" {
+  let docs = issue(issue(issue([], Invoice, 1), Invoice, 2), Quote, 3)
+  assert_eq(docs |> list.map(label), ["INV-0001", "INV-0002", "QUO-0001"])
+  assert_eq(next_id(docs, Receipt), 1)
+  assert_eq(next_id([Doc { id: DocId { kind: Quote, n: 41 }, amount: 0 }], Invoice), 1)
+}
+test "hidden: register order and wide numbers" {
+  let docs = [
+    Doc { id: DocId { kind: Receipt, n: 1 }, amount: 0 },
+    Doc { id: DocId { kind: Invoice, n: 10000 }, amount: 0 },
+    Doc { id: DocId { kind: Quote, n: 7 }, amount: 0 },
+    Doc { id: DocId { kind: Invoice, n: 9999 }, amount: 0 },
+  ]
+  assert_eq(register(docs), ["INV-9999", "INV-10000", "QUO-0007", "RCP-0001"])
+  assert_eq(next_id(docs, Invoice), 10001)
+}
+test "hidden: find needs the kind" {
+  let docs = issue(issue([], Invoice, 5), Receipt, 6)
+  assert_eq(find(docs, DocId { kind: Receipt, n: 1 }) |> option.map((d) => d.amount), some(6))
+  assert_eq(find(docs, DocId { kind: Quote, n: 1 }), none)
+}

@@ -1,0 +1,21 @@
+// A shipping-rate port: the cost in cents of a parcel of `grams`, or none when
+// the carrier cannot take it.
+protocol Shipping {
+  fn cost(s: Self, grams: Int) -> Int?
+}
+
+// A price per started kilogram, up to a weight limit.
+type ByWeight: Shipping = { per_kg: Int, max_grams: Int }
+fn ByWeight.cost(s: ByWeight, grams: Int) -> Int? =
+  if grams > s.max_grams then none else some((grams + 999) / 1000 * s.per_kg)
+
+// One price for anything up to a weight limit.
+type FlatRate: Shipping = { cents: Int, max_grams: Int }
+fn FlatRate.cost(s: FlatRate, grams: Int) -> Int? = if grams > s.max_grams then none else some(s.cents)
+
+fn quote[S: Shipping](s: S, grams: Int) -> String =
+  match s.cost(grams) {
+    some(0) => "free shipping",
+    some(c) => "shipping " + int.to_string(c),
+    none => "cannot ship",
+  }

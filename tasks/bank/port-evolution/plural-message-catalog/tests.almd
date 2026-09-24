@@ -1,0 +1,8 @@
+test "plural forms" {
+  let p = Plural { forms: ["file": ("{n} file", "{n} files")] }
+  assert_eq(render_all(Counted(p), [("file", 1), ("file", 3)]), ["1 file", "3 files"])
+}
+test "flat catalog" {
+  let f = Flat { entries: ["hi": "hello {n}"] }
+  assert_eq(render_all(Simple(f), [("hi", 2), ("bye", 1)]), ["hello 2", "[bye]"])
+}

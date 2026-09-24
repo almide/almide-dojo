@@ -1,0 +1,27 @@
+// A height map stored as rows of cells.
+type Grid: Eq, Repr = { rows: List[List[Int]] }
+
+fn grid(rows: List[List[Int]]) -> Grid = Grid { rows: rows }
+
+fn height(g: Grid) -> Int = list.len(g.rows)
+fn width(g: Grid) -> Int = list.len(list.first(g.rows) ?? [])
+
+// The cell at row r, column c; none outside the grid.
+fn get(g: Grid, r: Int, c: Int) -> Int? = option.flat_map(list.get(g.rows, r), (row) => list.get(row, c))
+
+// Sum of the up/down/left/right neighbours that exist.
+fn neighbour_sum(g: Grid, r: Int, c: Int) -> Int =
+  [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]
+    |> list.filter_map((p) => get(g, p.0, p.1))
+    |> list.sum
+
+// Cells strictly higher than every existing neighbour, as "r,c", row by row.
+fn peaks(g: Grid) -> List[String] =
+  list.range(0, height(g)) |> list.flat_map((r) =>
+    list.range(0, width(g)) |> list.filter_map((c) => {
+      let h = get(g, r, c) ?? 0
+      let ns = [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)] |> list.filter_map((p) => get(g, p.0, p.1))
+      if list.all(ns, (n) => h > n) then some(int.to_string(r) + "," + int.to_string(c)) else none
+    }))
+
+fn column(g: Grid, c: Int) -> List[Int] = g.rows |> list.filter_map((row) => list.get(row, c))

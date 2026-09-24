@@ -1,0 +1,49 @@
+// Plausible wrong patch: validates the text but converts through Float,
+// `to_int(f * 100.0)`, which truncates 0.29 to 28 cents. Passes the visible tests.
+// A price list read from text such as "12.50". Prices are kept as exact cents.
+type Item: Eq, Repr = { name: String, cents: Int }
+
+fn digits(s: String) -> Bool = s != "" and string.is_digit(s)
+
+// Digits, optionally "." and one or two digits; none for anything else.
+fn cents_of(t: String) -> Int? =
+  match string.split_once(t, ".") {
+    none => if digits(t) then option.map(int.parse(t)?, (d) => d * 100) else none,
+    some((whole, frac)) =>
+      if digits(whole) and digits(frac) and string.len(frac) <= 2 then
+        option.map(float.parse(t)?, (f) => float.to_int(f * 100.0))
+      else none,
+  }
+
+fn item(name: String, text: String) -> Item! = {
+  let t = string.trim(text)
+  match string.strip_prefix(t, "-") {
+    some(rest) => match cents_of(rest) {
+      some(_) => err("negative price: " + text),
+      none => err("bad price: " + text),
+    },
+    none => match cents_of(t) {
+      some(c) => ok(Item { name: name, cents: c }),
+      none => err("bad price: " + text),
+    },
+  }
+}
+
+fn render(i: Item) -> String =
+  i.name + " $" + int.to_string(i.cents / 100) + "." + string.pad_start(int.to_string(i.cents % 100), 2, "0")
+
+fn total(items: List[Item]) -> Int = items |> list.fold(0, (acc, i) => acc + i.cents)
+
+// Names of the items costing at most `budget` cents, in list order.
+fn affordable(items: List[Item], budget: Int) -> List[String] =
+  items |> list.filter((i) => i.cents <= budget) |> list.map((i) => i.name)
+
+// Reads "name=price" lines; the first bad line (in order) is the error.
+fn load(lines: List[String]) -> List[Item]! = {
+  var out: List[Item] = []
+  for line in lines {
+    let (name, text) = option.to_result(string.split_once(line, "="), "bad line: " + line)!
+    out = out + [item(name, text)!]
+  }
+  out
+}

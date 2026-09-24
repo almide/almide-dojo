@@ -1,0 +1,36 @@
+// Replicated notes. `rev` counts the edits made on each node; an absent node
+// has made 0 edits.
+type Note: Eq, Repr = { title: String, rev: Map[String, Int] }
+
+fn note(title: String, entries: List[(String, Int)]) -> Note = Note { title: title, rev: map.from_list(entries) }
+
+fn count(n: Note, node: String) -> Int = map.get(n.rev, node) ?? 0
+
+// One more edit, made on `node`.
+fn edit(n: Note, node: String) -> Note = Note { ...n, rev: map.set(n.rev, node, count(n, node) + 1) }
+
+fn nodes(a: Note, b: Note) -> List[String] = (map.keys(a.rev) + map.keys(b.rev)) |> list.unique
+
+// "before", "after", "same" or "concurrent": how `a` relates to `b`.
+fn relation(a: Note, b: Note) -> String = {
+  let ns = nodes(a, b)
+  let behind = ns |> list.any((k) => count(a, k) < count(b, k))
+  let ahead = ns |> list.any((k) => count(a, k) > count(b, k))
+  if behind and ahead then "concurrent" else if behind then "before" else if ahead then "after" else "same"
+}
+
+// `a`'s title with, for every node, the larger count.
+fn reconcile(a: Note, b: Note) -> Note =
+  Note { ...a, rev: nodes(a, b) |> list.map((k) => (k, int.max(count(a, k), count(b, k)))) |> map.from_list }
+
+fn stamp(n: Note) -> String = {
+  let parts = map.keys(n.rev)
+    |> list.filter((k) => count(n, k) > 0)
+    |> list.sort
+    |> list.map((k) => k + ":" + int.to_string(count(n, k)))
+  n.title + "@" + (if list.is_empty(parts) then "-" else list.join(parts, ","))
+}
+
+// Titles whose copies disagree, in list order.
+fn stale(pairs: List[(Note, Note)]) -> List[String] =
+  pairs |> list.filter((p) => relation(p.0, p.1) != "same") |> list.map((p) => p.0.title)

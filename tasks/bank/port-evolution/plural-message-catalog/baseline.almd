@@ -1,0 +1,19 @@
+// A message catalog port: the template for `key` given a count `n`, if any.
+// Templates may contain "{n}", replaced by the count.
+protocol Catalog {
+  fn template(c: Self, key: String, n: Int) -> String?
+}
+
+// One template per key, whatever the count.
+type Flat: Catalog = { entries: Map[String, String] }
+fn Flat.template(c: Flat, key: String, n: Int) -> String? = map.get(c.entries, key)
+
+// The message, or "[key]" when the catalog has no template.
+fn say[C: Catalog](c: C, key: String, n: Int) -> String =
+  match c.template(key, n) {
+    some(t) => string.replace(t, "{n}", int.to_string(n)),
+    none => "[" + key + "]",
+  }
+
+fn say_all[C: Catalog](c: C, items: List[(String, Int)]) -> List[String] =
+  items |> list.map((it) => say(c, it.0, it.1))

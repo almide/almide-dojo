@@ -1,0 +1,14 @@
+test "hidden: zero and negatives" {
+  let p = Plural { forms: ["file": ("{n} file", "{n} files")] }
+  assert_eq(render_all(Counted(p), [("file", 0), ("file", -1), ("file", -2)]), ["0 files", "-1 file", "-2 files"])
+}
+test "hidden: unknown keys and templates" {
+  let p = Plural { forms: ["x": ("one item", "{n} of {n}"), "y": ("", "")] }
+  assert_eq(render_all(Counted(p), [("x", 1), ("x", 4), ("z", 1), ("y", 1)]), ["one item", "4 of 4", "[z]", ""])
+  assert_eq(p.template("z", 2), none)
+}
+test "hidden: flat ignores the count" {
+  let f = Flat { entries: ["n": "{n}!"] }
+  assert_eq(say_all(f, [("n", 0), ("n", 1)]), ["0!", "1!"])
+  assert_eq(render_all(Simple(f), []), [])
+}

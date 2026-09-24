@@ -1,0 +1,19 @@
+test "hidden: backslashes are escaped once" {
+  let h = Hit { method: "GET", path: "C:\\dir", status: 200, agent: "a\\\"b" }
+  assert_eq(JsonLine {}.line(h), "{\"method\":\"GET\",\"path\":\"C:\\\\dir\",\"status\":200,\"agent\":\"a\\\\\\\"b\"}")
+}
+test "hidden: quotes" {
+  let h = Hit { method: "GET", path: "/q", status: 200, agent: "say \"hi\"" }
+  assert_eq(JsonLine {}.line(h), "{\"method\":\"GET\",\"path\":\"/q\",\"status\":200,\"agent\":\"say \\\"hi\\\"\"}")
+}
+test "hidden: control characters" {
+  let h = Hit { method: "GET", path: "/x\ny", status: 500, agent: "t\tab" }
+  assert_eq(JsonLine {}.line(h), "{\"method\":\"GET\",\"path\":\"/x\\ny\",\"status\":500,\"agent\":\"t\\tab\"}")
+}
+test "hidden: filter and order" {
+  let a = Hit { method: "GET", path: "/1", status: 199, agent: "" }
+  let b = Hit { method: "GET", path: "/2", status: 200, agent: "" }
+  let c = Hit { method: "PUT", path: "/3", status: 301, agent: "" }
+  assert_eq(dump_as(Json(JsonLine {}), [c, a, b], 200), "{\"method\":\"PUT\",\"path\":\"/3\",\"status\":301,\"agent\":\"\"}\n{\"method\":\"GET\",\"path\":\"/2\",\"status\":200,\"agent\":\"\"}")
+  assert_eq(dump_as(Text(Common {}), [], 0), "")
+}

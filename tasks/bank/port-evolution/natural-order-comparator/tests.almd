@@ -1,0 +1,7 @@
+test "natural order" {
+  assert_eq(sort_by_collation(Human(Natural {}), ["file10", "file9", "file1"]), ["file1", "file9", "file10"])
+  assert_eq(sort_by_collation(Plain(Lexical {}), ["file10", "file9"]), ["file10", "file9"])
+}
+test "greatest by natural order" {
+  assert_eq(greatest(Natural {}, ["v2", "v10", "v3"]), some("v10"))
+}

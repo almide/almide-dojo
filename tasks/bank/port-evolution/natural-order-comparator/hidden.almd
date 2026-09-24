@@ -1,0 +1,15 @@
+test "hidden: numerically equal runs fall back to string order" {
+  assert_eq(sort_by_collation(Human(Natural {}), ["a1", "a01"]), ["a01", "a1"])
+  assert_eq(sort_by_collation(Human(Natural {}), ["a01", "a1"]), ["a01", "a1"])
+  assert_eq(Natural {}.cmp("x007", "x7"), -1)
+  assert_eq(Natural {}.cmp("x7", "x7"), 0)
+}
+test "hidden: prefixes and mixed runs" {
+  assert_eq(sort_by_collation(Human(Natural {}), ["file10b", "file10", "file9", "file10a"]), ["file9", "file10", "file10a", "file10b"])
+  assert_eq(sort_by_collation(Human(Natural {}), ["b", "a2", "a", "a10", "10", "9"]), ["9", "10", "a", "a2", "a10", "b"])
+}
+test "hidden: plain order and stability" {
+  assert_eq(sort_by_collation(Human(Natural {}), ["beta", "Alpha", "alpha"]), ["Alpha", "alpha", "beta"])
+  assert_eq(sort_names(Lexical {}, ["b", "a", "b", "a"]), ["a", "a", "b", "b"])
+  assert_eq(greatest(Lexical {}, []), none)
+}

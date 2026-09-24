@@ -1,0 +1,23 @@
+test "hidden: exact conversion" {
+  assert_eq(item("a", "0.29"), ok(Item { name: "a", cents: 29 }))
+  assert_eq(item("a", "8.2"), ok(Item { name: "a", cents: 820 }))
+  assert_eq(item("a", "1.15"), ok(Item { name: "a", cents: 115 }))
+  assert_eq(item("a", " 2.3 "), ok(Item { name: "a", cents: 230 }))
+  assert_eq(item("a", "0"), ok(Item { name: "a", cents: 0 }))
+}
+test "hidden: rejected texts" {
+  assert_eq(item("a", ".5"), err("bad price: .5"))
+  assert_eq(item("a", "12."), err("bad price: 12."))
+  assert_eq(item("a", "1e2"), err("bad price: 1e2"))
+  assert_eq(item("a", ""), err("bad price: "))
+  assert_eq(item("a", "-1.5"), err("negative price: -1.5"))
+  assert_eq(item("a", "-x"), err("bad price: -x"))
+}
+test "hidden: render, budget and load" {
+  assert_eq(render(item("c", "0.05")!), "c $0.05")
+  assert_eq(render(item("c", "8.2")!), "c $8.20")
+  assert_eq(affordable([item("a", "0.29")!, item("b", "0.30")!, item("c", "0.28")!], 29), ["a", "c"])
+  assert_eq(load(["a=1", "b", "c=x"]), err("bad line: b"))
+  assert_eq(load(["a=1", "c=x", "b"]), err("bad price: x"))
+  assert_eq(load(["a=0.57", "b=1.15"]) |> result.map((xs) => total(xs)), ok(172))
+}

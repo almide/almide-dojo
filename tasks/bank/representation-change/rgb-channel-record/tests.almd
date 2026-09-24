@@ -1,0 +1,9 @@
+test "channels are numbers" {
+  let s = swatch("sky", "#87CEEB")
+  assert_eq(s.color, Rgb { r: 135, g: 206, b: 235 })
+  assert_eq(render(s), "sky #87ceeb")
+  assert_eq(render(mix(swatch("a", "#ff8040"), swatch("b", "#c0a0e0"), "m")), "m #df9090")
+}
+test "short form" {
+  assert_eq(swatch("x", "#abc").color, Rgb { r: 170, g: 187, b: 204 })
+}

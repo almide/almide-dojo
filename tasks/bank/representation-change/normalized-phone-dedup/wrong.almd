@@ -1,0 +1,39 @@
+// Plausible wrong patch: drops ALL leading zeros of a national number instead of
+// the single trunk prefix. Passes the visible tests.
+// An address book keyed by normalized phone number.
+type Phone: Eq, Repr = { cc: Int, number: String }
+type Contact: Eq, Repr = { name: String, phone: Phone }
+
+fn is_sep(ch: String) -> Bool = ch == " " or ch == "-" or ch == "." or ch == "(" or ch == ")"
+
+fn strip_seps(s: String) -> String = string.chars(s) |> list.filter((ch) => not is_sep(ch)) |> list.join("")
+
+fn phone(text: String) -> Phone = {
+  let t = string.trim(text)
+  match string.strip_prefix(t, "+") {
+    some(rest) => {
+      let cc_text = string.chars(rest) |> list.take_while((ch) => not is_sep(ch)) |> list.join("")
+      Phone { cc: int.parse(cc_text) ?? 0, number: strip_seps(string.drop(rest, string.len(cc_text))) }
+    },
+    none => {
+      let digits = strip_seps(t)
+      Phone { cc: 81, number: digits |> string.chars |> list.drop_while((ch) => ch == "0") |> list.join("") }
+    },
+  }
+}
+
+fn contact(name: String, text: String) -> Contact = Contact { name: name, phone: phone(text) }
+
+// Adds `c` unless a contact with the same phone is already there (the old entry wins).
+fn add(book: List[Contact], c: Contact) -> List[Contact] =
+  if list.any(book, (o) => o.phone == c.phone) then book else book + [c]
+
+fn lookup(book: List[Contact], text: String) -> String? =
+  book |> list.find((c) => c.phone == phone(text)) |> option.map((c) => c.name)
+
+fn render(c: Contact) -> String = c.name + " <+" + int.to_string(c.phone.cc) + " " + c.phone.number + ">"
+
+fn import_all(names_and_phones: List[(String, String)]) -> List[String] =
+  names_and_phones
+    |> list.fold([], (book, p) => add(book, contact(p.0, p.1)))
+    |> list.map(render)

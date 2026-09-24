@@ -1,0 +1,8 @@
+test "milli-arc-seconds" {
+  assert_eq(render(bearing("a", 45005000)), "a 12d30m05s")
+  assert_eq(dms(bearing("b", 45005400)), "12d30m05s")
+  assert_eq(turn(bearing("c", 1000), 250), bearing("c", 1250))
+}
+test "table order" {
+  assert_eq(table([bearing("x", 7200000), bearing("y", 3600000)]), ["y 1d00m00s", "x 2d00m00s"])
+}

@@ -1,0 +1,9 @@
+test "one-sided changes merge" {
+  let fs = [Field { name: "port", base: "80", ours: "8080", theirs: "80" }, Field { name: "host", base: "a", ours: "a", theirs: "b" }]
+  assert_eq(merge_with(Three(ThreeWay {}), fs), ok(["port=8080", "host=b"]))
+}
+test "two-sided changes conflict" {
+  let fs = [Field { name: "port", base: "80", ours: "81", theirs: "82" }]
+  assert_eq(merge_with(Three(ThreeWay {}), fs), err("port: conflict: 81 vs 82"))
+  assert_eq(merge_with(Ours(KeepOurs {}), fs), ok(["port=81"]))
+}

@@ -1,0 +1,15 @@
+test "hidden: rounding carries into minutes and degrees" {
+  assert_eq(dms(bearing("a", 45059600)), "12d31m00s")
+  assert_eq(dms(bearing("a", 46799500)), "13d00m00s")
+  assert_eq(dms(bearing("a", 5499)), "0d00m05s")
+  assert_eq(dms(bearing("a", 5500)), "0d00m06s")
+}
+test "hidden: the sign follows the rounded value" {
+  assert_eq(dms(bearing("a", -400)), "0d00m00s")
+  assert_eq(dms(bearing("a", -500)), "-0d00m01s")
+  assert_eq(dms(bearing("a", -45059600)), "-12d31m00s")
+}
+test "hidden: table uses the exact angle" {
+  let bs = [bearing("p", 1400), bearing("q", 1100), bearing("r", 1400), bearing("s", -2)]
+  assert_eq(table(bs), ["s 0d00m00s", "q 0d00m01s", "p 0d00m01s", "r 0d00m01s"])
+}

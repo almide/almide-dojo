@@ -1,0 +1,9 @@
+test "free over a threshold" {
+  let p = FreeOver { inner: ByWeight { per_kg: 500, max_grams: 20000 }, threshold: 5000 }
+  assert_eq(quote_with(Promo(p), 1500, 6000), "free shipping")
+  assert_eq(quote_with(Promo(p), 1500, 1000), "shipping 1000")
+}
+test "plain carriers ignore the subtotal" {
+  assert_eq(quote_with(Flat(FlatRate { cents: 700, max_grams: 5000 }), 100, 99999), "shipping 700")
+  assert_eq(quote_with(Weight(ByWeight { per_kg: 300, max_grams: 2000 }), 2001, 0), "cannot ship")
+}

@@ -1,0 +1,8 @@
+test "mounted routes" {
+  let m = Mount { prefix: "/api", inner: Table { routes: ["/users": "list_users", "/": "api_root"] } }
+  assert_eq(dispatch_app(Mounted(m), ["/api/users", "/users"]), ["/api/users -> list_users", "/users -> 404"])
+}
+test "plain table" {
+  let t = Table { routes: ["/": "home"] }
+  assert_eq(served_app(Plain(t), ["/", "/x"]), 1)
+}

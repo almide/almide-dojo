@@ -1,0 +1,45 @@
+// An access-policy port with three answers.
+type Decision: Eq, Repr = | Allow | Deny | Abstain
+
+protocol Policy {
+  fn decide(p: Self, user: String, res: String) -> Decision
+}
+
+// One rule: for `user` ("*" = anyone) on resources starting with `prefix`, allow
+// or deny; any other request is not its business.
+type Rule: Policy = { user: String, prefix: String, allow: Bool }
+fn Rule.decide(r: Rule, user: String, res: String) -> Decision =
+  if (r.user == "*" or r.user == user) and string.starts_with(res, r.prefix) then
+    (if r.allow then Allow else Deny)
+  else Abstain
+
+// Any deny wins; otherwise any allow; otherwise abstain.
+type DenyOverrides: Policy = { rules: List[Rule] }
+fn DenyOverrides.decide(d: DenyOverrides, user: String, res: String) -> Decision = {
+  let ds = d.rules |> list.map((r) => r.decide(user, res))
+  if list.contains(ds, Deny) then Deny else if list.contains(ds, Allow) then Allow else Abstain
+}
+
+// Only an explicit Allow grants access.
+fn permitted[P: Policy](p: P, user: String, res: String) -> Bool = p.decide(user, res) == Allow
+
+fn explain[P: Policy](p: P, user: String, res: String) -> String =
+  match p.decide(user, res) {
+    Allow => user + " may use " + res,
+    Deny => user + " is denied " + res,
+    Abstain => "no rule for " + user + " on " + res,
+  }
+
+type Guard = | One(Rule) | Many(DenyOverrides)
+
+fn explain_with(g: Guard, user: String, res: String) -> String =
+  match g {
+    One(r) => explain(r, user, res),
+    Many(d) => explain(d, user, res),
+  }
+
+fn permitted_with(g: Guard, user: String, res: String) -> Bool =
+  match g {
+    One(r) => permitted(r, user, res),
+    Many(d) => permitted(d, user, res),
+  }
