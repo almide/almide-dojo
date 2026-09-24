@@ -1,0 +1,41 @@
+// Plausible wrong patch: only combines when both parts answer, so once the
+// one-off has fired the merged schedule stops. Passes the visible tests.
+// A schedule port: the first firing time strictly after `t`, if any.
+protocol Schedule {
+  fn next_after(s: Self, t: Int) -> Int?
+}
+
+// Fires at offset, offset + period, offset + 2*period, ... (period >= 1).
+type Every: Schedule = { period: Int, offset: Int }
+fn Every.next_after(s: Every, t: Int) -> Int? =
+  if t < s.offset then some(s.offset)
+  else some(s.offset + ((t - s.offset) / s.period + 1) * s.period)
+
+// Fires once, at `at`.
+type Once: Schedule = { at: Int }
+fn Once.next_after(s: Once, t: Int) -> Int? = if s.at > t then some(s.at) else none
+
+// Fires whenever either part fires.
+type Merged: Schedule = { repeat: Every, extra: Once }
+fn Merged.next_after(s: Merged, t: Int) -> Int? =
+  match (s.repeat.next_after(t), s.extra.next_after(t)) {
+    (some(a), some(b)) => some(int.min(a, b)),
+    _ => none,
+  }
+
+// The next `n` firing times after `t`, fewer when the schedule runs out.
+fn upcoming[S: Schedule](s: S, t: Int, n: Int) -> List[Int] =
+  if n <= 0 then []
+  else match s.next_after(t) {
+    some(x) => [x] + upcoming(s, x, n - 1),
+    none => [],
+  }
+
+type Plan = | Repeat(Every) | Single(Once) | Both(Merged)
+
+fn upcoming_for(p: Plan, t: Int, n: Int) -> List[Int] =
+  match p {
+    Repeat(e) => upcoming(e, t, n),
+    Single(o) => upcoming(o, t, n),
+    Both(m) => upcoming(m, t, n),
+  }

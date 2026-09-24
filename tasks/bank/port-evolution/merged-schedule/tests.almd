@@ -1,0 +1,8 @@
+test "merged fires on both" {
+  let m = Merged { repeat: Every { period: 10, offset: 0 }, extra: Once { at: 25 } }
+  assert_eq(upcoming_for(Both(m), 0, 3), [10, 20, 25])
+}
+test "single plans" {
+  assert_eq(upcoming_for(Single(Once { at: 5 }), 0, 3), [5])
+  assert_eq(upcoming_for(Repeat(Every { period: 5, offset: 2 }), 0, 2), [2, 7])
+}
