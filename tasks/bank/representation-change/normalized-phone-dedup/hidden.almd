@@ -1,0 +1,15 @@
+test "hidden: national and international forms are one number" {
+  let out = import_all([("ann", "+81 90-1234-5678"), ("dup", "090 1234 5678"), ("dup2", "(090) 1234.5678"), ("bo", "+44 20 7946 0000")])
+  assert_eq(out, ["ann <+81 9012345678>", "bo <+44 2079460000>"])
+  assert_eq(lookup(add([], contact("cy", "03-1111-2222")), "+81 3 1111 2222"), some("cy"))
+}
+test "hidden: one trunk zero only" {
+  assert_eq(contact("z", "0012-34").phone, Phone { cc: 81, number: "01234" })
+  assert_eq(contact("i", "+81 090 1").phone, Phone { cc: 81, number: "0901" })
+  assert_eq(contact("j", "+1-555-0100").phone, Phone { cc: 1, number: "5550100" })
+}
+test "hidden: first contact wins and order kept" {
+  let out = import_all([("x", "080-1"), ("y", "+81 5"), ("x2", "+81 80 1"), ("z", "05")])
+  assert_eq(out, ["x <+81 801>", "y <+81 5>"])
+  assert_eq(lookup([], "1"), none)
+}
