@@ -1,0 +1,6 @@
+test "buckets" {
+  let q = push(push(push(queue(), 1, "a"), 5, "b"), 1, "c")
+  assert_eq(q.buckets, [1: ["a", "c"], 5: ["b"]])
+  assert_eq(pop(q) |> option.map((p) => p.0), some("b"))
+  assert_eq(size(q), 3)
+}
