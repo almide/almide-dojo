@@ -1,0 +1,61 @@
+// Plausible wrong patch: recovers the WrongWidth case as a whole, so a row that
+// is too long is cut down to the width (and noted as "padded") instead of failing.
+// Numeric table reader. The first line is "cols <n>"; every other line holds n
+// integers separated by spaces. Rows are numbered from 1 after the header.
+type MatErr: Eq, Repr =
+  | NoHeader(String)
+  | WrongWidth(Int, Int, Int)
+  | BadCell(Int, Int, String)
+type Table: Eq, Repr = { rows: List[List[Int]], notes: List[String] }
+
+fn cells(line: String) -> List[String] =
+  string.split(string.trim(line), " ") |> list.filter((w) => w != "")
+
+fn parse_row(width: Int, r: Int, line: String) -> List[Int]!MatErr = {
+  let cs = cells(line)
+  guard list.len(cs) == width else err(WrongWidth(r, list.len(cs), width))
+  cs |> list.enumerate |> list.map((p) => match int.parse(p.1) {
+    ok(n) => ok(n),
+    err(_) => err(BadCell(r, p.0 + 1, p.1)),
+  }) |> list.map((x) => x!)!
+}
+
+fn header_width(line: String) -> Int!MatErr = {
+  let ws = cells(line)
+  guard list.len(ws) == 2 and list.first(ws) == some("cols") else err(NoHeader(line))
+  match int.parse(list.get(ws, 1) ?? "") {
+    ok(n) => if n > 0 then ok(n) else err(NoHeader(line)),
+    err(_) => err(NoHeader(line)),
+  }
+}
+
+fn read_table(lines: List[String]) -> Table!MatErr = {
+  let width = header_width(list.first(lines) ?? "")!
+  let body = list.drop(lines, 1) |> list.filter((l) => string.trim(l) != "")
+  var rows: List[List[Int]] = []
+  var notes: List[String] = []
+  for p in list.enumerate(body) {
+    let r = p.0 + 1
+    let row = match parse_row(width, r, p.1) {
+      ok(row) => ok(row),
+      err(WrongWidth(_, k, n)) => {
+        let fixed = list.take(cells(p.1) + list.repeat("0", n), n) |> list.join(" ")
+        notes = notes + ["row ${int.to_string(r)} padded from ${int.to_string(k)} to ${int.to_string(n)}"]
+        parse_row(n, r, fixed)
+      },
+      err(e) => err(e),
+    }!
+    rows = rows + [row]
+  }
+  Table { rows: rows, notes: notes }
+}
+
+fn column_sums(t: Table) -> List[Int] =
+  t.rows |> list.fold([], (acc, row) =>
+    if list.is_empty(acc) then row else list.zip_with(acc, row, (a, b) => a + b))
+
+fn report(lines: List[String]) -> String!MatErr = {
+  let t = read_table(lines)!
+  let sums = column_sums(t) |> list.map((n) => int.to_string(n)) |> list.join(" ")
+  if list.is_empty(t.notes) then ok("sums ${sums}") else ok("sums ${sums} | ${list.join(t.notes, "; ")}")
+}

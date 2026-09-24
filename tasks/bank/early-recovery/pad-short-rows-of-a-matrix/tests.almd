@@ -1,0 +1,6 @@
+test "a short row is padded with zeros" {
+  assert_eq(report(["cols 3", "1 2 3", "4 5"]), ok("sums 5 7 3 | row 2 padded from 2 to 3"))
+}
+test "a bad cell is still fatal" {
+  assert_eq(report(["cols 2", "1 x"]), err(BadCell(1, 2, "x")))
+}

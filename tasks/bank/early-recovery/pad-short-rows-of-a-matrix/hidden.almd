@@ -1,0 +1,13 @@
+test "hidden: a row that is too long is still fatal" {
+  assert_eq(report(["cols 2", "1", "1 2 3"]), err(WrongWidth(2, 3, 2)))
+}
+test "hidden: a bad cell inside a short row is still fatal" {
+  assert_eq(report(["cols 4", "1 2 3 4", "5 q"]), err(BadCell(2, 2, "q")))
+}
+test "hidden: any short row pads, notes in row order, blank lines not counted" {
+  assert_eq(report(["cols 3", "7", "", "1 1 1", "2 2", "9 9 9"]), ok("sums 19 12 10 | row 1 padded from 1 to 3; row 3 padded from 2 to 3"))
+}
+test "hidden: header errors stay fatal" {
+  assert_eq(report(["cols 0", "1"]), err(NoHeader("cols 0")))
+  assert_eq(report(["1 2", "3 4"]), err(NoHeader("1 2")))
+}
