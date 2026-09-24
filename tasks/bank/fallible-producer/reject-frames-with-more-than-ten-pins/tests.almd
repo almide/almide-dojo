@@ -1,0 +1,6 @@
+test "two rolls of one frame may not knock down more than ten pins" {
+  assert(result.is_err(score([7, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])))
+}
+test "a normal game still scores" {
+  assert_eq(score([10, 7, 3, 9, 0, 10, 0, 8, 8, 2, 0, 6, 10, 10, 10, 8, 1]), ok(167))
+}

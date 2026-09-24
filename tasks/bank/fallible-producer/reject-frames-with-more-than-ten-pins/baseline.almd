@@ -1,0 +1,45 @@
+// Ten-pin bowling scorer. A game is the list of rolls (pins knocked down).
+// Frames 1-9: a strike is one roll of 10, otherwise two rolls. Frame 10: two
+// rolls, plus one bonus roll after a strike or a spare.
+fn check_roll(n: Int) -> Int! = {
+  guard n >= 0 and n <= 10 else err("bad roll ${int.to_string(n)}")
+  n
+}
+
+fn split_frames(rolls: List[Int], k: Int) -> List[List[Int]]! =
+  if k == 10 then {
+    let first = list.get(rolls, 0) ?? -1
+    let second = list.get(rolls, 1) ?? -1
+    guard first >= 0 and second >= 0 else err("incomplete game")
+    let need = if first == 10 or first + second == 10 then 3 else 2
+    guard list.len(rolls) >= need else err("incomplete game")
+    guard list.len(rolls) == need else err("too many rolls")
+    ok([rolls])
+  } else match rolls {
+    [] => err("incomplete game"),
+    [a, ..rest] if a == 10 => {
+      let tail = split_frames(rest, k + 1)!
+      ok([[10]] + tail)
+    },
+    [a, b, ..rest] => {
+      let tail = split_frames(rest, k + 1)!
+      ok([[a, b]] + tail)
+    },
+    _ => err("incomplete game"),
+  }
+
+fn frame_score(frames: List[List[Int]], i: Int) -> Int = {
+  let f = list.get(frames, i) ?? []
+  let later = list.drop(frames, i + 1) |> list.flat_map((x) => x)
+  let pins = list.sum(f)
+  if i == 9 then pins
+  else if list.first(f) == some(10) then 10 + list.sum(list.take(later, 2))
+  else if pins == 10 then 10 + list.sum(list.take(later, 1))
+  else pins
+}
+
+fn score(rolls: List[Int]) -> Int! = {
+  let checked = rolls |> list.map((r) => check_roll(r)!)!
+  let frames = split_frames(checked, 1)!
+  list.range(0, 10) |> list.fold(0, (acc, i) => acc + frame_score(frames, i))
+}
