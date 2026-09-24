@@ -1,0 +1,32 @@
+// Monthly subscriptions. The n-th due date is `n` months after the start date, on
+// the start's day of the month, or on the last day of a shorter month.
+type Date: Eq, Repr = { y: Int, m: Int, d: Int }
+type Sub: Eq, Repr = { name: String, start: Date, paid: Int }
+
+fn leap(y: Int) -> Bool = y % 4 == 0 and (y % 100 != 0 or y % 400 == 0)
+
+fn month_len(y: Int, m: Int) -> Int =
+  match m {
+    2 => if leap(y) then 29 else 28,
+    4 | 6 | 9 | 11 => 30,
+    _ => 31,
+  }
+
+fn pad2(n: Int) -> String = string.pad_start(int.to_string(n), 2, "0")
+fn render(d: Date) -> String = int.to_string(d.y) + "-" + pad2(d.m) + "-" + pad2(d.d)
+
+fn sub(name: String, start: Date) -> Sub = Sub { name: name, start: start, paid: 0 }
+
+// The next unpaid due date.
+fn due(s: Sub) -> Date = {
+  let idx = s.start.y * 12 + (s.start.m - 1) + s.paid
+  let y = idx / 12
+  let m = idx % 12 + 1
+  Date { y: y, m: m, d: int.min(s.start.d, month_len(y, m)) }
+}
+
+// Pays the current period.
+fn pay(s: Sub) -> Sub = Sub { ...s, paid: s.paid + 1 }
+
+fn schedule(s: Sub, n: Int) -> List[String] =
+  list.range(0, n) |> list.map((k) => render(due(Sub { ...s, paid: s.paid + k })))
