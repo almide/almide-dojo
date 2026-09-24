@@ -1,0 +1,108 @@
+// A tiny script language: statements "let <name> = <expr>;" and
+// "print <expr>;". Expressions: integers, names, + - * with the usual
+// precedence, parentheses. Positions are token indexes from 0.
+type Tok: Eq, Repr = { kind: String, text: String }
+type LangErr: Eq, Repr =
+  | BadChar(Int)
+  | Syntax(Int, String)
+  | Unbound(Int, String)
+type Run: Eq, Repr = { printed: List[Int], errors: List[String] }
+type St = { env: Map[String, Int], printed: List[Int] }
+type Ev = { v: Int, next: Int }
+
+fn lex(src: String, i: Int, acc: List[Tok]) -> List[Tok]!LangErr = {
+  let c = string.slice(src, i, i + 1)
+  if i >= string.len(src) then ok(acc)
+  else if c == " " or c == "\n" then lex(src, i + 1, acc)
+  else if string.contains("+-*=;()", c) then lex(src, i + 1, acc + [Tok { kind: "sym", text: c }])
+  else if string.is_digit(c) or string.is_alpha(c) then {
+    let end = word_end(src, i)
+    let w = string.slice(src, i, end)
+    lex(src, end, acc + [Tok { kind: if string.is_digit(c) then "num" else "name", text: w }])
+  }
+  else err(BadChar(i))
+}
+
+fn word_end(src: String, i: Int) -> Int =
+  if i < string.len(src) and string.is_alphanumeric(string.slice(src, i, i + 1)) then word_end(src, i + 1) else i
+
+fn at(ts: List[Tok], i: Int) -> Tok = list.get(ts, i) ?? Tok { kind: "eof", text: "" }
+
+fn expect(ts: List[Tok], i: Int, text: String) -> Int!LangErr =
+  if at(ts, i).text == text then ok(i + 1) else err(Syntax(i, "expected ${text}"))
+
+fn atom(ts: List[Tok], env: Map[String, Int], i: Int) -> Ev!LangErr = {
+  let t = at(ts, i)
+  match t.kind {
+    "num" => ok(Ev { v: int.parse(t.text) ?? 0, next: i + 1 }),
+    "name" => match map.get(env, t.text) {
+      some(v) => ok(Ev { v: v, next: i + 1 }),
+      none => err(Unbound(i, t.text)),
+    },
+    _ => if t.text == "(" then {
+      let inner = sum(ts, env, i + 1)!
+      let j = expect(ts, inner.next, ")")!
+      ok(Ev { v: inner.v, next: j })
+    } else err(Syntax(i, "expected a value")),
+  }
+}
+
+fn product(ts: List[Tok], env: Map[String, Int], i: Int) -> Ev!LangErr = {
+  let first = atom(ts, env, i)!
+  more_product(ts, env, first)
+}
+
+fn more_product(ts: List[Tok], env: Map[String, Int], acc: Ev) -> Ev!LangErr =
+  if at(ts, acc.next).text == "*" then {
+    let rhs = atom(ts, env, acc.next + 1)!
+    more_product(ts, env, Ev { v: acc.v * rhs.v, next: rhs.next })
+  } else ok(acc)
+
+fn sum(ts: List[Tok], env: Map[String, Int], i: Int) -> Ev!LangErr = {
+  let first = product(ts, env, i)!
+  more_sum(ts, env, first)
+}
+
+fn more_sum(ts: List[Tok], env: Map[String, Int], acc: Ev) -> Ev!LangErr = {
+  let op = at(ts, acc.next).text
+  if op == "+" or op == "-" then {
+    let rhs = product(ts, env, acc.next + 1)!
+    more_sum(ts, env, Ev { v: if op == "+" then acc.v + rhs.v else acc.v - rhs.v, next: rhs.next })
+  } else ok(acc)
+}
+
+// Runs the statement starting at token i; returns the new state and the index
+// just after its ";".
+fn statement(ts: List[Tok], st: St, i: Int) -> (St, Int)!LangErr = {
+  let t = at(ts, i)
+  if t.text == "let" then {
+    let name = at(ts, i + 1)
+    guard name.kind == "name" else err(Syntax(i + 1, "expected a name"))
+    let j = expect(ts, i + 2, "=")!
+    let e = sum(ts, st.env, j)!
+    let k = expect(ts, e.next, ";")!
+    ok(({ ...st, env: map.set(st.env, name.text, e.v) }, k))
+  } else if t.text == "print" then {
+    let e = sum(ts, st.env, i + 1)!
+    let k = expect(ts, e.next, ";")!
+    ok(({ ...st, printed: st.printed + [e.v] }, k))
+  } else err(Syntax(i, "expected a statement"))
+}
+
+fn run_from(ts: List[Tok], st: St, i: Int) -> St!LangErr =
+  if i >= list.len(ts) then ok(st)
+  else {
+    let step = statement(ts, st, i)!
+    run_from(ts, step.0, step.1)
+  }
+
+fn run(src: String) -> Run!LangErr = {
+  let ts = lex(src, 0, [])!
+  let st = run_from(ts, St { env: [:], printed: [] }, 0)!
+  Run { printed: st.printed, errors: [] }
+}
+
+fn show(r: Run) -> String = {
+  let p = r.printed |> list.map((n) => int.to_string(n)) |> list.join(",")
+  if list.is_empty(r.errors) then "printed ${p}" else "printed ${p} | ${list.join(r.errors, "; ")}"
+}

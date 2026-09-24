@@ -1,0 +1,6 @@
+test "a statement with a syntax error is skipped and reported" {
+  assert_eq(run("print 1; print + ; print 3;") |> result.map((r) => show(r)), ok("printed 1,3 | syntax error at token 4: expected a value"))
+}
+test "an unbound name is still fatal" {
+  assert_eq(run("print 1; print zz;") |> result.map((r) => show(r)), err(Unbound(4, "zz")))
+}

@@ -1,0 +1,16 @@
+test "hidden: an error found at the semicolon itself resumes right after it" {
+  assert_eq(run("let a = 2 * ; print 7; print 8;") |> result.map((r) => show(r)), ok("printed 7,8 | syntax error at token 5: expected a value"))
+  assert_eq(run("print (1 + 2; print 4;") |> result.map((r) => show(r)), ok("printed 4 | syntax error at token 5: expected )"))
+}
+test "hidden: a failed let defines nothing" {
+  assert_eq(run("let x = ; print x;") |> result.map((r) => show(r)), err(Unbound(5, "x")))
+  assert_eq(run("let x = 1; let x = 5 5; print x;") |> result.map((r) => show(r)), ok("printed 1 | syntax error at token 9: expected ;"))
+}
+test "hidden: with no semicolon left the run stops after reporting" {
+  assert_eq(run("print 1; print 2 print 3") |> result.map((r) => show(r)), ok("printed 1 | syntax error at token 5: expected ;"))
+  assert_eq(run("let 5 = 3; print 6;") |> result.map((r) => show(r)), ok("printed 6 | syntax error at token 1: expected a name"))
+}
+test "hidden: lexer errors stay fatal, several syntax errors in order" {
+  assert_eq(run("print 1; print #;") |> result.map((r) => show(r)), err(BadChar(15)))
+  assert_eq(run("foo; print 2; = ; print 3;") |> result.map((r) => show(r)), ok("printed 2,3 | syntax error at token 0: expected a statement; syntax error at token 5: expected a statement"))
+}
