@@ -1,0 +1,6 @@
+test "an entry that does not add up is rejected" {
+  assert(result.is_err(journal(["entry 1", "cash -10.00 USD", "sales 9.00 USD"])))
+}
+test "balanced entries still give the balances" {
+  assert_eq(balances(["entry 1", "cash -10.00 USD", "sales 10.00 USD", "entry 2", "cash 2.50 USD", "fees -2.50 USD"]), ok(["cash USD -7.50", "fees USD -2.50", "sales USD 10.00"]))
+}

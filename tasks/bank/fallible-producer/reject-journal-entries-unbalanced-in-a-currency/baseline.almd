@@ -1,0 +1,71 @@
+// Double-entry journal. An entry starts with "entry <id>" and is followed by
+// its postings "<account> <amount> <currency>", amounts with exactly two
+// decimals ("-12.30"). An entry ends at the next "entry" line or at the end.
+type Posting = { account: String, cents: Int, cur: String }
+type Entry = { id: String, postings: List[Posting] }
+
+let CURRENCIES = ["USD", "EUR", "JPY"]
+
+fn amount(s: String, line: String) -> Int! = {
+  let neg = string.starts_with(s, "-")
+  let body = if neg then string.slice(s, 1, string.len(s)) else s
+  let p = string.split(body, ".")
+  guard list.len(p) == 2 and string.len(list.get(p, 1) ?? "") == 2 else err("bad amount in: ${line}")
+  let whole = int.parse(list.get(p, 0) ?? "") |> result.map_err((_) => "bad amount in: ${line}")!
+  let frac = int.parse(list.get(p, 1) ?? "") |> result.map_err((_) => "bad amount in: ${line}")!
+  guard whole >= 0 and frac >= 0 else err("bad amount in: ${line}")
+  if neg then 0 - (whole * 100 + frac) else whole * 100 + frac
+}
+
+fn money(c: Int) -> String = {
+  let a = if c < 0 then 0 - c else c
+  "${if c < 0 then "-" else ""}${int.to_string(a / 100)}.${string.pad_start(int.to_string(a % 100), 2, "0")}"
+}
+
+fn posting(line: String) -> Posting! = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) == 3 else err("bad posting: ${line}")
+  let cur = list.get(w, 2) ?? ""
+  guard list.contains(CURRENCIES, cur) else err("unknown currency ${cur} in: ${line}")
+  Posting { account: list.get(w, 0) ?? "", cents: amount(list.get(w, 1) ?? "", line)!, cur: cur }
+}
+
+// Checks an entry once all its postings are known.
+fn close(e: Entry) -> Entry! = {
+  guard list.len(e.postings) >= 2 else err("entry ${e.id} has fewer than two postings")
+  e
+}
+
+fn journal(lines: List[String]) -> List[Entry]! = {
+  var done: List[Entry] = []
+  var open: Option[Entry] = none
+  for line in lines |> list.filter((l) => string.trim(l) != "") {
+    if string.starts_with(line, "entry ") then {
+      match open {
+        some(e) => { done = done + [close(e)!] },
+        none => (),
+      }
+      open = some(Entry { id: string.trim(string.slice(line, 6, string.len(line))), postings: [] })
+    } else {
+      let p = posting(line)!
+      open = match open {
+        some(e) => ok(some(Entry { id: e.id, postings: e.postings + [p] })),
+        none => err("posting before any entry: ${line}"),
+      }!
+    }
+  }
+  match open {
+    some(e) => done + [close(e)!],
+    none => done,
+  }
+}
+
+// "<account> <currency> <balance>", sorted by account then currency.
+fn balances(lines: List[String]) -> List[String]! = {
+  let ps = journal(lines)! |> list.flat_map((e) => e.postings)
+  let keys = ps |> list.map((p) => "${p.account} ${p.cur}") |> list.unique |> list.sort
+  keys |> list.map((k) => {
+    let total = ps |> list.filter((p) => "${p.account} ${p.cur}" == k) |> list.fold(0, (a, p) => a + p.cents)
+    "${k} ${money(total)}"
+  })
+}

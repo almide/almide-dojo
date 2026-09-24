@@ -1,0 +1,17 @@
+test "hidden: exact message with the amount it is off by" {
+  assert_eq(balances(["entry 7", "cash -10.00 USD", "sales 9.95 USD"]), err("entry 7 is off by -0.05 USD"))
+  assert_eq(balances(["entry 8", "cash 100.00 JPY", "sales -99.00 JPY"]), err("entry 8 is off by 1.00 JPY"))
+}
+test "hidden: one currency cannot make up for another" {
+  assert_eq(balances(["entry 3", "cash 10.00 USD", "cash -10.00 EUR"]), err("entry 3 is off by 10.00 USD"))
+  assert_eq(balances(["entry 4", "fx 5.00 EUR", "fx -5.00 EUR", "a 1.00 JPY", "b -2.00 USD", "c 1.00 USD"]), err("entry 4 is off by 1.00 JPY"))
+}
+test "hidden: several currencies that each balance are fine" {
+  assert_eq(balances(["entry 5", "bank -9.00 EUR", "fx 9.00 EUR", "fx -10.00 USD", "bank 10.00 USD"]), ok(["bank EUR -9.00", "bank USD 10.00", "fx EUR 9.00", "fx USD -10.00"]))
+}
+test "hidden: entries are checked when they end, in order" {
+  assert_eq(balances(["entry 1", "a 1.00 USD", "b -2.00 USD", "entry 2", "x"]), err("entry 1 is off by -1.00 USD"))
+  assert_eq(balances(["entry 1", "a 1.00 USD", "b -1.00 USD", "entry 2", "a 1.00 USD"]), err("entry 2 has fewer than two postings"))
+  assert_eq(balances(["entry 1", "a 1.00 USD", "b -1.00 USD", "entry 2", "a 1.00 USD", "b 1.00 USD"]), err("entry 2 is off by 2.00 USD"))
+  assert_eq(balances(["entry 1", "a 1.00 USD", "b 1.0 USD"]), err("bad amount in: b 1.0 USD"))
+}
