@@ -243,7 +243,7 @@ effect fn run_steps(dir: String, steps: List[Step]) -> StepOut = match steps {
   [] => StepOut { kind: "", code: 0, output: "" },
   [st, ..rest] => {
     let out = run_step(dir, st)!
-    if out.code != 0 then out else if list.is_empty(rest) then out else run_steps(dir, rest)
+    if out.code != 0 then out else if list.is_empty(rest) then out else run_steps(dir, rest)!
   },
 }
 

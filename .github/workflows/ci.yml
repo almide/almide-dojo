@@ -34,11 +34,17 @@ jobs:
       # visible suite and fails the hidden oracle, and the solution agrees on
       # wasm. wasmtime keeps the cross-target leg on; the gate refuses to run
       # with it off in CI (BANK_REQUIRE_WASM) rather than silently skipping it.
+      # From the v0.63.0 pin on, a solution the wasm leg SKIPs is an error rather
+      # than unscored (BANK_REQUIRE_WASM_RENDER), and the resource oracle must be
+      # armed — the pinned compiler prints the allocation counters
+      # (BANK_REQUIRE_RESOURCE).
       - uses: bytecodealliance/actions/wasmtime/setup@v1
 
       - name: The contract-preserving bank discriminates
         env:
           BANK_REQUIRE_WASM: '1'
+          BANK_REQUIRE_WASM_RENDER: '1'
+          BANK_REQUIRE_RESOURCE: '1'
         run: bash scripts/check-bank.sh
 
   msr-verify:
