@@ -1,0 +1,44 @@
+// Plausible wrong patch: drops every Repeat, so a reading at the same time with
+// a different value is silently dropped instead of failing.
+// Time series ingest. Each line is "<t>=<value>" with integer seconds and an
+// integer value; times must strictly increase.
+type Point: Eq, Repr = { t: Int, v: Int }
+type SeriesErr: Eq, Repr =
+  | BadReading(String)
+  | Repeat(Int)
+  | Backwards(Int, Int)
+type Series: Eq, Repr = { points: List[Point], dropped: Int }
+
+fn parse_point(line: String) -> Point!SeriesErr = {
+  let i = string.index_of(line, "=") ?? -1
+  guard i > 0 else err(BadReading(line))
+  match (int.parse(string.slice(line, 0, i)), int.parse(string.drop(line, i + 1))) {
+    (ok(t), ok(v)) => ok(Point { t: t, v: v }),
+    _ => err(BadReading(line)),
+  }
+}
+
+fn append(s: Series, p: Point) -> Series!SeriesErr =
+  match list.last(s.points) {
+    some(last) if p.t == last.t => err(Repeat(p.t)),
+    some(last) if p.t < last.t => err(Backwards(last.t, p.t)),
+    _ => ok({ ...s, points: s.points + [p] }),
+  }
+
+fn ingest(lines: List[String]) -> Series!SeriesErr = {
+  var s = Series { points: [], dropped: 0 }
+  for l in lines {
+    let p = parse_point(l)!
+    s = match append(s, p) {
+      ok(next) => ok(next),
+      err(Repeat(_)) => ok({ ...s, dropped: s.dropped + 1 }),
+      err(e) => err(e),
+    }!
+  }
+  s
+}
+
+fn summary(s: Series) -> String = {
+  let ps = s.points |> list.map((p) => "${int.to_string(p.t)}:${int.to_string(p.v)}") |> list.join(" ")
+  "${ps} (dropped ${int.to_string(s.dropped)})"
+}
