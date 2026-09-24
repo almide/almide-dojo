@@ -1,0 +1,6 @@
+test "overlapping panels are rejected" {
+  assert(result.is_err(layout(["cpu 0,0 6x4", "mem 4,2 6x4"])))
+}
+test "a tiled dashboard is still summarised" {
+  assert_eq(summary(["cpu 0,0 6x4", "mem 6,0 6x4", "log 0,4 12x2"]), ok("6 rows, 72/72 cells"))
+}
