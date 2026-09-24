@@ -1,0 +1,23 @@
+// Timesheet entries. A duration is text "<h>h<m>m" as produced by `dur`, e.g.
+// "1h30m" or "0h45m" (minutes always 0..59).
+type Entry: Eq, Repr = { task: String, spent: String }
+
+fn dur(h: Int, m: Int) -> String = int.to_string(h) + "h" + int.to_string(m) + "m"
+
+fn minutes(d: String) -> Int = {
+  let (h, m) = string.split_once(string.drop_end(d, 1), "h") ?? ("0", "0")
+  (int.parse(h) ?? 0) * 60 + (int.parse(m) ?? 0)
+}
+
+fn entry(task: String, h: Int, m: Int) -> Entry = Entry { task: task, spent: dur(h, m) }
+
+fn total(es: List[Entry]) -> String = {
+  let t = es |> list.fold(0, (acc, e) => acc + minutes(e.spent))
+  dur(t / 60, t % 60)
+}
+
+fn line(e: Entry) -> String = e.task + " " + e.spent
+
+// Tasks that took longer than `limit_min` minutes, in list order.
+fn over(es: List[Entry], limit_min: Int) -> List[String] =
+  es |> list.filter((e) => minutes(e.spent) > limit_min) |> list.map((e) => e.task)
