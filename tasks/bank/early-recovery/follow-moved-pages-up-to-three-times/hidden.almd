@@ -1,0 +1,18 @@
+test "hidden: at most three moves are followed" {
+  let site = ["/1": "moved:/2", "/2": "moved:/3", "/3": "moved:/4", "/4": "ok:four", "/5": "moved:/1"]
+  assert_eq(fetch_all(site, ["/1"]), ok(["four"]))
+  assert_eq(fetch_all(site, ["/5"]), err(TooManyMoves("/5")))
+}
+test "hidden: coming back to a url already visited is a loop, even within the limit" {
+  assert_eq(fetch_all(["/a": "moved:/b", "/b": "moved:/a"], ["/a"]), err(MoveLoop("/a")))
+  assert_eq(fetch_all(["/a": "moved:/a"], ["/a"]), err(MoveLoop("/a")))
+  assert_eq(fetch_all(["/x": "moved:/a", "/a": "moved:/b", "/b": "moved:/a"], ["/x"]), err(MoveLoop("/a")))
+}
+test "hidden: errors at the end of a chain are reported for the final url" {
+  assert_eq(fetch_all(["/a": "moved:/b", "/b": "gone"], ["/a"]), err(Gone("/b")))
+  assert_eq(fetch_all(["/a": "moved:/nowhere"], ["/a"]), err(NoPage("/nowhere")))
+}
+test "hidden: each url starts its own chain" {
+  let site = ["/a": "moved:/b", "/b": "moved:/c", "/c": "ok:C", "/d": "moved:/c"]
+  assert_eq(fetch_all(site, ["/a", "/d", "/c"]), ok(["C", "C", "C"]))
+}

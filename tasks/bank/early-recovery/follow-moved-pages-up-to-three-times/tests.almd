@@ -1,0 +1,6 @@
+test "a moved page is followed to its new url" {
+  assert_eq(fetch_all(["/a": "moved:/b", "/b": "ok:B"], ["/a"]), ok(["B"]))
+}
+test "a gone page is still an error" {
+  assert_eq(fetch_all(["/a": "gone"], ["/a"]), err(Gone("/a")))
+}
