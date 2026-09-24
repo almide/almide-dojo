@@ -1,0 +1,43 @@
+// Release history. Each line is "<version> <date> <notes...>", oldest first;
+// a version is "<major>.<minor>.<patch>" and a date "YYYY-MM-DD".
+type Release: Eq, Repr = { version: String, date: String, notes: String }
+
+fn check_version(v: String) -> String! = {
+  let parts = string.split(v, ".")
+  guard list.len(parts) == 3 else err("bad version ${v}")
+  match list.find(parts, (p) => p == "" or not string.is_digit(p) or (string.len(p) > 1 and string.starts_with(p, "0"))) {
+    some(_) => err("bad version ${v}"),
+    none => ok(v),
+  }
+}
+
+fn check_date(d: String) -> String! = {
+  let parts = string.split(d, "-")
+  guard list.len(parts) == 3 and string.len(d) == 10 and list.all(parts, (p) => string.is_digit(p)) else err("bad date ${d}")
+  d
+}
+
+fn parse_release(line: String) -> Release! = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) >= 3 else err("bad line: ${line}")
+  let v = check_version(list.get(w, 0) ?? "")!
+  let d = check_date(list.get(w, 1) ?? "")!
+  Release { version: v, date: d, notes: list.drop(w, 2) |> list.join(" ") }
+}
+
+fn history(lines: List[String]) -> List[Release]! =
+  lines |> list.fold([], (acc, line) => {
+    let r = parse_release(line)!
+    match list.last(acc) {
+      some(prev) if r.date < prev.date => err("date went backwards at ${r.version}: ${r.date} < ${prev.date}"),
+      _ => ok(acc + [r]),
+    }!
+  })!
+
+fn latest(lines: List[String]) -> String! = {
+  let rs = history(lines)!
+  match list.last(rs) {
+    some(r) => ok("${r.version} (${r.date})"),
+    none => ok("none"),
+  }
+}
