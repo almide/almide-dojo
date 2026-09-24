@@ -1,0 +1,7 @@
+// Resource probe: __K__ labels over fresh 4,000-line logs, all held live.
+// Capturing the prefix grows by a few bytes each; capturing `lines` grows by
+// the whole log.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) => prefix_label(list.range(0, 4000) |> list.map((j) => "[net] event " + int.to_string(j + i))))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("-")))))
+}

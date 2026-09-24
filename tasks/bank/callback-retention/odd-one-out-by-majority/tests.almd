@@ -1,0 +1,4 @@
+test "faulty" {
+  assert_eq(faulty([3, 3, 9, 3])("r1"), "r1: sensor 2")
+  assert_eq(faulty([4, 4, 4])("r1"), "r1: all agree")
+}

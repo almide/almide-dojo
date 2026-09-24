@@ -1,0 +1,19 @@
+// Log lines from one component usually share a prefix such as
+// "[net] conn". Lines are in the order they were written (NOT sorted).
+fn shared(a: String, b: String) -> String = {
+  let n = list.zip(string.chars(a), string.chars(b)) |> list.take_while(((x, y)) => x == y) |> list.len
+  string.take(a, n)
+}
+
+fn line_count(lines: List[String]) -> Int = list.len(lines)
+
+// Plausible wrong patch: the closure folds the lines when it runs, so it
+// captures `lines` and keeps the whole log alive.
+fn prefix_label(lines: List[String]) -> (String) -> String =
+  (default) => {
+    let p = match list.first(lines) {
+      some(first) => lines |> list.fold(first, (acc, l) => shared(acc, l)),
+      none => "",
+    }
+    if p == "" then default else p
+  }

@@ -1,0 +1,7 @@
+test "hidden: fewer than three" {
+  assert_eq(recent_badge([90])("/b"), "/b: recent 90ms")
+  assert_eq(recent_badge([10, 21])("/c"), "/c: recent 15ms")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(slowest([3, 9, 1]), 9)
+}

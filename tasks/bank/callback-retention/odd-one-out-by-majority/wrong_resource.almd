@@ -1,0 +1,13 @@
+// Readings from a set of identical sensors: all agree except, possibly, ONE
+// faulty sensor. The faulty reading may be anywhere, including first.
+fn agree(xs: List[Int]) -> Bool = list.len(list.unique(xs)) <= 1
+
+fn spread(xs: List[Int]) -> Int = (list.max(xs) ?? 0) - (list.min(xs) ?? 0)
+
+// Plausible wrong patch: the closure searches when it runs, so it captures
+// `xs` and keeps every reading alive.
+fn faulty(xs: List[Int]) -> (String) -> String =
+  (rack) => match xs |> list.sort_by((x) => 0 - (xs |> list.count((y) => y == x))) |> list.first |> option.flat_map((m) => xs |> list.find_index((x) => x != m)) {
+    some(i) => rack + ": sensor " + int.to_string(i),
+    none => rack + ": all agree",
+  }

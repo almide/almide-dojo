@@ -1,0 +1,9 @@
+test "hidden: the odd reading can come first" {
+  assert_eq(faulty([5, 3, 3, 3])("a"), "a: sensor 0")
+  assert_eq(faulty([7, 1, 7])("b"), "b: sensor 1")
+  assert_eq(faulty([2, 8])("c"), "c: sensor 1")
+}
+test "hidden: empty and helpers" {
+  assert_eq(faulty([])("d"), "d: all agree")
+  assert_eq(spread([4, 1]), 3)
+}

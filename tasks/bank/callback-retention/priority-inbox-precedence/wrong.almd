@@ -1,0 +1,14 @@
+// Mail headers. A message is URGENT when it is UNREAD and either from a VIP
+// or flagged. A read message is never urgent.
+type Mail = { from: String, read: Bool, flagged: Bool }
+
+fn from_vip(m: Mail, vips: List[String]) -> Bool = list.contains(vips, m.from)
+
+fn unread(ms: List[Mail]) -> Int = ms |> list.count((m) => not m.read)
+
+// Plausible wrong patch: writes the rule left to right without parentheses;
+// `and` binds tighter than `or`, so any flagged message counts, read or not.
+fn urgent_badge(ms: List[Mail], vips: List[String]) -> (String) -> String = {
+  let n = ms |> list.count((m) => not m.read and from_vip(m, vips) or m.flagged)
+  (folder) => folder + ": " + int.to_string(n) + " urgent"
+}

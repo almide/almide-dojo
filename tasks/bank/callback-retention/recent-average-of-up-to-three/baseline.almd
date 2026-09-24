@@ -1,0 +1,4 @@
+// Response times (ms), oldest first.
+fn slowest(ts: List[Int]) -> Int = list.max(ts) ?? 0
+
+fn samples(ts: List[Int]) -> Int = list.len(ts)

@@ -1,0 +1,3 @@
+test "palindromes" {
+  assert_eq(palindrome_count(["level", "hello", "noon"])("t"), "t: 2 palindromes")
+}

@@ -1,0 +1,22 @@
+// Deadlines written day-first, "D/M/YYYY" ("5/11/2026" is 5 November 2026).
+// Days and months may have one or two digits.
+fn parse_date(s: String) -> (Int, Int, Int)? =
+  match string.split(s, "/") {
+    [d, m, y] => match (int.parse(d), int.parse(m), int.parse(y)) {
+      (ok(dd), ok(mm), ok(yy)) => some((yy, mm, dd)),
+      _ => none,
+    },
+    _ => none,
+  }
+
+fn valid_dates(ds: List[String]) -> Int = ds |> list.count((d) => option.is_some(parse_date(d)))
+
+// Plausible wrong patch: takes the smallest date TEXT among the valid ones,
+// which is not calendar order for day-first dates.
+fn next_deadline(ds: List[String]) -> (String) -> String = {
+  let best = ds |> list.filter((d) => option.is_some(parse_date(d))) |> list.min
+  match best {
+    some(text) => (project) => project + ": due " + text,
+    none => (project) => project + ": no deadline",
+  }
+}

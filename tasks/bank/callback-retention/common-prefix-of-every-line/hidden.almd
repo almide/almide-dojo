@@ -1,0 +1,8 @@
+test "hidden: every line counts" {
+  assert_eq(prefix_label(["abc1", "xyz", "abc2"])("-"), "-")
+  assert_eq(prefix_label(["log: a", "log: b", "lo", "log: c"])("-"), "lo")
+}
+test "hidden: single and empty" {
+  assert_eq(prefix_label(["only"])("-"), "only")
+  assert_eq(prefix_label([])("-"), "-")
+}

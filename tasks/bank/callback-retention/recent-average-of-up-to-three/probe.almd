@@ -1,0 +1,7 @@
+// Resource probe: __K__ badges over fresh 20,000-time lists, all held live.
+// Capturing the average grows by a few bytes each; capturing `ts` grows by
+// the whole list.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) => recent_badge(list.range(0, 20000 + i)))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("/e")))))
+}

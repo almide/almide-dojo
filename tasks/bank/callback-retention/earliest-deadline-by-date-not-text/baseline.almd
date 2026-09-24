@@ -1,0 +1,12 @@
+// Deadlines written day-first, "D/M/YYYY" ("5/11/2026" is 5 November 2026).
+// Days and months may have one or two digits.
+fn parse_date(s: String) -> (Int, Int, Int)? =
+  match string.split(s, "/") {
+    [d, m, y] => match (int.parse(d), int.parse(m), int.parse(y)) {
+      (ok(dd), ok(mm), ok(yy)) => some((yy, mm, dd)),
+      _ => none,
+    },
+    _ => none,
+  }
+
+fn valid_dates(ds: List[String]) -> Int = ds |> list.count((d) => option.is_some(parse_date(d)))

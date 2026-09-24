@@ -1,0 +1,19 @@
+// Meetings "<minutes>:<name>,<name>,...". A name listed twice in the same
+// meeting (a copy-paste slip) is still one attendee of that meeting.
+fn parse_meeting(s: String) -> (Int, List[String])? =
+  match string.split(s, ":") {
+    [m, names] => int.parse(m)? |> option.map((v) => (v, string.split(names, ",") |> list.filter((n) => n != ""))),
+    _ => none,
+  }
+
+fn meeting_count(ms: List[String]) -> Int = ms |> list.count((m) => option.is_some(parse_meeting(m)))
+
+// Plausible wrong patch: parses up front and totals inside the closure, so
+// the closure captures every parsed meeting.
+fn time_in_meetings(ms: List[String]) -> (String) -> String = {
+  let parsed = ms |> list.filter_map((m) => parse_meeting(m))
+  (name) => name + ": " + int.to_string(parsed |> list.filter(((_, names)) => list.contains(names, name)) |> list.fold(0, (a, mt) => {
+    let (mins, _) = mt
+    a + mins
+  })) + " min"
+}

@@ -1,0 +1,28 @@
+// Deadlines written day-first, "D/M/YYYY" ("5/11/2026" is 5 November 2026).
+// Days and months may have one or two digits.
+fn parse_date(s: String) -> (Int, Int, Int)? =
+  match string.split(s, "/") {
+    [d, m, y] => match (int.parse(d), int.parse(m), int.parse(y)) {
+      (ok(dd), ok(mm), ok(yy)) => some((yy, mm, dd)),
+      _ => none,
+    },
+    _ => none,
+  }
+
+fn valid_dates(ds: List[String]) -> Int = ds |> list.count((d) => option.is_some(parse_date(d)))
+
+// Plausible wrong patch: parses up front and chooses inside the closure, so
+// the closure captures every parsed date.
+fn next_deadline(ds: List[String]) -> (String) -> String = {
+  let parsed = ds |> list.filter_map((d) => parse_date(d) |> option.map((k) => (d, k)))
+  (project) => match parsed |> list.fold(none, (acc, x) => {
+    let (_, (y, m, dd)) = x
+    match acc {
+      some((_, (by, bm, bd))) => if y < by or (y == by and (m < bm or (m == bm and dd < bd))) then some(x) else acc,
+      none => some(x),
+    }
+  }) {
+    some((text, _)) => project + ": due " + text,
+    none => project + ": no deadline",
+  }
+}

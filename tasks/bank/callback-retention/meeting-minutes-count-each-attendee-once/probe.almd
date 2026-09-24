@@ -1,0 +1,8 @@
+// Resource probe: __K__ closures over fresh 3,000-meeting lists among 10
+// people, all held live. Ten totals per closure stay small; the parsed
+// meetings grow with the list.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) =>
+    time_in_meetings(list.range(0, 3000) |> list.map((j) => int.to_string(j % 60 + i) + ":p" + int.to_string(j % 10) + ",p" + int.to_string((j + 3) % 10))))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("p1")))))
+}

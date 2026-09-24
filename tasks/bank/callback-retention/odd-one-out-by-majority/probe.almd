@@ -1,0 +1,7 @@
+// Resource probe: __K__ closures over fresh 2,500-reading racks, all held live.
+// Capturing the index grows by a few bytes each; capturing `xs` grows by the
+// whole rack.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) => faulty(list.range(0, 2500 + i) |> list.map((j) => if j == 7 then 99 else 5)))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("r")))))
+}

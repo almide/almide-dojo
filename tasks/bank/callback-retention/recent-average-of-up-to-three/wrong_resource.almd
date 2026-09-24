@@ -1,0 +1,12 @@
+// Response times (ms), oldest first.
+fn slowest(ts: List[Int]) -> Int = list.max(ts) ?? 0
+
+fn samples(ts: List[Int]) -> Int = list.len(ts)
+
+// Plausible wrong patch: the closure averages when it runs, so it captures
+// `ts` and keeps every time alive.
+fn recent_badge(ts: List[Int]) -> (String) -> String =
+  (endpoint) => {
+    let last = list.take_end(ts, 3)
+    if list.is_empty(last) then endpoint + ": no data" else endpoint + ": recent " + int.to_string(list.sum(last) / list.len(last)) + "ms"
+  }

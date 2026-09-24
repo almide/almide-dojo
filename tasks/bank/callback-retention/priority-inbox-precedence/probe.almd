@@ -1,0 +1,8 @@
+// Resource probe: __K__ badges over fresh 5,000-message folders, all held
+// live. Capturing the count grows by a few bytes each; capturing `ms` grows
+// by every message.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) =>
+    urgent_badge(list.range(0, 5000) |> list.map((j) => Mail { from: "sender" + int.to_string(j % 50 + i), read: j % 2 == 0, flagged: j % 3 == 0 }), ["sender7"]))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("in")))))
+}

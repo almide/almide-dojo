@@ -1,0 +1,8 @@
+// Log lines from one component usually share a prefix such as
+// "[net] conn". Lines are in the order they were written (NOT sorted).
+fn shared(a: String, b: String) -> String = {
+  let n = list.zip(string.chars(a), string.chars(b)) |> list.take_while(((x, y)) => x == y) |> list.len
+  string.take(a, n)
+}
+
+fn line_count(lines: List[String]) -> Int = list.len(lines)

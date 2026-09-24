@@ -1,0 +1,4 @@
+test "prefix label" {
+  assert_eq(prefix_label(["[net] up", "[net] down"])("-"), "[net] ")
+  assert_eq(prefix_label(["a", "b"])("none"), "none")
+}
