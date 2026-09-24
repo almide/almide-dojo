@@ -1,0 +1,10 @@
+test "hidden: an exact retry of a request is charged once and is not an error" {
+  assert_eq(receipt(["k1 acct-a 100", "k1 acct-a 100", "k2 acct-b 5", "k1 acct-a 100"]), ok("2 charges, 105 cents"))
+}
+test "hidden: a different account with the same key is a different request" {
+  assert_eq(receipt(["k9 acct-a 100", "k9 acct-b 100"]), err("key k9 reused for a different request"))
+}
+test "hidden: request errors come first and the first bad line wins" {
+  assert_eq(receipt(["k1 acct-a 100", "k1 acct-a x"]), err("bad amount in: k1 acct-a x"))
+  assert_eq(receipt(["k1 acct-a 100", "k1 acct-a 7", "k2 bad 1"]), err("key k1 reused for a different request"))
+}

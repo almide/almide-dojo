@@ -1,0 +1,6 @@
+test "a key reused for a different request is rejected" {
+  assert_eq(receipt(["k1 acct-a 100", "k1 acct-a 250"]), err("key k1 reused for a different request"))
+}
+test "distinct keys are all charged" {
+  assert_eq(receipt(["k1 acct-a 100", "k2 acct-a 100"]), ok("2 charges, 200 cents"))
+}
