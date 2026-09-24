@@ -1,0 +1,34 @@
+// HTTP route table. Each line is "<METHOD|*> <pattern> <handler>". A pattern is
+// an exact path ("/users/me") or a prefix ("/users/*"), which matches the
+// prefix itself and everything below it ("/users", "/users/7/posts"). The first
+// matching route handles a request.
+type Route: Eq, Repr = { method: String, path: String, prefix: Bool, handler: String }
+
+fn parse_route(line: String) -> Route! = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) == 3 else err("bad route line: ${line}")
+  let method = list.get(w, 0) ?? ""
+  guard list.contains(["*", "GET", "POST", "PUT", "DELETE"], method) else err("bad method ${method}")
+  let pat = list.get(w, 1) ?? ""
+  guard string.starts_with(pat, "/") else err("pattern must start with /: ${pat}")
+  let prefix = string.ends_with(pat, "/*")
+  let path = if prefix then string.drop_end(pat, 2) else pat
+  Route { method: method, path: path, prefix: prefix, handler: list.get(w, 2) ?? "" }
+}
+
+fn matches(r: Route, method: String, path: String) -> Bool = {
+  let method_ok = r.method == "*" or r.method == method
+  let path_ok = if r.prefix then path == r.path or string.starts_with(path, r.path + "/") else path == r.path
+  method_ok and path_ok
+}
+
+fn table(lines: List[String]) -> List[Route]! =
+  lines |> list.map((l) => parse_route(l)!)!
+
+fn dispatch(lines: List[String], method: String, path: String) -> String! = {
+  let routes = table(lines)!
+  match list.find(routes, (r) => matches(r, method, path)) {
+    some(r) => ok(r.handler),
+    none => ok("404"),
+  }
+}

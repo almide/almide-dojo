@@ -1,0 +1,33 @@
+// Plausible wrong patch: only counts moves, so a loop is reported as
+// TooManyMoves once the count runs out (and a self-move is followed three times).
+// Page fetcher over a scripted site. Each url maps to "ok:<body>",
+// "moved:<url>" or "gone".
+type WebErr: Eq, Repr =
+  | NoPage(String)
+  | Gone(String)
+  | Moved(String, String)
+  | TooManyMoves(String)
+  | MoveLoop(String)
+
+fn get(site: Map[String, String], url: String) -> String!WebErr = {
+  let resp = match map.get(site, url) {
+    some(r) => ok(r),
+    none => err(NoPage(url)),
+  }!
+  if string.starts_with(resp, "ok:") then ok(string.drop(resp, 3))
+  else if string.starts_with(resp, "moved:") then err(Moved(url, string.drop(resp, 6)))
+  else err(Gone(url))
+}
+
+fn follow(site: Map[String, String], start: String, url: String, moves: Int) -> String!WebErr =
+  match get(site, url) {
+    ok(body) => ok(body),
+    err(Moved(_, to)) => {
+      guard moves < 3 else err(TooManyMoves(start))
+      follow(site, start, to, moves + 1)
+    },
+    err(e) => err(e),
+  }
+
+fn fetch_all(site: Map[String, String], urls: List[String]) -> List[String]!WebErr =
+  urls |> list.map((u) => follow(site, u, u, 0)!)!

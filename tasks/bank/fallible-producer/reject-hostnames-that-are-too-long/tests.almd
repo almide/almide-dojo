@@ -1,0 +1,7 @@
+let L63 = string.repeat("a", 63)
+test "a label longer than 63 characters is rejected" {
+  assert(result.is_err(normalize("${L63}b.com")))
+}
+test "ordinary hostnames still normalize" {
+  assert_eq(allow_list(["api.example.com.", "api.example.com", "x-1.io"]), ok(["api.example.com", "x-1.io"]))
+}

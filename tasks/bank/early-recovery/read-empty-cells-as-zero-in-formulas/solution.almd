@@ -1,0 +1,61 @@
+// A tiny spreadsheet. A cell holds an integer, a formula "=<term>+<term>..."
+// whose terms are integers or cell names, or nothing (""/missing). Cells are
+// evaluated on demand, following references.
+type CellErr: Eq, Repr =
+  | Empty(String, String)
+  | BadLiteral(String)
+  | Cycle(String)
+type Sheet: Eq, Repr = { values: List[String], warnings: List[String] }
+type Val = { n: Int, warnings: List[String] }
+
+fn is_ref(t: String) -> Bool =
+  string.len(t) >= 2 and string.is_upper(string.slice(t, 0, 1)) and string.is_digit(string.drop(t, 1))
+
+fn value(grid: Map[String, String], cell: String, path: List[String]) -> Val!CellErr = {
+  guard not list.contains(path, cell) else err(Cycle(cell))
+  let raw = string.trim(map.get(grid, cell) ?? "")
+  if string.starts_with(raw, "=") then {
+    let terms = string.split(string.drop(raw, 1), "+") |> list.map((t) => string.trim(t))
+    sum_terms(grid, cell, terms, path + [cell])
+  } else match int.parse(raw) {
+    ok(n) => ok(Val { n: n, warnings: [] }),
+    err(_) => err(BadLiteral(cell)),
+  }
+}
+
+fn sum_terms(grid: Map[String, String], cell: String, terms: List[String], path: List[String]) -> Val!CellErr =
+  match terms {
+    [] => ok(Val { n: 0, warnings: [] }),
+    [t, ..rest] => {
+      let v = match term(grid, cell, t, path) {
+        ok(v) => ok(v),
+        err(Empty(from, r)) => ok(Val { n: 0, warnings: ["${from}: ${r} is empty, using 0"] }),
+        err(e) => err(e),
+      }!
+      let r = sum_terms(grid, cell, rest, path)!
+      ok(Val { n: v.n + r.n, warnings: v.warnings + r.warnings })
+    },
+  }
+
+fn term(grid: Map[String, String], from: String, t: String, path: List[String]) -> Val!CellErr =
+  if is_ref(t) then {
+    let raw = string.trim(map.get(grid, t) ?? "")
+    guard raw != "" else err(Empty(from, t))
+    value(grid, t, path)
+  } else match int.parse(t) {
+    ok(n) => ok(Val { n: n, warnings: [] }),
+    err(_) => err(BadLiteral(from)),
+  }
+
+fn sheet(grid: Map[String, String], cells: List[String]) -> Sheet!CellErr = {
+  let vals = cells |> list.map((c) => value(grid, c, [])!)!
+  Sheet {
+    values: list.zip(cells, vals) |> list.map((p) => "${p.0}=${int.to_string(p.1.n)}"),
+    warnings: vals |> list.flat_map((v) => v.warnings),
+  }
+}
+
+fn show(s: Sheet) -> String = {
+  let vs = list.join(s.values, " ")
+  if list.is_empty(s.warnings) then vs else "${vs} | ${list.join(s.warnings, "; ")}"
+}

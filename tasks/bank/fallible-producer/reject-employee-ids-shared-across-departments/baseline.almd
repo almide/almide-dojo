@@ -1,0 +1,39 @@
+// Company roster. "[<dept>]" starts a department; the lines after it are
+// "<id> <name...>" with a numeric id. Departments list their people in order.
+type Person: Eq, Repr = { id: Int, name: String }
+type Dept: Eq, Repr = { name: String, people: List[Person] }
+
+fn parse_person(dept: String, line: String) -> Person! = {
+  let sp = string.index_of(line, " ") ?? -1
+  guard sp > 0 else err("bad line in ${dept}: ${line}")
+  let raw = string.slice(line, 0, sp)
+  let id = int.parse(raw) |> result.map_err((_) => "bad id ${raw} in ${dept}")!
+  guard id > 0 else err("bad id ${raw} in ${dept}")
+  Person { id: id, name: string.trim(string.drop(line, sp + 1)) }
+}
+
+fn add_person(d: Dept, p: Person) -> Dept! = {
+  guard not list.any(d.people, (o) => o.id == p.id) else err("duplicate id ${int.to_string(p.id)} in ${d.name}")
+  { ...d, people: d.people + [p] }
+}
+
+fn roster(lines: List[String]) -> List[Dept]! = {
+  var depts: List[Dept] = []
+  for raw in lines {
+    let line = string.trim(raw)
+    if line == "" then ()
+    else if string.starts_with(line, "[") and string.ends_with(line, "]") then {
+      depts = depts + [Dept { name: string.slice(line, 1, string.len(line) - 1), people: [] }]
+    } else {
+      let cur = option.to_result(list.last(depts), "person outside a department: ${line}")!
+      let p = parse_person(cur.name, line)!
+      depts = list.set(depts, list.len(depts) - 1, add_person(cur, p)!)
+    }
+  }
+  depts
+}
+
+fn headcounts(lines: List[String]) -> String! = {
+  let ds = roster(lines)!
+  ds |> list.map((d) => "${d.name}=${int.to_string(list.len(d.people))}") |> list.join(" ")
+}

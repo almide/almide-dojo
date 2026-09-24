@@ -1,0 +1,6 @@
+test "a missing rate is taken from the inverse rate" {
+  assert_eq(convert(["USD>EUR": 500000], 100, "EUR", "USD"), ok(200))
+}
+test "direct rates still apply" {
+  assert_eq(total(["EUR>USD": 1080000], "USD", ["10.00 EUR", "1.00 USD"]), ok(1180))
+}

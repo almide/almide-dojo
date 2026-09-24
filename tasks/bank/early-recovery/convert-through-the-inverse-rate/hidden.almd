@@ -1,0 +1,16 @@
+test "hidden: the inverse conversion rounds to the nearest cent, halves up" {
+  assert_eq(convert(["USD>EUR": 3000000], 100, "EUR", "USD"), ok(33))
+  assert_eq(convert(["USD>EUR": 3000000], 200, "EUR", "USD"), ok(67))
+  assert_eq(convert(["GBP>EUR": 1600000], 4, "EUR", "GBP"), ok(3))
+}
+test "hidden: the direct rate wins when both exist" {
+  assert_eq(convert(["EUR>USD": 1100000, "USD>EUR": 500000], 1000, "EUR", "USD"), ok(1100))
+}
+test "hidden: with neither rate the error names the direct pair" {
+  assert_eq(convert(["USD>EUR": 900000], 100, "EUR", "JPY"), err("no rate EUR>JPY"))
+  assert_eq(total(["USD>EUR": 900000], "USD", ["1.00 EUR", "2.00 GBP"]), err("no rate GBP>USD"))
+}
+test "hidden: bad lines still fail first, same currency needs no rate" {
+  assert_eq(total([:], "USD", ["1.5 EUR"]), err("bad amount 1.5"))
+  assert_eq(total([:], "EUR", ["1.50 EUR", "0.25 EUR"]), ok(175))
+}

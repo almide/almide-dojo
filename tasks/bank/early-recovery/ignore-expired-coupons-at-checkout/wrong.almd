@@ -1,0 +1,36 @@
+// Plausible wrong patch: screens expired coupons itself before applying, with
+// `>=`, so a coupon used on its expiry day is wrongly ignored.
+// Checkout with coupons. Coupons are applied in the order given; at most two
+// coupons can be applied to one cart. Dates are yyyymmdd numbers; a coupon can
+// be used up to and including its expiry date.
+type Coupon = { code: String, off_pct: Int, min_cents: Int, expires: Int }
+type CouponErr: Eq, Repr =
+  | Unknown(String)
+  | Expired(String, Int)
+  | LimitReached(String)
+  | BelowMinimum(String, Int)
+type Cart: Eq, Repr = { cents: Int, applied: List[String], notes: List[String] }
+
+fn find(book: List[Coupon], code: String) -> Coupon!CouponErr =
+  match list.find(book, (c) => c.code == code) {
+    some(c) => ok(c),
+    none => err(Unknown(code)),
+  }
+
+fn apply_coupon(book: List[Coupon], cart: Cart, code: String, today: Int) -> Cart!CouponErr = {
+  let c = find(book, code)!
+  guard today <= c.expires else err(Expired(code, c.expires))
+  guard list.len(cart.applied) < 2 else err(LimitReached(code))
+  guard cart.cents >= c.min_cents else err(BelowMinimum(code, c.min_cents))
+  let off = cart.cents * c.off_pct / 100
+  Cart { cents: cart.cents - off, applied: cart.applied + [code], notes: cart.notes + ["${code} -${int.to_string(off)}"] }
+}
+
+fn checkout(book: List[Coupon], cents: Int, codes: List[String], today: Int) -> Cart!CouponErr =
+  codes |> list.fold(Cart { cents: cents, applied: [], notes: [] }, (cart, code) =>
+    match list.find(book, (c) => c.code == code and today >= c.expires) {
+      some(_) => ok({ ...cart, notes: cart.notes + ["${code} expired"] }),
+      none => apply_coupon(book, cart, code, today),
+    }!)!
+
+fn receipt(c: Cart) -> String = "${int.to_string(c.cents)} [${list.join(c.notes, ", ")}]"

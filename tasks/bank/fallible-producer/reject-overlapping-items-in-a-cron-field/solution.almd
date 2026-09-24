@@ -1,0 +1,45 @@
+// Cron minute field. A field is a comma-separated list of items:
+//   *        every minute          N      one minute
+//   A-B      A through B           */S    every S minutes from 0
+//   A-B/S    every S minutes from A up to B
+// Minutes are 0-59. `schedule` gives the minutes of a field in item order.
+fn num(item: String, s: String) -> Int! = {
+  let n = int.parse(s) |> result.map_err((_) => "bad item ${item}")!
+  guard n >= 0 and n <= 59 else err("value ${s} out of range 0-59")
+  n
+}
+
+fn stepped(lo: Int, hi: Int, step: Int) -> List[Int] =
+  list.range(0, (hi - lo) / step + 1) |> list.map((k) => lo + k * step)
+
+fn expand(item: String) -> List[Int]! = {
+  let halves = string.split(item, "/")
+  guard list.len(halves) <= 2 else err("bad item ${item}")
+  let span = list.get(halves, 0) ?? ""
+  let step = if list.len(halves) == 2 then num(item, list.get(halves, 1) ?? "")! else 1
+  guard step > 0 else err("step 0 in ${item}")
+  if span == "*" then ok(stepped(0, 59, step))
+  else {
+    let ends = string.split(span, "-")
+    guard list.len(ends) <= 2 else err("bad item ${item}")
+    let lo = num(item, list.get(ends, 0) ?? "")!
+    let hi = if list.len(ends) == 2 then num(item, list.get(ends, 1) ?? "")! else lo
+    guard lo <= hi else err("empty range ${span}")
+    guard list.len(ends) == 2 or list.len(halves) == 1 else err("bad item ${item}")
+    ok(stepped(lo, hi, step))
+  }
+}
+
+fn schedule(field: String) -> List[Int]! =
+  string.split(field, ",") |> list.fold([], (acc, item) => {
+    let ms = expand(string.trim(item))!
+    match list.find(ms, (m) => list.contains(acc, m)) {
+      some(m) => err("minute ${int.to_string(m)} listed twice in ${field}"),
+      none => ok(acc + ms),
+    }!
+  })!
+
+fn count(field: String) -> Int! = {
+  let ms = schedule(field)!
+  list.len(ms)
+}

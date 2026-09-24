@@ -1,0 +1,6 @@
+test "a route hidden behind an earlier one is an error" {
+  assert(result.is_err(table(["GET /users/* users", "GET /users/me me"])))
+}
+test "dispatch still picks the first match" {
+  assert_eq(dispatch(["GET /users/me me", "GET /users/* users", "* /health ok"], "GET", "/users/7"), ok("users"))
+}

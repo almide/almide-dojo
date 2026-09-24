@@ -1,0 +1,6 @@
+test "a heading that jumps levels is pulled up one level below the previous" {
+  assert_eq(outline(["# Intro", "### Detail"]) |> result.map((o) => render(o)), ok("1 Intro; 1.1 Detail | line 2: level 3 after 1, using 2"))
+}
+test "an empty title is still fatal" {
+  assert_eq(outline(["# Intro", "## "]) |> result.map((o) => render(o)), err(EmptyTitle(2)))
+}

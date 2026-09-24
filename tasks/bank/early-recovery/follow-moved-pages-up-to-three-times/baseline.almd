@@ -1,0 +1,19 @@
+// Page fetcher over a scripted site. Each url maps to "ok:<body>",
+// "moved:<url>" or "gone".
+type WebErr: Eq, Repr =
+  | NoPage(String)
+  | Gone(String)
+  | Moved(String, String)
+
+fn get(site: Map[String, String], url: String) -> String!WebErr = {
+  let resp = match map.get(site, url) {
+    some(r) => ok(r),
+    none => err(NoPage(url)),
+  }!
+  if string.starts_with(resp, "ok:") then ok(string.drop(resp, 3))
+  else if string.starts_with(resp, "moved:") then err(Moved(url, string.drop(resp, 6)))
+  else err(Gone(url))
+}
+
+fn fetch_all(site: Map[String, String], urls: List[String]) -> List[String]!WebErr =
+  urls |> list.map((u) => get(site, u)!)!

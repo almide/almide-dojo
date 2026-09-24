@@ -1,0 +1,25 @@
+// Hostname checker for an allow-list. A hostname is dot-separated labels of
+// lowercase letters, digits and "-", not starting or ending with "-". One
+// trailing dot (the root) is allowed and dropped: "example.com." == "example.com".
+fn check_label(host: String, label: String) -> String! = {
+  guard label != "" else err("empty label in ${host}")
+  let bad = string.chars(label) |> list.find((c) => not (string.is_lower(c) or string.is_digit(c) or c == "-"))
+  match bad {
+    some(c) => err("bad character ${c} in ${host}"),
+    none => ok(()),
+  }!
+  guard not string.starts_with(label, "-") and not string.ends_with(label, "-") else err("label ${label} starts or ends with - in ${host}")
+  label
+}
+
+fn normalize(host: String) -> String! = {
+  let body = if string.ends_with(host, ".") then string.drop_end(host, 1) else host
+  guard body != "" else err("empty hostname")
+  let labels = string.split(body, ".") |> list.map((l) => check_label(host, l)!)!
+  list.join(labels, ".")
+}
+
+fn allow_list(hosts: List[String]) -> List[String]! = {
+  let ns = hosts |> list.map((h) => normalize(h)!)!
+  list.unique(ns)
+}

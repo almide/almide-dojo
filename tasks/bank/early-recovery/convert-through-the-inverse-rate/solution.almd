@@ -1,0 +1,32 @@
+// Expense report in one currency. Rates are given in millionths:
+// "EUR>USD" -> 1080000 means 1 EUR = 1.08 USD. Conversions round to the
+// nearest cent, halves up.
+type Expense = { cents: Int, cur: String }
+
+fn parse_expense(line: String) -> Expense! = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) == 2 else err("bad line: ${line}")
+  let raw = list.get(w, 0) ?? ""
+  let parts = string.split(raw, ".")
+  guard list.len(parts) == 2 and string.len(list.get(parts, 1) ?? "") == 2 else err("bad amount ${raw}")
+  let units = int.parse(list.get(parts, 0) ?? "") |> result.map_err((_) => "bad amount ${raw}")!
+  let hundredths = int.parse(list.get(parts, 1) ?? "") |> result.map_err((_) => "bad amount ${raw}")!
+  guard units >= 0 and hundredths >= 0 else err("bad amount ${raw}")
+  Expense { cents: units * 100 + hundredths, cur: list.get(w, 1) ?? "" }
+}
+
+fn convert(rates: Map[String, Int], cents: Int, from: String, to: String) -> Int! =
+  if from == to then ok(cents)
+  else match map.get(rates, "${from}>${to}") {
+    some(r) => ok((cents * r + 500000) / 1000000),
+    none => match map.get(rates, "${to}>${from}") {
+      some(inv) => ok((cents * 1000000 * 2 + inv) / (2 * inv)),
+      none => err("no rate ${from}>${to}"),
+    },
+  }
+
+fn total(rates: Map[String, Int], to: String, lines: List[String]) -> Int! =
+  lines |> list.fold(0, (acc, l) => {
+    let e = parse_expense(l)!
+    acc + convert(rates, e.cents, e.cur, to)!
+  })!

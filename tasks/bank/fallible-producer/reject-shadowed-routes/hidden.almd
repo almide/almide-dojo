@@ -1,0 +1,17 @@
+test "hidden: exact message, first shadowing route named" {
+  assert_eq(table(["* /a/* any", "GET /a/* a", "GET /a/b/c abc"]) |> result.map((t) => list.len(t)), err("route 2 is shadowed by route 1"))
+  assert_eq(table(["POST /x x", "GET /b/* b", "* /b/* star", "GET /b/c/* bc"]) |> result.map((t) => list.len(t)), err("route 4 is shadowed by route 2"))
+}
+test "hidden: a prefix covers only whole path segments" {
+  assert_eq(table(["GET /api/* api", "GET /apiv2/x v2", "GET /api2/* a2"]) |> result.map((t) => list.len(t)), ok(3))
+  assert_eq(table(["GET /api/* api", "GET /api v"]) |> result.map((t) => list.len(t)), err("route 2 is shadowed by route 1"))
+}
+test "hidden: methods must overlap, and an exact route never shadows a prefix" {
+  assert_eq(table(["GET /a/* a", "POST /a/b b", "GET /c c", "GET /c/* cs", "* /d d"]) |> result.map((t) => list.len(t)), ok(5))
+  assert_eq(table(["GET /q q", "GET /q q2"]) |> result.map((t) => list.len(t)), err("route 2 is shadowed by route 1"))
+  assert_eq(table(["GET /q q", "* /q q2"]) |> result.map((t) => list.len(t)), ok(2))
+}
+test "hidden: line errors come first, in order" {
+  assert_eq(table(["GET /a/* a", "GET /a/b b", "PATCH /z z"]) |> result.map((t) => list.len(t)), err("route 2 is shadowed by route 1"))
+  assert_eq(table(["GET /a/* a", "PATCH /z z", "GET /a/b b"]) |> result.map((t) => list.len(t)), err("bad method PATCH"))
+}

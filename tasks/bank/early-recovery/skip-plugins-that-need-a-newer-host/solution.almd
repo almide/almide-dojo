@@ -1,0 +1,69 @@
+// Plugin loader. Each manifest line is "<name> <needs-host> [dep,dep...]";
+// versions are "<major>.<minor>". Plugins load in order and a dependency must
+// be loaded before the plugin that needs it.
+type PluginErr: Eq, Repr =
+  | Malformed(String)
+  | TooNew(String, String)
+  | MissingDep(String, String)
+  | Duplicate(String)
+type Loaded: Eq, Repr = { names: List[String], notes: List[String] }
+type Manifest = { name: String, needs: String, deps: List[String] }
+
+fn version(s: String) -> (Int, Int)? = {
+  let p = string.split(s, ".")
+  if list.len(p) != 2 then none
+  else match (int.parse(list.get(p, 0) ?? ""), int.parse(list.get(p, 1) ?? "")) {
+    (ok(a), ok(b)) => some((a, b)),
+    _ => none,
+  }
+}
+
+fn parse_manifest(line: String) -> Manifest!PluginErr = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  let name = list.get(w, 0) ?? line
+  guard list.len(w) == 2 or list.len(w) == 3 else err(Malformed(name))
+  let needs = list.get(w, 1) ?? ""
+  guard version(needs) != none else err(Malformed(name))
+  let deps = if list.len(w) == 3 then string.split(list.get(w, 2) ?? "", ",") else []
+  Manifest { name: name, needs: needs, deps: deps }
+}
+
+fn admit(host: String, loaded: List[String], m: Manifest) -> String!PluginErr = {
+  let h = version(host) ?? (0, 0)
+  let n = version(m.needs) ?? (0, 0)
+  guard n.0 < h.0 or (n.0 == h.0 and n.1 <= h.1) else err(TooNew(m.name, m.needs))
+  guard not list.contains(loaded, m.name) else err(Duplicate(m.name))
+  match list.find(m.deps, (d) => not list.contains(loaded, d)) {
+    some(d) => err(MissingDep(m.name, d)),
+    none => ok(m.name),
+  }
+}
+
+fn load(host: String, lines: List[String]) -> Loaded!PluginErr = {
+  var names: List[String] = []
+  var skipped: List[String] = []
+  var notes: List[String] = []
+  for line in lines {
+    let m = parse_manifest(line)!
+    names = match admit(host, names, m) {
+      ok(n) => ok(names + [n]),
+      err(TooNew(n, v)) => {
+        skipped = skipped + [n]
+        notes = notes + ["${n} skipped (needs host ${v})"]
+        ok(names)
+      },
+      err(MissingDep(n, d)) if list.contains(skipped, d) => {
+        skipped = skipped + [n]
+        notes = notes + ["${n} skipped (depends on ${d})"]
+        ok(names)
+      },
+      err(e) => err(e),
+    }!
+  }
+  Loaded { names: names, notes: notes }
+}
+
+fn show(l: Loaded) -> String = {
+  let ns = list.join(l.names, " ")
+  if list.is_empty(l.notes) then ns else "${ns} | ${list.join(l.notes, "; ")}"
+}

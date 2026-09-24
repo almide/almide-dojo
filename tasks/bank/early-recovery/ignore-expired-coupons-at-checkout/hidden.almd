@@ -1,0 +1,22 @@
+let HBOOK = [
+  Coupon { code: "TEN", off_pct: 10, min_cents: 0, expires: 20261231 },
+  Coupon { code: "FIVE", off_pct: 5, min_cents: 0, expires: 20261231 },
+  Coupon { code: "LAST", off_pct: 20, min_cents: 0, expires: 20260924 },
+  Coupon { code: "OLD", off_pct: 50, min_cents: 0, expires: 20240101 },
+  Coupon { code: "BIG", off_pct: 30, min_cents: 5000, expires: 20261231 },
+]
+test "hidden: a coupon is still valid on its expiry day" {
+  assert_eq(checkout(HBOOK, 1000, ["LAST"], 20260924) |> result.map((c) => receipt(c)), ok("800 [LAST -200]"))
+  assert_eq(checkout(HBOOK, 1000, ["LAST"], 20260925) |> result.map((c) => receipt(c)), ok("1000 [LAST expired]"))
+}
+test "hidden: an ignored coupon does not count toward the limit" {
+  assert_eq(checkout(HBOOK, 1000, ["OLD", "TEN", "OLD", "FIVE"], 20260924) |> result.map((c) => receipt(c)), ok("855 [OLD expired, TEN -100, OLD expired, FIVE -45]"))
+  assert_eq(checkout(HBOOK, 1000, ["TEN", "FIVE", "LAST"], 20260924) |> result.map((c) => receipt(c)), err(LimitReached("LAST")))
+}
+test "hidden: an unknown code is fatal even after an ignored one" {
+  assert_eq(checkout(HBOOK, 1000, ["OLD", "XX"], 20260924) |> result.map((c) => receipt(c)), err(Unknown("XX")))
+}
+test "hidden: expiry is checked before the limit and the minimum" {
+  assert_eq(checkout(HBOOK, 1000, ["TEN", "FIVE", "OLD"], 20260924) |> result.map((c) => receipt(c)), ok("855 [TEN -100, FIVE -45, OLD expired]"))
+  assert_eq(checkout(HBOOK, 1000, ["BIG"], 20260924) |> result.map((c) => receipt(c)), err(BelowMinimum("BIG", 5000)))
+}

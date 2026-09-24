@@ -1,0 +1,15 @@
+test "hidden: an ignored column's cells are never validated" {
+  assert_eq(import_csv(["age,notes,name,email", "30,,Ann,a@x", "41,  ???  ,Bo,"]) |> result.map((i) => show(i)),
+    ok("Ann/30/a@x Bo/41/ | ignoring column notes"))
+}
+test "hidden: the cell count still includes ignored columns" {
+  assert_eq(import_csv(["name,age,phone", "Ann,30"]) |> result.map((i) => show(i)), err("row 2: expected 3 cells"))
+}
+test "hidden: several unknown columns, warned once each in header order" {
+  assert_eq(import_csv(["zip,name,age,city", "1,Ann,3,X", "2,Bo,4,Y"]) |> result.map((i) => show(i)),
+    ok("Ann/3/ Bo/4/ | ignoring column zip; ignoring column city"))
+}
+test "hidden: a missing required column is fatal even with unknown columns, and row errors keep their text" {
+  assert_eq(import_csv(["name,phone", "Ann,1"]) |> result.map((i) => show(i)), err("missing column age"))
+  assert_eq(import_csv(["name,age,extra", "Ann,200,ok"]) |> result.map((i) => show(i)), err("row 2: bad age"))
+}

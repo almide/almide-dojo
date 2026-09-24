@@ -1,0 +1,6 @@
+test "a minute listed twice is an error" {
+  assert(result.is_err(schedule("5,5")))
+}
+test "ordinary fields still expand" {
+  assert_eq(schedule("0-10/5,30,45-47"), ok([0, 5, 10, 30, 45, 46, 47]))
+}

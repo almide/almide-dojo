@@ -1,0 +1,15 @@
+test "hidden: the primary is asked again for every sku after an outage" {
+  let primary = ["a": "100", "b": "down", "c": "300"]
+  let backup = ["a": "1", "b": "222", "c": "3"]
+  assert_eq(sync(primary, backup, ["a", "b", "c", "b"]) |> result.map((s) => show(s)), ok("a=100 b=222 c=300 b=222 (backup 2)"))
+}
+test "hidden: backup errors are reported as the backup's" {
+  assert_eq(sync(["a": "down"], ["a": "missing"], ["a"]) |> result.map((s) => show(s)), err(Missing("backup", "a")))
+  assert_eq(sync(["a": "down"], ["a": "down"], ["a"]) |> result.map((s) => show(s)), err(Down("backup", "a")))
+}
+test "hidden: a garbled primary answer is not an outage" {
+  assert_eq(sync(["a": "12x"], ["a": "5"], ["a"]) |> result.map((s) => show(s)), err(Garbled("primary", "a")))
+}
+test "hidden: the first failing sku wins" {
+  assert_eq(sync(["a": "down", "b": "missing"], ["a": "9", "b": "9"], ["a", "b"]) |> result.map((s) => show(s)), err(Missing("primary", "b")))
+}

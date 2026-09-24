@@ -1,0 +1,35 @@
+// Plausible wrong patch: adds the Float percentages and compares with 100.0, so
+// 33.4 + 33.3 + 33.3 (99.99999999999999 in Float) is rejected.
+// Budget split. Each line is "<team> <percent>" with at most one decimal
+// ("12.5", "40"); each team gets its percentage of the budget, rounded down to
+// the cent.
+type Share: Eq, Repr = { team: String, pct: Float }
+
+fn parse_share(line: String) -> Share! = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) == 2 else err("bad line: ${line}")
+  let team = list.get(w, 0) ?? ""
+  let raw = list.get(w, 1) ?? ""
+  let parts = string.split(raw, ".")
+  guard list.len(parts) <= 2 and string.len(list.get(parts, 1) ?? "0") == 1 else err("bad percent ${raw} for ${team}")
+  let pct = float.parse(raw) |> result.map_err((_) => "bad percent ${raw} for ${team}")!
+  guard pct > 0.0 and pct <= 100.0 else err("bad percent ${raw} for ${team}")
+  Share { team: team, pct: pct }
+}
+
+fn parse_plan(lines: List[String]) -> List[Share]! =
+  lines |> list.fold([], (acc, l) => {
+    let s = parse_share(l)!
+    guard not list.any(acc, (o) => o.team == s.team) else err("duplicate team ${s.team}")
+    acc + [s]
+  })!
+
+fn allocate(budget_cents: Int, lines: List[String]) -> List[String]! = {
+  let plan = parse_plan(lines)!
+  let total = plan |> list.fold(0.0, (acc, s) => acc + s.pct)
+  guard total == 100.0 else err("shares add up to ${float.to_fixed(total, 1)}%, not 100%")
+  plan |> list.map((s) => {
+    let cents = float.to_int(float.floor(float.from_int(budget_cents) * s.pct / 100.0))
+    "${s.team}: ${int.to_string(cents)}"
+  })
+}

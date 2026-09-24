@@ -1,0 +1,21 @@
+let H63 = string.repeat("a", 63)
+let H61 = string.repeat("b", 61)
+test "hidden: a 63-character label is fine, 64 is not, exact message" {
+  assert_eq(normalize("${H63}.com") |> result.map((h) => string.len(h)), ok(67))
+  assert_eq(normalize("x.${H63}q.com"), err("label too long (64) in x.${H63}q.com"))
+}
+test "hidden: the total limit is 253 without the trailing dot" {
+  let name253 = "${H63}.${H63}.${H63}.${H61}"
+  assert_eq(normalize(name253) |> result.map((h) => string.len(h)), ok(253))
+  assert_eq(normalize("${name253}.") |> result.map((h) => string.len(h)), ok(253))
+  assert_eq(normalize("${name253}b"), err("hostname too long (254) in ${name253}b"))
+}
+test "hidden: label problems are found left to right, the total length last" {
+  let long = "${H63}.${H63}.${H63}.${H63}"
+  assert_eq(normalize("${long}.A"), err("bad character A in ${long}.A"))
+  assert_eq(normalize("${H63}z.B"), err("label too long (64) in ${H63}z.B"))
+  assert_eq(normalize("${long}"), err("hostname too long (255) in ${long}"))
+}
+test "hidden: the first bad host of a list wins" {
+  assert_eq(allow_list(["ok.io", "-x.io", "${H63}zz.io"]), err("label -x starts or ends with - in -x.io"))
+}

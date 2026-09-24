@@ -1,0 +1,46 @@
+// Contact import. The first line names the columns; the known columns are
+// name (required), age (required, 0..150) and email (optional, must contain
+// "@"). Every row must have as many cells as the header.
+type Contact: Eq, Repr = { name: String, age: Int, email: String }
+type Import: Eq, Repr = { contacts: List[Contact], warnings: List[String] }
+
+let KNOWN = ["name", "age", "email"]
+
+fn check_header(cols: List[String]) -> List[String]! = {
+  match list.find(cols, (c) => not list.contains(KNOWN, c)) {
+    some(c) => err("unknown column ${c}"),
+    none => ok(()),
+  }!
+  guard list.contains(cols, "name") else err("missing column name")
+  guard list.contains(cols, "age") else err("missing column age")
+  cols
+}
+
+fn cell(cols: List[String], row: List[String], name: String) -> String =
+  match list.index_of(cols, name) {
+    some(i) => list.get(row, i) ?? "",
+    none => "",
+  }
+
+fn parse_row(cols: List[String], n: Int, line: String) -> Contact! = {
+  let row = string.split(line, ",") |> list.map((c) => string.trim(c))
+  guard list.len(row) == list.len(cols) else err("row ${int.to_string(n)}: expected ${int.to_string(list.len(cols))} cells")
+  let name = cell(cols, row, "name")
+  guard name != "" else err("row ${int.to_string(n)}: empty name")
+  let age = int.parse(cell(cols, row, "age")) |> result.map_err((_) => "row ${int.to_string(n)}: bad age")!
+  guard age >= 0 and age <= 150 else err("row ${int.to_string(n)}: bad age")
+  let email = cell(cols, row, "email")
+  guard email == "" or string.contains(email, "@") else err("row ${int.to_string(n)}: bad email")
+  Contact { name: name, age: age, email: email }
+}
+
+fn import_csv(lines: List[String]) -> Import! = {
+  let cols = check_header(string.split(list.first(lines) ?? "", ",") |> list.map((c) => string.trim(c)))!
+  let cs = list.drop(lines, 1) |> list.enumerate |> list.map((p) => parse_row(cols, p.0 + 2, p.1)!)!
+  Import { contacts: cs, warnings: [] }
+}
+
+fn show(im: Import) -> String = {
+  let cs = im.contacts |> list.map((c) => "${c.name}/${int.to_string(c.age)}/${c.email}") |> list.join(" ")
+  if list.is_empty(im.warnings) then cs else "${cs} | ${list.join(im.warnings, "; ")}"
+}

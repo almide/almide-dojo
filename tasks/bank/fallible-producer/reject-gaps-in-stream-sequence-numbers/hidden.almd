@@ -1,0 +1,15 @@
+test "hidden: exact message names the first missing number" {
+  assert_eq(reassemble(["a 1 x", "b 1 y", "a 2 x", "a 5 x"]), err("missing seq 3 in stream a"))
+}
+test "hidden: every stream must start at 1" {
+  assert_eq(reassemble(["a 1 x", "b 2 y"]), err("missing seq 1 in stream b"))
+  assert_eq(reassemble(["q 4 late"]), err("missing seq 1 in stream q"))
+}
+test "hidden: numbering is per stream" {
+  assert_eq(reassemble(["a 1 x", "b 1 y", "b 2 y", "b 3 y", "a 2 x"]), ok("a: x x | b: y y y"))
+}
+test "hidden: a duplicate stays a duplicate, older errors keep their text" {
+  assert_eq(reassemble(["a 1 x", "a 2 x", "a 2 x"]), err("duplicate seq 2 in stream a"))
+  assert_eq(reassemble(["a 1 x", "a 0 x"]), err("bad seq 0 in stream a"))
+  assert_eq(reassemble(["a 1 x", "a 3 x", "junk"]), err("missing seq 2 in stream a"))
+}

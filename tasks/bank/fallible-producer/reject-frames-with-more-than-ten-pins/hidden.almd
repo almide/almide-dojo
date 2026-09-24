@@ -1,0 +1,18 @@
+test "hidden: exact message names the frame" {
+  assert_eq(score([10, 3, 4, 6, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), err("frame 3 has more than 10 pins"))
+}
+test "hidden: the tenth frame is checked too, bonus rolls included" {
+  assert_eq(score([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 5]), err("frame 10 has more than 10 pins"))
+  assert_eq(score([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 7, 5]), err("frame 10 has more than 10 pins"))
+}
+test "hidden: strikes and spares in the tenth frame reset the pins" {
+  assert_eq(score([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 10, 7]), ok(27))
+  assert_eq(score([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 7, 10]), ok(20))
+  assert_eq(score([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 3, 7]), ok(20))
+  assert_eq(score([10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]), ok(300))
+}
+test "hidden: a bad roll anywhere comes first; an earlier frame beats a later problem" {
+  assert_eq(score([7, 5, 11]), err("bad roll 11"))
+  assert_eq(score([7, 5]), err("frame 1 has more than 10 pins"))
+  assert_eq(score([1, 1, 9, 9]), err("frame 2 has more than 10 pins"))
+}
