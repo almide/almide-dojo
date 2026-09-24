@@ -1,0 +1,26 @@
+// Sequences of readings, one text per sequence: integers separated by " ".
+// A rising run is a maximal block of strictly increasing consecutive values.
+fn values(seq: String) -> List[Int] = string.split(seq, " ") |> list.filter_map((t) => int.parse(t)?)
+
+fn rises(seq: String) -> Int = {
+  let vs = values(seq)
+  list.zip(vs, list.drop(vs, 1)) |> list.count(((a, b)) => b > a)
+}
+
+// Plausible wrong patch: carries the "previous value" through the whole batch,
+// so a sequence that starts above the previous one's end continues its run.
+fn longest_rises(seqs: List[String]) -> List[Int] = {
+  let (_, _, out) = seqs |> list.fold((none, 0, []), (st, s) => {
+    let (prev0, cur0, acc) = st
+    let (prev, best, cur) = values(s) |> list.fold((prev0, 0, cur0), (inner, v) => {
+      let (p, b, c) = inner
+      let run = match p {
+        some(pv) => if v > pv then c + 1 else 1,
+        none => 1,
+      }
+      (some(v), int.max(b, run), run)
+    })
+    (prev, cur, acc + [best])
+  })
+  out
+}

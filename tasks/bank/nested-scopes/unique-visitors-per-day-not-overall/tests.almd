@@ -1,0 +1,3 @@
+test "daily uniques" {
+  assert_eq(daily_uniques(["a,b,a", "c"]), [2, 1])
+}

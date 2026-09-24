@@ -1,0 +1,9 @@
+test "hidden: numbering restarts per file" {
+  let fs = [("a", "hit\nno"), ("b", "no\nno\nhit\nhit again")]
+  assert_eq(grep(fs, "hit"), ["a:1:hit", "b:3:hit", "b:4:hit again"])
+}
+test "hidden: empties" {
+  assert_eq(grep([("e", ""), ("f", "zzz")], "q"), [])
+  assert_eq(grep([], "q"), [])
+  assert_eq(count_in("a\na", "a"), 2)
+}

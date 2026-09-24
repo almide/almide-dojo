@@ -1,0 +1,4 @@
+test "resolve all" {
+  let d = map.from_list([("port", "80")])
+  assert_eq(resolve_all(d, ["port=8080", "port=9"], "port"), ["8080", "9"])
+}

@@ -1,0 +1,8 @@
+test "hidden: returning visitors count again" {
+  assert_eq(daily_uniques(["a,b", "b,c,b", "a"]), [2, 2, 1])
+  assert_eq(daily_uniques(["x", "x", "x"]), [1, 1, 1])
+}
+test "hidden: empty days" {
+  assert_eq(daily_uniques(["", "q,,q"]), [0, 1])
+  assert_eq(daily_uniques([]), [])
+}

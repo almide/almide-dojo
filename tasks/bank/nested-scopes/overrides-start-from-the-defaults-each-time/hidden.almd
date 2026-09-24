@@ -1,0 +1,9 @@
+test "hidden: overrides do not leak between services" {
+  let d = map.from_list([("port", "80")])
+  assert_eq(resolve_all(d, ["debug=on", "", "debug=off\ndebug=on"], "debug"), ["on", "unset", "on"])
+  assert_eq(resolve_all(d, ["port=1", "x=2"], "port"), ["1", "80"])
+}
+test "hidden: empty batch" {
+  assert_eq(resolve_all(map.new(), [], "k"), [])
+  assert_eq(map.get(apply(map.new(), "a=1\na=2\nb"), "a"), some("2"))
+}

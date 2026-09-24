@@ -1,0 +1,8 @@
+test "hidden: every class gets its own podium" {
+  assert_eq(podiums(["a=99;b=98;c=97", "d=10;e=20;f=5"]), ["a,b", "e,d"])
+  assert_eq(podiums(["z=5;y=5;x=1"]), ["y,z"])
+}
+test "hidden: empty classes" {
+  assert_eq(podiums(["", "bad"]), ["", ""])
+  assert_eq(best_score("a=1;b=x"), some(1))
+}

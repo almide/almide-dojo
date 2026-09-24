@@ -1,0 +1,3 @@
+test "column totals" {
+  assert_eq(column_totals(["id,qty\n1,5\n2,7", "id,qty\n3,1"], "qty"), ["12", "1"])
+}

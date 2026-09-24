@@ -1,0 +1,7 @@
+// Searching text files. A file is (name, text); its lines are separated by
+// "\n" and numbered from 1 within that file.
+fn lines_of(text: String) -> List[String] = string.split(text, "\n")
+
+fn matches(line: String, needle: String) -> Bool = string.contains(line, needle)
+
+fn count_in(text: String, needle: String) -> Int = lines_of(text) |> list.count((l) => matches(l, needle))

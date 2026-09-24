@@ -1,0 +1,15 @@
+// Orders, one text per order: line amounts in cents separated by "+". An
+// order whose TOTAL reaches 10000 gets 5% off the whole order (rounded down);
+// single lines are never discounted on their own.
+fn lines(order: String) -> List[Int] = string.split(order, "+") |> list.filter_map((t) => int.parse(t)?)
+
+fn subtotal(order: String) -> Int = list.sum(lines(order))
+
+fn qualifies(total: Int) -> Bool = total >= 10000
+
+// Each order's lines are parsed and dropped inside its own step.
+fn charges(orders: List[String]) -> List[Int] =
+  orders |> list.map((o) => {
+    let t = subtotal(o)
+    if qualifies(t) then t - t * 5 / 100 else t
+  })

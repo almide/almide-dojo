@@ -1,0 +1,8 @@
+test "hidden: many small lines qualify together" {
+  assert_eq(charges(["6000+4000", "9999+1"]), [9500, 9500])
+  assert_eq(charges(["12000+100"]), [11495])
+}
+test "hidden: empty orders" {
+  assert_eq(charges(["", "x"]), [0, 0])
+  assert_eq(subtotal("1+2"), 3)
+}

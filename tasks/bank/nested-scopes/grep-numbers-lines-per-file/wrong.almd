@@ -1,0 +1,18 @@
+// Searching text files. A file is (name, text); its lines are separated by
+// "\n" and numbered from 1 within that file.
+fn lines_of(text: String) -> List[String] = string.split(text, "\n")
+
+fn matches(line: String, needle: String) -> Bool = string.contains(line, needle)
+
+fn count_in(text: String, needle: String) -> Int = lines_of(text) |> list.count((l) => matches(l, needle))
+
+// Plausible wrong patch: tags every line with its file, flattens once and
+// numbers the flat list, so numbering continues across files.
+fn grep(files: List[(String, String)], needle: String) -> List[String] =
+  files
+    |> list.flat_map(((name, text)) => lines_of(text) |> list.map((l) => (name, l)))
+    |> list.enumerate
+    |> list.filter_map(((i, p)) => {
+      let (name, l) = p
+      if matches(l, needle) then some(name + ":" + int.to_string(i + 1) + ":" + l) else none
+    })

@@ -1,0 +1,7 @@
+// Visit logs, one text per day: visitor ids separated by ",". The same
+// visitor may visit several times a day and on several days.
+fn visits(day: String) -> List[String] = string.split(day, ",") |> list.filter((v) => v != "")
+
+fn total_visits(days: List[String]) -> Int = days |> list.fold(0, (a, d) => a + list.len(visits(d)))
+
+fn visited_on(day: String, id: String) -> Bool = list.contains(visits(day), id)
