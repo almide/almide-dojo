@@ -1,0 +1,42 @@
+// Plausible wrong patch: only forbids overlaps (a tier must start after the
+// previous one ends), so holes between tiers and a first tier above 0 pass.
+// Volume pricing. Each tier is "<lo>-<hi>:<cents>" or "<lo>+:<cents>" (open
+// ended, last tier only), listed from the smallest quantities up. The price of
+// an order is quantity * the unit price of the tier containing the quantity.
+type Tier: Eq, Repr = { lo: Int, hi: Int?, cents: Int }
+
+fn parse_tier(s: String) -> Tier! = {
+  let halves = string.split(s, ":")
+  guard list.len(halves) == 2 else err("bad tier ${s}")
+  let cents = int.parse(list.get(halves, 1) ?? "") |> result.map_err((_) => "bad price in ${s}")!
+  let range = list.get(halves, 0) ?? ""
+  if string.ends_with(range, "+") then {
+    let lo = int.parse(string.drop_end(range, 1)) |> result.map_err((_) => "bad tier ${s}")!
+    ok(Tier { lo: lo, hi: none, cents: cents })
+  } else {
+    let ends = string.split(range, "-")
+    guard list.len(ends) == 2 else err("bad tier ${s}")
+    let lo = int.parse(list.get(ends, 0) ?? "") |> result.map_err((_) => "bad tier ${s}")!
+    let hi = int.parse(list.get(ends, 1) ?? "") |> result.map_err((_) => "bad tier ${s}")!
+    guard lo <= hi else err("empty tier ${s}")
+    ok(Tier { lo: lo, hi: some(hi), cents: cents })
+  }
+}
+
+fn tiers(specs: List[String]) -> List[Tier]! =
+  specs |> list.fold([], (acc, s) => {
+    let t = parse_tier(s)!
+    match list.last(acc) {
+      some(prev) if prev.hi == none => err("open tier must be last"),
+      some(prev) if t.lo <= (prev.hi ?? 0) => err("tiers do not join at ${int.to_string(t.lo)}"),
+      _ => ok(acc + [t]),
+    }!
+  })!
+
+fn price(specs: List[String], qty: Int) -> Int! = {
+  let ts = tiers(specs)!
+  match list.find(ts, (t) => qty >= t.lo and (t.hi == none or qty <= (t.hi ?? 0))) {
+    some(t) => ok(qty * t.cents),
+    none => err("no tier for ${int.to_string(qty)}"),
+  }
+}

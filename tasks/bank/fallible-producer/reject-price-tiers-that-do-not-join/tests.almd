@@ -1,0 +1,6 @@
+test "overlapping tiers are rejected" {
+  assert(result.is_err(tiers(["0-99:500", "90-499:450", "500+:400"])))
+}
+test "joined tiers still price" {
+  assert_eq(price(["0-99:500", "100-499:450", "500+:400"], 120), ok(54000))
+}

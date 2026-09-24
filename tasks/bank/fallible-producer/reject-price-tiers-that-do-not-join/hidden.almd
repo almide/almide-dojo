@@ -1,0 +1,17 @@
+test "hidden: a gap is not a join either, exact message" {
+  assert_eq(price(["0-99:500", "150-499:450"], 5), err("tiers do not join at 150"))
+  assert_eq(price(["0-99:500", "100-199:450", "199+:400"], 5), err("tiers do not join at 199"))
+}
+test "hidden: the first tier must start at 0" {
+  assert_eq(price(["1-99:500", "100+:450"], 5), err("tiers do not join at 1"))
+}
+test "hidden: single-quantity tiers and a lone open tier are fine" {
+  assert_eq(price(["0-0:0", "1-1:900", "2+:800"], 1), ok(900))
+  assert_eq(price(["0+:250"], 3), ok(750))
+  assert_eq(price(["0-9:10"], 12), err("no tier for 12"))
+}
+test "hidden: tier errors come first, in order" {
+  assert_eq(tiers(["0-9:10", "20-10:5"]) |> result.map((t) => list.len(t)), err("empty tier 20-10:5"))
+  assert_eq(tiers(["0-9:10", "12-19:5", "10+:1", "x"]) |> result.map((t) => list.len(t)), err("tiers do not join at 12"))
+  assert_eq(tiers(["0+:1", "5-9:1"]) |> result.map((t) => list.len(t)), err("open tier must be last"))
+}
