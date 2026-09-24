@@ -1,0 +1,44 @@
+// Signed message inbox. Each line is "<time> <key id> <signature> <body...>",
+// time in seconds. A key may be retired from some time on; a message signed
+// with a key at or after its retirement is refused. Lines are numbered from 1.
+type Key = { id: String, secret: Int, retired: Option[Int] }
+type Raw = { at: Int, key: String, sig: Int, body: String }
+type MsgErr: Eq, Repr = | BadLine(Int) | UnknownKey(Int, String) | RetiredKey(Int, String) | BadSignature(Int)
+type Inbox: Eq, Repr = { messages: List[String], notes: List[String] }
+
+fn sign(body: String, secret: Int) -> Int =
+  string.to_bytes(body) |> list.fold(secret, (h, b) => (h * 31 + b) % 100003)
+
+fn parse(line: String, no: Int) -> Raw!MsgErr = {
+  let w = string.split(line, " ")
+  guard list.len(w) >= 4 else err(BadLine(no))
+  match (int.parse(list.get(w, 0) ?? ""), int.parse(list.get(w, 2) ?? "")) {
+    (ok(at), ok(sig)) => ok(Raw { at: at, key: list.get(w, 1) ?? "", sig: sig, body: list.drop(w, 3) |> list.join(" ") }),
+    _ => err(BadLine(no)),
+  }
+}
+
+fn verify(keys: List[Key], line: String, no: Int) -> Raw!MsgErr = {
+  let r = parse(line, no)!
+  let k = match list.find(keys, (k) => k.id == r.key) {
+    some(k) => ok(k),
+    none => err(UnknownKey(no, r.key)),
+  }!
+  let usable = match k.retired {
+    some(t) => r.at < t,
+    none => true,
+  }
+  guard usable else err(RetiredKey(no, k.id))
+  guard sign(r.body, k.secret) == r.sig else err(BadSignature(no))
+  r
+}
+
+fn inbox(keys: List[Key], lines: List[String]) -> Inbox!MsgErr = {
+  var messages: List[String] = []
+  var notes: List[String] = []
+  for p in list.enumerate(lines) {
+    let r = verify(keys, p.1, p.0 + 1)!
+    messages = messages + ["${r.key}: ${r.body}"]
+  }
+  Inbox { messages: messages, notes: notes }
+}

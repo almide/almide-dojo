@@ -1,0 +1,9 @@
+let KEYS = [Key { id: "k1", secret: 17, retired: some(1000) }, Key { id: "k2", secret: 29, retired: none }]
+
+test "a retired key is accepted during the grace hour" {
+  let line = "1500 k1 ${int.to_string(sign("hello", 17))} hello"
+  assert_eq(inbox(KEYS, [line]), ok(Inbox { messages: ["k1: hello"], notes: ["line 1: accepted retired key k1"] }))
+}
+test "an unknown key is still fatal" {
+  assert_eq(inbox(KEYS, ["10 k9 1 hi"]), err(UnknownKey(1, "k9")))
+}
