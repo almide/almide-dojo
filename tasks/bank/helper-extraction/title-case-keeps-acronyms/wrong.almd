@@ -1,0 +1,7 @@
+// Plausible wrong patch: the helper is the plain capitalize-the-lowercase
+// idiom, so "API" becomes "Api".
+fn title_word(w: String) -> String = string.capitalize(string.to_lower(w))
+
+fn heading(s: String) -> String = string.split(s, " ") |> list.map((w) => title_word(w)) |> list.join(" ")
+
+fn menu_item(s: String) -> String = "> " + heading(s)

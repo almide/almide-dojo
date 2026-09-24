@@ -1,0 +1,7 @@
+// Resource probe: the same 200 headings built __K__ times. The helper must
+// allocate no more per word than the inline code did.
+effect fn main() -> Unit = {
+  let hs = list.range(0, 200) |> list.map((i) => "using the HTTP API number " + int.to_string(i))
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (hs |> list.fold(0, (a, h) => a + string.len(heading(h)))))
+  println(int.to_string(t))
+}

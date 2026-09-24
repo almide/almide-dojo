@@ -1,0 +1,12 @@
+// Colours "#rrggbb" or the shorthand "#rgb" (each digit doubled: "#f80" is
+// "#ff8800"), hex digits in any case.
+fn channel(hex: String) -> Int? = int.from_hex(hex)?
+
+fn expand(c: String) -> String? =
+  if string.len(c) == 4 and string.starts_with(c, "#") then some(string.drop(c, 1) |> string.chars |> list.map((d) => d + d) |> list.join(""))
+  else if string.len(c) == 7 and string.starts_with(c, "#") then some(string.drop(c, 1))
+  else none
+
+fn red(c: String) -> Int? = expand(c) |> option.flat_map((h) => channel(string.slice(h, 0, 2)))
+
+fn is_colour(c: String) -> Bool = expand(c) |> option.flat_map((h) => channel(h)) |> option.is_some

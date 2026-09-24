@@ -1,0 +1,7 @@
+// Resource probe: the same 1,000 statuses counted __K__ times. The inline
+// test allocated nothing per status, so the count must not grow.
+effect fn main() -> Unit = {
+  let ss = list.range(0, 1000) |> list.map((i) => 400 + i % 110)
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + retry_count(ss))
+  println(int.to_string(t))
+}

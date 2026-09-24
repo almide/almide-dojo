@@ -1,0 +1,13 @@
+// Plausible wrong patch: the helper writes the mask in binary and reads the
+// digits back. Same names — but a string per bit on every call.
+let NAMES = ["read", "write", "exec", "admin"]
+
+fn bits(mask: Int, b: Int) -> List[String] =
+  if b >= 4 then [] else [int.to_string(int.band(int.bshr(mask, b), 1))] + bits(mask, b + 1)
+
+fn names(mask: Int) -> List[String] =
+  bits(mask, 0) |> list.enumerate |> list.filter(((_, d)) => d == "1") |> list.map(((b, _)) => list.get(NAMES, b) ?? "?")
+
+fn describe(mask: Int) -> String = names(mask) |> list.join("+")
+
+fn can(mask: Int, name: String) -> Bool = names(mask) |> list.contains(name)

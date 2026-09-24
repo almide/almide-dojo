@@ -1,0 +1,5 @@
+test "names" {
+  assert_eq(names(1), ["read"])
+  assert_eq(describe(0), "")
+  assert_eq(can(2, "write"), true)
+}

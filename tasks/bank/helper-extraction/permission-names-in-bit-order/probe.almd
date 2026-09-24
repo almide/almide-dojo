@@ -1,0 +1,7 @@
+// Resource probe: the same 500 masks described __K__ times. The helper must
+// allocate no more per mask than the inline code did.
+effect fn main() -> Unit = {
+  let masks = list.range(0, 500) |> list.map((i) => i % 16)
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (masks |> list.fold(0, (a, m) => a + string.len(describe(m)))))
+  println(int.to_string(t))
+}

@@ -1,0 +1,8 @@
+// Title case for headings: every word gets a capital first letter and the rest
+// lowercase — EXCEPT words that are written entirely in capitals (acronyms
+// like "API", "HTTP"), which are kept as they are.
+fn heading(s: String) -> String =
+  string.split(s, " ") |> list.map((w) => if w != "" and string.to_upper(w) == w and string.to_lower(w) != w then w else string.capitalize(string.to_lower(w))) |> list.join(" ")
+
+fn menu_item(s: String) -> String =
+  "> " + (string.split(s, " ") |> list.map((w) => if w != "" and string.to_upper(w) == w and string.to_lower(w) != w then w else string.capitalize(string.to_lower(w))) |> list.join(" "))

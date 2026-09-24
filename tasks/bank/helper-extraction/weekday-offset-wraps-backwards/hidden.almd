@@ -1,0 +1,6 @@
+test "hidden: backwards offsets wrap" {
+  assert_eq(shift(0, -1), 6)
+  assert_eq(day_name(2, -10), "Sun")
+  assert_eq(is_weekend(0, -2), true)
+  assert_eq(shift(3, -21), 3)
+}

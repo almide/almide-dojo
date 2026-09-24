@@ -1,0 +1,7 @@
+// Weekdays numbered 0 (Monday) to 6 (Sunday). Moving by an offset of days
+// wraps around the week in BOTH directions: 0 moved by -1 is 6.
+let DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+fn day_name(day: Int, offset: Int) -> String = list.get(DAYS, ((day + offset) % 7 + 7) % 7) ?? "?"
+
+fn is_weekend(day: Int, offset: Int) -> Bool = ((day + offset) % 7 + 7) % 7 >= 5

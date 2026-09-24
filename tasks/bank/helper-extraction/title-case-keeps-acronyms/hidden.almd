@@ -1,0 +1,7 @@
+test "hidden: acronyms are kept" {
+  assert_eq(title_word("API"), "API")
+  assert_eq(heading("using the HTTP API"), "Using The HTTP API")
+  assert_eq(menu_item("open URL"), "> Open URL")
+  assert_eq(title_word("hELLO"), "Hello")
+  assert_eq(title_word("42"), "42")
+}

@@ -1,0 +1,10 @@
+// Permission bit masks: bit 0 read, bit 1 write, bit 2 exec, bit 3 admin.
+// Names are always listed from the LOWEST bit up.
+let NAMES = ["read", "write", "exec", "admin"]
+
+fn names(mask: Int) -> List[String] =
+  list.range(0, 4) |> list.filter((b) => int.band(int.bshr(mask, b), 1) == 1) |> list.map((b) => list.get(NAMES, b) ?? "?")
+
+fn describe(mask: Int) -> String = names(mask) |> list.join("+")
+
+fn can(mask: Int, name: String) -> Bool = names(mask) |> list.contains(name)

@@ -1,0 +1,5 @@
+test "month index" {
+  assert_eq(month_index("january"), some(0))
+  assert_eq(month_number("march"), some(3))
+  assert_eq(quarter("december"), some(4))
+}

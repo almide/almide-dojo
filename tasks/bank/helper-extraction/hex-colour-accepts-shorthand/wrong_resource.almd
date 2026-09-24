@@ -1,0 +1,16 @@
+// Plausible wrong patch: the helper always walks the digits and doubles them
+// for the shorthand by index. Same digits — but the long form now goes
+// through a character list as well.
+fn channel(hex: String) -> Int? = int.from_hex(hex)?
+
+fn expand(c: String) -> String? = {
+  let ds = string.chars(string.drop(c, 1))
+  if not string.starts_with(c, "#") then none
+  else if list.len(ds) == 3 then some(ds |> list.map((d) => d + d) |> list.join(""))
+  else if list.len(ds) == 6 then some(list.join(ds, ""))
+  else none
+}
+
+fn red(c: String) -> Int? = expand(c) |> option.flat_map((h) => channel(string.slice(h, 0, 2)))
+
+fn is_colour(c: String) -> Bool = expand(c) |> option.flat_map((h) => channel(h)) |> option.is_some

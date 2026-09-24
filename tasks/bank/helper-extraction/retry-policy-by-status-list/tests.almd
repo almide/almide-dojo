@@ -1,0 +1,5 @@
+test "retryable" {
+  assert_eq(retryable(503), true)
+  assert_eq(retryable(404), false)
+  assert_eq(should_retry(502, 1, 3), true)
+}

@@ -1,0 +1,7 @@
+// Plausible wrong patch: the helper generalizes to "server errors" (5xx),
+// dropping 408 and 429 and adding 500 and 501.
+fn retryable(status: Int) -> Bool = status >= 500 and status < 600
+
+fn should_retry(status: Int, attempt: Int, max_attempts: Int) -> Bool = attempt < max_attempts and retryable(status)
+
+fn retry_count(statuses: List[Int]) -> Int = statuses |> list.count((s) => retryable(s))

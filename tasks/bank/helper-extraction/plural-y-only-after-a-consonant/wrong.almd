@@ -1,0 +1,8 @@
+// Plausible wrong patch: the helper keeps only the common "y -> ies" rule,
+// so "day" becomes "daies".
+fn plural(word: String) -> String =
+  if string.ends_with(word, "y") then string.drop_end(word, 1) + "ies" else word + "s"
+
+fn count_label(n: Int, word: String) -> String = int.to_string(n) + " " + (if n == 1 then word else plural(word))
+
+fn heading(word: String) -> String = string.capitalize(plural(word))

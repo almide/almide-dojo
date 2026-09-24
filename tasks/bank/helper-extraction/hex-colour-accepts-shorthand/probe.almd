@@ -1,0 +1,8 @@
+// Resource probe: the red channel of the same 400 long-form colours read
+// __K__ times. The helper must allocate no more per colour than the inline
+// slicing did.
+effect fn main() -> Unit = {
+  let cs = list.range(0, 400) |> list.map((i) => "#" + string.pad_start(int.to_hex(i * 40000), 6, "0"))
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (cs |> list.fold(0, (a, c) => a + (red(c) ?? 0))))
+  println(int.to_string(t))
+}

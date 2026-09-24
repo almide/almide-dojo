@@ -1,0 +1,7 @@
+// Resource probe: the same 300 labels built __K__ times. The helper must
+// allocate no more per word than the inline code did.
+effect fn main() -> Unit = {
+  let words = list.range(0, 300) |> list.map((i) => list.get(["city", "day", "file", "category", "key"], i % 5) ?? "x")
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (words |> list.fold(0, (a, w) => a + string.len(count_label(2, w)))))
+  println(int.to_string(t))
+}

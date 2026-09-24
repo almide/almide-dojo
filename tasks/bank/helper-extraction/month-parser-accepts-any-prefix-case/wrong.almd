@@ -1,0 +1,9 @@
+// Plausible wrong patch: the helper looks the text up as a whole name, so
+// prefixes and capitals are no longer accepted.
+let MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
+
+fn month_index(s: String) -> Int? = list.index_of(MONTHS, s)
+
+fn month_number(s: String) -> Int? = month_index(s) |> option.map((i) => i + 1)
+
+fn quarter(s: String) -> Int? = month_index(s) |> option.map((i) => i / 3 + 1)

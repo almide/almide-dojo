@@ -1,0 +1,7 @@
+test "hidden: exactly the listed statuses" {
+  assert_eq(retryable(408), true)
+  assert_eq(retryable(429), true)
+  assert_eq(retryable(500), false)
+  assert_eq(retry_count([500, 501, 504, 429]), 2)
+  assert_eq(should_retry(503, 3, 3), false)
+}

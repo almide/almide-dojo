@@ -1,0 +1,15 @@
+// Month names as users type them: any case, full or cut to at least three
+// letters ("jan", "Janu", "JANUARY"). Unknown text is rejected.
+let MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
+
+fn month_number(s: String) -> Int? = {
+  let t = string.to_lower(s)
+  guard string.len(t) >= 3 else none
+  MONTHS |> list.find_index((m) => string.starts_with(m, t)) |> option.map((i) => i + 1)
+}
+
+fn quarter(s: String) -> Int? = {
+  let t = string.to_lower(s)
+  guard string.len(t) >= 3 else none
+  MONTHS |> list.find_index((m) => string.starts_with(m, t)) |> option.map((i) => i / 3 + 1)
+}

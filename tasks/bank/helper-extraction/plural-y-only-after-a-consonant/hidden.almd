@@ -1,0 +1,6 @@
+test "hidden: vowel before y keeps the y" {
+  assert_eq(plural("day"), "days")
+  assert_eq(count_label(2, "key"), "2 keys")
+  assert_eq(heading("toy"), "Toys")
+  assert_eq(heading("party"), "Parties")
+}

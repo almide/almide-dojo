@@ -1,0 +1,4 @@
+test "title word" {
+  assert_eq(title_word("hello"), "Hello")
+  assert_eq(heading("the quick fox"), "The Quick Fox")
+}
