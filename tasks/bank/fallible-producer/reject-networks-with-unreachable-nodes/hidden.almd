@@ -1,0 +1,15 @@
+test "hidden: two linked islands are not one network, exact message" {
+  assert_eq(latency(["node a", "node b", "node c", "node d", "link a b 1", "link c d 1"], "a", "b"), err("node c is not connected to a"))
+}
+test "hidden: the first unreachable node in declaration order is named" {
+  assert_eq(build(["node hub", "node x", "node y", "node z", "link hub y 3"]) |> result.map((n) => 0), err("node x is not connected to hub"))
+}
+test "hidden: reachability goes through other nodes, links work both ways" {
+  assert_eq(latency(["node a", "node b", "node c", "node d", "link d c 1", "link c b 1", "link b a 1"], "a", "d"), ok("3 ms"))
+  assert_eq(latency(["node solo"], "solo", "solo"), ok("0 ms"))
+  assert_eq(build([]) |> result.map((n) => list.len(n.nodes)), ok(0))
+}
+test "hidden: line errors come first" {
+  assert_eq(build(["node a", "node b", "link a q 1"]) |> result.map((n) => 0), err("unknown node q"))
+  assert_eq(build(["node a", "node b", "link a b 0"]) |> result.map((n) => 0), err("bad latency in: link a b 0"))
+}

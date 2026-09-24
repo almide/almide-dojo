@@ -1,0 +1,6 @@
+test "a node that cannot be reached is rejected" {
+  assert(result.is_err(build(["node a", "node b", "node c", "link a b 5"])))
+}
+test "latencies of a connected network" {
+  assert_eq(latency(["node a", "node b", "node c", "link a b 5", "link b c 2", "link a c 9"], "a", "c"), ok("7 ms"))
+}
