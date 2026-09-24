@@ -1,0 +1,51 @@
+// Reader for a JSON array of numbers: "[1, -2.5, 3e2]". A number is an
+// optional "-", digits, an optional "." with digits, and an optional exponent
+// ("e" or "E", an optional sign, digits). Spaces may follow "[" and ",".
+// Positions are 0-based.
+fn digits_end(s: String, i: Int) -> Int =
+  if i < string.len(s) and string.is_digit(string.slice(s, i, i + 1)) then digits_end(s, i + 1) else i
+
+fn spaces_end(s: String, i: Int) -> Int =
+  if string.slice(s, i, i + 1) == " " then spaces_end(s, i + 1) else i
+
+fn fraction_end(s: String, i: Int, start: Int) -> Int! =
+  if string.slice(s, i, i + 1) != "." then ok(i)
+  else {
+    let j = digits_end(s, i + 1)
+    if j > i + 1 then ok(j) else err("bad number at ${int.to_string(start)}")
+  }
+
+fn exponent_end(s: String, i: Int, start: Int) -> Int! = {
+  let e = string.slice(s, i, i + 1)
+  if e != "e" and e != "E" then ok(i)
+  else {
+    let sign = string.slice(s, i + 1, i + 2)
+    let from = if sign == "+" or sign == "-" then i + 2 else i + 1
+    let j = digits_end(s, from)
+    if j > from then ok(j) else err("bad number at ${int.to_string(start)}")
+  }
+}
+
+fn number_end(s: String, i: Int) -> Int! = {
+  let from = if string.slice(s, i, i + 1) == "-" then i + 1 else i
+  let whole = digits_end(s, from)
+  guard whole > from else err("bad number at ${int.to_string(i)}")
+  let f = fraction_end(s, whole, i)!
+  exponent_end(s, f, i)!
+}
+
+fn items(s: String, i: Int, acc: List[String]) -> List[String]! = {
+  let j = number_end(s, i)!
+  let all = acc + [string.slice(s, i, j)]
+  match string.slice(s, j, j + 1) {
+    "," => items(s, spaces_end(s, j + 1), all),
+    "]" => if j + 1 == string.len(s) then ok(all) else err("trailing text at ${int.to_string(j + 1)}"),
+    _ => err("expected , or ] at ${int.to_string(j)}"),
+  }
+}
+
+fn numbers(src: String) -> List[String]! = {
+  guard string.slice(src, 0, 1) == "[" else err("expected [ at 0")
+  let i = spaces_end(src, 1)
+  if string.slice(src, i, i + 1) == "]" and i + 1 == string.len(src) then ok([]) else items(src, i, [])
+}
