@@ -1,0 +1,23 @@
+// A configuration-source port: the raw text of a setting such as "db.pool-size".
+protocol Config {
+  fn raw(c: Self, key: String) -> String?
+}
+
+type FileConfig: Config = { entries: Map[String, String] }
+fn FileConfig.raw(c: FileConfig, key: String) -> String? = map.get(c.entries, key)
+
+// An integer setting; a missing setting is `fallback`, unreadable text is an error.
+fn get_int[C: Config](c: C, key: String, fallback: Int) -> Int! =
+  match c.raw(key) {
+    none => ok(fallback),
+    some(text) => int.parse(text) |> result.map_err((_) => "bad int for " + key + ": " + text),
+  }
+
+// "key=value" for each key with its integer value (fallback 0); the first error wins.
+fn summary[C: Config](c: C, keys: List[String]) -> String! = {
+  var parts: List[String] = []
+  for k in keys {
+    parts = parts + [k + "=" + int.to_string(get_int(c, k, 0)!)]
+  }
+  list.join(parts, " ")
+}

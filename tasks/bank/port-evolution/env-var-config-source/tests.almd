@@ -1,0 +1,7 @@
+test "environment source" {
+  let e = EnvConfig { prefix: "APP", vars: ["APP_PORT": "8080", "APP_DB_POOL_SIZE": "5"] }
+  assert_eq(summary_from(Env(e), ["port", "db.pool-size", "missing"]), ok("port=8080 db.pool-size=5 missing=0"))
+}
+test "file source" {
+  assert_eq(summary_from(File(FileConfig { entries: ["a": "x"] }), ["a"]), err("bad int for a: x"))
+}
