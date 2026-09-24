@@ -1,0 +1,13 @@
+test "hidden: a PORT that is set but bad stays an error" {
+  assert_eq(load(["PORT": "http", "ADMIN_PORT": "9000"]), err(Invalid("PORT", "http")))
+  assert_eq(load(["PORT": "", "ADMIN_PORT": "9000"]), err(Invalid("PORT", "")))
+  assert_eq(load(["PORT": "70000", "ADMIN_PORT": "x"]), err(Invalid("PORT", "70000")))
+}
+test "hidden: the default can clash, and ADMIN_PORT stays required" {
+  assert_eq(load(["ADMIN_PORT": "8080"]), err(Clash("ADMIN_PORT", "PORT")))
+  assert_eq(load(["WORKERS": "2"]), err(Missing("ADMIN_PORT")))
+}
+test "hidden: notes in check order, explicit values untouched" {
+  assert_eq(load(["ADMIN_PORT": "81", "WORKERS": "8"]), ok(Server { port: 8080, admin: 81, workers: 8, notes: ["PORT not set, using 8080"] }))
+  assert_eq(load(["PORT": " 443", "ADMIN_PORT": "8080"]), ok(Server { port: 443, admin: 8080, workers: 4, notes: ["WORKERS not set, using 4"] }))
+}
