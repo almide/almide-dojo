@@ -1,0 +1,45 @@
+// Bank statement check. The statement starts from an opening balance; each
+// row is "<yyyy-mm-dd> <amount> <balance>" in cents, the balance being the
+// bank's running balance after that row. Rows are numbered from 1.
+type StmtErr: Eq, Repr = | Malformed(Int) | OutOfOrder(Int, String) | Mismatch(Int, Int, Int)
+type Row = { date: String, amount: Int, balance: Int }
+type Checked: Eq, Repr = { closing: Int, rows: Int, warnings: List[String] }
+
+fn parse_row(line: String, no: Int) -> Row!StmtErr = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) == 3 and string.len(list.get(w, 0) ?? "") == 10 else err(Malformed(no))
+  match (int.parse(list.get(w, 1) ?? ""), int.parse(list.get(w, 2) ?? "")) {
+    (ok(a), ok(b)) => ok(Row { date: list.get(w, 0) ?? "", amount: a, balance: b }),
+    _ => err(Malformed(no)),
+  }
+}
+
+fn check(opening: Int, lines: List[String]) -> Checked!StmtErr = {
+  var running = opening
+  var last_date = ""
+  var rows = 0
+  var resync = false
+  var warnings: List[String] = []
+  for p in list.enumerate(lines) {
+    let no = p.0 + 1
+    match parse_row(p.1, no) {
+      err(Malformed(n)) => {
+        warnings = warnings + ["line ${int.to_string(n)}: skipped malformed row"]
+        resync = true
+        ok(())
+      },
+      err(e) => err(e),
+      ok(row) => {
+        guard row.date >= last_date else err(OutOfOrder(no, row.date))
+        guard resync or running + row.amount == row.balance else err(Mismatch(no, running + row.amount, row.balance))
+        if row.amount == 0 then warnings = warnings + ["line ${int.to_string(no)}: zero amount"]
+        running = row.balance
+        last_date = row.date
+        rows = rows + 1
+        resync = false
+        ok(())
+      },
+    }!
+  }
+  Checked { closing: running, rows: rows, warnings: warnings }
+}

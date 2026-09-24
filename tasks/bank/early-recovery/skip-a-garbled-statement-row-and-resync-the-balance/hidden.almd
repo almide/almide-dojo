@@ -1,0 +1,11 @@
+test "hidden: a garbled last row changes nothing else" {
+  assert_eq(check(1000, ["2024-03-01 -200 800", "2024-03-02 ??"]), ok(Checked { closing: 800, rows: 1, warnings: ["line 2: skipped malformed row"] }))
+}
+test "hidden: several skipped rows, then one trusted row, then checks again" {
+  assert_eq(check(0, ["bad", "2024-03-01", "2024-03-02 10 500", "2024-03-03 10 520"]), err(Mismatch(4, 510, 520)))
+  assert_eq(check(0, ["2024-03-01 5 5", "bad", "2024-03-02", "2024-03-03 10 500", "2024-03-04 10 510"]), ok(Checked { closing: 510, rows: 3, warnings: ["line 2: skipped malformed row", "line 3: skipped malformed row"] }))
+}
+test "hidden: the trusted row is otherwise an ordinary row" {
+  assert_eq(check(0, ["2024-03-05 10 10", "oops", "2024-03-04 10 999"]), err(OutOfOrder(3, "2024-03-04")))
+  assert_eq(check(0, ["oops", "2024-03-04 0 700", "2024-03-05 0 700"]), ok(Checked { closing: 700, rows: 2, warnings: ["line 1: skipped malformed row", "line 2: zero amount", "line 3: zero amount"] }))
+}
