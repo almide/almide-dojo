@@ -1,0 +1,44 @@
+// Versioned counter store with optimistic concurrency. Each line is
+// "set <key> <n> @<version>" or "add <key> <n> @<version>", the version being
+// the one the client last read (0 for a key that does not exist yet). An
+// operation on a stale version is a conflict; every write bumps the version.
+type StoreErr: Eq, Repr = | BadOp(String) | NoKey(String) | Conflict(String, Int, Int)
+type Op = { kind: String, key: String, amount: Int, ver: Int }
+type Cell = { value: Int, version: Int }
+type Outcome: Eq, Repr = { values: List[String], notes: List[String] }
+
+fn parse_op(line: String) -> Op!StoreErr = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) == 4 else err(BadOp(line))
+  let kind = list.get(w, 0) ?? ""
+  guard kind == "set" or kind == "add" else err(BadOp(line))
+  let v = list.get(w, 3) ?? ""
+  guard string.starts_with(v, "@") else err(BadOp(line))
+  match (int.parse(list.get(w, 2) ?? ""), int.parse(string.slice(v, 1, string.len(v)))) {
+    (ok(n), ok(ver)) => ok(Op { kind: kind, key: list.get(w, 1) ?? "", amount: n, ver: ver }),
+    _ => err(BadOp(line)),
+  }
+}
+
+fn apply(store: Map[String, Cell], op: Op) -> Map[String, Cell]!StoreErr = {
+  let cur = map.get(store, op.key)
+  guard op.kind == "set" or cur != none else err(NoKey(op.key))
+  let version = cur?.version ?? 0
+  guard version == op.ver else err(Conflict(op.key, op.ver, version))
+  let value = if op.kind == "set" then op.amount else (cur?.value ?? 0) + op.amount
+  map.set(store, op.key, Cell { value: value, version: version + 1 })
+}
+
+fn replay(lines: List[String]) -> Outcome!StoreErr = {
+  var store: Map[String, Cell] = [:]
+  var notes: List[String] = []
+  for line in lines {
+    let op = parse_op(line)!
+    store = apply(store, op)!
+  }
+  let values = map.keys(store) |> list.sort |> list.map((k) => {
+    let c = map.get(store, k) ?? Cell { value: 0, version: 0 }
+    "${k}=${int.to_string(c.value)} v${int.to_string(c.version)}"
+  })
+  Outcome { values: values, notes: notes }
+}
