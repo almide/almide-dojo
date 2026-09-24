@@ -1,0 +1,29 @@
+// Plausible wrong patch: checks the move counts only, so a board where the
+// loser moved after the game was won (or both players have a line) passes.
+// Tic-tac-toe position reader. A board is 9 cells, row by row, each "X", "O"
+// or "."; X always moves first. `status` says who has won, or whether the game
+// is a draw or still going.
+let LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]]
+
+fn read_board(s: String) -> List[String]! = {
+  let cs = string.chars(s)
+  guard list.len(cs) == 9 else err("board must have 9 cells")
+  match list.enumerate(cs) |> list.find((p) => p.1 != "X" and p.1 != "O" and p.1 != ".") {
+    some(p) => err("bad cell ${p.1} at ${int.to_string(p.0)}"),
+    none => ok(cs),
+  }
+}
+
+fn wins(b: List[String], who: String) -> Bool =
+  list.any(LINES, (l) => list.all(l, (i) => list.get(b, i) == some(who)))
+
+fn status(s: String) -> String! = {
+  let b = read_board(s)!
+  let x = list.count(b, (c) => c == "X")
+  let o = list.count(b, (c) => c == "O")
+  guard x == o or x == o + 1 else err("impossible position")
+  if wins(b, "X") then "X wins"
+  else if wins(b, "O") then "O wins"
+  else if list.contains(b, ".") then "ongoing"
+  else "draw"
+}

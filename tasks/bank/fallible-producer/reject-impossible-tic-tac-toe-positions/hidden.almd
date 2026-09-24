@@ -1,0 +1,18 @@
+test "hidden: the winner must have made the last move" {
+  assert_eq(status("XXXOOO..."), err("impossible position"))
+  assert_eq(status("XXXOO.O.."), err("impossible position"))
+  assert_eq(status("OOOXX.X.X"), err("impossible position"))
+  assert_eq(status("OOOXX.X.."), ok("O wins"))
+}
+test "hidden: two lines for the same winner are fine" {
+  assert_eq(status("XXXOXOOOX"), ok("X wins"))
+}
+test "hidden: X may be at most one move ahead" {
+  assert_eq(status("XX......."), err("impossible position"))
+  assert_eq(status("........."), ok("ongoing"))
+  assert_eq(status("XOXXOOOXX"), ok("draw"))
+}
+test "hidden: format errors come first" {
+  assert_eq(status("OOOO"), err("board must have 9 cells"))
+  assert_eq(status("OO.....x."), err("bad cell x at 7"))
+}
