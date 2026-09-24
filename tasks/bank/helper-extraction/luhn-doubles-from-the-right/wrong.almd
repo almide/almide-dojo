@@ -1,0 +1,13 @@
+// Plausible wrong patch: the helper doubles every second digit counting from
+// the LEFT, which agrees with the rule only for even-length numbers.
+fn digits(s: String) -> List[Int] = string.chars(s) |> list.filter((c) => c != " ") |> list.map((c) => int.parse(c) ?? 0)
+
+fn luhn_sum(s: String) -> Int =
+  digits(s) |> list.enumerate |> list.fold(0, (a, p) => {
+    let (i, d) = p
+    if i % 2 == 0 then a + (if d * 2 > 9 then d * 2 - 9 else d * 2) else a + d
+  })
+
+fn valid(s: String) -> Bool = luhn_sum(s) % 10 == 0
+
+fn check_digit(partial: String) -> Int = (10 - luhn_sum(partial + "0") % 10) % 10

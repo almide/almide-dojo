@@ -1,0 +1,4 @@
+test "shorten" {
+  assert_eq(shorten("abc", 5), "abc")
+  assert_eq(cell("ab", 4), "ab  ")
+}

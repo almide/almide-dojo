@@ -1,0 +1,10 @@
+// Plausible wrong patch: the helper cuts through a character list. Same text
+// — but a string per character on every call.
+fn shorten(label: String, width: Int) -> String = {
+  let cs = string.chars(label)
+  if list.len(cs) <= width then label else list.take(cs, width - 1) |> list.join("") |> string.pad_end(width, "~")
+}
+
+fn cell(label: String, width: Int) -> String = string.pad_end(shorten(label, width), width, " ")
+
+fn title(label: String, width: Int) -> String = "[" + shorten(label, width) + "]"

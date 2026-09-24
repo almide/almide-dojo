@@ -1,0 +1,9 @@
+// Shortening labels to fit a column of `width` characters (width >= 2). A
+// label that is too long keeps its first width-1 characters and ends with
+// "~", so the result is EXACTLY `width` characters.
+fn shorten(label: String, width: Int) -> String =
+  if string.len(label) <= width then label else string.take(label, width - 1) + "~"
+
+fn cell(label: String, width: Int) -> String = string.pad_end(shorten(label, width), width, " ")
+
+fn title(label: String, width: Int) -> String = "[" + shorten(label, width) + "]"

@@ -1,0 +1,9 @@
+// Quality control: a measured part passes when it is within `tol` of the
+// nominal size, in EITHER direction (too big or too small).
+fn within(a: Int, b: Int, tol: Int) -> Bool = int.abs(a - b) <= tol
+
+fn passes(measured: Int, nominal: Int, tol: Int) -> Bool = within(measured, nominal, tol)
+
+fn batch_passes(ms: List[Int], nominal: Int, tol: Int) -> Int = ms |> list.count((m) => within(m, nominal, tol))
+
+fn rejects(ms: List[Int], nominal: Int, tol: Int) -> List[Int] = ms |> list.filter((m) => not within(m, nominal, tol))

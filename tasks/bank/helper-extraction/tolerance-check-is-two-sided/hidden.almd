@@ -1,0 +1,6 @@
+test "hidden: too small fails too" {
+  assert_eq(within(97, 100, 2), false)
+  assert_eq(within(98, 100, 2), true)
+  assert_eq(batch_passes([90, 100, 110], 100, 5), 1)
+  assert_eq(rejects([95, 99, 101], 100, 2), [95])
+}

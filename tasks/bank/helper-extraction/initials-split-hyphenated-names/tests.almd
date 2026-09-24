@@ -1,0 +1,4 @@
+test "initials" {
+  assert_eq(initials("ada lovelace"), "AL")
+  assert_eq(avatar("Grace  Hopper"), "GH")
+}

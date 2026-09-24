@@ -1,0 +1,7 @@
+test "hidden: every spelling" {
+  assert_eq(parse_flag("YES"), some(true))
+  assert_eq(parse_flag("off"), some(false))
+  assert_eq(enabled("0", true), false)
+  assert_eq(is_bool("On"), true)
+  assert_eq(is_bool("2"), false)
+}

@@ -1,0 +1,7 @@
+test "hidden: odd lengths count from the right" {
+  assert_eq(valid("79927398713"), true)
+  assert_eq(valid("79927398710"), false)
+  assert_eq(luhn_sum("18"), 10)
+  assert_eq(check_digit("1234"), 4)
+  assert_eq(check_digit("7992739871"), 3)
+}

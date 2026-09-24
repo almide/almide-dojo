@@ -1,0 +1,9 @@
+// Plausible wrong patch: the helper checks membership in the accepted range.
+// Same answers — but the whole range is built as a list on every call.
+fn within(a: Int, b: Int, tol: Int) -> Bool = list.range(b - tol, b + tol + 1) |> list.contains(a)
+
+fn passes(measured: Int, nominal: Int, tol: Int) -> Bool = within(measured, nominal, tol)
+
+fn batch_passes(ms: List[Int], nominal: Int, tol: Int) -> Int = ms |> list.count((m) => within(m, nominal, tol))
+
+fn rejects(ms: List[Int], nominal: Int, tol: Int) -> List[Int] = ms |> list.filter((m) => not within(m, nominal, tol))

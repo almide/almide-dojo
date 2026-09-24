@@ -1,0 +1,13 @@
+// Plausible wrong patch: the helper walks the characters and keeps the ones
+// that follow a separator. Same initials — but a string per character.
+fn initials(name: String) -> String = {
+  let (out, _) = string.chars(name) |> list.fold(("", true), (st, c) => {
+    let (acc, at_start) = st
+    if c == " " or c == "-" then (acc, true) else if at_start then (acc + string.to_upper(c), false) else (acc, false)
+  })
+  out
+}
+
+fn avatar(name: String) -> String = initials(name)
+
+fn signature(name: String) -> String = name + " (" + initials(name) + ")"

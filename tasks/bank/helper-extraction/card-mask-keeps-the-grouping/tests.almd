@@ -1,0 +1,4 @@
+test "mask" {
+  assert_eq(mask("12345678"), "****5678")
+  assert_eq(receipt_line("123"), "card 123")
+}

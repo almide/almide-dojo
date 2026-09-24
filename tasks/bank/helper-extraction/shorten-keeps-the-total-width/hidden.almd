@@ -1,0 +1,6 @@
+test "hidden: exactly the width" {
+  assert_eq(shorten("abcdef", 4), "abc~")
+  assert_eq(cell("abcdef", 4), "abc~")
+  assert_eq(title("abcdef", 3), "[ab~]")
+  assert_eq(shorten("abcd", 4), "abcd")
+}

@@ -1,0 +1,8 @@
+// Plausible wrong patch: the helper keeps `width` characters and then adds
+// the "~", one character too many.
+fn shorten(label: String, width: Int) -> String =
+  if string.len(label) <= width then label else string.take(label, width) + "~"
+
+fn cell(label: String, width: Int) -> String = string.pad_end(shorten(label, width), width, " ")
+
+fn title(label: String, width: Int) -> String = "[" + shorten(label, width) + "]"

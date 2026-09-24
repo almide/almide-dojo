@@ -1,0 +1,13 @@
+// Card numbers as typed, with spaces between digit groups. Masking replaces
+// every digit except the LAST FOUR digits with "*" and keeps the spaces where
+// they are ("4111 1111 1111 1234" -> "**** **** **** 1234").
+fn receipt_line(card: String) -> String = {
+  let digits = string.chars(card) |> list.count((c) => c != " ")
+  let (out, _) = string.chars(card) |> list.fold(("", 0), (st, c) => {
+    let (acc, seen) = st
+    if c == " " then (acc + c, seen) else (acc + (if seen >= digits - 4 then c else "*"), seen + 1)
+  })
+  "card " + out
+}
+
+fn last4(card: String) -> String = string.chars(card) |> list.filter((c) => c != " ") |> list.take_end(4) |> list.join("")

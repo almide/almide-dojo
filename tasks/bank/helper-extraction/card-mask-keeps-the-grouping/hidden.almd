@@ -1,0 +1,5 @@
+test "hidden: spaces stay in place" {
+  assert_eq(mask("4111 1111 1111 1234"), "**** **** **** 1234")
+  assert_eq(receipt_line("12 3456 78"), "card ** **56 78")
+  assert_eq(last4("1 2 3 4 5"), "2345")
+}

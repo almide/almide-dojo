@@ -1,0 +1,10 @@
+// Plausible wrong patch: the helper strips the spaces first and masks the
+// digits, so the typed grouping is lost.
+fn mask(card: String) -> String = {
+  let ds = string.chars(card) |> list.filter((c) => c != " ")
+  string.repeat("*", int.max(0, list.len(ds) - 4)) + (list.take_end(ds, 4) |> list.join(""))
+}
+
+fn receipt_line(card: String) -> String = "card " + mask(card)
+
+fn last4(card: String) -> String = string.chars(card) |> list.filter((c) => c != " ") |> list.take_end(4) |> list.join("")

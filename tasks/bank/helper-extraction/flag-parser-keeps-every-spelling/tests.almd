@@ -1,0 +1,5 @@
+test "parse flag" {
+  assert_eq(parse_flag("true"), some(true))
+  assert_eq(parse_flag("False"), some(false))
+  assert_eq(enabled("maybe", true), true)
+}

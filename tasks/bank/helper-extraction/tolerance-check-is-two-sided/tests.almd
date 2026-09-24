@@ -1,0 +1,5 @@
+test "within" {
+  assert_eq(within(102, 100, 2), true)
+  assert_eq(within(103, 100, 2), false)
+  assert_eq(passes(100, 100, 0), true)
+}
