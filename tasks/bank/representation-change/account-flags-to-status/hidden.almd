@@ -1,0 +1,19 @@
+test "hidden: suspend and activate keep a deleted account deleted" {
+  let d = delete(account("x", true, false))
+  assert_eq(suspend(d), Account { name: "x", status: Deleted(false) })
+  assert_eq(restore(suspend(d)), account("x", false, false))
+  assert_eq(activate(delete(account("y", false, false))), Account { name: "y", status: Deleted(true) })
+  assert_eq(listing([suspend(d), activate(d)]), [])
+}
+test "hidden: idempotent delete and restore" {
+  let d = delete(account("z", false, false))
+  assert_eq(delete(d), d)
+  assert_eq(restore(account("q", true, false)), account("q", true, false))
+  assert_eq(restore(restore(d)), account("z", false, false))
+}
+test "hidden: counts over every status" {
+  let accs = [account("a", false, true), account("b", true, true), account("c", false, false), account("d", true, false), account("e", true, false)]
+  assert_eq(counts(accs), "active=2 suspended=1 deleted=2")
+  assert_eq(counts([]), "active=0 suspended=0 deleted=0")
+  assert_eq(listing(accs), ["c (suspended)", "d", "e"])
+}

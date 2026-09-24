@@ -1,0 +1,10 @@
+test "status replaces flags" {
+  assert_eq(account("a", true, false), Account { name: "a", status: Active })
+  assert_eq(delete(account("b", false, false)), Account { name: "b", status: Deleted(false) })
+  assert_eq(restore(delete(account("c", true, false))), account("c", true, false))
+}
+test "listing and counts" {
+  let accs = [account("a", true, false), account("b", false, false), account("c", true, true)]
+  assert_eq(listing(accs), ["a", "b (suspended)"])
+  assert_eq(counts(accs), "active=1 suspended=1 deleted=1")
+}
