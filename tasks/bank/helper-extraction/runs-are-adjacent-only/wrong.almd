@@ -1,0 +1,13 @@
+// Plausible wrong patch: builds the runs with list.group_by, which gathers
+// EVERY occurrence of a value into one group, adjacent or not.
+fn runs(xs: List[Int]) -> List[(Int, Int)] =
+  map.entries(list.group_by(xs, (x) => x)) |> list.map(((v, g)) => (v, list.len(g)))
+
+fn encode(xs: List[Int]) -> String =
+  runs(xs) |> list.map(((v, n)) => int.to_string(v) + "x" + int.to_string(n)) |> list.join(" ")
+
+fn longest_run(xs: List[Int]) -> Int =
+  runs(xs) |> list.fold(0, (m, r) => {
+    let (_, n) = r
+    int.max(m, n)
+  })

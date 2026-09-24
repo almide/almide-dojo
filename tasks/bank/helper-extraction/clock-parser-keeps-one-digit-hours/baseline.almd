@@ -1,0 +1,19 @@
+// Clock times "H:MM" or "HH:MM" (hours 0-23, minutes exactly two digits).
+fn duration(a: String, b: String) -> Int? = {
+  let ia = string.index_of(a, ":")!
+  let ib = string.index_of(b, ":")!
+  let ha = int.parse(string.slice(a, 0, ia))?!
+  let ma_text = string.drop(a, ia + 1)
+  let hb = int.parse(string.slice(b, 0, ib))?!
+  let mb_text = string.drop(b, ib + 1)
+  guard string.len(ma_text) == 2 and string.len(mb_text) == 2 else none
+  let ma = int.parse(ma_text)?!
+  let mb = int.parse(mb_text)?!
+  guard ha >= 0 and ha < 24 and hb >= 0 and hb < 24 and ma >= 0 and ma < 60 and mb >= 0 and mb < 60 else none
+  some((hb * 60 + mb) - (ha * 60 + ma))
+}
+
+fn total(spans: List[(String, String)]) -> Int = spans |> list.fold(0, (acc, s) => {
+  let (a, b) = s
+  acc + (duration(a, b) ?? 0)
+})

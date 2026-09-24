@@ -1,0 +1,16 @@
+// Run-length views of a sequence. A run is a maximal block of ADJACENT equal
+// values: [1, 1, 2, 1] has three runs (1 x2, 2 x1, 1 x1).
+fn encode(xs: List[Int]) -> String =
+  xs |> list.fold([], (acc, x) => match list.last(acc) {
+    some((v, n)) => if v == x then list.drop_end(acc, 1) + [(v, n + 1)] else acc + [(x, 1)],
+    none => [(x, 1)],
+  }) |> list.map(((v, n)) => int.to_string(v) + "x" + int.to_string(n)) |> list.join(" ")
+
+fn longest_run(xs: List[Int]) -> Int =
+  xs |> list.fold([], (acc, x) => match list.last(acc) {
+    some((v, n)) => if v == x then list.drop_end(acc, 1) + [(v, n + 1)] else acc + [(x, 1)],
+    none => [(x, 1)],
+  }) |> list.fold(0, (m, r) => {
+    let (_, n) = r
+    int.max(m, n)
+  })

@@ -1,0 +1,5 @@
+test "hidden: a value that comes back starts a new run" {
+  assert_eq(runs([1, 1, 2, 1]), [(1, 2), (2, 1), (1, 1)])
+  assert_eq(encode([3, 4, 3, 3, 4]), "3x1 4x1 3x2 4x1")
+  assert_eq(longest_run([2, 9, 2, 9, 2]), 1)
+}

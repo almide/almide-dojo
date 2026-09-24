@@ -1,0 +1,5 @@
+test "clock helper" {
+  assert_eq(clock("10:30"), some(630))
+  assert_eq(clock("24:00"), none)
+  assert_eq(duration("10:00", "11:15"), some(75))
+}

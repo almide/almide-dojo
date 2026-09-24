@@ -1,0 +1,8 @@
+test "hidden: missing is the default, empty is bad" {
+  let cfg = map.from_list([("port", ""), ("tls", "")])
+  assert_eq(get_int(cfg, "workers", 4), ok(4))
+  assert_eq(get_bool(cfg, "verbose", true), ok(true))
+  assert_eq(get_int(cfg, "port", 1), err("bad int for port: "))
+  assert_eq(get_bool(cfg, "tls", false), err("bad bool for tls: "))
+  assert_eq(setting(cfg, "none"), none)
+}

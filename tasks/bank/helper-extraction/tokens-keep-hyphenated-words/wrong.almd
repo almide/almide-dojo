@@ -1,0 +1,13 @@
+// Plausible wrong patch: the helper keeps only letters and digits and splits
+// on everything else, so "well-known" and "don't" fall apart.
+fn tokens(text: String) -> List[String] =
+  string.chars(text)
+    |> list.map((c) => if string.is_alphanumeric(c) then c else " ")
+    |> list.join("")
+    |> string.split(" ")
+    |> list.filter((w) => w != "")
+
+fn word_count(text: String) -> Int = list.len(tokens(text))
+
+fn longest_word(text: String) -> String =
+  tokens(text) |> list.fold("", (b, w) => if string.len(w) > string.len(b) then w else b)

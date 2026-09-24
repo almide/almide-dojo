@@ -1,0 +1,12 @@
+// Plausible wrong patch: the helper compares the two neighbouring multiples
+// kept in a list. Same answers — but the list is allocated per value.
+fn snap(x: Int, step: Int) -> Int = {
+  let lo = if x >= 0 then x / step * step else 0 - ((0 - x + step - 1) / step) * step
+  let cands = [lo, lo + step]
+  if x - lo < lo + step - x then list.first(cands) ?? lo else list.last(cands) ?? lo
+}
+
+fn snap_all(xs: List[Int], step: Int) -> List[Int] = xs |> list.map((x) => snap(x, step))
+
+fn moved(xs: List[Int], step: Int) -> Int =
+  list.zip(xs, snap_all(xs, step)) |> list.count(((a, b)) => a != b)

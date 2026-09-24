@@ -1,0 +1,7 @@
+test "setting helper" {
+  let cfg = map.from_list([("port", "80"), ("debug", "true")])
+  assert_eq(setting(cfg, "port"), some("80"))
+  assert_eq(get_int(cfg, "port", 1), ok(80))
+  assert_eq(get_bool(cfg, "debug", false), ok(true))
+  assert_eq(get_int(cfg, "debug", 1), err("bad int for debug: true"))
+}

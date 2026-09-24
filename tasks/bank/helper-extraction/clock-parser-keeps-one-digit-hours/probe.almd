@@ -1,0 +1,7 @@
+// Resource probe: the same 500 spans totalled __K__ times. The helper must
+// allocate no more per time than the inline parsing did.
+effect fn main() -> Unit = {
+  let spans = list.range(0, 500) |> list.map((i) => (int.to_string(i % 10) + ":0" + int.to_string(i % 10), "1" + int.to_string(i % 10) + ":30"))
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + total(spans))
+  println(int.to_string(t))
+}

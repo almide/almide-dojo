@@ -1,0 +1,8 @@
+// Resource probe: the same 1,000 values snapped __K__ times. The inline
+// arithmetic allocated only the result list, so the helper must not add
+// allocations per value.
+effect fn main() -> Unit = {
+  let xs = list.range(0, 1000) |> list.map((i) => i * 7 - 3500)
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + moved(xs, 5))
+  println(int.to_string(t))
+}

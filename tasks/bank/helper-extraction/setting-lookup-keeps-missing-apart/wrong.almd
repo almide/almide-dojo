@@ -1,0 +1,18 @@
+// Plausible wrong patch: the callers turn the Option into "" with ?? and then
+// treat "" as missing, so a present EMPTY value silently becomes the default.
+fn setting(cfg: Map[String, String], key: String) -> String? = map.get(cfg, key)
+
+fn get_int(cfg: Map[String, String], key: String, default: Int) -> Result[Int, String] = {
+  let v = setting(cfg, key) ?? ""
+  if v == "" then ok(default) else int.parse(v) |> result.map_err((_) => "bad int for " + key + ": " + v)
+}
+
+fn get_bool(cfg: Map[String, String], key: String, default: Bool) -> Result[Bool, String] = {
+  let v = setting(cfg, key) ?? ""
+  match v {
+    "" => ok(default),
+    "true" => ok(true),
+    "false" => ok(false),
+    _ => err("bad bool for " + key + ": " + v),
+  }
+}

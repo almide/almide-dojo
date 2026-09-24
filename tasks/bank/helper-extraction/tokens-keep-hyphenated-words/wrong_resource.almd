@@ -1,0 +1,20 @@
+// Plausible wrong patch: the helper strips punctuation by repeated
+// replacement over the whole word list for each mark. Same tokens — but every
+// punctuation mark rebuilds every word.
+fn strip_punct(w: String) -> String = {
+  let p = [".", ",", ";", ":", "!", "?", "\""]
+  let cs = string.chars(w)
+  let front = cs |> list.drop_while((c) => list.contains(p, c))
+  front |> list.reverse |> list.drop_while((c) => list.contains(p, c)) |> list.reverse |> list.join("")
+}
+
+fn tokens(text: String) -> List[String] = {
+  let raw = string.split(text, " ")
+  let stripped = [".", ",", ";", ":", "!", "?", "\""] |> list.fold(raw, (ws, _) => ws |> list.map((w) => strip_punct(w)))
+  stripped |> list.filter((w) => w != "")
+}
+
+fn word_count(text: String) -> Int = list.len(tokens(text))
+
+fn longest_word(text: String) -> String =
+  tokens(text) |> list.fold("", (b, w) => if string.len(w) > string.len(b) then w else b)

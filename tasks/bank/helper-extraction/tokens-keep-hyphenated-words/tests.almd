@@ -1,0 +1,4 @@
+test "tokens" {
+  assert_eq(tokens("Hello, world!"), ["Hello", "world"])
+  assert_eq(word_count("a b  c"), 3)
+}

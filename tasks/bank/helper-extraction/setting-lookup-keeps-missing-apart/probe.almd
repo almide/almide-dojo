@@ -1,0 +1,7 @@
+// Resource probe: one integer setting read __K__ x 500 times from a 40-key
+// config. The inline lookup allocated nothing per read beyond the result.
+effect fn main() -> Unit = {
+  let cfg = map.from_list(list.range(0, 40) |> list.map((i) => ("key" + int.to_string(i), int.to_string(i))))
+  let t = list.range(0, __K__ * 500) |> list.fold(0, (acc, _) => acc + (get_int(cfg, "key7", 0) ?? 0))
+  println(int.to_string(t))
+}

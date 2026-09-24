@@ -1,0 +1,19 @@
+// Settings as a map of raw texts. A MISSING key means "use the default"; a key
+// that is present but unparsable is an error naming the key.
+fn setting(cfg: Map[String, String], key: String) -> String? = map.get(cfg, key)
+
+fn get_int(cfg: Map[String, String], key: String, default: Int) -> Result[Int, String] =
+  match setting(cfg, key) {
+    none => ok(default),
+    some(v) => int.parse(v) |> result.map_err((_) => "bad int for " + key + ": " + v),
+  }
+
+fn get_bool(cfg: Map[String, String], key: String, default: Bool) -> Result[Bool, String] =
+  match setting(cfg, key) {
+    none => ok(default),
+    some(v) => match v {
+      "true" => ok(true),
+      "false" => ok(false),
+      _ => err("bad bool for " + key + ": " + v),
+    },
+  }

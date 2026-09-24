@@ -1,0 +1,4 @@
+test "contains_ci" {
+  assert_eq(contains_ci("Learning Rust", "rust"), true)
+  assert_eq(search(["Go Tour", "Rust Book"], "book"), ["Rust Book"])
+}

@@ -1,0 +1,8 @@
+// Plausible wrong patch: the helper is the textbook one-liner, whose integer
+// division rounds toward zero instead of down for negative values.
+fn snap(x: Int, step: Int) -> Int = (x + step / 2) / step * step
+
+fn snap_all(xs: List[Int], step: Int) -> List[Int] = xs |> list.map((x) => snap(x, step))
+
+fn moved(xs: List[Int], step: Int) -> Int =
+  list.zip(xs, snap_all(xs, step)) |> list.count(((a, b)) => a != b)
