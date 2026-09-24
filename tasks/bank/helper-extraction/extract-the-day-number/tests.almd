@@ -1,0 +1,5 @@
+test "day number" {
+  assert_eq(days_between("2024-01-01", "2024-03-01"), some(60))
+  assert_eq(day_number("2023-05-02") |> option.is_some, true)
+  assert_eq(day_number("20x3-05-02"), none)
+}

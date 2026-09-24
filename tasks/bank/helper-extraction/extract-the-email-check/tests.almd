@@ -1,0 +1,5 @@
+test "email helper" {
+  assert_eq(check_email("a@b"), ok("a@b"))
+  assert_eq(check_email("ab"), err("bad email: ab"))
+  assert_eq(validate(User { name: "x", email: "x@y", age: 3 }) |> result.is_ok, true)
+}

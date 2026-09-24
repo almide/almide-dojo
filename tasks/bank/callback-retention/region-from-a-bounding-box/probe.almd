@@ -1,0 +1,8 @@
+// Resource probe: __K__ regions over fresh 3,000-point inputs, all held live.
+// Capturing the box grows by a few bytes each; capturing the points grows by
+// the whole point list.
+effect fn main() -> Unit = {
+  let regions = list.range(0, __K__) |> list.map((i) =>
+    region(list.range(0, 3000) |> list.map((j) => int.to_string(j % 97) + "," + int.to_string((j * 3 + i) % 89))) ?? ((p) => false))
+  println(int.to_string(regions |> list.count((f) => f((10, 10)))))
+}

@@ -1,0 +1,15 @@
+// A student's average with the lowest score dropped (when there are at least
+// two scores), rounded down. No scores: 0.
+type Student = { name: String, scores: List[Int] }
+
+fn average_drop_lowest(scores: List[Int]) -> Int = {
+  let sorted = list.sort(scores)
+  let kept = if list.len(sorted) >= 2 then list.drop(sorted, 1) else sorted
+  if list.is_empty(kept) then 0 else list.sum(kept) / list.len(kept)
+}
+
+fn line_for(s: Student) -> String = s.name + ":" + int.to_string(average_drop_lowest(s.scores))
+
+// One line per student; each sorted copy lives inside line_for's call only.
+fn class_report(students: List[Student]) -> List[String] =
+  students |> list.map((s) => if list.is_empty(s.scores) then s.name + ":-" else line_for(s))

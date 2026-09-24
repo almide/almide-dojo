@@ -1,0 +1,7 @@
+// Resource probe: __K__ badges over fresh 20,000-day logs, all held live.
+// Capturing two numbers grows by a few bytes each; capturing `days` grows by
+// the whole log.
+effect fn main() -> Unit = {
+  let badges = list.range(0, __K__) |> list.map((i) => streak_badge(list.range(0, 20000 + i) |> list.map((j) => j % 9 != 0)))
+  println(int.to_string(badges |> list.fold(0, (acc, f) => acc + string.len(f("me")))))
+}

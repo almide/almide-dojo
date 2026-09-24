@@ -1,0 +1,57 @@
+// Build dependencies, one per line: "a -> b" means a must be built before b.
+// Blank lines are ignored.
+fn parse_edge(line: String) -> Result[(String, String), String] = {
+  let parts = string.split(line, "->") |> list.map((p) => string.trim(p))
+  match parts {
+    [a, b] => if a != "" and b != "" then ok((a, b)) else err("bad edge: " + line),
+    _ => err("bad edge: " + line),
+  }
+}
+
+fn parse_edges(lines: List[String]) -> Result[List[(String, String)], String] =
+  lines |> list.filter((l) => string.trim(l) != "") |> list.map((l) => parse_edge(l)!)
+
+// Every node, in order of first appearance.
+fn nodes(edges: List[(String, String)]) -> List[String] =
+  edges |> list.fold([], (acc, e) => {
+    let (a, b) = e
+    let with_a = if list.contains(acc, a) then acc else acc + [a]
+    if list.contains(with_a, b) then with_a else with_a + [b]
+  })
+
+fn describe(lines: List[String]) -> String =
+  match parse_edges(lines) {
+    ok(es) => int.to_string(list.len(nodes(es))) + " nodes, " + int.to_string(list.len(es)) + " edges",
+    err(e) => e,
+  }
+
+fn in_degree(n: String, edges: List[(String, String)]) -> Int =
+  edges |> list.count(((_, b)) => b == n)
+
+// Kahn's algorithm with a queue: the initially ready nodes are sorted, and
+// every node that becomes ready is appended to the back of the queue.
+fn kahn(queue: List[String], edges: List[(String, String)], done: List[String], total: Int) -> String? =
+  match list.first(queue) {
+    none => if list.len(done) == total then some(list.join(done, ",")) else none,
+    some(n) => {
+      let rest = edges |> list.filter(((a, _)) => a != n)
+      let freed = edges
+        |> list.filter(((a, b)) => a == n and in_degree(b, rest) == 0 and not list.contains(queue, b))
+        |> list.map(((_, b)) => b)
+        |> list.unique
+        |> list.sort
+      kahn(list.drop(queue, 1) + freed, rest, done + [n], total)
+    },
+  }
+
+// Plausible wrong patch: textbook Kahn with a FIFO queue. The start is sorted,
+// but a node freed later waits behind larger nodes that were ready earlier.
+fn build_order(lines: List[String]) -> String =
+  match parse_edges(lines) {
+    err(e) => e,
+    ok(es) => {
+      let ns = nodes(es)
+      let start = ns |> list.filter((n) => in_degree(n, es) == 0) |> list.sort
+      kahn(start, es, [], list.len(ns)) ?? "cycle"
+    },
+  }

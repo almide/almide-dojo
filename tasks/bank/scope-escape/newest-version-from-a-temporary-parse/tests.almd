@@ -1,0 +1,6 @@
+test "newest numeric" {
+  assert_eq(newest(["1.2", "1.10", "1.9"]), "newest=1.10")
+}
+test "newest error" {
+  assert_eq(newest(["1.0", "x"]), "error=bad version: x")
+}

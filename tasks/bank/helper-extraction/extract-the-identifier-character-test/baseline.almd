@@ -1,0 +1,22 @@
+// A tiny lexer. Identifiers start with a lowercase ASCII letter or "_" and
+// continue with lowercase letters, digits or "_". Digit runs are numbers.
+// Spaces separate; any other single character is its own token.
+fn lower_or_underscore(c: String) -> Bool = c == "_" or (c >= "a" and c <= "z")
+
+fn lex(chars: List[String], i: Int, acc: List[String]) -> List[String] =
+  match list.get(chars, i) {
+    none => acc,
+    some(c) =>
+      if c == " " then lex(chars, i + 1, acc)
+      else if lower_or_underscore(c) then {
+        let run = list.drop(chars, i + 1) |> list.take_while((d) => lower_or_underscore(d) or (d >= "0" and d <= "9"))
+        lex(chars, i + 1 + list.len(run), acc + [c + list.join(run, "")])
+      }
+      else if c >= "0" and c <= "9" then {
+        let run = list.drop(chars, i) |> list.take_while((d) => d >= "0" and d <= "9")
+        lex(chars, i + list.len(run), acc + [list.join(run, "")])
+      }
+      else lex(chars, i + 1, acc + [c]),
+  }
+
+fn tokens(src: String) -> List[String] = lex(string.chars(src), 0, [])

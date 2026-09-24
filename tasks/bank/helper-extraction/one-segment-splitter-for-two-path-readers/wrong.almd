@@ -1,0 +1,7 @@
+// Plausible wrong patch: the shared helper drops "." segments too (as depth
+// did), so basename("a/.") becomes "a".
+fn segments(p: String) -> List[String] = string.split(p, "/") |> list.filter((s) => s != "" and s != ".")
+
+fn depth(p: String) -> Int = segments(p) |> list.len
+
+fn basename(p: String) -> String = segments(p) |> list.last ?? ""

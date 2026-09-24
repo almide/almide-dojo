@@ -1,0 +1,10 @@
+test "hidden: negative amounts in both styles" {
+  assert_eq(total_line(-150), "TOTAL (1.50)")
+  assert_eq(receipt_line("refund", -150), "refund -1.50")
+  assert_eq(total_line(-5), "TOTAL (0.05)")
+  assert_eq(receipt_line("x", -5), "x -0.05")
+}
+test "hidden: zero and whole units" {
+  assert_eq(total_line(0), "TOTAL 0.00")
+  assert_eq(receipt_line("y", 100000), "y 1000.00")
+}

@@ -1,0 +1,9 @@
+// Resource probe: __K__ months of 2,000 expenses over 2,000 categories. Each
+// month's totals map belongs to its own step, so the batch grows by the input
+// only; computing every month's map first keeps them all live.
+effect fn main() -> Unit = {
+  let limits = map.from_list([("c1", 5)])
+  let months = list.range(0, __K__) |> list.map((i) =>
+    Month { name: "m" + int.to_string(i), expenses: list.range(0, 2000) |> list.map((j) => ("c" + int.to_string(j), (j + i) % 9)) })
+  println(int.to_string(budget_report(limits, months) |> list.fold(0, (a, s) => a + string.len(s))))
+}

@@ -1,0 +1,32 @@
+// An order's life: new -> paid -> shipped -> delivered. "cancel" is allowed
+// only from new or paid. Any event that is not allowed in the current state is
+// rejected: the state stays and the rejection is counted.
+fn transition(state: String, event: String) -> String? =
+  match state {
+    "new" => match event {
+      "pay" => some("paid"),
+      "cancel" => some("cancelled"),
+      _ => none,
+    },
+    "paid" => match event {
+      "ship" => some("shipped"),
+      "cancel" => some("cancelled"),
+      _ => none,
+    },
+    "shipped" => match event {
+      "deliver" => some("delivered"),
+      _ => none,
+    },
+    _ => none,
+  }
+
+fn replay(events: List[String]) -> String = {
+  let (state, rejected) = events |> list.fold(("new", 0), (acc, ev) => {
+    let (st, rej) = acc
+    match transition(st, ev) {
+      some(next) => (next, rej),
+      none => (st, rej + 1),
+    }
+  })
+  "state=" + state + ",rejected=" + int.to_string(rejected)
+}

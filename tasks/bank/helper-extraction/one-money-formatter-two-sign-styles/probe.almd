@@ -1,0 +1,7 @@
+// Resource probe: the same 1,000 amounts formatted __K__ times. The helper
+// must allocate no more per call than the inline formatting did.
+effect fn main() -> Unit = {
+  let amounts = list.range(0, 1000) |> list.map((i) => i * 37 - 18000)
+  let total = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (amounts |> list.fold(0, (a, c) => a + string.len(total_line(c)))))
+  println(int.to_string(total))
+}

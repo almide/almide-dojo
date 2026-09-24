@@ -1,0 +1,8 @@
+// Resource probe: __K__ documents of 2,000 heading lines each. Each
+// document's heading list belongs to its own step, so the batch grows by the
+// input only; extracting every document's headings first keeps them all live.
+effect fn main() -> Unit = {
+  let docs = list.range(0, __K__) |> list.map((i) =>
+    list.range(0, 2000) |> list.map((j) => "## section number " + int.to_string(j + i)))
+  println(int.to_string(titles(docs) |> list.fold(0, (a, t) => a + string.len(t))))
+}

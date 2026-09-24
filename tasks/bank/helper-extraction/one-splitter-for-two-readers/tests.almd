@@ -1,0 +1,5 @@
+test "split and load" {
+  assert_eq(split_kv("a = 1"), some(("a", " 1")))
+  assert_eq(split_kv("nothing"), none)
+  assert_eq(map.get(load_settings(["Port=80"]), "port"), some("80"))
+}

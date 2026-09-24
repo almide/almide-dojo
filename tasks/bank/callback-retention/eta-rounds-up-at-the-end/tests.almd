@@ -1,0 +1,6 @@
+test "eta" {
+  let f = eta([2, 4])
+  assert_eq(f(10), "30s")
+  assert_eq(f(40), "2m00s")
+  assert_eq(eta([])(3), "unknown")
+}

@@ -1,0 +1,19 @@
+// Plausible wrong patch: the Result-returning helper invites the fallible
+// map, which stops at the FIRST failing field — later problems vanish.
+type Field = { name: String, value: String }
+
+fn check_field(f: Field) -> Result[Unit, String] =
+  if f.value == "" then err(f.name + ": required")
+  else if string.len(f.value) > 20 then err(f.name + ": too long")
+  else ok(())
+
+fn check_all(fields: List[Field]) -> Result[List[Unit], String] =
+  fields |> list.map((f) => check_field(f)!)
+
+fn check_form(fields: List[Field]) -> List[String] =
+  match check_all(fields) {
+    ok(_) => [],
+    err(e) => [e],
+  }
+
+fn is_valid(fields: List[Field]) -> Bool = list.is_empty(check_form(fields))

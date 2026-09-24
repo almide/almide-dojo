@@ -1,0 +1,26 @@
+// Undirected graphs given as edge lists over named nodes.
+fn neighbours(edges: List[(String, String)], n: String) -> List[String] =
+  edges |> list.filter_map(((a, b)) => if a == n then some(b) else if b == n then some(a) else none)
+
+// All nodes reachable from `start` (including it).
+fn reach(edges: List[(String, String)], frontier: List[String], seen: List[String]) -> List[String] =
+  match list.first(frontier) {
+    none => seen,
+    some(n) =>
+      if list.contains(seen, n) then reach(edges, list.drop(frontier, 1), seen)
+      else reach(edges, list.drop(frontier, 1) + neighbours(edges, n), seen + [n]),
+  }
+
+// Number of connected components among `nodes`.
+fn components(nodes: List[String], edges: List[(String, String)]) -> Int = {
+  let (_, count) = nodes |> list.fold(([], 0), (st, n) => {
+    let (seen, c) = st
+    if list.contains(seen, n) then st else (seen + reach(edges, [n], []), c + 1)
+  })
+  count
+}
+
+// Plausible wrong patch: takes each graph's nodes from its edges only, so a
+// universe node without edges is not counted as a component.
+fn components_batch(universe: List[String], graphs: List[List[(String, String)]]) -> List[Int] =
+  graphs |> list.map((edges) => components(edges |> list.flat_map(((a, b)) => [a, b]) |> list.unique, edges))

@@ -1,0 +1,12 @@
+test "hidden: the whole email rule survives" {
+  assert_eq(check_email("a@b@c"), err("bad email: a@b@c"))
+  assert_eq(check_email("@b"), err("bad email: @b"))
+  assert_eq(check_email("a@"), err("bad email: a@"))
+  assert_eq(check_email("A@B"), ok("A@B"))
+}
+test "hidden: order of checks" {
+  let users = [User { name: "ok", email: "o@k", age: 1 }, User { name: "", email: "bad", age: 999 }, User { name: "b", email: "x@@y", age: -1 }]
+  assert_eq(first_problem(users), "name is empty")
+  assert_eq(validate(User { name: "b", email: "x@@y", age: -1 }), err("bad email: x@@y"))
+  assert_eq(count_valid(users), 1)
+}

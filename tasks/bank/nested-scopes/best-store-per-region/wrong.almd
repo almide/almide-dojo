@@ -1,0 +1,31 @@
+// Regions hold stores; each store has a list of daily sales. Store names are
+// only unique WITHIN a region: "central" in two regions is two stores.
+type Store = { name: String, sales: List[Int] }
+type Region = { name: String, stores: List[Store] }
+
+fn store_total(s: Store) -> Int = s.sales |> list.fold(0, (a, x) => a + x)
+
+fn region_total(r: Region) -> Int = r.stores |> list.fold(0, (a, s) => a + store_total(s))
+
+fn overview(regions: List[Region]) -> List[String] =
+  regions |> list.map((r) => r.name + "=" + int.to_string(region_total(r)))
+
+// Plausible wrong patch: totals every store name ONCE for the whole input (one
+// pass instead of one per region), so stores that share a name are merged.
+fn best_stores(regions: List[Region]) -> List[String] = {
+  let by_name = regions |> list.flat_map((r) => r.stores) |> list.fold(map.new(), (m, s) =>
+    map.set(m, s.name, (map.get(m, s.name) ?? 0) + store_total(s)))
+  regions |> list.map((r) => {
+    let best = r.stores |> list.map((s) => (s.name, map.get(by_name, s.name) ?? 0)) |> list.fold(none, (acc, p) => {
+      let (_, t) = p
+      match acc {
+        some((_, bt)) => if t > bt then some(p) else acc,
+        none => some(p),
+      }
+    })
+    match best {
+      some((name, t)) => r.name + ": " + name + " " + int.to_string(t),
+      none => r.name + ": none",
+    }
+  })
+}

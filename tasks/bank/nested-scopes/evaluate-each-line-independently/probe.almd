@@ -1,0 +1,8 @@
+// Resource probe: a batch of __K__ lines of 3,000 tokens each. Each line's
+// tokens and stack belong to its own step, so the batch grows by the input
+// lines only; tokenizing every line first keeps all the token lists live.
+effect fn main() -> Unit = {
+  let lines = list.range(0, __K__) |> list.map((i) =>
+    (list.range(0, 1500) |> list.map((j) => int.to_string((j + i) % 9 + 1)) |> list.join(" ")) + string.repeat(" +", 1499))
+  println(int.to_string(eval_all(lines) |> list.fold(0, (a, s) => a + string.len(s))))
+}

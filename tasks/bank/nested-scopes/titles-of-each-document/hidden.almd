@@ -1,0 +1,10 @@
+test "hidden: not every hash is a title" {
+  assert_eq(titles([["#tag", "## Sub", "# Real"], ["##x"], ["####### deep", "#  Spaced  "]]), ["Real", "(untitled)", "Spaced"])
+}
+test "hidden: first title wins, empty batch" {
+  assert_eq(titles([["text", "# One", "# Two"], []]), ["One", "(untitled)"])
+  assert_eq(titles([]), [])
+}
+test "hidden: outline unchanged" {
+  assert_eq(outline(["# A", "#b", "### C"]), ["A", "    C"])
+}

@@ -1,0 +1,56 @@
+// Editor commands, one per line: "type:<text>", "undo", "redo".
+type Cmd =
+  | TypeText(String)
+  | Undo
+  | Redo
+
+fn parse_cmd(line: String) -> Result[Cmd, String] =
+  match line {
+    "undo" => ok(Undo),
+    "redo" => ok(Redo),
+    _ => match string.strip_prefix(line, "type:") {
+      some(t) => ok(TypeText(t)),
+      none => err("unknown command: " + line),
+    },
+  }
+
+fn parse_script(lines: List[String]) -> Result[List[Cmd], String] =
+  lines |> list.map((l) => parse_cmd(l)!)
+
+// How many commands of each kind: (typed, undos, redos).
+fn census(lines: List[String]) -> Result[(Int, Int, Int), String] = {
+  let cmds = parse_script(lines)!
+  ok(cmds |> list.fold((0, 0, 0), (acc, c) => {
+    let (t, u, r) = acc
+    match c {
+      TypeText(_) => (t + 1, u, r),
+      Undo => (t, u + 1, r),
+      Redo => (t, u, r + 1),
+    }
+  }))
+}
+
+// Replay with undo/redo stacks of earlier texts; the stacks stay local.
+type Ed = { text: String, undos: List[String], redos: List[String] }
+
+fn step(ed: Ed, c: Cmd) -> Ed =
+  match c {
+    TypeText(t) => Ed { text: ed.text + t, undos: ed.undos + [ed.text], redos: [] },
+    Undo => match list.last(ed.undos) {
+      some(prev) => Ed { text: prev, undos: list.drop_end(ed.undos, 1), redos: ed.redos + [ed.text] },
+      none => ed,
+    },
+    Redo => match list.last(ed.redos) {
+      some(next) => Ed { text: next, undos: ed.undos + [ed.text], redos: list.drop_end(ed.redos, 1) },
+      none => ed,
+    },
+  }
+
+fn final_text(lines: List[String]) -> String =
+  match parse_script(lines) {
+    err(e) => "error=" + e,
+    ok(cmds) => {
+      let ed = cmds |> list.fold(Ed { text: "", undos: [], redos: [] }, (acc, c) => step(acc, c))
+      ed.text
+    },
+  }

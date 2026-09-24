@@ -1,0 +1,12 @@
+test "hidden: recovered accounts still count" {
+  assert_eq(overdrawn([Withdraw("a", 3), Deposit("a", 10)]), "a")
+  assert_eq(overdrawn([Deposit("a", 1), Transfer("a", "b", 2), Deposit("a", 5)]), "a")
+}
+test "hidden: order of first going negative, zero is fine" {
+  assert_eq(overdrawn([Deposit("a", 1), Withdraw("b", 1), Withdraw("a", 2), Withdraw("b", 1)]), "b,a")
+  assert_eq(overdrawn([Deposit("a", 2), Withdraw("a", 2)]), "none")
+  assert_eq(overdrawn([]), "none")
+}
+test "hidden: statement unchanged" {
+  assert_eq(statement([Transfer("x", "y", 4), Deposit("x", 1)]), "x=-3,y=4")
+}

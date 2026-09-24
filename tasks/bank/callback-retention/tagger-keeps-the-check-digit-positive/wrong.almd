@@ -1,0 +1,18 @@
+// Batches of signed adjustments. The weighted sum gives position i (from 0)
+// the weight i + 1.
+fn weighted(xs: List[Int]) -> Int =
+  xs |> list.enumerate |> list.fold(0, (acc, p) => {
+    let (i, x) = p
+    acc + (i + 1) * x
+  })
+
+fn describe(xs: List[Int]) -> String =
+  int.to_string(list.len(xs)) + " items, weighted " + int.to_string(weighted(xs))
+
+// Plausible wrong patch: uses `%` directly. For a negative sum the remainder
+// is negative, so the check comes out as "-1" instead of 96.
+fn tagger(xs: List[Int]) -> (String) -> String = {
+  let c = weighted(xs) % 97
+  let text = (if c < 10 and c >= 0 then "0" else "") + int.to_string(c)
+  (prefix) => prefix + "-" + text
+}

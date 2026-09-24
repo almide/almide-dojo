@@ -1,0 +1,15 @@
+test "hidden: counted like the tally" {
+  let f = alert_rule(["error disk", "  Error net", "ERRORS many", "WARN x"])
+  assert_eq(f(2), "alert: 2 errors")
+  assert_eq(f(3), "ok: 2 errors")
+  assert_eq(alert_rule(["ERROR: colon", "ERROR y"])(2), "ok: 1 errors")
+}
+test "hidden: thresholds at the edge" {
+  let f = alert_rule([])
+  assert_eq(f(0), "alert: 0 errors")
+  assert_eq(f(1), "ok: 0 errors")
+  assert_eq(f(-1), "alert: 0 errors")
+}
+test "hidden: summary unchanged" {
+  assert_eq(summary(["x", "info a", "Info b"]), "OTHER=1 INFO=2")
+}

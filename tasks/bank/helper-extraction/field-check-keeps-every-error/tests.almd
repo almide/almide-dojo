@@ -1,0 +1,5 @@
+test "field check" {
+  assert_eq(check_field(Field { name: "a", value: "" }), err("a: required"))
+  assert_eq(check_field(Field { name: "a", value: "x" }), ok(()))
+  assert_eq(check_form([Field { name: "a", value: "x" }, Field { name: "b", value: "" }]), ["b: required"])
+}

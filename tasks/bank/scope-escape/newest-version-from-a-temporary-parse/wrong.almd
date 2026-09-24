@@ -1,0 +1,50 @@
+// Dotted version strings ("1.10.2") compared numerically, component by
+// component. A missing component counts as 0, so "1.2" and "1.2.0" are equal.
+
+fn digits_only(p: String) -> Bool =
+  p != "" and (string.chars(p) |> list.all((c) => string.is_digit(c)))
+
+fn parse(v: String) -> Result[List[Int], String] = {
+  let parts = string.split(v, ".")
+  if parts |> list.all((p) => digits_only(p)) then ok(parts |> list.map((p) => int.parse(p) ?? 0))
+  else err("bad version: " + v)
+}
+
+fn cmp_at(a: List[Int], b: List[Int], i: Int) -> Int =
+  if i >= list.len(a) and i >= list.len(b) then 0
+  else {
+    let x = list.get(a, i) ?? 0
+    let y = list.get(b, i) ?? 0
+    if x < y then -1 else if x > y then 1 else cmp_at(a, b, i + 1)
+  }
+
+fn compare(a: List[Int], b: List[Int]) -> Int = cmp_at(a, b, 0)
+
+// Every version parsed, in input order; the first bad one is the error.
+fn parse_all(vs: List[String]) -> Result[List[(List[Int], String)], String] =
+  vs |> list.map((v) => (parse(v)!, v))
+
+fn insert_sorted(sorted: List[(List[Int], String)], item: (List[Int], String)) -> List[(List[Int], String)] = {
+  let (key, _) = item
+  let before = sorted |> list.take_while(((k, _)) => compare(k, key) <= 0)
+  let after = sorted |> list.drop(list.len(before))
+  list.flatten([before, [item], after])
+}
+
+// Ascending, stable: equal versions keep their input order.
+fn sort_versions(vs: List[String]) -> Result[List[String], String] = {
+  let items = parse_all(vs)!
+  ok(items |> list.fold([], (acc, it) => insert_sorted(acc, it)) |> list.map(((_, v)) => v))
+}
+
+// Plausible wrong patch: reuse the stable ascending sort and take the last
+// element. With ties the stable sort keeps input order, so the LAST of the
+// equal versions is reported instead of the first.
+fn newest(vs: List[String]) -> String =
+  match sort_versions(vs) {
+    err(e) => "error=" + e,
+    ok(sorted) => match list.last(sorted) {
+      some(v) => "newest=" + v,
+      none => "none",
+    },
+  }

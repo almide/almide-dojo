@@ -1,0 +1,21 @@
+test "hidden: exact mean with negatives" {
+  let f = above_mean([-1, -2])
+  assert_eq(f(-1), true)
+  assert_eq(f(-2), false)
+  let g = above_mean([-3, 0])
+  assert_eq(g(-1), true)
+}
+test "hidden: fractional positive mean and repeats" {
+  let f = above_mean([1, 2])
+  assert_eq(f(1), false)
+  assert_eq(f(2), true)
+  assert_eq(f(2), true)
+}
+test "hidden: no readings" {
+  let f = above_mean([])
+  assert_eq(f(0), false)
+  assert_eq(f(100), false)
+}
+test "hidden: report unchanged" {
+  assert_eq(report([-1, -2]), "n=2,mean~-1")
+}

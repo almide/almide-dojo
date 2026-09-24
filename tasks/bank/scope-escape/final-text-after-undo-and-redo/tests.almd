@@ -1,0 +1,7 @@
+test "type and undo" {
+  assert_eq(final_text(["type:ab", "type:c", "undo"]), "ab")
+  assert_eq(final_text(["type:a", "undo", "redo"]), "a")
+}
+test "bad command" {
+  assert_eq(final_text(["type:a", "jump"]), "error=unknown command: jump")
+}

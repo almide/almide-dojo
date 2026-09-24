@@ -1,0 +1,14 @@
+test "hidden: totals decide, not single entries" {
+  let f = announcer([Entry { name: "bob", points: 5 }, Entry { name: "ann", points: 3 }, Entry { name: "ann", points: 4 }])
+  assert_eq(f("Now"), "Now, ann leads with 7")
+  assert_eq(f("Later"), "Later, ann leads with 7")
+}
+test "hidden: ties alphabetical, negatives" {
+  let f = announcer([Entry { name: "zed", points: 4 }, Entry { name: "amy", points: 1 }, Entry { name: "amy", points: 3 }])
+  assert_eq(f("Tie"), "Tie, amy leads with 4")
+  let g = announcer([Entry { name: "x", points: -2 }, Entry { name: "y", points: -1 }])
+  assert_eq(g(""), ", y leads with -1")
+}
+test "hidden: standings unchanged" {
+  assert_eq(standings([Entry { name: "b", points: 1 }, Entry { name: "a", points: 1 }]), ["a:1", "b:1"])
+}

@@ -1,0 +1,22 @@
+// Plausible wrong patch: the table is flattened into one match on the event,
+// and "cancel" is written once for every state — so a shipped, delivered or
+// already cancelled order can now be cancelled.
+fn transition(state: String, event: String) -> String? =
+  match event {
+    "pay" => if state == "new" then some("paid") else none,
+    "ship" => if state == "paid" then some("shipped") else none,
+    "deliver" => if state == "shipped" then some("delivered") else none,
+    "cancel" => some("cancelled"),
+    _ => none,
+  }
+
+fn replay(events: List[String]) -> String = {
+  let (state, rejected) = events |> list.fold(("new", 0), (acc, ev) => {
+    let (st, rej) = acc
+    match transition(st, ev) {
+      some(next) => (next, rej),
+      none => (st, rej + 1),
+    }
+  })
+  "state=" + state + ",rejected=" + int.to_string(rejected)
+}

@@ -1,0 +1,8 @@
+// Resource probe: __K__ announcers over fresh 5,000-entry scoreboards, all held
+// live. Capturing the leader grows by one name each; capturing `entries` grows
+// by the whole board.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) =>
+    announcer(list.range(0, 5000) |> list.map((j) => Entry { name: "p" + int.to_string(j % 50), points: (j * 7 + i) % 13 })))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("hi")))))
+}

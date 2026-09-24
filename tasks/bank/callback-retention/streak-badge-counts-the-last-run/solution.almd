@@ -1,0 +1,15 @@
+// A habit log: one Bool per day, true when the habit was done.
+fn done_days(days: List[Bool]) -> Int = days |> list.count((d) => d)
+
+fn completion(days: List[Bool]) -> String =
+  if list.is_empty(days) then "no days"
+  else int.to_string(done_days(days)) + "/" + int.to_string(list.len(days)) + " days"
+
+// Both runs are computed now; the closure captures two numbers only.
+fn streak_badge(days: List[Bool]) -> (String) -> String = {
+  let (best, cur) = days |> list.fold((0, 0), (st, d) => {
+    let (b, c) = st
+    if d then (int.max(b, c + 1), c + 1) else (b, 0)
+  })
+  (name) => name + ": best " + int.to_string(best) + ", current " + int.to_string(cur)
+}

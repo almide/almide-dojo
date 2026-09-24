@@ -1,0 +1,9 @@
+// Resource probe: __K__ graphs of 500 disjoint edges over their own nodes.
+// Each graph's node list and reachability lists belong to its own step, so
+// the batch grows by the input edges only; building every node list first
+// keeps them all live.
+effect fn main() -> Unit = {
+  let graphs = list.range(0, __K__) |> list.map((g) =>
+    list.range(0, 500) |> list.map((j) => ("left-node-" + int.to_string(g) + "-" + int.to_string(j), "right-node-" + int.to_string(g) + "-" + int.to_string(j))))
+  println(int.to_string(components_batch(["solo"], graphs) |> list.fold(0, (a, n) => a + n)))
+}

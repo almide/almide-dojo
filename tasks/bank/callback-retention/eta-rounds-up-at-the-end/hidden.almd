@@ -1,0 +1,12 @@
+test "hidden: round up once at the end" {
+  let f = eta([1, 2])
+  assert_eq(f(3), "5s")
+  assert_eq(f(1), "2s")
+  assert_eq(f(0), "0s")
+  let g = eta([1, 1, 2])
+  assert_eq(g(3), "4s")
+  assert_eq(g(2700), "1h00m00s")
+}
+test "hidden: spent unchanged" {
+  assert_eq(spent([3599, 1]), "1h00m00s")
+}

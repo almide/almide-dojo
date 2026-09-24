@@ -1,0 +1,22 @@
+// Plausible wrong patch: the helper splits the email at "@" and checks the
+// parts: exactly two, neither empty. That is the same rule — but every check
+// now allocates a list and two strings the inline test never made.
+type User = { name: String, email: String, age: Int }
+
+fn check_email(email: String) -> Result[String, String] = {
+  let parts = string.split(email, "@")
+  if list.len(parts) == 2 and (list.first(parts) ?? "") != "" and (list.last(parts) ?? "") != "" then ok(email)
+  else err("bad email: " + email)
+}
+
+fn validate(u: User) -> Result[User, String] = {
+  guard u.name != "" else err("name is empty")
+  check_email(u.email)!
+  guard u.age >= 0 and u.age <= 150 else err("bad age: " + int.to_string(u.age))
+  ok(u)
+}
+
+fn count_valid(users: List[User]) -> Int = users |> list.count((u) => result.is_ok(validate(u)))
+
+fn first_problem(users: List[User]) -> String =
+  users |> list.filter_map((u) => result.to_err_option(validate(u))) |> list.first ?? "all valid"

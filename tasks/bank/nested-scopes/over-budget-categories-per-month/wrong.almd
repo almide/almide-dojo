@@ -1,0 +1,24 @@
+// Monthly expenses by category, checked against per-category limits.
+type Month = { name: String, expenses: List[(String, Int)] }
+
+// Category totals for one month, categories in order of first expense.
+fn totals(expenses: List[(String, Int)]) -> Map[String, Int] =
+  expenses |> list.fold(map.new(), (m, e) => {
+    let (cat, amt) = e
+    map.set(m, cat, (map.get(m, cat) ?? 0) + amt)
+  })
+
+fn spent(m: Month) -> Int = m.expenses |> list.fold(0, (a, e) => {
+  let (_, amt) = e
+  a + amt
+})
+
+// Plausible wrong patch: a missing limit defaults to 0, so any spending in an
+// unlimited category is reported as over.
+fn budget_report(limits: Map[String, Int], months: List[Month]) -> List[String] =
+  months |> list.map((m) => {
+    let over = map.entries(totals(m.expenses))
+      |> list.filter(((cat, t)) => t > (map.get(limits, cat) ?? 0))
+      |> list.map(((cat, _)) => cat)
+    m.name + ": " + (if list.is_empty(over) then "ok" else list.join(over, ","))
+  })

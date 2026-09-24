@@ -1,0 +1,31 @@
+// Cache simulations over a request trace. A cache holds at most `capacity`
+// keys; capacity 0 caches nothing.
+
+// FIFO: on a miss the key is added; when full, the OLDEST INSERTED key is
+// evicted. A hit changes nothing.
+fn fifo_misses(capacity: Int, requests: List[String]) -> Int = {
+  let (_, misses) = requests |> list.fold(([], 0), (st, key) => {
+    let (cache, m) = st
+    if list.contains(cache, key) then (cache, m)
+    else if capacity <= 0 then (cache, m + 1)
+    else if list.len(cache) < capacity then (cache + [key], m + 1)
+    else (list.drop(cache, 1) + [key], m + 1)
+  })
+  misses
+}
+
+fn fifo_report(capacity: Int, requests: List[String]) -> String =
+  "fifo misses=" + int.to_string(fifo_misses(capacity, requests)) + "/" + int.to_string(list.len(requests))
+
+// LRU: the cache list runs from least to most recently used; a hit moves the
+// key to the end. The cache stays local to this call.
+fn lru_stats(capacity: Int, requests: List[String]) -> String = {
+  let (_, hits, misses) = requests |> list.fold(([], 0, 0), (st, key) => {
+    let (cache, h, m) = st
+    if list.contains(cache, key) then ((cache |> list.filter((k) => k != key)) + [key], h + 1, m)
+    else if capacity <= 0 then (cache, h, m + 1)
+    else if list.len(cache) < capacity then (cache + [key], h, m + 1)
+    else (list.drop(cache, 1) + [key], h, m + 1)
+  })
+  "hits=" + int.to_string(hits) + ",misses=" + int.to_string(misses)
+}

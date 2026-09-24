@@ -1,0 +1,28 @@
+// Half-open integer intervals [start, end). An interval with end <= start is
+// empty and covers nothing.
+
+fn is_empty(iv: (Int, Int)) -> Bool = {
+  let (s, e) = iv
+  e <= s
+}
+
+fn clean(ivs: List[(Int, Int)]) -> List[(Int, Int)] = ivs |> list.filter((iv) => not is_empty(iv))
+
+// Merge overlapping or touching intervals.
+// REQUIRES: `ivs` is clean and sorted by start.
+fn merge(ivs: List[(Int, Int)]) -> List[(Int, Int)] =
+  ivs |> list.fold([], (acc, iv) => {
+    let (s, e) = iv
+    match list.last(acc) {
+      some((ls, le)) =>
+        if s <= le then list.take(acc, list.len(acc) - 1) + [(ls, int.max(le, e))]
+        else acc + [iv],
+      none => [iv],
+    }
+  })
+
+fn render(ivs: List[(Int, Int)]) -> String =
+  ivs |> list.map(((s, e)) => "[" + int.to_string(s) + "," + int.to_string(e) + ")") |> list.join(" ")
+
+// The schedule as given, cleaned and merged. Callers pass it sorted.
+fn show_schedule(ivs: List[(Int, Int)]) -> String = render(merge(clean(ivs)))

@@ -1,0 +1,19 @@
+// Plausible wrong patch: the table becomes data keyed on "state/event"
+// strings. Exactly the same transitions — but every lookup builds the table
+// and a fresh key string, where the nested match allocated nothing.
+fn transition(state: String, event: String) -> String? = {
+  let table = [("new/pay", "paid"), ("new/cancel", "cancelled"), ("paid/ship", "shipped"), ("paid/cancel", "cancelled"), ("shipped/deliver", "delivered")]
+  let key = state + "/" + event
+  table |> list.find(((k, _)) => k == key) |> option.map(((_, next)) => next)
+}
+
+fn replay(events: List[String]) -> String = {
+  let (state, rejected) = events |> list.fold(("new", 0), (acc, ev) => {
+    let (st, rej) = acc
+    match transition(st, ev) {
+      some(next) => (next, rej),
+      none => (st, rej + 1),
+    }
+  })
+  "state=" + state + ",rejected=" + int.to_string(rejected)
+}

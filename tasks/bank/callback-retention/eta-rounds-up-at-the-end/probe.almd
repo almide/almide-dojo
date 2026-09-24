@@ -1,0 +1,7 @@
+// Resource probe: __K__ estimators over fresh 20,000-sample lists, all held
+// live. Capturing the totals grows by a few bytes each; capturing `samples`
+// grows by the whole list.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) => eta(list.range(0, 20000 + i) |> list.map((j) => j % 7)))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f(5)))))
+}

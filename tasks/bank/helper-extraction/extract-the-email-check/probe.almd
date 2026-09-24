@@ -1,0 +1,8 @@
+// Resource probe: the same 1,000 valid users counted __K__ times. The helper
+// is a refactor of a check that allocated nothing, so the allocation count
+// must grow only as the inline version's did.
+effect fn main() -> Unit = {
+  let users = list.range(0, 1000) |> list.map((i) => User { name: "u" + int.to_string(i), email: "user" + int.to_string(i) + "@example.org", age: i % 100 })
+  let total = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + count_valid(users))
+  println(int.to_string(total))
+}

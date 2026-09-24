@@ -1,0 +1,13 @@
+// A scoreboard: one entry per round, a player may appear in many rounds.
+type Entry = { name: String, points: Int }
+
+// Points per player, players in order of first appearance.
+fn totals(entries: List[Entry]) -> Map[String, Int] =
+  entries |> list.fold(map.new(), (m, e) => map.set(m, e.name, (map.get(m, e.name) ?? 0) + e.points))
+
+// "name:points", highest total first, ties alphabetical.
+fn standings(entries: List[Entry]) -> List[String] =
+  map.entries(totals(entries))
+    |> list.sort_by(((name, _)) => name)
+    |> list.sort_by(((_, pts)) => 0 - pts)
+    |> list.map(((name, pts)) => name + ":" + int.to_string(pts))

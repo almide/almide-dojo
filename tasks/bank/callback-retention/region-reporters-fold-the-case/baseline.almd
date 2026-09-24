@@ -1,0 +1,13 @@
+// Sales records. Region names are case-insensitive: "North" and "north" are
+// the same region, shown with the spelling of its FIRST sale.
+type Sale = { region: String, amount: Int }
+
+fn same_region(a: String, b: String) -> Bool = string.to_lower(a) == string.to_lower(b)
+
+// Regions in order of first appearance, each with its first spelling.
+fn regions(sales: List[Sale]) -> List[String] =
+  sales |> list.fold([], (acc, s) =>
+    if acc |> list.any((r) => same_region(r, s.region)) then acc else acc + [s.region])
+
+fn region_total(sales: List[Sale], region: String) -> Int =
+  sales |> list.filter((s) => same_region(s.region, region)) |> list.fold(0, (a, s) => a + s.amount)

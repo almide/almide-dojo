@@ -1,0 +1,24 @@
+// Markdown-ish documents: a heading is 1 to 6 '#' followed by a space.
+// "#tag" (no space) and "####### x" (seven) are not headings.
+fn heading_level(line: String) -> Int? = {
+  let hashes = string.chars(line) |> list.take_while((c) => c == "#") |> list.len
+  if hashes >= 1 and hashes <= 6 and string.get(line, hashes) == some(" ") then some(hashes) else none
+}
+
+fn headings(doc: List[String]) -> List[(Int, String)] =
+  doc |> list.filter_map((l) => match heading_level(l) {
+    some(n) => some((n, string.trim(string.drop(l, n)))),
+    none => none,
+  })
+
+fn outline(doc: List[String]) -> List[String] =
+  headings(doc) |> list.map(((n, t)) => string.repeat("  ", n - 1) + t)
+
+// Plausible wrong patch: finds the first line starting with "#" and strips the
+// hash marks, so "#tag" and "## Sub" are taken as titles.
+fn titles(docs: List[List[String]]) -> List[String] =
+  docs |> list.map((doc) =>
+    match doc |> list.find((l) => string.starts_with(l, "#")) {
+      some(l) => string.trim(string.chars(l) |> list.drop_while((c) => c == "#") |> list.join("")),
+      none => "(untitled)",
+    })

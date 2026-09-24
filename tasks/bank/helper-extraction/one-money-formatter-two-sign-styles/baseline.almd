@@ -1,0 +1,12 @@
+// Amounts in cents. Receipt lines show a minus sign; the TOTAL line shows a
+// negative amount in parentheses (accounting style), with no minus sign.
+fn receipt_line(item: String, cents: Int) -> String = {
+  let a = int.abs(cents)
+  item + " " + (if cents < 0 then "-" else "") + int.to_string(a / 100) + "." + (if a % 100 < 10 then "0" else "") + int.to_string(a % 100)
+}
+
+fn total_line(cents: Int) -> String = {
+  let a = int.abs(cents)
+  let body = int.to_string(a / 100) + "." + (if a % 100 < 10 then "0" else "") + int.to_string(a % 100)
+  "TOTAL " + (if cents < 0 then "(" + body + ")" else body)
+}

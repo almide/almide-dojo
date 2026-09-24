@@ -1,0 +1,4 @@
+test "overdrawn at the end" {
+  assert_eq(overdrawn([Deposit("a", 5), Withdraw("a", 8), Deposit("b", 1)]), "a")
+  assert_eq(overdrawn([Deposit("a", 5)]), "none")
+}

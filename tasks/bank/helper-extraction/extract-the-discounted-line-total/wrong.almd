@@ -1,0 +1,18 @@
+// Plausible wrong patch: the helper discounts the unit price first and then
+// multiplies, so the rounding happens per unit instead of once per line.
+fn line_total(qty: Int, unit: Int) -> Int = {
+  let pct = if qty >= 100 then 10 else if qty >= 10 then 5 else 0
+  let unit_after = unit * (100 - pct) / 100
+  qty * unit_after
+}
+
+fn order_total(lines: List[(Int, Int)]) -> Int =
+  lines |> list.fold(0, (acc, line) => {
+    let (qty, unit) = line
+    acc + line_total(qty, unit)
+  })
+
+fn invoice(lines: List[(Int, Int)]) -> String = {
+  let cents = order_total(lines)
+  int.to_string(cents / 100) + "." + (if cents % 100 < 10 then "0" else "") + int.to_string(cents % 100)
+}

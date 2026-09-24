@@ -1,0 +1,26 @@
+// Log lines "<LEVEL> <message>". The level is case-insensitive and may be
+// preceded by spaces; unknown levels are tallied as "OTHER".
+fn level_of(line: String) -> String = {
+  let word = string.split(string.trim(line), " ") |> list.first ?? ""
+  let up = string.to_upper(word)
+  match up {
+    "ERROR" | "WARN" | "INFO" => up,
+    _ => "OTHER",
+  }
+}
+
+fn tally(lines: List[String]) -> Map[String, Int] =
+  lines |> list.fold(map.new(), (m, l) => {
+    let lv = level_of(l)
+    map.set(m, lv, (map.get(m, lv) ?? 0) + 1)
+  })
+
+fn summary(lines: List[String]) -> String =
+  map.entries(tally(lines)) |> list.map(((k, n)) => k + "=" + int.to_string(n)) |> list.join(" ")
+
+// The error count is computed now, exactly as tally counts it; the closure
+// captures the count only.
+fn alert_rule(lines: List[String]) -> (Int) -> String = {
+  let n = lines |> list.count((l) => level_of(l) == "ERROR")
+  (threshold) => (if n >= threshold then "alert: " else "ok: ") + int.to_string(n) + " errors"
+}

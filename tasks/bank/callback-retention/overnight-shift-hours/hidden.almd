@@ -1,0 +1,11 @@
+test "hidden: shifts across midnight" {
+  assert_eq(timesheet([("22:00", "06:00")])("a"), "a worked 8h00m")
+  assert_eq(timesheet([("23:50", "00:05"), ("08:00", "08:00")])("b"), "b worked 0h15m")
+}
+test "hidden: bad shifts skipped, empty" {
+  assert_eq(timesheet([("09:00", "25:00"), ("x", "10:00"), ("01:00", "02:05")])("c"), "c worked 1h05m")
+  assert_eq(timesheet([])("d"), "d worked 0h00m")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(valid_punches(["00:00", "23:59", "24:00", "7"]), 2)
+}

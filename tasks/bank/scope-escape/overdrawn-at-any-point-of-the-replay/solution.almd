@@ -1,0 +1,38 @@
+// A ledger replay: deposits, withdrawals and transfers between accounts.
+type Tx =
+  | Deposit(String, Int)
+  | Withdraw(String, Int)
+  | Transfer(String, String, Int)
+
+fn add(m: Map[String, Int], acct: String, amt: Int) -> Map[String, Int] =
+  map.set(m, acct, (map.get(m, acct) ?? 0) + amt)
+
+fn apply(m: Map[String, Int], tx: Tx) -> Map[String, Int] =
+  match tx {
+    Deposit(a, n) => add(m, a, n),
+    Withdraw(a, n) => add(m, a, 0 - n),
+    Transfer(from, to, n) => add(add(m, from, 0 - n), to, n),
+  }
+
+// Balances after the whole replay, accounts in order of first appearance.
+fn final_balances(txs: List[Tx]) -> Map[String, Int] =
+  txs |> list.fold(map.new(), (m, tx) => apply(m, tx))
+
+fn render(m: Map[String, Int]) -> String =
+  map.entries(m) |> list.map(((a, n)) => a + "=" + int.to_string(n)) |> list.join(",")
+
+fn statement(txs: List[Tx]) -> String = render(final_balances(txs))
+
+// Accounts that were negative after any transaction, in order of first going
+// negative. The replayed balances stay local to this call.
+fn overdrawn(txs: List[Tx]) -> String = {
+  let (_, seen) = txs |> list.fold((map.new(), []), (st, tx) => {
+    let (m, names) = st
+    let next = apply(m, tx)
+    let fresh = map.entries(next)
+      |> list.filter(((a, n)) => n < 0 and not list.contains(names, a))
+      |> list.map(((a, _)) => a)
+    (next, names + fresh)
+  })
+  if list.is_empty(seen) then "none" else list.join(seen, ",")
+}

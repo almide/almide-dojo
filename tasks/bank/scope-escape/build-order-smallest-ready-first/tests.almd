@@ -1,0 +1,4 @@
+test "build order" {
+  assert_eq(build_order(["a -> b", "b -> c"]), "a,b,c")
+  assert_eq(build_order(["a -> b", "b -> a"]), "cycle")
+}

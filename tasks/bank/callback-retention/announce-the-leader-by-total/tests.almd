@@ -1,0 +1,5 @@
+test "announce" {
+  let f = announcer([Entry { name: "ann", points: 3 }, Entry { name: "bob", points: 5 }])
+  assert_eq(f("Hi"), "Hi, bob leads with 5")
+  assert_eq(announcer([])("Hey"), "Hey, no scores")
+}

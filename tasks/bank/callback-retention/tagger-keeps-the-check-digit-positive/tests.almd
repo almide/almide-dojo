@@ -1,0 +1,5 @@
+test "tagger" {
+  let f = tagger([3, 1])
+  assert_eq(f("B7"), "B7-05")
+  assert_eq(tagger([100])("x"), "x-03")
+}

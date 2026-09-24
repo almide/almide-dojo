@@ -1,0 +1,17 @@
+test "hidden: box away from the origin" {
+  let inside = region(["5,5", "7,9"])!
+  assert_eq(inside((0, 0)), false)
+  assert_eq(inside((5, 9)), true)
+  assert_eq(inside((6, 4)), false)
+  let neg = region(["-3,-4", "-1,-2"])!
+  assert_eq(neg((0, 0)), false)
+  assert_eq(neg((-1, -4)), true)
+}
+test "hidden: no points and errors" {
+  let none_in = region([])!
+  assert_eq(none_in((0, 0)), false)
+  assert_eq(result.to_err_option(region(["1,2", "oops", "3"])), some("bad point: oops"))
+}
+test "hidden: count unchanged" {
+  assert_eq(count_points([" 1 , 2", "3,4"]), ok(2))
+}

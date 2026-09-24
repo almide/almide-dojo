@@ -1,0 +1,17 @@
+kind = "modify"
+family = "dojo:helper-extraction"
+contracts = []
+oracles = ["behaviour", "cross-target", "resource"]
+expected_loc = 10
+timeout_sec = 60
+difficulty = "hard"
+# Resource oracle (scripts/resource-oracle.sh, almide-dojo#5): the probe runs
+# at both scales on both targets; the candidate's growth in `allocs` must stay
+# within factor * the reference's growth + slack. wrong_resource.almd must pass
+# behaviour and exceed the bound.
+resource_oracle = "active"
+resource_probe = "probe.almd"
+resource_metric = "allocs"
+resource_scales = "1,8"
+resource_factor_pct = 120
+resource_slack = 256

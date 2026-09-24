@@ -1,0 +1,24 @@
+// Dates "YYYY-MM-DD" in the proleptic Gregorian calendar. Leap years: every
+// 4th year, except centuries, except every 400th year (1900 is not a leap
+// year, 2000 is).
+fn days_before_month(m: Int, leap: Bool) -> Int = {
+  let base = match m {
+    1 => 0, 2 => 31, 3 => 59, 4 => 90, 5 => 120, 6 => 151,
+    7 => 181, 8 => 212, 9 => 243, 10 => 273, 11 => 304, _ => 334,
+  }
+  if leap and m > 2 then base + 1 else base
+}
+
+fn days_between(a: String, b: String) -> Int? = {
+  let ya = int.parse(string.slice(a, 0, 4))?!
+  let ma = int.parse(string.slice(a, 5, 7))?!
+  let da = int.parse(string.slice(a, 8, 10))?!
+  let yb = int.parse(string.slice(b, 0, 4))?!
+  let mb = int.parse(string.slice(b, 5, 7))?!
+  let db = int.parse(string.slice(b, 8, 10))?!
+  let leap_a = (ya % 4 == 0 and ya % 100 != 0) or ya % 400 == 0
+  let leap_b = (yb % 4 == 0 and yb % 100 != 0) or yb % 400 == 0
+  let na = 365 * (ya - 1) + (ya - 1) / 4 - (ya - 1) / 100 + (ya - 1) / 400 + days_before_month(ma, leap_a) + da
+  let nb = 365 * (yb - 1) + (yb - 1) / 4 - (yb - 1) / 100 + (yb - 1) / 400 + days_before_month(mb, leap_b) + db
+  some(nb - na)
+}

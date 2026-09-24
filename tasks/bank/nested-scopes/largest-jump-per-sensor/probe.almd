@@ -1,0 +1,8 @@
+// Resource probe: __K__ sensors with 4,000 readings each. Each jump list is a
+// temporary of its own sensor's step, so the ranking grows by the input only;
+// keeping every jump list for the sort keeps them all live at once.
+effect fn main() -> Unit = {
+  let sensors = list.range(0, __K__) |> list.map((i) =>
+    Sensor { id: "s" + int.to_string(i), readings: list.range(0, 4000) |> list.map((j) => (j * 7919 + i * 13) % 1000) })
+  println(int.to_string(list.len(jump_ranking(sensors))))
+}

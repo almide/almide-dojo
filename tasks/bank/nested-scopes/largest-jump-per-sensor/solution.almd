@@ -1,0 +1,22 @@
+// Sensor readings over time. The largest jump is the biggest absolute change
+// between two consecutive readings; fewer than two readings have no jump.
+type Sensor = { id: String, readings: List[Int] }
+
+fn jumps(readings: List[Int]) -> List[Int] =
+  list.zip(readings, list.drop(readings, 1)) |> list.map(((a, b)) => int.abs(b - a))
+
+fn largest_jump(readings: List[Int]) -> Int? = list.max(jumps(readings))
+
+fn show(s: Sensor) -> String =
+  match largest_jump(s.readings) {
+    some(j) => s.id + ":" + int.to_string(j),
+    none => s.id + ":n/a",
+  }
+
+// One number per sensor (its jump list lives inside largest_jump's call);
+// n/a sensors rank below every real jump.
+fn jump_ranking(sensors: List[Sensor]) -> List[String] =
+  sensors
+    |> list.map((s) => (s, largest_jump(s.readings)))
+    |> list.sort_by(((_, j)) => match j { some(v) => 0 - v, none => 1 })
+    |> list.map(((s, _)) => show(s))

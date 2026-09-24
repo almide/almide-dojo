@@ -1,0 +1,4 @@
+test "busiest bucket" {
+  assert_eq(busiest([1, 12, 15, 18, 3], 10), "[10,20) x3")
+  assert_eq(busiest([], 10), "empty")
+}

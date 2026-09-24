@@ -1,0 +1,14 @@
+test "hidden: case-insensitive regions" {
+  let rs = reporters([Sale { region: "North", amount: 50 }, Sale { region: "north", amount: 30 }, Sale { region: "NORTH", amount: -10 }])
+  assert_eq(rs |> list.map(((r, _)) => r), ["North"])
+  assert_eq(rs |> list.map(((_, f)) => f(70)), ["North: 70/70 met"])
+}
+test "hidden: order, repeats, empty" {
+  let rs = reporters([Sale { region: "b", amount: 1 }, Sale { region: "A", amount: 2 }, Sale { region: "a", amount: 3 }])
+  assert_eq(rs |> list.map(((_, f)) => f(5)), ["b: 1/5 short", "A: 5/5 met"])
+  assert_eq(rs |> list.map(((_, f)) => f(0)), ["b: 1/0 met", "A: 5/0 met"])
+  assert_eq(list.len(reporters([])), 0)
+}
+test "hidden: regions unchanged" {
+  assert_eq(regions([Sale { region: "x", amount: 1 }, Sale { region: "X", amount: 1 }, Sale { region: "y", amount: 1 }]), ["x", "y"])
+}

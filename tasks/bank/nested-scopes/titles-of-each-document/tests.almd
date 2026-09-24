@@ -1,0 +1,3 @@
+test "titles" {
+  assert_eq(titles([["# Intro", "text"], ["no heading"]]), ["Intro", "(untitled)"])
+}

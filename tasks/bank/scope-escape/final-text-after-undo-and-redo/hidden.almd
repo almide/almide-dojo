@@ -1,0 +1,12 @@
+test "hidden: typing after undo drops the redo history" {
+  assert_eq(final_text(["type:a", "undo", "type:b", "redo"]), "b")
+  assert_eq(final_text(["type:a", "type:b", "undo", "undo", "type:c", "redo", "redo"]), "c")
+}
+test "hidden: multi-step and no-ops" {
+  assert_eq(final_text(["type:a", "type:b", "type:c", "undo", "undo", "redo"]), "ab")
+  assert_eq(final_text(["undo", "redo", "type:x"]), "x")
+  assert_eq(final_text([]), "")
+}
+test "hidden: census unchanged" {
+  assert_eq(census(["type:", "undo", "undo", "redo"]), ok((1, 2, 1)))
+}

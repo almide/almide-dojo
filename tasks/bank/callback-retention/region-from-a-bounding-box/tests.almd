@@ -1,0 +1,6 @@
+test "region" {
+  let inside = region(["0,0", "4,2"])!
+  assert_eq(inside((2, 1)), true)
+  assert_eq(inside((5, 1)), false)
+  assert_eq(region(["1,x"]) |> result.is_err, true)
+}

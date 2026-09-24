@@ -1,0 +1,5 @@
+test "segments" {
+  assert_eq(segments("/a//b/"), ["a", "b"])
+  assert_eq(depth("a/b/c"), 3)
+  assert_eq(basename("x/y"), "y")
+}

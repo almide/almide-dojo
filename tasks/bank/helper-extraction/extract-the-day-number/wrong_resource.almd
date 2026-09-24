@@ -1,0 +1,26 @@
+// Plausible wrong patch: the helper splits the date on "-" and reads the
+// month lengths from a list. Same numbers — but it allocates a parts list and
+// a month table on every call, where the inline code sliced three strings.
+fn days_before_month(m: Int, leap: Bool) -> Int = {
+  let base = match m {
+    1 => 0, 2 => 31, 3 => 59, 4 => 90, 5 => 120, 6 => 151,
+    7 => 181, 8 => 212, 9 => 243, 10 => 273, 11 => 304, _ => 334,
+  }
+  if leap and m > 2 then base + 1 else base
+}
+
+fn day_number(date: String) -> Int? = {
+  let parts = string.split(date, "-")
+  let y = int.parse(string.slice(date, 0, 4))?!
+  let m = int.parse(list.get(parts, 1) ?? "")?!
+  let d = int.parse(string.slice(date, 8, 10))?!
+  let leap = (y % 4 == 0 and y % 100 != 0) or y % 400 == 0
+  let lengths = [31, if leap then 29 else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  some(365 * (y - 1) + (y - 1) / 4 - (y - 1) / 100 + (y - 1) / 400 + list.sum(list.take(lengths, m - 1)) + d)
+}
+
+fn days_between(a: String, b: String) -> Int? = {
+  let na = day_number(a)!
+  let nb = day_number(b)!
+  some(nb - na)
+}

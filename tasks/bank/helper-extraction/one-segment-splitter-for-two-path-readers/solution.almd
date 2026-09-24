@@ -1,0 +1,8 @@
+// Slash-separated paths. Empty segments ("a//b", a leading or trailing "/")
+// never count. `depth` also ignores "." segments; `basename` does NOT: the
+// basename of "a/." is ".".
+fn segments(p: String) -> List[String] = string.split(p, "/") |> list.filter((s) => s != "")
+
+fn depth(p: String) -> Int = segments(p) |> list.filter((s) => s != ".") |> list.len
+
+fn basename(p: String) -> String = segments(p) |> list.last ?? ""

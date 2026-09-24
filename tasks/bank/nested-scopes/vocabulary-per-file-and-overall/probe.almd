@@ -1,0 +1,9 @@
+// Resource probe: a batch of __K__ files over the SAME 3,000-word vocabulary.
+// Each file's word set belongs to its own step and the overall vocabulary stays
+// at 3,000 words, so the batch grows by the input texts only; building every
+// file's set first keeps __K__ sets live at once.
+effect fn main() -> Unit = {
+  let files = list.range(0, __K__) |> list.map((i) =>
+    ("f" + int.to_string(i), list.range(0, 3000) |> list.map((j) => "w" + int.to_string((j * 7 + i) % 3000)) |> list.join(" ")))
+  println(int.to_string(list.len(vocab_report(files))))
+}

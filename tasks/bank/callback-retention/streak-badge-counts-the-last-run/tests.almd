@@ -1,0 +1,4 @@
+test "streaks" {
+  let f = streak_badge([true, true, false, true])
+  assert_eq(f("ann"), "ann: best 2, current 1")
+}

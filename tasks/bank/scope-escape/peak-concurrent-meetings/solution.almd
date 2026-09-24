@@ -1,0 +1,50 @@
+// Meetings written "HH:MM-HH:MM", a half-open span [start, end): a meeting
+// that ends at 10:00 and one that starts at 10:00 do not overlap.
+fn minutes(hhmm: String) -> Result[Int, String] =
+  match string.split(hhmm, ":") {
+    [h, m] => match int.parse(h) {
+      ok(hh) => match int.parse(m) {
+        ok(mm) => if hh >= 0 and hh < 24 and mm >= 0 and mm < 60 then ok(hh * 60 + mm) else err("bad time: " + hhmm),
+        err(_) => err("bad time: " + hhmm),
+      },
+      err(_) => err("bad time: " + hhmm),
+    },
+    _ => err("bad time: " + hhmm),
+  }
+
+fn parse_meeting(line: String) -> Result[(Int, Int), String] =
+  match string.split(line, "-") {
+    [a, b] => ok((minutes(a)!, minutes(b)!)),
+    _ => err("bad meeting: " + line),
+  }
+
+fn parse_meetings(lines: List[String]) -> Result[List[(Int, Int)], String] =
+  lines |> list.map((l) => parse_meeting(l)!)
+
+fn booked_minutes(lines: List[String]) -> Result[Int, String] = {
+  let ms = parse_meetings(lines)!
+  ok(ms |> list.fold(0, (acc, m) => {
+    let (s, e) = m
+    acc + int.max(0, e - s)
+  }))
+}
+
+// Sweep over +1/-1 events; at equal times the ends (-1) come before the
+// starts (+1). The event list stays local to this call.
+fn peak(lines: List[String]) -> String =
+  match parse_meetings(lines) {
+    err(e) => e,
+    ok(ms) => {
+      let events = ms
+        |> list.filter(((s, e)) => e > s)
+        |> list.flat_map(((s, e)) => [(s, 1), (e, -1)])
+        |> list.sort_by(((_, d)) => d)
+        |> list.sort_by(((t, _)) => t)
+      let (_, best) = events |> list.fold((0, 0), (st, ev) => {
+        let (cur, top) = st
+        let (_, d) = ev
+        (cur + d, int.max(top, cur + d))
+      })
+      "peak=" + int.to_string(best)
+    },
+  }

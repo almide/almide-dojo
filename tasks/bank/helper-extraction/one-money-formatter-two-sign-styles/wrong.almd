@@ -1,0 +1,11 @@
+// Plausible wrong patch: the helper takes over the receipt's minus sign, and
+// the TOTAL line wraps it in parentheses, giving "(-1.50)".
+fn money(cents: Int) -> String = {
+  let a = int.abs(cents)
+  (if cents < 0 then "-" else "") + int.to_string(a / 100) + "." + (if a % 100 < 10 then "0" else "") + int.to_string(a % 100)
+}
+
+fn receipt_line(item: String, cents: Int) -> String = item + " " + money(cents)
+
+fn total_line(cents: Int) -> String =
+  "TOTAL " + (if cents < 0 then "(" + money(cents) + ")" else money(cents))

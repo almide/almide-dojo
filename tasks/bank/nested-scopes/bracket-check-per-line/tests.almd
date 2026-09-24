@@ -1,0 +1,3 @@
+test "check lines" {
+  assert_eq(check_lines(["(a)", "(]", "x("]), ["ok", "bad@1", "open@1"])
+}

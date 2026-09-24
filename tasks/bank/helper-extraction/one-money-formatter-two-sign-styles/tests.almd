@@ -1,0 +1,5 @@
+test "money helper" {
+  assert_eq(money(1205), "12.05")
+  assert_eq(receipt_line("tea", 350), "tea 3.50")
+  assert_eq(total_line(99), "TOTAL 0.99")
+}
