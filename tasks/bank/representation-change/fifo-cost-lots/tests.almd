@@ -1,0 +1,10 @@
+test "fifo lots" {
+  let s = receive(receive(stock("pen"), 10, 100), 5, 130)
+  assert_eq(s.lots, [Lot { qty: 10, cost: 100 }, Lot { qty: 5, cost: 130 }])
+  let (after, cost) = ship(s, 12)!
+  assert_eq(cost, 10 * 100 + 2 * 130)
+  assert_eq(report(after), "pen: 3 units worth 390")
+}
+test "short" {
+  assert_eq(ship(receive(stock("x"), 2, 5), 3), err("short: have 2, want 3"))
+}
