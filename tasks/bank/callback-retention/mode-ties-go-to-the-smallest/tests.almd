@@ -1,0 +1,5 @@
+test "mode" {
+  let f = mode_reporter([3, 5, 3, 1])
+  assert_eq(f("d6"), "d6: mode 3 x2")
+  assert_eq(mode_reporter([])("d6"), "d6: no rolls")
+}

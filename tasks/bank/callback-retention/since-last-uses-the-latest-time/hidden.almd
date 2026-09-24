@@ -1,0 +1,9 @@
+test "hidden: late deliveries do not move the clock back" {
+  let f = since_last([100, 300, 200])
+  assert_eq(f(350), "50s ago")
+  assert_eq(f(300), "0s ago")
+  assert_eq(since_last([5, -10])(0), "-5s ago")
+}
+test "hidden: describe unchanged" {
+  assert_eq(describe([9, 3]), "2 events since 3")
+}

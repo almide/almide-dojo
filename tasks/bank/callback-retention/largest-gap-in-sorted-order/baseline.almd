@@ -1,0 +1,11 @@
+// Arrival times (minutes) of buses at a stop, in the order they were logged —
+// NOT necessarily in time order.
+fn earliest(ts: List[Int]) -> Int? = list.min(ts)
+
+fn latest(ts: List[Int]) -> Int? = list.max(ts)
+
+fn span(ts: List[Int]) -> Int =
+  match (earliest(ts), latest(ts)) {
+    (some(a), some(b)) => b - a,
+    _ => 0,
+  }

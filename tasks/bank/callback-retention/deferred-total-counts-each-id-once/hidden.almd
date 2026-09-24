@@ -1,0 +1,10 @@
+test "hidden: a retry with another amount does not count" {
+  let f = deferred_total([("a", 100), ("a", 999), ("b", 5), ("b", 7)], (n) => "=" + int.to_string(n))
+  assert_eq(f(), "=105")
+  assert_eq(f(), "=105")
+}
+test "hidden: empty and formatter" {
+  assert_eq(deferred_total([], (n) => "t" + int.to_string(n))(), "t0")
+  assert_eq(deferred_total([("x", -3)], (n) => int.to_string(n * 2))(), "-6")
+  assert_eq(retried([("a", 1), ("b", 1), ("a", 2)]), ["a"])
+}

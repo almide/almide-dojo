@@ -1,0 +1,13 @@
+test "hidden: time order, not log order" {
+  let f = gap_alarm([30, 0, 25, 10])
+  assert_eq(f(20), "gap 15 ok")
+  assert_eq(gap_alarm([50, 0, 5])(40), "gap 45 over")
+}
+test "hidden: few buses and duplicates" {
+  assert_eq(gap_alarm([7])(0), "gap 0 ok")
+  assert_eq(gap_alarm([])(0), "gap 0 ok")
+  assert_eq(gap_alarm([4, 4, 9])(4), "gap 5 over")
+}
+test "hidden: span unchanged" {
+  assert_eq(span([9, 2, 5]), 7)
+}

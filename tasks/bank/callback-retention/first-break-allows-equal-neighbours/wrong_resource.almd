@@ -1,0 +1,14 @@
+// Meter readings must never go DOWN; staying the same is fine.
+fn pairs(xs: List[Int]) -> List[(Int, Int)] = list.zip(xs, list.drop(xs, 1))
+
+fn drops(xs: List[Int]) -> Int = pairs(xs) |> list.count(((a, b)) => b < a)
+
+fn is_monotone(xs: List[Int]) -> Bool = drops(xs) == 0
+
+// Plausible wrong patch: the closure searches when it runs, so it captures
+// `xs` and keeps every reading alive.
+fn audit(xs: List[Int]) -> (String) -> String =
+  (name) => match pairs(xs) |> list.find_index(((a, b)) => b < a) {
+    some(i) => name + ": drop at " + int.to_string(i + 1),
+    none => name + ": ok",
+  }

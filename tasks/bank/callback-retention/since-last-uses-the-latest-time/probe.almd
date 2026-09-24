@@ -1,0 +1,7 @@
+// Resource probe: __K__ closures over fresh 20,000-timestamp lists, all held
+// live. Capturing one timestamp grows by a few bytes each; capturing `ts`
+// grows by the whole list.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) => since_last(list.range(0, 20000 + i) |> list.map((j) => (j * 7919) % 40009)))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f(50000)))))
+}

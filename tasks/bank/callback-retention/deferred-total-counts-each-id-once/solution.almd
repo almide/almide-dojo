@@ -1,0 +1,19 @@
+// Payment events (id, cents). The same payment can be delivered more than once
+// (retries); an id counts ONCE, with the amount of its FIRST delivery, even if
+// a retry carries a different amount.
+fn ids(events: List[(String, Int)]) -> List[String] = events |> list.map(((id, _)) => id) |> list.unique
+
+fn deliveries(events: List[(String, Int)], id: String) -> Int = events |> list.count(((i, _)) => i == id)
+
+fn retried(events: List[(String, Int)]) -> List[String] = ids(events) |> list.filter((id) => deliveries(events, id) > 1)
+
+// The total is computed now (first delivery per id); the closure keeps the
+// total and the caller's formatter.
+fn deferred_total(events: List[(String, Int)], fmt: (Int) -> String) -> () -> String = {
+  let (_, total) = events |> list.fold((set.new(), 0), (st, e) => {
+    let (seen, t) = st
+    let (id, c) = e
+    if set.contains(seen, id) then st else (set.insert(seen, id), t + c)
+  })
+  () => fmt(total)
+}

@@ -1,0 +1,7 @@
+// Resource probe: __K__ badges over fresh 100,000-character texts, all held
+// live. Capturing one word grows by a few bytes each; capturing `text` grows
+// by the whole text.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) => longest_badge(string.repeat("lorem ipsum\tdolor sit amet ", 4000) + int.to_string(i)))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("w")))))
+}

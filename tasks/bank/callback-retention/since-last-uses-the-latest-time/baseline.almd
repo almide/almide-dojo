@@ -1,0 +1,11 @@
+// Event timestamps (seconds) as they arrive from several clients — NOT in
+// time order: a late client can deliver an old event last.
+fn in_window(ts: List[Int], from: Int, to: Int) -> Int = ts |> list.count((t) => t >= from and t < to)
+
+fn first_seen(ts: List[Int]) -> Int? = list.min(ts)
+
+fn describe(ts: List[Int]) -> String =
+  int.to_string(list.len(ts)) + " events" + (match first_seen(ts) {
+    some(t) => " since " + int.to_string(t),
+    none => "",
+  })

@@ -1,0 +1,8 @@
+// Resource probe: __K__ deferred totals over fresh 5,000-event lists, all held
+// live. Capturing the total grows by a few bytes each; capturing `events`
+// grows by the whole list.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) =>
+    deferred_total(list.range(0, 5000) |> list.map((j) => ("pay-" + int.to_string(j % 4000) + "-" + int.to_string(i), j % 90)), (n) => int.to_string(n)))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f()))))
+}

@@ -1,0 +1,5 @@
+test "longest badge" {
+  let f = longest_badge("a quick brown fox")
+  assert_eq(f("L"), "L: quick (5)")
+  assert_eq(longest_badge("   ")("x"), "x: -")
+}

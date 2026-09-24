@@ -1,0 +1,7 @@
+// Resource probe: __K__ reporters over fresh 20,000-roll lists with 5,000
+// distinct values, all held live. Capturing the mode grows by a few bytes;
+// capturing the count table grows by the whole table.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) => mode_reporter(list.range(0, 20000) |> list.map((j) => (j * 7 + i) % 5000)))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("m")))))
+}
