@@ -1,0 +1,54 @@
+// Build order. Each line is "<module>: <dep>, <dep>, ..." ("<module>:" when it
+// imports nothing). A module is built after everything it imports. Modules are
+// walked in line order and imports in the order they are listed, so the build
+// order is deterministic.
+type Module = { name: String, deps: List[String] }
+type Walk = { seen: List[String], built: List[String] }
+
+fn parse_module(line: String) -> Module! = {
+  let parts = string.split(line, ":")
+  guard list.len(parts) == 2 else err("bad line: ${line}")
+  let name = string.trim(list.get(parts, 0) ?? "")
+  guard name != "" and not string.contains(name, " ") else err("bad module name in: ${line}")
+  let deps = string.split(list.get(parts, 1) ?? "", ",")
+    |> list.map((d) => string.trim(d))
+    |> list.filter((d) => d != "")
+  Module { name: name, deps: deps }
+}
+
+fn modules(lines: List[String]) -> List[Module]! = {
+  let ms = lines |> list.map((l) => parse_module(l)!)!
+  let twice = ms |> list.enumerate |> list.find((p) =>
+    list.take(ms, p.0) |> list.any((m) => m.name == p.1.name))
+  match twice {
+    some(p) => err("module ${p.1.name} defined twice"),
+    none => ok(ms),
+  }
+}
+
+// `via` is the chain of imports that led here, for the error message.
+fn visit(ms: List[Module], name: String, via: List[String], w: Walk) -> Walk! = {
+  match list.index_of(via, name) {
+    some(i) => err("import cycle: ${(list.drop(via, i) + [name]) |> list.join(" -> ")}"),
+    none => ok(()),
+  }!
+  guard not list.contains(w.seen, name) else ok(w)
+  let m = match list.find(ms, (x) => x.name == name) {
+    some(m) => ok(m),
+    none => err("unknown module ${name} (via ${via |> list.join(" -> ")})"),
+  }!
+  var cur = Walk { seen: w.seen + [name], built: w.built }
+  for d in m.deps {
+    cur = visit(ms, d, via + [name], cur)!
+  }
+  Walk { seen: cur.seen, built: cur.built + [name] }
+}
+
+fn build_order(lines: List[String]) -> List[String]! = {
+  let ms = modules(lines)!
+  var w = Walk { seen: [], built: [] }
+  for m in ms {
+    w = visit(ms, m.name, [], w)!
+  }
+  w.built
+}

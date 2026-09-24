@@ -1,0 +1,16 @@
+test "hidden: the chain starts at the module reached again" {
+  assert_eq(build_order(["app: core, ui", "ui: widgets", "widgets: theme", "theme: ui", "core:"]), err("import cycle: ui -> widgets -> theme -> ui"))
+  assert_eq(build_order(["a: a"]), err("import cycle: a -> a"))
+}
+test "hidden: shared imports are not cycles" {
+  assert_eq(build_order(["app: ui, net", "ui: core", "net: core", "core:"]), ok(["core", "ui", "net", "app"]))
+  assert_eq(build_order(["b: c", "a: b, c", "c:"]), ok(["c", "b", "a"]))
+}
+test "hidden: whichever the walk meets first wins" {
+  assert_eq(build_order(["app: x, ui", "ui: app"]), err("unknown module x (via app)"))
+  assert_eq(build_order(["app: ui, x", "ui: app"]), err("import cycle: app -> ui -> app"))
+}
+test "hidden: line errors and duplicates come before the walk" {
+  assert_eq(build_order(["a: a", "b c"]), err("bad line: b c"))
+  assert_eq(build_order(["a: b", "b: a", "a:"]), err("module a defined twice"))
+}
