@@ -1,0 +1,41 @@
+// Utility meter readings. Every meter starts from a known reading; each line
+// "<meter> <reading>" is a new cumulative reading, and consumption is the sum of
+// the increases.
+type Meter: Eq, Repr = { last: Int, total: Int, replaced: Int }
+
+fn read_line(line: String) -> (String, Int)! = {
+  let words = string.split(line, " ") |> list.filter((w) => w != "")
+  guard list.len(words) == 2 else err("bad line: ${line}")
+  let n = int.parse(list.get(words, 1) ?? "") |> result.map_err((_) => "bad reading: ${line}")!
+  guard n >= 0 else err("bad reading: ${line}")
+  (list.get(words, 0) ?? "", n)
+}
+
+fn advance(m: Meter, id: String, reading: Int) -> Meter! = {
+  guard reading >= m.last else err("reading went backwards on ${id}: ${int.to_string(m.last)} -> ${int.to_string(reading)}")
+  { ...m, last: reading, total: m.total + reading - m.last }
+}
+
+fn consume(start: Map[String, Int], lines: List[String]) -> Map[String, Meter]! = {
+  var meters: Map[String, Meter] = map.from_list(map.entries(start) |> list.map((e) => (e.0, Meter { last: e.1, total: 0, replaced: 0 })))
+  for line in lines {
+    let r = read_line(line)!
+    let m = match map.get(meters, r.0) {
+      some(m) => ok(m),
+      none => err("unknown meter ${r.0}"),
+    }!
+    meters = map.set(meters, r.0, advance(m, r.0, r.1)!)
+  }
+  meters
+}
+
+// "a used 30 (1 replaced); b used 0", meters by id.
+fn bill(start: Map[String, Int], lines: List[String]) -> String! = {
+  let ms = consume(start, lines)!
+  let parts = map.keys(ms) |> list.sort |> list.map((id) => {
+    let m = map.get(ms, id) ?? Meter { last: 0, total: 0, replaced: 0 }
+    let rep = if m.replaced == 0 then "" else " (${int.to_string(m.replaced)} replaced)"
+    "${id} used ${int.to_string(m.total)}${rep}"
+  })
+  list.join(parts, "; ")
+}

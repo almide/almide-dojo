@@ -1,0 +1,6 @@
+test "a reading lower than the last one means the meter was replaced" {
+  assert_eq(bill(["a": 100], ["a 50"]), ok("a used 0 (1 replaced)"))
+}
+test "an unknown meter is still fatal" {
+  assert_eq(bill(["a": 100], ["b 5"]), err("unknown meter b"))
+}
