@@ -1,0 +1,14 @@
+// A tax-rule port. Amounts are cents; rates are basis points (1% = 100).
+protocol TaxRule {
+  fn tax(t: Self, income: Int) -> Int
+}
+
+// One rate on the whole income, rounded down; no tax on zero or negative income.
+type FlatTax: TaxRule = { bps: Int }
+fn FlatTax.tax(t: FlatTax, income: Int) -> Int = if income <= 0 then 0 else income * t.bps / 10000
+
+fn net[T: TaxRule](t: T, income: Int) -> Int = income - t.tax(income)
+
+// "income: tax / net" per income, in order.
+fn payslips[T: TaxRule](t: T, incomes: List[Int]) -> List[String] =
+  incomes |> list.map((i) => int.to_string(i) + ": " + int.to_string(t.tax(i)) + " / " + int.to_string(net(t, i)))

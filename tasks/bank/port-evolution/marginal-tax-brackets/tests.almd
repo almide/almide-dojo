@@ -1,0 +1,8 @@
+test "marginal brackets" {
+  let b = Brackets { bands: [(100000, 1000), (300000, 2000)], top_bps: 4000 }
+  assert_eq(b.tax(250000), 10000 + 30000)
+  assert_eq(payslips_under(Progressive(b), [500000]), ["500000: 130000 / 370000"])
+}
+test "simple regime" {
+  assert_eq(payslips_under(Simple(FlatTax { bps: 1500 }), [1000]), ["1000: 150 / 850"])
+}
