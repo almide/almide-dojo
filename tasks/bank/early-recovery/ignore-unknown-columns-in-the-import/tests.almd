@@ -1,0 +1,6 @@
+test "an unknown column is ignored with a warning" {
+  assert_eq(import_csv(["name,age,phone", "Ann,30,555"]) |> result.map((i) => show(i)), ok("Ann/30/ | ignoring column phone"))
+}
+test "a missing required column is still fatal" {
+  assert_eq(import_csv(["name,email", "Ann,a@b"]) |> result.map((i) => show(i)), err("missing column age"))
+}
