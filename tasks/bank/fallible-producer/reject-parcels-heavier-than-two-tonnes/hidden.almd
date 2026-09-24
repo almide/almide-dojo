@@ -1,0 +1,16 @@
+test "hidden: the limit applies to the converted weight, exact message" {
+  assert_eq(manifest(["a 1kg", "b 3t"]), err("too heavy: b (3000000000 mg)"))
+  assert_eq(manifest(["big 2000001g"]), err("too heavy: big (2000001000 mg)"))
+}
+test "hidden: exactly two tonnes is allowed, in any unit" {
+  assert_eq(manifest(["a 2t", "b 2000kg", "c 2000000g", "d 2000000000mg"]), ok("4 parcels, 8000.000 kg"))
+}
+test "hidden: older checks win" {
+  assert_eq(manifest(["a 9st"]), err("unknown unit st for a"))
+  assert_eq(manifest(["a 0t"]), err("empty parcel a"))
+  assert_eq(manifest(["a t"]), err("missing amount for a"))
+}
+test "hidden: the first failing line wins" {
+  assert_eq(manifest(["a 5t", "b 1x"]), err("too heavy: a (5000000000 mg)"))
+  assert_eq(manifest(["b 1x", "a 5t"]), err("unknown unit x for b"))
+}

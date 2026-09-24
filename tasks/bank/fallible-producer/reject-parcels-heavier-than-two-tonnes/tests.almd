@@ -1,0 +1,6 @@
+test "a parcel over two tonnes is rejected" {
+  assert(result.is_err(parse_parcel("crate 2000000001mg")))
+}
+test "ordinary parcels still add up" {
+  assert_eq(manifest(["a 1500g", "b 2kg", "c 250mg"]), ok("3 parcels, 3.500 kg"))
+}
