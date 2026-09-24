@@ -1,0 +1,71 @@
+// Cabin seating. Events, one per line: "book <passenger> <seat>",
+// "move <passenger> <seat>", "cancel <passenger>". Seats are a row 1-30 and a
+// letter A-F ("12C"). Lines are numbered from 1.
+type Event = | Book(String, String) | Move(String, String) | Cancel(String)
+
+let LETTERS = ["A", "B", "C", "D", "E", "F"]
+
+fn row_of(seat: String) -> Int = int.parse(string.slice(seat, 0, string.len(seat) - 1)) ?? 0
+
+fn seat(s: String, no: String) -> String! = {
+  let letter = string.slice(s, string.len(s) - 1, string.len(s))
+  let row = int.parse(string.slice(s, 0, string.len(s) - 1)) |> result.map_err((_) => "line ${no}: bad seat ${s}")!
+  guard row >= 1 and row <= 30 and list.contains(LETTERS, letter) else err("line ${no}: bad seat ${s}")
+  s
+}
+
+fn parse_event(line: String, no: String) -> Event! = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  let who = list.get(w, 1) ?? ""
+  match (list.get(w, 0) ?? "", list.len(w)) {
+    ("book", 3) => ok(Book(who, seat(list.get(w, 2) ?? "", no)!)),
+    ("move", 3) => ok(Move(who, seat(list.get(w, 2) ?? "", no)!)),
+    ("cancel", 2) => ok(Cancel(who)),
+    _ => err("line ${no}: bad event ${line}"),
+  }
+}
+
+fn apply(seats: Map[String, String], e: Event, no: String) -> Map[String, String]! = {
+  let target = match e {
+    Book(_, s) => s,
+    Move(_, s) => s,
+    Cancel(_) => "",
+  }
+  match map.keys(seats) |> list.find((q) => map.get(seats, q) == some(target)) {
+    some(q) => err("line ${no}: seat ${target} is taken by ${q}"),
+    none => ok(()),
+  }!
+  match e {
+  Book(p, s) => {
+    guard not map.contains(seats, p) else err("line ${no}: ${p} is already booked")
+    ok(map.set(seats, p, s))
+  },
+  Move(p, s) => {
+    guard map.contains(seats, p) else err("line ${no}: no booking for ${p}")
+    ok(map.set(seats, p, s))
+  },
+  Cancel(p) => {
+    guard map.contains(seats, p) else err("line ${no}: no booking for ${p}")
+    ok(map.remove(seats, p))
+  },
+  }
+}
+
+// Passenger -> seat after every event.
+fn board(lines: List[String]) -> Map[String, String]! = {
+  var seats: Map[String, String] = [:]
+  for p in list.enumerate(lines) {
+    let no = int.to_string(p.0 + 1)
+    seats = apply(seats, parse_event(p.1, no)!, no)!
+  }
+  seats
+}
+
+// "<seat> <passenger>" by row, then letter.
+fn seat_map(lines: List[String]) -> List[String]! = {
+  let seats = board(lines)!
+  map.keys(seats)
+    |> list.map((p) => (map.get(seats, p) ?? "", p))
+    |> list.sort_by((x) => row_of(x.0) * 10 + (list.index_of(LETTERS, string.slice(x.0, string.len(x.0) - 1, string.len(x.0))) ?? 0))
+    |> list.map((x) => "${x.0} ${x.1}")
+}

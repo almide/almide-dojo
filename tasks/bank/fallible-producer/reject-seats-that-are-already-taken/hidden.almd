@@ -1,0 +1,13 @@
+test "hidden: exact message for a booking and for a move" {
+  assert_eq(seat_map(["book ann 3A", "book bob 3A"]), err("line 2: seat 3A is taken by ann"))
+  assert_eq(seat_map(["book ann 3A", "book bob 4B", "move bob 3A"]), err("line 3: seat 3A is taken by ann"))
+}
+test "hidden: freed seats can be taken again, and staying put is allowed" {
+  assert_eq(seat_map(["book ann 3A", "cancel ann", "book bob 3A", "move bob 5B", "move cy 5B", "book cy 3A"]), err("line 5: no booking for cy"))
+  assert_eq(seat_map(["book ann 3A", "cancel ann", "book bob 3A", "move bob 5B", "book cy 3A", "move cy 3A"]), ok(["3A cy", "5B bob"]))
+}
+test "hidden: existing checks come before the taken seat" {
+  assert_eq(board(["book ann 3A", "move bob 3A"]) |> result.map((_) => ""), err("line 2: no booking for bob"))
+  assert_eq(board(["book ann 3A", "book bob 4A", "book bob 3A"]) |> result.map((_) => ""), err("line 3: bob is already booked"))
+  assert_eq(board(["book ann 3A", "book bob 3G"]) |> result.map((_) => ""), err("line 2: bad seat 3G"))
+}

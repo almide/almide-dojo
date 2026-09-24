@@ -1,0 +1,6 @@
+test "booking a taken seat is rejected" {
+  assert(result.is_err(board(["book ann 3A", "book bob 3A"])))
+}
+test "seating still works" {
+  assert_eq(seat_map(["book ann 12C", "book bob 3A", "move ann 3F", "book cy 12C"]), ok(["3A bob", "3F ann", "12C cy"]))
+}
