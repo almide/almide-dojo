@@ -1,0 +1,6 @@
+test "spans that cross each other are rejected" {
+  assert(result.is_err(profile(["0 begin a", "1 begin b", "2 end a", "3 end b"])))
+}
+test "nested spans still add up" {
+  assert_eq(profile(["0 begin a", "1 begin b", "4 end b", "6 end a"]) |> result.map((t) => list.join(t.totals, " ")), ok("a=6ms b=3ms"))
+}

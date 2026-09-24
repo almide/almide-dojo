@@ -1,0 +1,14 @@
+test "hidden: exact message names the inner span still open" {
+  assert_eq(profile(["0 begin a", "1 begin b", "2 begin c", "3 end c", "4 end a", "5 end b"]) |> result.map((t) => list.join(t.totals, " ")), err("end a while b is open inside it"))
+}
+test "hidden: the innermost open span is named" {
+  assert_eq(profile(["0 begin a", "1 begin b", "2 begin c", "3 end a"]) |> result.map((t) => list.join(t.totals, " ")), err("end a while c is open inside it"))
+}
+test "hidden: siblings and repeated spans are fine" {
+  assert_eq(profile(["0 begin a", "1 begin b", "2 end b", "2 begin c", "5 end c", "6 end a", "7 begin b", "9 end b"]) |> result.map((t) => list.join(t.totals, " ")), ok("a=6ms b=3ms c=3ms"))
+}
+test "hidden: older errors keep their text and order" {
+  assert_eq(profile(["0 begin a", "1 end b"]) |> result.map((t) => list.join(t.totals, " ")), err("end without begin: b"))
+  assert_eq(profile(["0 begin a", "1 begin b", "2 end a", "x"]) |> result.map((t) => list.join(t.totals, " ")), err("end a while b is open inside it"))
+  assert_eq(profile(["0 begin a", "1 begin b"]) |> result.map((t) => list.join(t.totals, " ")), err("unterminated span a"))
+}
