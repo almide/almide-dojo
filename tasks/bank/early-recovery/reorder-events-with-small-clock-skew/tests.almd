@@ -1,0 +1,6 @@
+test "an event a few seconds late is moved into place" {
+  assert_eq(read_stream(["100 a x", "103 b y", "101 c z"]) |> result.map((s) => show(s)), ok("100:a 101:c 103:b | line 3: moved back 2s"))
+}
+test "a large backward jump is still fatal" {
+  assert_eq(read_stream(["100 a x", "200 b y", "150 c z"]) |> result.map((s) => show(s)), err(Backwards(3, 200, 150)))
+}

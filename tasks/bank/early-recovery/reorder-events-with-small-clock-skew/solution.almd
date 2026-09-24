@@ -1,0 +1,47 @@
+// Event stream. Each line is "<seconds> <source> <event...>"; the stream must
+// be in non-decreasing time order.
+type Event: Eq, Repr = { t: Int, source: String, what: String }
+type StreamErr: Eq, Repr = | BadLine(String) | Backwards(Int, Int, Int)
+type Stream: Eq, Repr = { events: List[Event], warnings: List[String] }
+
+fn parse_event(line: String) -> Event!StreamErr = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) >= 3 else err(BadLine(line))
+  match int.parse(list.get(w, 0) ?? "") {
+    ok(t) => ok(Event { t: t, source: list.get(w, 1) ?? "", what: list.drop(w, 2) |> list.join(" ") }),
+    err(_) => err(BadLine(line)),
+  }
+}
+
+// Line n arrives after the last accepted event.
+fn accept(s: Stream, n: Int, e: Event) -> Stream!StreamErr = {
+  let last = list.last(s.events)
+  match last {
+    some(l) if e.t < l.t => err(Backwards(n, l.t, e.t)),
+    _ => ok({ ...s, events: s.events + [e] }),
+  }
+}
+
+fn insert_late(s: Stream, n: Int, e: Event, latest: Int) -> Stream = {
+  let before = s.events |> list.take_while((x) => x.t <= e.t)
+  let after = list.drop(s.events, list.len(before))
+  Stream { events: before + [e] + after, warnings: s.warnings + ["line ${int.to_string(n)}: moved back ${int.to_string(latest - e.t)}s"] }
+}
+
+fn read_stream(lines: List[String]) -> Stream!StreamErr = {
+  var s = Stream { events: [], warnings: [] }
+  for p in list.enumerate(lines) {
+    let e = parse_event(p.1)!
+    s = match accept(s, p.0 + 1, e) {
+      ok(next) => ok(next),
+      err(Backwards(n, latest, t)) if latest - t <= 5 => ok(insert_late(s, n, e, latest)),
+      err(err_) => err(err_),
+    }!
+  }
+  s
+}
+
+fn show(s: Stream) -> String = {
+  let es = s.events |> list.map((e) => "${int.to_string(e.t)}:${e.source}") |> list.join(" ")
+  if list.is_empty(s.warnings) then es else "${es} | ${list.join(s.warnings, "; ")}"
+}
