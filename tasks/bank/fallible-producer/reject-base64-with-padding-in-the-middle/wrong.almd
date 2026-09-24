@@ -1,0 +1,35 @@
+// Plausible wrong patch: only allows "=" in the last two positions, so a "="
+// there that is followed by a data character ("QQ=A") passes.
+// Base64 decoder (standard alphabet). Input length must be a multiple of 4;
+// "=" pads the end. Output is the list of byte values.
+let ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+fn sextet(c: String, pos: Int) -> Int! =
+  match string.index_of(ALPHABET, c) {
+    some(v) => ok(v),
+    none => err("bad character ${c} at ${int.to_string(pos)}"),
+  }
+
+fn decode_group(g: List[String], at: Int) -> List[Int]! = {
+  let pads = g |> list.count((c) => c == "=")
+  let vals = g |> list.enumerate |> list.map((p) => if p.1 == "=" then ok(0) else sextet(p.1, at + p.0)) |> list.map((r) => r!)!
+  let n = vals |> list.fold(0, (acc, v) => acc * 64 + v)
+  let bytes = [n / 65536, n / 256 % 256, n % 256]
+  list.take(bytes, 3 - pads)
+}
+
+fn decode(s: String) -> List[Int]! = {
+  let cs = string.chars(s)
+  guard list.len(cs) % 4 == 0 else err("length ${int.to_string(list.len(cs))} is not a multiple of 4")
+  let n = list.len(cs)
+  match list.range(0, n) |> list.find((i) => list.get(cs, i) == some("=") and i < n - 2) {
+    some(p) => err("bad padding at ${int.to_string(p)}"),
+    none => ok(()),
+  }!
+  list.chunk(cs, 4) |> list.enumerate |> list.flat_map((p) => decode_group(p.1, p.0 * 4)!)!
+}
+
+fn decode_text(s: String) -> String! = {
+  let bytes = decode(s)!
+  string.from_bytes(bytes)
+}

@@ -1,0 +1,7 @@
+test "padding in the middle is rejected" {
+  assert(result.is_err(decode("QQ==QUI=")))
+}
+test "ordinary input still decodes" {
+  assert_eq(decode_text("aGVsbG8="), ok("hello"))
+  assert_eq(decode_text("aGk="), ok("hi"))
+}
