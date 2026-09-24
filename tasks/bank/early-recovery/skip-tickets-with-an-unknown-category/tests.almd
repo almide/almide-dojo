@@ -1,0 +1,6 @@
+test "a ticket with an unknown category is skipped with a warning" {
+  assert_eq(import_board(["bug p1 login fails", "idea p3 dark mode"]) |> result.map((b) => show(b)), ok("#1 bug:login fails (p1) | skipped idea p3 dark mode: unknown category idea"))
+}
+test "a bad priority is still fatal" {
+  assert_eq(import_board(["bug p9 crash"]) |> result.map((b) => show(b)), err(BadPriority("p9")))
+}
