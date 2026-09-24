@@ -1,0 +1,6 @@
+test "a rank that does not cover eight squares is rejected" {
+  assert(result.is_err(board("rnbqkbnr/pppppppp/8/8/4P2/8/PPPP1PPP/RNBQKBNR")))
+}
+test "the starting position still reads" {
+  assert_eq(pieces("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"), ok("16 white, 16 black"))
+}
