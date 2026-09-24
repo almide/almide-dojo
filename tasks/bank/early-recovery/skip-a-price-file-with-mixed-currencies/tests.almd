@@ -1,0 +1,8 @@
+test "a file with a line in another currency is skipped" {
+  let fs = [PriceFile { name: "a.txt", lines: ["currency EUR", "tea 300 EUR"] }, PriceFile { name: "b.txt", lines: ["currency EUR", "jam 450 USD"] }]
+  assert_eq(merge(fs) |> result.map((t) => show(t)), ok("tea=300 | skipped b.txt"))
+}
+test "a bad price is still fatal" {
+  let fs = [PriceFile { name: "a.txt", lines: ["currency EUR", "tea x EUR"] }]
+  assert_eq(merge(fs) |> result.map((t) => show(t)), err(BadPrice("a.txt", 2)))
+}
