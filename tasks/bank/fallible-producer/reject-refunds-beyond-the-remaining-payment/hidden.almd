@@ -1,0 +1,17 @@
+test "hidden: refunds add up against the remaining amount, exact message" {
+  assert_eq(status(["o1 created", "o1 paid 30", "o1 cancelled", "o1 refunded 20", "o1 refunded 15"]),
+    err("event 5: refund of 15 exceeds remaining 10 for o1"))
+}
+test "hidden: refunding exactly the remainder is fine, and after that nothing remains" {
+  assert_eq(status(["a created", "a paid 30", "a cancelled", "a refunded 20", "a refunded 10"]), ok("a cancelled 30/30"))
+  assert_eq(status(["a created", "a paid 30", "a cancelled", "a refunded 30", "a refunded 1"]), err("event 5: refund of 1 exceeds remaining 0 for a"))
+}
+test "hidden: orders are tracked separately" {
+  assert_eq(status(["a created", "b created", "a paid 10", "b paid 50", "a cancelled", "b cancelled", "b refunded 40", "a refunded 10"]),
+    ok("a cancelled 10/10; b cancelled 50/40"))
+}
+test "hidden: older checks win over the new one" {
+  assert_eq(status(["a created", "a paid 5", "a refunded 99"]), err("event 3: a refunded not allowed after paid"))
+  assert_eq(status(["a created", "a cancelled", "a refunded 99"]), err("event 3: refund without payment for a"))
+  assert_eq(status(["a created", "a paid 5", "a cancelled", "a refunded x"]), err("event 4: bad amount x"))
+}
