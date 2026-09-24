@@ -1,0 +1,29 @@
+// Build versions major.minor.patch.
+type Build: Eq, Repr = { major: Int, minor: Int, patch: Int }
+
+fn build(major: Int, minor: Int, patch: Int) -> Build = Build { major: major, minor: minor, patch: patch }
+
+fn label(b: Build) -> String =
+  int.to_string(b.major) + "." + int.to_string(b.minor) + "." + int.to_string(b.patch)
+
+// Oldest first; equal builds keep list order.
+fn ordered(bs: List[Build]) -> List[String] =
+  bs
+    |> list.sort_by((b) => b.patch)
+    |> list.sort_by((b) => b.minor)
+    |> list.sort_by((b) => b.major)
+    |> list.map(label)
+
+fn is_after(a: Build, b: Build) -> Bool =
+  if a.major != b.major then a.major > b.major
+  else if a.minor != b.minor then a.minor > b.minor
+  else a.patch > b.patch
+
+// The newest build; the first listed among equals; none for an empty list.
+fn newest(bs: List[Build]) -> String? =
+  bs
+    |> list.fold(none, (best, b) => match best {
+      none => some(b),
+      some(x) => if is_after(b, x) then some(b) else some(x),
+    })
+    |> option.map(label)

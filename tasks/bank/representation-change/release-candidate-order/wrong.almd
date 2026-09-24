@@ -1,0 +1,41 @@
+// Plausible wrong patch: orders by the `rc` option directly, where `none` sorts
+// first, so the final release lands before its candidates. Passes the visible tests.
+// Build versions major.minor.patch, optionally a release candidate.
+type Build: Eq, Repr = { major: Int, minor: Int, patch: Int, rc: Int? }
+
+fn build(major: Int, minor: Int, patch: Int) -> Build = Build { major: major, minor: minor, patch: patch, rc: none }
+
+fn candidate(major: Int, minor: Int, patch: Int, rc: Int) -> Build =
+  Build { major: major, minor: minor, patch: patch, rc: some(rc) }
+
+fn label(b: Build) -> String = {
+  let core = int.to_string(b.major) + "." + int.to_string(b.minor) + "." + int.to_string(b.patch)
+  match b.rc {
+    some(n) => core + "-rc" + int.to_string(n),
+    none => core,
+  }
+}
+
+// Oldest first; equal builds keep list order.
+fn ordered(bs: List[Build]) -> List[String] =
+  bs
+    |> list.sort_by((b) => b.rc)
+    |> list.sort_by((b) => b.patch)
+    |> list.sort_by((b) => b.minor)
+    |> list.sort_by((b) => b.major)
+    |> list.map(label)
+
+fn is_after(a: Build, b: Build) -> Bool =
+  if a.major != b.major then a.major > b.major
+  else if a.minor != b.minor then a.minor > b.minor
+  else if a.patch != b.patch then a.patch > b.patch
+  else (a.rc ?? 0) > (b.rc ?? 0)
+
+// The newest build; the first listed among equals; none for an empty list.
+fn newest(bs: List[Build]) -> String? =
+  bs
+    |> list.fold(none, (best, b) => match best {
+      none => some(b),
+      some(x) => if is_after(b, x) then some(b) else some(x),
+    })
+    |> option.map(label)
