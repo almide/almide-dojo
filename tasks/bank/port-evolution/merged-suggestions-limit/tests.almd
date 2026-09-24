@@ -1,0 +1,7 @@
+test "combined suggestions" {
+  let c = Combined { main: Table { entries: ["teh": ["the", "ten"]] }, extra: Table { entries: ["teh": ["tea", "tech"]] }, limit: 3 }
+  assert_eq(hints(Both(c), ["teh"], 5), ["teh: the, ten, tea"])
+}
+test "plain table" {
+  assert_eq(hints(Plain(Table { entries: [:] }), ["x"], 2), ["x: (none)"])
+}
