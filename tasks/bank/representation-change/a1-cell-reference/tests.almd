@@ -1,0 +1,9 @@
+test "references are numbers" {
+  assert_eq(cell("B3", 5).at, Ref { col: 2, row: 3 })
+  assert_eq(render(cell("C10", 7)), "C10=7")
+  assert_eq(move(cell("B3", 1), 1, 2), some(cell("C5", 1)))
+}
+test "rectangles" {
+  let cs = [cell("A1", 1), cell("B2", 2), cell("C3", 4)]
+  assert_eq(rect_sum(cs, "A1", "B2"), 3)
+}

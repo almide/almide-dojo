@@ -1,0 +1,30 @@
+// Spreadsheet cells addressed in A1 notation: column letters, then the row
+// number ("B3", "AA10"). References are canonical uppercase text.
+type Cell: Eq, Repr = { at: String, value: Int }
+
+fn cell(at: String, value: Int) -> Cell = Cell { at: at, value: value }
+
+fn letters_of(at: String) -> String = string.chars(at) |> list.take_while(string.is_alpha) |> list.join("")
+
+// A = 1, Z = 26, AA = 27, ...
+fn col_of(at: String) -> Int =
+  string.chars(letters_of(at)) |> list.fold(0, (acc, ch) => acc * 26 + (string.codepoint(ch) ?? 64) - 64)
+
+fn row_of(at: String) -> Int = int.parse(string.drop(at, string.len(letters_of(at)))) ?? 0
+
+fn render(c: Cell) -> String = c.at + "=" + int.to_string(c.value)
+
+// Cells inside the rectangle spanned by two corners (inclusive).
+fn in_rect(c: Cell, tl: String, br: String) -> Bool =
+  col_of(c.at) >= col_of(tl) and col_of(c.at) <= col_of(br)
+    and row_of(c.at) >= row_of(tl) and row_of(c.at) <= row_of(br)
+
+fn rect_sum(cells: List[Cell], tl: String, br: String) -> Int =
+  cells |> list.filter((c) => in_rect(c, tl, br)) |> list.fold(0, (acc, c) => acc + c.value)
+
+// Row by row, left to right within a row; equal positions keep list order.
+fn ordered(cells: List[Cell]) -> List[String] =
+  cells
+    |> list.sort_by((c) => col_of(c.at))
+    |> list.sort_by((c) => row_of(c.at))
+    |> list.map(render)
