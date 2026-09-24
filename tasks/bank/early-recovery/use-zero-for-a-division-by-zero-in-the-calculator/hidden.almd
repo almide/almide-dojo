@@ -1,0 +1,12 @@
+test "hidden: later tokens see one 0 in place of the two values" {
+  assert_eq(eval("1 6 0 / -"), ok(Outcome { value: 1, warnings: ["token 3: division by zero, using 0"] }))
+  assert_eq(eval("9 3 0 / dup * +"), ok(Outcome { value: 9, warnings: ["token 3: division by zero, using 0"] }))
+}
+test "hidden: an underflow caused by what the division consumed is fatal" {
+  assert_eq(eval("6 0 / +"), err(Underflow(3)))
+  assert_eq(eval("0 /"), err(Underflow(1)))
+}
+test "hidden: warnings in token order, left-over warning last" {
+  assert_eq(eval("5 8 0 / 0 /"), ok(Outcome { value: 0, warnings: ["token 3: division by zero, using 0", "token 5: division by zero, using 0", "2 values left over"] }))
+  assert_eq(eval("7 2 / 1"), ok(Outcome { value: 1, warnings: ["2 values left over"] }))
+}

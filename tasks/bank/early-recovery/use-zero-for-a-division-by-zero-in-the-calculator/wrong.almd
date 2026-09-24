@@ -1,0 +1,53 @@
+// Reverse Polish calculator over integers. Tokens are separated by spaces and
+// numbered from 0: numbers are pushed; "+", "-", "*", "/" pop two values and
+// push the result; "dup" copies the top value. The result is the top value.
+type CalcErr: Eq, Repr = | Underflow(Int) | DivZero(Int) | BadToken(Int, String)
+type Outcome: Eq, Repr = { value: Int, warnings: List[String] }
+
+fn step(stack: List[Int], tok: String, i: Int) -> List[Int]!CalcErr = {
+  let n = list.len(stack)
+  match tok {
+    "dup" => {
+      guard n >= 1 else err(Underflow(i))
+      ok(stack + [list.last(stack) ?? 0])
+    },
+    "+" | "-" | "*" | "/" => {
+      guard n >= 2 else err(Underflow(i))
+      let a = list.get(stack, n - 2) ?? 0
+      let b = list.get(stack, n - 1) ?? 0
+      let rest = list.take(stack, n - 2)
+      match tok {
+        "+" => ok(rest + [a + b]),
+        "-" => ok(rest + [a - b]),
+        "*" => ok(rest + [a * b]),
+        _ => if b == 0 then err(DivZero(i)) else ok(rest + [a / b]),
+      }
+    },
+    _ => match int.parse(tok) {
+      ok(v) => ok(stack + [v]),
+      err(_) => err(BadToken(i, tok)),
+    },
+  }
+}
+
+fn eval(src: String) -> Outcome!CalcErr = {
+  let toks = string.split(src, " ") |> list.filter((t) => t != "")
+  var stack: List[Int] = []
+  var warnings: List[String] = []
+  for p in list.enumerate(toks) {
+    stack = match step(stack, p.1, p.0) {
+      ok(s) => ok(s),
+      err(DivZero(i)) => {
+        warnings = warnings + ["token ${int.to_string(i)}: division by zero, using 0"]
+        ok(stack)
+      },
+      err(e) => err(e),
+    }!
+  }
+  let top = match list.last(stack) {
+    some(v) => ok(v),
+    none => err(Underflow(list.len(toks))),
+  }!
+  if list.len(stack) > 1 then warnings = warnings + ["${int.to_string(list.len(stack))} values left over"]
+  Outcome { value: top, warnings: warnings }
+}
