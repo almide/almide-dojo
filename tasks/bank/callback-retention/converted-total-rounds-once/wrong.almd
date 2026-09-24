@@ -1,0 +1,28 @@
+// Expenses in foreign currencies, as (currency, amount in cents). Rates are
+// per mille: a rate of 1085 means 1 unit = 1.085 units of the target
+// currency.
+fn currencies(xs: List[(String, Int)]) -> List[String] =
+  list.group_by(xs, ((c, _)) => c) |> map.keys
+
+fn in_currency(xs: List[(String, Int)], c: String) -> Int =
+  xs |> list.fold(0, (acc, e) => {
+    let (cur, cents) = e
+    if cur == c then acc + cents else acc
+  })
+
+fn largest_expense(xs: List[(String, Int)]) -> String =
+  match xs |> list.sort_by(((_, a)) => 0 - a) |> list.first {
+    some((c, a)) => int.to_string(a) + " " + c,
+    none => "none",
+  }
+
+// Plausible wrong patch: converts every expense on its own, rounding each one
+// down, so many small expenses lose cents.
+fn converter(xs: List[(String, Int)], rates: Map[String, Int]) -> (String) -> String = {
+  let parts = xs |> list.map(((c, a)) => map.get(rates, c) |> option.map((r) => a * r / 1000))
+  let total = if parts |> list.all((p) => option.is_some(p)) then some(parts |> list.fold(0, (s, p) => s + (p ?? 0))) else none
+  (code) => match total {
+    some(t) => int.to_string(t) + " " + code,
+    none => "missing rate",
+  }
+}

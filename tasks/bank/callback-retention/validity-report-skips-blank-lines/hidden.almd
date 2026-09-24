@@ -1,0 +1,8 @@
+test "hidden: blank lines are not counted" {
+  assert_eq(validity(["a=1", "", "  ", "b=2"])("g"), "g: 2/2 valid")
+  assert_eq(validity(["", "=x", "c=3", "junk"])("h"), "h: 1/3 valid (first bad: =x)")
+}
+test "hidden: empty file" {
+  assert_eq(validity([])("e"), "e: 0/0 valid")
+  assert_eq(records(["a=", "=b"]), 1)
+}

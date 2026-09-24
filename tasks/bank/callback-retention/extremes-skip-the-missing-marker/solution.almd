@@ -1,0 +1,19 @@
+// Station readings in tenths of a degree. The value -9999 is the station's
+// "sensor offline" marker, not a temperature.
+let MISSING = -9999
+
+fn present(xs: List[Int]) -> Int = xs |> list.count((x) => x != MISSING)
+
+fn tenths(x: Int) -> String = {
+  let a = int.abs(x)
+  (if x < 0 then "-" else "") + int.to_string(a / 10) + "." + int.to_string(a % 10)
+}
+
+// The extremes of the real readings are found now; the closure keeps them.
+fn extremes(xs: List[Int]) -> (String) -> String = {
+  let real = xs |> list.filter((x) => x != MISSING)
+  match option.zip(list.min(real), list.max(real)) {
+    some((lo, hi)) => (station) => station + ": " + tenths(lo) + ".." + tenths(hi),
+    none => (station) => station + ": no data",
+  }
+}

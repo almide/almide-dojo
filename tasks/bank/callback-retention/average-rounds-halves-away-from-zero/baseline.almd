@@ -1,0 +1,6 @@
+// Temperature deltas (signed integers).
+fn net(xs: List[Int]) -> Int = list.sum(xs)
+
+fn warming(xs: List[Int]) -> Bool = net(xs) > 0
+
+fn describe(xs: List[Int]) -> String = int.to_string(list.len(xs)) + " deltas, net " + int.to_string(net(xs))

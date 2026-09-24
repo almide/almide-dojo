@@ -1,0 +1,10 @@
+test "hidden: rounded once per currency" {
+  let f = converter([("EUR", 1), ("EUR", 1), ("EUR", 1)], map.from_list([("EUR", 1500)]))
+  assert_eq(f("USD"), "4 USD")
+  let g = converter([("EUR", 333), ("JPY", 5), ("EUR", 333)], map.from_list([("EUR", 1085), ("JPY", 7)]))
+  assert_eq(g("USD"), "722 USD")
+}
+test "hidden: empty" {
+  assert_eq(converter([], map.new())("USD"), "0 USD")
+  assert_eq(in_currency([("A", 2), ("B", 3), ("A", 4)], "A"), 6)
+}

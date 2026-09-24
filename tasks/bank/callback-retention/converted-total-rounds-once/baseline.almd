@@ -1,0 +1,17 @@
+// Expenses in foreign currencies, as (currency, amount in cents). Rates are
+// per mille: a rate of 1085 means 1 unit = 1.085 units of the target
+// currency.
+fn currencies(xs: List[(String, Int)]) -> List[String] =
+  list.group_by(xs, ((c, _)) => c) |> map.keys
+
+fn in_currency(xs: List[(String, Int)], c: String) -> Int =
+  xs |> list.fold(0, (acc, e) => {
+    let (cur, cents) = e
+    if cur == c then acc + cents else acc
+  })
+
+fn largest_expense(xs: List[(String, Int)]) -> String =
+  match xs |> list.sort_by(((_, a)) => 0 - a) |> list.first {
+    some((c, a)) => int.to_string(a) + " " + c,
+    none => "none",
+  }

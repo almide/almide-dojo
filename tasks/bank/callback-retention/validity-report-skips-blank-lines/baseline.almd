@@ -1,0 +1,9 @@
+// A data file of "key=value" records. Blank lines are layout, not records.
+fn is_blank(line: String) -> Bool = string.trim(line) == ""
+
+fn is_record(line: String) -> Bool = match string.index_of(line, "=") {
+  some(i) => i > 0,
+  none => false,
+}
+
+fn records(lines: List[String]) -> Int = lines |> list.count((l) => is_record(l))

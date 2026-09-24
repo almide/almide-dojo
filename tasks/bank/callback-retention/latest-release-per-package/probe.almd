@@ -1,0 +1,8 @@
+// Resource probe: __K__ lookups over fresh 4,000-line feeds of 20 packages,
+// all held live. Keeping one version per package grows by 20 short strings
+// each; keeping the parsed feed grows by every release.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) =>
+    latest_lookup(list.range(0, 4000) |> list.map((j) => "pkg" + int.to_string(j % 20) + " 1." + int.to_string(j % 37) + "." + int.to_string(i))))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("pkg3")))))
+}

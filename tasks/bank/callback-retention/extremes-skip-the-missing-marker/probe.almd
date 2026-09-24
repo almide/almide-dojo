@@ -1,0 +1,7 @@
+// Resource probe: __K__ closures over fresh 20,000-reading lists, all held
+// live. Capturing two numbers grows by a few bytes each; capturing the
+// readings grows by the whole list.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) => extremes(list.range(0, 20000 + i) |> list.map((j) => if j % 100 == 0 then -9999 else j % 400 - 200)))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("s")))))
+}

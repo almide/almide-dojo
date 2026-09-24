@@ -1,0 +1,9 @@
+// A sequence of observed states of a traffic light, one per second.
+fn distinct_states(xs: List[String]) -> Int = list.len(list.unique(xs))
+
+fn seconds_in(xs: List[String], s: String) -> Int = xs |> list.count((x) => x == s)
+
+// Plausible wrong patch: the closure counts when it runs, so it captures `xs`
+// and keeps every observation alive.
+fn change_badge(xs: List[String]) -> (String) -> String =
+  (name) => name + ": " + int.to_string(list.zip(xs, list.drop(xs, 1)) |> list.count(((a, b)) => a != b)) + " changes"

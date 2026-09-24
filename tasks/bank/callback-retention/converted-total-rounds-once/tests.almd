@@ -1,0 +1,5 @@
+test "converter" {
+  let f = converter([("EUR", 1000), ("EUR", 2000)], map.from_list([("EUR", 1100)]))
+  assert_eq(f("USD"), "3300 USD")
+  assert_eq(converter([("GBP", 1)], map.new())("USD"), "missing rate")
+}

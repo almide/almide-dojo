@@ -1,0 +1,5 @@
+test "latest lookup" {
+  let f = latest_lookup(["web 1.0.0", "db 2.1.0", "web 1.2.0"])
+  assert_eq(f("web"), "1.2.0")
+  assert_eq(f("cli"), "unknown")
+}

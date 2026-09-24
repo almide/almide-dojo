@@ -1,0 +1,16 @@
+// Temperature deltas (signed integers).
+fn net(xs: List[Int]) -> Int = list.sum(xs)
+
+fn warming(xs: List[Int]) -> Bool = net(xs) > 0
+
+fn describe(xs: List[Int]) -> String = int.to_string(list.len(xs)) + " deltas, net " + int.to_string(net(xs))
+
+// Plausible wrong patch: the closure averages when it runs, so it captures
+// `xs` and keeps every delta alive.
+fn avg_badge(xs: List[Int]) -> (String) -> String =
+  (label) => {
+    let n = list.len(xs)
+    let s = net(xs)
+    let mag = (2 * int.abs(s) + n) / (2 * int.max(n, 1))
+    if n == 0 then label + ": avg n/a" else label + ": avg " + int.to_string(if s < 0 then 0 - mag else mag)
+  }
