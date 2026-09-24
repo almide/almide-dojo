@@ -1,0 +1,6 @@
+test "a message that cannot be decoded twice goes to the dead letters" {
+  assert_eq(consume(["m1 v1 user=a", "m2 v1 junk", "m2 v1 junk"]) |> result.map((c) => show(c)), ok("m1:user=a | dead: m2"))
+}
+test "an unknown schema is still fatal" {
+  assert_eq(consume(["m1 v9 user=a"]) |> result.map((c) => show(c)), err(UnknownSchema("m1", "v9")))
+}

@@ -1,0 +1,36 @@
+// Queue consumer. Each delivery is "<msg-id> <schema> <payload>"; the same
+// message id may be delivered again later (a redelivery). Payloads are
+// "key=value" pairs separated by ";" and must decode for the schema.
+type QErr: Eq, Repr = | BadDelivery(String) | UnknownSchema(String, String) | Undecodable(String)
+type Consumed: Eq, Repr = { handled: List[String], dead: List[String] }
+
+fn decode(id: String, schema: String, payload: String) -> String!QErr = {
+  let need = match schema {
+    "v1" => ok(["user"]),
+    "v2" => ok(["user", "amount"]),
+    _ => err(UnknownSchema(id, schema)),
+  }!
+  let pairs = string.split(payload, ";") |> list.map((p) => string.split(p, "="))
+  guard list.all(pairs, (p) => list.len(p) == 2) else err(Undecodable(id))
+  let keys = pairs |> list.map((p) => list.first(p) ?? "")
+  guard list.all(need, (k) => list.contains(keys, k)) else err(Undecodable(id))
+  "${id}:${payload}"
+}
+
+fn consume(deliveries: List[String]) -> Consumed!QErr = {
+  var handled: List[String] = []
+  for d in deliveries {
+    let w = string.split(d, " ") |> list.filter((x) => x != "")
+    guard list.len(w) == 3 else err(BadDelivery(d))
+    let id = list.get(w, 0) ?? ""
+    if list.any(handled, (h) => string.starts_with(h, id + ":")) then () else {
+      handled = handled + [decode(id, list.get(w, 1) ?? "", list.get(w, 2) ?? "")!]
+    }
+  }
+  Consumed { handled: handled, dead: [] }
+}
+
+fn show(c: Consumed) -> String = {
+  let h = list.join(c.handled, " ")
+  if list.is_empty(c.dead) then h else "${h} | dead: ${list.join(c.dead, ",")}"
+}
