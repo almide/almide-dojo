@@ -1,0 +1,38 @@
+// Transfer batch. Each line is "<from> <to> <amount>" where an account id is
+// "<digits>-<check>": 6 to 24 digits, a dash, and a two-digit check number.
+type Transfer: Eq, Repr = { from: String, to: String, cents: Int }
+
+fn check_id(id: String) -> String! = {
+  let parts = string.split(id, "-")
+  guard list.len(parts) == 2 else err("bad id format ${id}")
+  let digits = list.get(parts, 0) ?? ""
+  let check = list.get(parts, 1) ?? ""
+  guard string.len(digits) >= 6 and string.len(digits) <= 24 and string.is_digit(digits) else err("bad id format ${id}")
+  guard string.len(check) == 2 and string.is_digit(check) else err("bad id format ${id}")
+  id
+}
+
+fn parse_cents(s: String) -> Int! = {
+  let parts = string.split(s, ".")
+  guard list.len(parts) == 2 and string.len(list.get(parts, 1) ?? "") == 2 else err("bad amount ${s}")
+  let whole = int.parse(list.get(parts, 0) ?? "") |> result.map_err((_) => "bad amount ${s}")!
+  let frac = int.parse(list.get(parts, 1) ?? "") |> result.map_err((_) => "bad amount ${s}")!
+  guard whole >= 0 and frac >= 0 else err("bad amount ${s}")
+  whole * 100 + frac
+}
+
+fn parse_transfer(line: String) -> Transfer! = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) == 3 else err("bad line: ${line}")
+  let from = check_id(list.get(w, 0) ?? "")!
+  let to = check_id(list.get(w, 1) ?? "")!
+  guard from != to else err("transfer to itself: ${from}")
+  let cents = parse_cents(list.get(w, 2) ?? "")!
+  guard cents > 0 else err("bad amount ${list.get(w, 2) ?? ""}")
+  Transfer { from: from, to: to, cents: cents }
+}
+
+fn batch_total(lines: List[String]) -> Int! = {
+  let ts = lines |> list.map((l) => parse_transfer(l)!)!
+  ts |> list.fold(0, (acc, t) => acc + t.cents)
+}

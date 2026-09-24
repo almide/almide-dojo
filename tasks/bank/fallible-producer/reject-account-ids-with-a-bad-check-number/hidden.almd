@@ -1,0 +1,20 @@
+test "hidden: long ids are checked exactly" {
+  assert_eq(check_id("123456789012345678901234-00"), ok("123456789012345678901234-00"))
+  assert_eq(check_id("999999999999999999999999-74"), ok("999999999999999999999999-74"))
+  assert_eq(check_id("999999999999999999999999-75"), err("check number mismatch in 999999999999999999999999-75"))
+}
+test "hidden: a check number with a leading zero" {
+  assert_eq(check_id("000097-00"), ok("000097-00"))
+  assert_eq(check_id("000098-01"), ok("000098-01"))
+  assert_eq(check_id("000098-1"), err("bad id format 000098-1"))
+}
+test "hidden: format errors come first, then the from id, then the to id" {
+  assert_eq(check_id("12345x-00"), err("bad id format 12345x-00"))
+  assert_eq(batch_total(["123456-00 123456-01 1.00"]), err("check number mismatch in 123456-00"))
+  assert_eq(batch_total(["123456-72 123456-01 x"]), err("check number mismatch in 123456-01"))
+  assert_eq(batch_total(["123456-72 123456-72 1.00"]), err("transfer to itself: 123456-72"))
+}
+test "hidden: the first bad line wins" {
+  assert_eq(batch_total(["123456-72 1000000-27 1.00", "bad", "123456-00 1000000-27 1.00"]), err("bad line: bad"))
+  assert_eq(batch_total(["123456-73 1000000-27 1.00", "bad"]), err("check number mismatch in 123456-73"))
+}
