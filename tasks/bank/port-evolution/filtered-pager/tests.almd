@@ -1,0 +1,9 @@
+test "filtered pages" {
+  let f = Filtered { inner: ListPager { items: ["ax", "ay", "az", "b"], size: 2 }, prefix: "a" }
+  assert_eq(outline_of(Only(f)), "p1: ax,ay | p2: az")
+  assert_eq(count_of(Only(f)), 3)
+}
+test "all items" {
+  let p = ListPager { items: ["a", "b", "c"], size: 2 }
+  assert_eq(outline_of(All(p)), "p1: a,b | p2: c")
+}
