@@ -1,0 +1,17 @@
+test "hidden: an unavailable service is still fatal, after an unknown customer too" {
+  let svc = ["c1": "notfound", "c2": "down:503"]
+  assert_eq(labels(svc, [Order { id: 1, customer: "c1" }, Order { id: 2, customer: "c2" }]), err(Unavailable("c2", 503)))
+}
+test "hidden: label calls outside the batch keep failing on a miss" {
+  let svc = ["c1": "name:Ann"]
+  assert_eq(label(svc, Order { id: 7, customer: "zz" }), err(NotFound("zz")))
+}
+test "hidden: the footer counts every label and every unknown one" {
+  let svc = ["a": "name:A", "b": "notfound"]
+  let os = [Order { id: 1, customer: "b" }, Order { id: 2, customer: "a" }, Order { id: 3, customer: "b" }, Order { id: 4, customer: "x" }]
+  assert_eq(labels(svc, os), ok(["#1 for (unknown customer b)", "#2 for A", "#3 for (unknown customer b)", "#4 for (unknown customer x)", "4 labels (3 unknown)"]))
+}
+test "hidden: no orders, no unknowns" {
+  let svc = ["a": "name:A"]
+  assert_eq(labels(svc, [Order { id: 5, customer: "a" }]), ok(["#5 for A", "1 labels"]))
+}

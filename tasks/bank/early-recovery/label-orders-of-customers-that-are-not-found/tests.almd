@@ -1,0 +1,9 @@
+test "an order whose customer is not found gets a placeholder" {
+  let svc = ["c1": "name:Ann"]
+  assert_eq(labels(svc, [Order { id: 1, customer: "c1" }, Order { id: 2, customer: "c9" }]),
+    ok(["#1 for Ann", "#2 for (unknown customer c9)", "2 labels (1 unknown)"]))
+}
+test "known customers are labelled as before" {
+  let svc = ["c1": "name:Ann", "c2": "name:Bo"]
+  assert_eq(labels(svc, [Order { id: 1, customer: "c2" }, Order { id: 2, customer: "c1" }]), ok(["#1 for Bo", "#2 for Ann", "2 labels"]))
+}
