@@ -1,0 +1,43 @@
+// Plausible wrong patch: walks cumulative weights modulo the total weight, which
+// lets negative weights shift the slots and divides by zero when all are 0.
+// A load-balancing port: the backend for request number `i` (0, 1, 2, ...), or
+// none when there is nowhere to send it.
+protocol Balancer {
+  fn pick(b: Self, i: Int) -> String?
+}
+
+// Backends in turn.
+type RoundRobin: Balancer = { backends: List[String] }
+fn RoundRobin.pick(b: RoundRobin, i: Int) -> String? =
+  if list.is_empty(b.backends) then none else list.get(b.backends, i % list.len(b.backends))
+
+// Each backend takes `weight` consecutive requests; weight <= 0 takes none.
+type Weighted: Balancer = { backends: List[(String, Int)] }
+fn Weighted.pick(b: Weighted, i: Int) -> String? = {
+  let total = b.backends |> list.fold(0, (acc, p) => acc + p.1)
+  let slot = i % total
+  let (_, found) = b.backends |> list.fold((0, none), (st, p) =>
+    match st.1 {
+      some(x) => st,
+      none => if slot < st.0 + p.1 then (st.0 + p.1, some(p.0)) else (st.0 + p.1, none),
+    })
+  found
+}
+
+// The backend of each of the first `n` requests ("-" when none).
+fn assign[B: Balancer](b: B, n: Int) -> List[String] =
+  list.range(0, n) |> list.map((i) => b.pick(i) ?? "-")
+
+// "name=count" for each backend used by the first `n` requests, first-use order.
+fn load[B: Balancer](b: B, n: Int) -> String = {
+  let picks = assign(b, n)
+  picks |> list.unique |> list.map((p) => p + "=" + int.to_string(list.count(picks, (x) => x == p))) |> list.join(" ")
+}
+
+type Pool = | Even(RoundRobin) | ByWeight(Weighted)
+
+fn load_of(p: Pool, n: Int) -> String =
+  match p {
+    Even(r) => load(r, n),
+    ByWeight(w) => load(w, n),
+  }

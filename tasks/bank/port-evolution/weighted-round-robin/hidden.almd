@@ -1,0 +1,9 @@
+test "hidden: zero and negative weights" {
+  let w = Weighted { backends: [("a", 0), ("b", 2), ("c", -1), ("d", 1)] }
+  assert_eq(assign(w, 5), ["b", "b", "d", "b", "b"])
+}
+test "hidden: nothing to pick" {
+  assert_eq(load_of(ByWeight(Weighted { backends: [("a", 0)] }), 2), "-=2")
+  assert_eq(load_of(ByWeight(Weighted { backends: [] }), 1), "-=1")
+  assert_eq(load_of(Even(RoundRobin { backends: [] }), 0), "")
+}

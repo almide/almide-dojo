@@ -1,0 +1,20 @@
+// A load-balancing port: the backend for request number `i` (0, 1, 2, ...), or
+// none when there is nowhere to send it.
+protocol Balancer {
+  fn pick(b: Self, i: Int) -> String?
+}
+
+// Backends in turn.
+type RoundRobin: Balancer = { backends: List[String] }
+fn RoundRobin.pick(b: RoundRobin, i: Int) -> String? =
+  if list.is_empty(b.backends) then none else list.get(b.backends, i % list.len(b.backends))
+
+// The backend of each of the first `n` requests ("-" when none).
+fn assign[B: Balancer](b: B, n: Int) -> List[String] =
+  list.range(0, n) |> list.map((i) => b.pick(i) ?? "-")
+
+// "name=count" for each backend used by the first `n` requests, first-use order.
+fn load[B: Balancer](b: B, n: Int) -> String = {
+  let picks = assign(b, n)
+  picks |> list.unique |> list.map((p) => p + "=" + int.to_string(list.count(picks, (x) => x == p))) |> list.join(" ")
+}
