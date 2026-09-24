@@ -1,0 +1,26 @@
+// A price list read from text such as "12.50". Prices are kept as Float dollars.
+type Item: Eq, Repr = { name: String, price: Float }
+
+fn item(name: String, text: String) -> Item! = {
+  let p = float.parse(string.trim(text)) |> result.map_err((_) => "bad price: " + text)!
+  guard p >= 0.0 else err("negative price: " + text)
+  Item { name: name, price: p }
+}
+
+fn render(i: Item) -> String = i.name + " $" + float.to_fixed(i.price, 2)
+
+fn total(items: List[Item]) -> Float = items |> list.fold(0.0, (acc, i) => acc + i.price)
+
+// Names of the items costing at most `budget` dollars, in list order.
+fn affordable(items: List[Item], budget: Float) -> List[String] =
+  items |> list.filter((i) => i.price <= budget) |> list.map((i) => i.name)
+
+// Reads "name=price" lines; the first bad line (in order) is the error.
+fn load(lines: List[String]) -> List[Item]! = {
+  var out: List[Item] = []
+  for line in lines {
+    let (name, text) = option.to_result(string.split_once(line, "="), "bad line: " + line)!
+    out = out + [item(name, text)!]
+  }
+  out
+}

@@ -1,0 +1,9 @@
+test "prices are cents" {
+  assert_eq(item("tea", "12.50"), ok(Item { name: "tea", cents: 1250 }))
+  assert_eq(render(item("pen", "3")!), "pen $3.00")
+  assert_eq(total([item("a", "1.5")!, item("b", "2")!]), 350)
+}
+test "strict text" {
+  assert_eq(item("x", "1.234"), err("bad price: 1.234"))
+  assert_eq(affordable([item("a", "4")!, item("b", "6")!], 500), ["a"])
+}
