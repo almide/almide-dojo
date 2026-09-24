@@ -1,0 +1,9 @@
+test "json lines" {
+  let h = Hit { method: "GET", path: "/a", status: 200, agent: "curl/8" }
+  assert_eq(dump_as(Json(JsonLine {}), [h], 0), "{\"method\":\"GET\",\"path\":\"/a\",\"status\":200,\"agent\":\"curl/8\"}")
+  assert_eq(JsonLine {}.line(Hit { ...h, agent: "two words" }), "{\"method\":\"GET\",\"path\":\"/a\",\"status\":200,\"agent\":\"two words\"}")
+}
+test "text output" {
+  let h = Hit { method: "POST", path: "/b", status: 404, agent: "x" }
+  assert_eq(dump_as(Text(Common {}), [h], 400), "POST /b 404 x")
+}
