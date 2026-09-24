@@ -1,0 +1,25 @@
+// A password-hashing port (toy digest; the shape is what matters).
+protocol Hasher {
+  fn hash(h: Self, pw: String) -> String
+  fn verify(h: Self, pw: String, stored: String) -> Bool
+}
+
+// A deterministic digest: hex of a position-weighted sum of code points.
+fn digest(s: String) -> String =
+  string.chars(s)
+    |> list.enumerate
+    |> list.fold(7, (acc, p) => (acc * 31 + (p.0 + 1) * (string.codepoint(p.1) ?? 0)) % 1000003)
+    |> int.to_hex
+
+// The original scheme: the bare digest of the password.
+type Plain: Hasher = {}
+fn Plain.hash(h: Plain, pw: String) -> String = digest(pw)
+fn Plain.verify(h: Plain, pw: String, stored: String) -> Bool = digest(pw) == stored
+
+type User = { name: String, stored: String }
+
+fn login[H: Hasher](h: H, users: List[User], name: String, pw: String) -> String =
+  match users |> list.find((u) => u.name == name) {
+    some(u) => if h.verify(pw, u.stored) then "ok" else "bad password",
+    none => "no such user",
+  }
