@@ -1,0 +1,8 @@
+test "guarded writes" {
+  let g = Guarded { inner: Mem { data: ["cfg/a": "1"] }, writable: ["tmp/"] }
+  assert_eq(run(Locked(g), [("tmp/x", "9")], ["tmp/x", "cfg/a"]), ok("tmp/x=9 cfg/a=1"))
+  assert_eq(run(Locked(g), [("tmp/x", "9"), ("cfg/a", "2")], []), err("read-only: cfg/a"))
+}
+test "open store" {
+  assert_eq(run(Open(Mem { data: [:] }), [("a", "1")], ["a", "b"]), ok("a=1 b=-"))
+}
