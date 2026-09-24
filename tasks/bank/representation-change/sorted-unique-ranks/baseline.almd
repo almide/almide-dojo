@@ -1,0 +1,18 @@
+// A set of seat numbers kept as an unordered list that may repeat numbers.
+type Seats: Eq, Repr = { taken: List[Int] }
+
+fn seats(xs: List[Int]) -> Seats = Seats { taken: xs }
+
+fn add(s: Seats, x: Int) -> Seats = Seats { taken: s.taken + [x] }
+
+fn distinct(s: Seats) -> List[Int] = s.taken |> list.unique |> list.sort
+
+fn count(s: Seats) -> Int = list.len(distinct(s))
+
+// How many distinct taken seats are numbered below `x`.
+fn rank(s: Seats, x: Int) -> Int = distinct(s) |> list.count((y) => y < x)
+
+// How many distinct taken seats lie in lo..hi (inclusive).
+fn between(s: Seats, lo: Int, hi: Int) -> Int = distinct(s) |> list.count((y) => y >= lo and y <= hi)
+
+fn render(s: Seats) -> String = distinct(s) |> list.map((y) => int.to_string(y)) |> list.join(",")

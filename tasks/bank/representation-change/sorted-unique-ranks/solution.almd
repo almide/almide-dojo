@@ -1,0 +1,16 @@
+// A set of seat numbers kept sorted and unique.
+type Seats: Eq, Repr = { sorted: List[Int] }
+
+fn seats(xs: List[Int]) -> Seats = Seats { sorted: xs |> list.unique |> list.sort }
+
+fn add(s: Seats, x: Int) -> Seats = seats(s.sorted + [x])
+
+fn count(s: Seats) -> Int = list.len(s.sorted)
+
+// The index of the first stored number >= x: how many numbers are below `x`.
+fn rank(s: Seats, x: Int) -> Int = list.find_index(s.sorted, (y) => y >= x) ?? list.len(s.sorted)
+
+// How many stored numbers lie in lo..hi (inclusive).
+fn between(s: Seats, lo: Int, hi: Int) -> Int = int.max(0, rank(s, hi + 1) - rank(s, lo))
+
+fn render(s: Seats) -> String = s.sorted |> list.map((y) => int.to_string(y)) |> list.join(",")
