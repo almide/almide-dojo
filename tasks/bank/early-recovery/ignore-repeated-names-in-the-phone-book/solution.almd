@@ -1,0 +1,37 @@
+// Phone book import. Each line is "<name>: <phone>". Phone numbers may be
+// written with spaces or dashes; they are normalized to digits (with a
+// leading "+" kept) and a warning notes every line that needed it.
+type Book: Eq, Repr = { entries: List[String], names: List[String], warnings: List[String] }
+
+fn normalize(n: Int, raw: String) -> String! = {
+  let t = string.trim(raw)
+  let plus = string.starts_with(t, "+")
+  let body = if plus then string.drop(t, 1) else t
+  let cs = string.chars(body)
+  match list.find(cs, (c) => not string.is_digit(c) and c != " " and c != "-") {
+    some(c) => err("line ${int.to_string(n)}: bad phone ${t}"),
+    none => ok(()),
+  }!
+  let digits = cs |> list.filter((c) => string.is_digit(c)) |> list.join("")
+  guard string.len(digits) >= 5 else err("line ${int.to_string(n)}: bad phone ${t}")
+  if plus then "+" + digits else digits
+}
+
+fn add_line(b: Book, n: Int, line: String) -> Book! = {
+  let i = string.index_of(line, ":") ?? -1
+  guard i > 0 else err("line ${int.to_string(n)}: missing colon")
+  let name = string.trim(string.slice(line, 0, i))
+  let raw = string.trim(string.drop(line, i + 1))
+  let phone = normalize(n, raw)!
+  guard not list.contains(b.names, string.to_lower(name)) else ok({ ...b, warnings: b.warnings + ["line ${int.to_string(n)}: duplicate ${name} ignored"] })
+  let w = if phone != raw then b.warnings + ["line ${int.to_string(n)}: normalized ${raw}"] else b.warnings
+  ok(Book { entries: b.entries + ["${name}=${phone}"], names: b.names + [string.to_lower(name)], warnings: w })
+}
+
+fn import_book(lines: List[String]) -> Book! =
+  lines |> list.enumerate |> list.fold(Book { entries: [], names: [], warnings: [] }, (b, p) => add_line(b, p.0 + 1, p.1)!)!
+
+fn show(b: Book) -> String = {
+  let e = list.join(b.entries, " ")
+  if list.is_empty(b.warnings) then e else "${e} | ${list.join(b.warnings, "; ")}"
+}
