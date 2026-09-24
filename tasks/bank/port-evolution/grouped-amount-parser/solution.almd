@@ -1,0 +1,60 @@
+// An amount-parsing port: text to cents, or why the text is not an amount.
+protocol AmountParser {
+  fn parse(p: Self, text: String) -> Int!
+}
+
+fn all_digits(s: String) -> Bool = s != "" and string.is_digit(s)
+
+// Digits, optionally "." and exactly two digits: "12", "12.50".
+type Plain: AmountParser = {}
+fn Plain.parse(p: Plain, text: String) -> Int! =
+  match string.split_once(text, ".") {
+    none => if all_digits(text) then ok((int.parse(text)!) * 100) else err("bad amount: " + text),
+    some((whole, cents)) =>
+      if all_digits(whole) and all_digits(cents) and string.len(cents) == 2 then ok((int.parse(whole)!) * 100 + int.parse(cents)!)
+      else err("bad amount: " + text),
+  }
+
+// 1-3 digits, then groups of exactly three digits after each `sep`; or plain digits.
+fn grouped_whole(whole: String, sep: String) -> Int? = {
+  let parts = string.split(whole, sep)
+  match parts {
+    [] => none,
+    [first, ..rest] =>
+      if all_digits(first) and (list.is_empty(rest) or string.len(first) <= 3)
+        and list.all(rest, (g) => all_digits(g) and string.len(g) == 3)
+      then int.parse(list.join(parts, ""))?
+      else none,
+  }
+}
+
+// "1,234,567.89" with group "," and decimal ".".
+type Grouped: AmountParser = { group: String, decimal: String }
+fn Grouped.parse(p: Grouped, text: String) -> Int! = {
+  let (whole, cents) = match string.split_once(text, p.decimal) {
+    some((w, c)) => (w, some(c)),
+    none => (text, none),
+  }
+  let w = option.to_result(grouped_whole(whole, p.group), "bad amount: " + text)!
+  match cents {
+    none => ok(w * 100),
+    some(c) => if all_digits(c) and string.len(c) == 2 then ok(w * 100 + int.parse(c)!) else err("bad amount: " + text),
+  }
+}
+
+// The total of every amount; the first bad text (in order) is the error.
+fn sum_all[P: AmountParser](p: P, texts: List[String]) -> Int! = {
+  var total = 0
+  for t in texts {
+    total = total + p.parse(t)!
+  }
+  total
+}
+
+type Locale = | Simple(Plain) | Local(Grouped)
+
+fn total_in(l: Locale, texts: List[String]) -> Int! =
+  match l {
+    Simple(p) => sum_all(p, texts),
+    Local(g) => sum_all(g, texts),
+  }
