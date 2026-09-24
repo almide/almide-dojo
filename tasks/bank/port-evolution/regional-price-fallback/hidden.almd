@@ -1,0 +1,12 @@
+test "hidden: the whole chain is walked" {
+  let r = Regional { own: Card { prices: ["eu": 400] }, parents: ["fr-paris": "fr", "fr": "eu"], fallback: Card { prices: ["fr-paris": 999] } }
+  assert_eq(quote_with(Tiered(r), ["fr-paris", "fr"]), ["fr-paris: 400", "fr: 400"])
+}
+test "hidden: nearest wins and zero is free" {
+  let r = Regional { own: Card { prices: ["eu": 400, "fr": 0] }, parents: ["fr-paris": "fr", "fr": "eu"], fallback: Card { prices: [:] } }
+  assert_eq(quote_with(Tiered(r), ["fr-paris", "eu"]), ["fr-paris: 0", "eu: 400"])
+}
+test "hidden: default only for the original region" {
+  let r = Regional { own: Card { prices: [:] }, parents: ["x-1": "x"], fallback: Card { prices: ["x": 7] } }
+  assert_eq(quote_with(Tiered(r), ["x-1", "x"]), ["x-1: n/a", "x: 7"])
+}
