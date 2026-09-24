@@ -1,0 +1,53 @@
+// Playlist file. "# <album>" starts an album; the lines after it are its
+// tracks, "<m>:<ss> <title>". Blank lines are ignored.
+type Track: Eq, Repr = { title: String, secs: Int }
+type Album: Eq, Repr = { name: String, tracks: List[Track] }
+
+fn parse_track(album: String, line: String) -> Track! = {
+  let sp = string.index_of(line, " ") ?? -1
+  guard sp > 0 else err("bad track line in ${album}: ${line}")
+  let d = string.slice(line, 0, sp)
+  let parts = string.split(d, ":")
+  guard list.len(parts) == 2 else err("bad duration ${d} in ${album}")
+  let m = int.parse(list.get(parts, 0) ?? "") |> result.map_err((_) => "bad duration ${d} in ${album}")!
+  let s = int.parse(list.get(parts, 1) ?? "") |> result.map_err((_) => "bad duration ${d} in ${album}")!
+  guard string.len(list.get(parts, 1) ?? "") == 2 and s < 60 and m >= 0 and s >= 0 else err("bad duration ${d} in ${album}")
+  Track { title: string.trim(string.slice(line, sp + 1, string.len(line))), secs: m * 60 + s }
+}
+
+fn add_track(a: Album, t: Track) -> Album! = {
+  guard not list.any(a.tracks, (o) => o.title == t.title) else err("duplicate track ${t.title} in ${a.name}")
+  Album { name: a.name, tracks: a.tracks + [t] }
+}
+
+fn load(lines: List[String]) -> List[Album]! = {
+  var done: List[Album] = []
+  var cur: Album? = none
+  for raw in lines {
+    let line = string.trim(raw)
+    if line == "" then ()
+    else if string.starts_with(line, "# ") then {
+      match cur {
+        some(a) => { done = done + [a] },
+        none => (),
+      }
+      cur = some(Album { name: string.drop(line, 2), tracks: [] })
+    } else {
+      let a = option.to_result(cur, "track before any album: ${line}")!
+      cur = some(add_track(a, parse_track(a.name, line)!)!)
+    }
+  }
+  match cur {
+    some(a) => done + [a],
+    none => done,
+  }
+}
+
+fn fmt(secs: Int) -> String = "${int.to_string(secs / 60)}:${string.pad_start(int.to_string(secs % 60), 2, "0")}"
+
+// "Blue (2 tracks, 7:05); Red (1 tracks, 3:00)"
+fn overview(lines: List[String]) -> String! = {
+  let albums = load(lines)!
+  let parts = albums |> list.map((a) => "${a.name} (${int.to_string(list.len(a.tracks))} tracks, ${fmt(a.tracks |> list.fold(0, (s, t) => s + t.secs))})")
+  list.join(parts, "; ")
+}
