@@ -1,0 +1,60 @@
+// Plausible wrong patch: falls back to UTC with `??` when the host has no
+// default, so a bare timestamp from an unconfigured host is silently taken as UTC.
+// Log merger. Lines "<host> <HH:MM:SS><+|-HH:MM> <message...>" from several
+// hosts are merged into one list ordered by UTC time; lines with the same UTC
+// time keep their input order.
+type StampErr: Eq, Repr = | BadLine(String) | BadStamp(String) | NoOffset(String, String)
+type Entry = { utc: Int, host: String, msg: String }
+
+fn secs(hms: String) -> Int? = {
+  let p = string.split(hms, ":")
+  if list.len(p) != 3 then none
+  else match (int.parse(list.get(p, 0) ?? ""), int.parse(list.get(p, 1) ?? ""), int.parse(list.get(p, 2) ?? "")) {
+    (ok(h), ok(m), ok(s)) => if h < 24 and m < 60 and s < 60 then some(h * 3600 + m * 60 + s) else none,
+    _ => none,
+  }
+}
+
+fn parse_stamp(host: String, stamp: String) -> Int!StampErr = {
+  guard string.len(stamp) >= 8 else err(BadStamp(stamp))
+  let wall = match secs(string.take(stamp, 8)) {
+    some(v) => ok(v),
+    none => err(BadStamp(stamp)),
+  }!
+  let off = string.drop(stamp, 8)
+  guard off != "" else err(NoOffset(host, stamp))
+  let sign = string.take(off, 1)
+  let mins = match secs("${string.drop(off, 1)}:00") {
+    some(v) => ok(v),
+    none => err(BadStamp(stamp)),
+  }!
+  guard sign == "+" or sign == "-" else err(BadStamp(stamp))
+  if sign == "+" then wall - mins else wall + mins
+}
+
+fn parse_entry(line: String) -> Entry!StampErr = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) >= 3 else err(BadLine(line))
+  let host = list.get(w, 0) ?? ""
+  let utc = parse_stamp(host, list.get(w, 1) ?? "")!
+  Entry { utc: utc, host: host, msg: list.drop(w, 2) |> list.join(" ") }
+}
+
+fn fmt(t: Int) -> String = {
+  let d = (t % 86400 + 86400) % 86400
+  let p = (x: Int) => string.pad_start(int.to_string(x), 2, "0")
+  "${p(d / 3600)}:${p(d % 3600 / 60)}:${p(d % 60)}Z"
+}
+
+fn merge(defaults: Map[String, String], lines: List[String]) -> List[String]!StampErr = {
+  let es = lines |> list.map((l) => match parse_entry(l) {
+    ok(e) => ok(e),
+    err(NoOffset(host, stamp)) => {
+      let off = map.get(defaults, host) ?? "+00:00"
+      let w = string.split(l, " ") |> list.filter((x) => x != "")
+      parse_entry(([host, stamp + off] + list.drop(w, 2)) |> list.join(" "))
+    },
+    err(e) => err(e),
+  }!)!
+  es |> list.sort_by((e) => e.utc) |> list.map((e) => "${fmt(e.utc)} ${e.host} ${e.msg}")
+}
