@@ -1,0 +1,10 @@
+test "start and nights" {
+  assert_eq(render(stay("ann", 3, 3)), "ann 3-5")
+  assert_eq(nights(stay("ann", 3, 3)), 3)
+  assert_eq(extend(stay("ann", 3, 3), 2), stay("ann", 3, 5))
+}
+test "overlap by nights" {
+  let ss = [stay("a", 1, 5), stay("b", 3, 1), stay("c", 10, 2)]
+  assert_eq(conflicts(ss), ["a/b"])
+  assert_eq(occupancy(ss, 3), 2)
+}

@@ -1,0 +1,18 @@
+test "hidden: back-to-back stays are compatible" {
+  let ss = [stay("a", 3, 3), stay("b", 6, 2), stay("c", 1, 2)]
+  assert_eq(conflicts(ss), [])
+  assert_eq(overlaps(stay("x", 3, 3), stay("y", 5, 1)), true)
+  assert_eq(overlaps(stay("y", 5, 1), stay("x", 3, 3)), true)
+}
+test "hidden: one-night stays and the check-out day" {
+  assert_eq(render(stay("bo", 7, 1)), "bo 7-7")
+  let ss = [stay("a", 3, 3), stay("b", 6, 1)]
+  assert_eq(occupancy(ss, 6), 1)
+  assert_eq(occupancy(ss, 5), 1)
+  assert_eq(occupancy(ss, 2), 0)
+  assert_eq(occupancy([stay("z", 4, 1)], 5), 0)
+}
+test "hidden: conflict order" {
+  let ss = [stay("a", 1, 10), stay("b", 2, 1), stay("c", 11, 1), stay("d", 10, 2)]
+  assert_eq(conflicts(ss), ["a/b", "a/d", "c/d"])
+}

@@ -1,0 +1,29 @@
+// Hotel room bookings. A stay starts on the night of `start` and lasts `nights`
+// nights; the guest checks out on day start + nights.
+type Stay: Eq, Repr = { guest: String, start: Int, nights: Int }
+
+fn stay(guest: String, start: Int, nights: Int) -> Stay = Stay { guest: guest, start: start, nights: nights }
+
+fn nights(s: Stay) -> Int = s.nights
+
+fn checkout(s: Stay) -> Int = s.start + s.nights
+
+fn overlaps(a: Stay, b: Stay) -> Bool = a.start < checkout(b) and b.start < checkout(a)
+
+fn render(s: Stay) -> String = s.guest + " " + int.to_string(s.start) + "-" + int.to_string(checkout(s) - 1)
+
+// Every overlapping pair "a/b" (a listed before b), in list order.
+fn conflicts(stays: List[Stay]) -> List[String] =
+  stays
+    |> list.enumerate
+    |> list.flat_map(((i, a)) =>
+      stays
+        |> list.drop(i + 1)
+        |> list.filter((b) => overlaps(a, b))
+        |> list.map((b) => a.guest + "/" + b.guest))
+
+// How many stays occupy the night of `day`.
+fn occupancy(stays: List[Stay], day: Int) -> Int =
+  stays |> list.count((s) => s.start <= day and day < checkout(s))
+
+fn extend(s: Stay, extra: Int) -> Stay = Stay { ...s, nights: s.nights + extra }
