@@ -1,0 +1,16 @@
+test "hidden: one-signed samples" {
+  assert_eq(summary(record_all(sensor("p"), [5, 7, 6])), "p n=3 lo=5 hi=7 mean=6")
+  assert_eq(summary(record_all(sensor("n"), [-5, -2, -9])), "n n=3 lo=-9 hi=-2 mean=-5")
+  assert_eq(low(record(sensor("x"), 42)), some(42))
+}
+test "hidden: mean truncates toward zero" {
+  assert_eq(mean(record_all(sensor("m"), [-7, 0])), some(-3))
+  assert_eq(mean(record_all(sensor("m"), [7, 0])), some(3))
+}
+test "hidden: merging" {
+  let a = record_all(sensor("a"), [4, 8])
+  let b = record_all(sensor("b"), [-1, 20])
+  assert_eq(merge(a, sensor("z")), a)
+  assert_eq(summary(merge(sensor("z"), a)), "z n=2 lo=4 hi=8 mean=6")
+  assert_eq(summary(merge(a, b)), "a n=4 lo=-1 hi=20 mean=7")
+}

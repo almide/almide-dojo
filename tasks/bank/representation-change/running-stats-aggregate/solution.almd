@@ -1,0 +1,32 @@
+// Sensor readings kept as a running aggregate.
+type Stats: Eq, Repr = { count: Int, sum: Int, lo: Int, hi: Int }
+type Sensor: Eq, Repr = { name: String, stats: Stats }
+
+fn sensor(name: String) -> Sensor = Sensor { name: name, stats: Stats { count: 0, sum: 0, lo: 0, hi: 0 } }
+
+fn combine(a: Stats, b: Stats) -> Stats =
+  if a.count == 0 then b
+  else if b.count == 0 then a
+  else Stats { count: a.count + b.count, sum: a.sum + b.sum, lo: int.min(a.lo, b.lo), hi: int.max(a.hi, b.hi) }
+
+fn record(s: Sensor, v: Int) -> Sensor = Sensor { ...s, stats: combine(s.stats, Stats { count: 1, sum: v, lo: v, hi: v }) }
+
+fn record_all(s: Sensor, vs: List[Int]) -> Sensor = vs |> list.fold(s, (acc, v) => record(acc, v))
+
+fn count(s: Sensor) -> Int = s.stats.count
+fn low(s: Sensor) -> Int? = if s.stats.count == 0 then none else some(s.stats.lo)
+fn high(s: Sensor) -> Int? = if s.stats.count == 0 then none else some(s.stats.hi)
+
+// Mean truncated toward zero; none without samples.
+fn mean(s: Sensor) -> Int? = if s.stats.count == 0 then none else some(s.stats.sum / s.stats.count)
+
+// Both sensors' readings under the first one's name.
+fn merge(a: Sensor, b: Sensor) -> Sensor = Sensor { ...a, stats: combine(a.stats, b.stats) }
+
+fn show(o: Int?) -> String = match o {
+  some(v) => int.to_string(v),
+  none => "-",
+}
+
+fn summary(s: Sensor) -> String =
+  s.name + " n=" + int.to_string(count(s)) + " lo=" + show(low(s)) + " hi=" + show(high(s)) + " mean=" + show(mean(s))

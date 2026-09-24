@@ -1,0 +1,8 @@
+test "aggregate stats" {
+  let s = record_all(sensor("t"), [3, -4, 9])
+  assert_eq(s.stats, Stats { count: 3, sum: 8, lo: -4, hi: 9 })
+  assert_eq(summary(s), "t n=3 lo=-4 hi=9 mean=2")
+}
+test "empty sensor" {
+  assert_eq(summary(sensor("e")), "e n=0 lo=- hi=- mean=-")
+}
