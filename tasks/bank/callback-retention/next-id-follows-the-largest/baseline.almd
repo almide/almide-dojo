@@ -1,0 +1,7 @@
+// Ticket ids "T-<n>". Tickets get deleted, so the numbers have gaps; a
+// malformed id is ignored.
+fn number(id: String) -> Int? = string.strip_prefix(id, "T-") |> option.flat_map((n) => int.parse(n)?)
+
+fn valid(ids: List[String]) -> Int = ids |> list.count((i) => option.is_some(number(i)))
+
+fn has(ids: List[String], n: Int) -> Bool = ids |> list.any((i) => number(i) == some(n))

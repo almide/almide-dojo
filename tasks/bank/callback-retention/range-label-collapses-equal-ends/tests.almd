@@ -1,0 +1,4 @@
+test "page label" {
+  assert_eq(page_label([12, 3, 7])("pp. "), "pp. 3-12")
+  assert_eq(page_label([])("p. "), "p. none")
+}

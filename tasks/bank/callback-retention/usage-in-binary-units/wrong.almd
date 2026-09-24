@@ -1,0 +1,20 @@
+// File sizes in bytes. Human-readable sizes use BINARY units: 1 KiB is 1024
+// bytes, 1 MiB is 1024 KiB, shown with one decimal, rounded down.
+fn human(bytes: Int) -> String =
+  if bytes < 1024 then int.to_string(bytes) + " B"
+  else if bytes < 1024 * 1024 then int.to_string(bytes / 1024) + "." + int.to_string(bytes * 10 / 1024 % 10) + " KiB"
+  else int.to_string(bytes / (1024 * 1024)) + "." + int.to_string(bytes * 10 / (1024 * 1024) % 10) + " MiB"
+
+fn largest(sizes: List[Int]) -> String = human(list.max(sizes) ?? 0)
+
+// Plausible wrong patch: formats the total with its own decimal-unit helper
+// (1 KB = 1000 bytes) instead of `human`.
+fn kb(bytes: Int) -> String =
+  if bytes < 1000 then int.to_string(bytes) + " B"
+  else if bytes < 1000000 then int.to_string(bytes / 1000) + "." + int.to_string(bytes / 100 % 10) + " KiB"
+  else int.to_string(bytes / 1000000) + "." + int.to_string(bytes / 100000 % 10) + " MiB"
+
+fn quota_meter(sizes: List[Int]) -> (Int) -> String = {
+  let total = list.sum(sizes)
+  (quota) => kb(total) + " of " + kb(quota) + (if total > quota then " over" else "")
+}

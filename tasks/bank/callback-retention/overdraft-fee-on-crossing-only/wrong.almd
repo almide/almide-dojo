@@ -1,0 +1,18 @@
+// A checking account from balance 0. Movements are signed cents. A fee of 500
+// is charged each time the balance CROSSES from zero-or-above to below zero
+// (not again for further movements while it stays negative).
+fn apply_fee(before: Int, after: Int) -> Int = if before >= 0 and after < 0 then after - 500 else after
+
+fn deposits(ms: List[Int]) -> Int = ms |> list.filter((m) => m > 0) |> list.sum
+
+fn withdrawals(ms: List[Int]) -> Int = ms |> list.filter((m) => m < 0) |> list.sum
+
+// Plausible wrong patch: charges the fee after EVERY movement that leaves the
+// balance negative, not only on the crossing.
+fn statement(ms: List[Int]) -> (String) -> String = {
+  let (bal, fees) = ms |> list.fold((0, 0), (st, m) => {
+    let (b, f) = st
+    if b + m < 0 then (b + m - 500, f + 500) else (b + m, f)
+  })
+  (name) => name + ": balance " + int.to_string(bal) + ", fees " + int.to_string(fees)
+}

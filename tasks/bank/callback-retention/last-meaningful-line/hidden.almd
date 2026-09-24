@@ -1,0 +1,8 @@
+test "hidden: trailing blanks are skipped" {
+  assert_eq(last_words(["start", "  finished  ", "", "   "])("-"), "finished")
+  assert_eq(last_words(["", " "])("fallback"), "fallback")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(first_line(["", " x "]), " x ")
+  assert_eq(line_count(["a", " ", "b"]), 2)
+}

@@ -1,0 +1,10 @@
+test "hidden: first start to last stop across restarts" {
+  let f = uptime(["10 START", "70 STOP", "100 START", "400 STOP", "x"])
+  assert_eq(f("s"), "390s")
+  assert_eq(f("min"), "6min")
+}
+test "hidden: stops before starts" {
+  assert_eq(uptime(["50 STOP", "60 START"])("s"), "n/a")
+  assert_eq(uptime([])("min"), "n/a")
+  assert_eq(starts(["1 START", "2 START", "3 STOP"]), 2)
+}

@@ -1,0 +1,6 @@
+test "uptime" {
+  let f = uptime(["0 START", "90 STOP"])
+  assert_eq(f("s"), "90s")
+  assert_eq(f("min"), "1min")
+  assert_eq(uptime(["5 START"])("s"), "n/a")
+}
