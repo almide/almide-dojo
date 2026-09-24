@@ -1,0 +1,4 @@
+test "best streak" {
+  assert_eq(best_streak([3, 1, 2, 7]), "streak=3")
+  assert_eq(best_streak([]), "streak=0")
+}

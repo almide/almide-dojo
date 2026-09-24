@@ -1,0 +1,21 @@
+// Login days as day numbers (day 0 = the service launch), in any order; a
+// user may log in several times on the same day.
+fn active_days(days: List[Int]) -> Int = list.len(list.unique(days))
+
+fn first_day(days: List[Int]) -> Int? = list.min(days)
+
+fn logins(days: List[Int]) -> Int = list.len(days)
+
+// Distinct days sorted, then the longest step-1 run; the list stays local.
+fn best_streak(days: List[Int]) -> String = {
+  let ds = list.sort(list.unique(days))
+  let (best, _, _) = ds |> list.fold((0, 0, none), (st, d) => {
+    let (b, cur, prev) = st
+    let run = match prev {
+      some(p) => if d == p + 1 then cur + 1 else 1,
+      none => 1,
+    }
+    (int.max(b, run), run, some(d))
+  })
+  "streak=" + int.to_string(best)
+}

@@ -1,0 +1,7 @@
+// Spreadsheet column labels: A..Z, then AA, AB, ... (bijective base 26: A is
+// 1, Z is 26, AA is 27, AZ is 52, BA is 53).
+fn letter_value(c: String) -> Int = (string.codepoint(c) ?? 64) - 64
+
+fn is_label(s: String) -> Bool = s != "" and (string.chars(s) |> list.all((c) => c >= "A" and c <= "Z"))
+
+fn labels_ok(ls: List[String]) -> Bool = ls |> list.all((l) => is_label(l))

@@ -1,0 +1,26 @@
+// Samples "<second>=<value>" in time order. A sample's value holds from its
+// time until the next sample; the last sample holds for nothing.
+fn parse_sample(s: String) -> (Int, Int)? =
+  match string.split(s, "=") {
+    [t, v] => option.zip(int.parse(t)?, int.parse(v)?),
+    _ => none,
+  }
+
+fn samples(ss: List[String]) -> List[(Int, Int)] = ss |> list.filter_map((s) => parse_sample(s))
+
+fn peak(ss: List[String]) -> Int? = samples(ss) |> list.map(((_, v)) => v) |> list.max
+
+// Each sample weighs the gap to the next one; the pairs stay local.
+fn time_above(ss: List[String], limit: Int) -> String = {
+  let xs = samples(ss)
+  let pairs = list.zip(xs, list.drop(xs, 1))
+  let above = pairs |> list.fold(0, (a, p) => {
+    let ((t, v), (t2, _)) = p
+    if v > limit then a + t2 - t else a
+  })
+  let total = match (list.first(xs), list.last(xs)) {
+    (some((a, _)), some((b, _))) => b - a,
+    _ => 0,
+  }
+  "above=" + int.to_string(above) + "/" + int.to_string(total)
+}

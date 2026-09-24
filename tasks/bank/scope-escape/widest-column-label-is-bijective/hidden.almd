@@ -1,0 +1,9 @@
+test "hidden: bijective numbering" {
+  assert_eq(rightmost(["Z", "AA"]), "col=27")
+  assert_eq(rightmost(["BA", "AZ"]), "col=53")
+  assert_eq(rightmost(["ZZ"]), "col=702")
+}
+test "hidden: empty" {
+  assert_eq(rightmost([]), "col=0")
+  assert_eq(letter_value("Z"), 26)
+}

@@ -1,0 +1,7 @@
+// Login days as day numbers (day 0 = the service launch), in any order; a
+// user may log in several times on the same day.
+fn active_days(days: List[Int]) -> Int = list.len(list.unique(days))
+
+fn first_day(days: List[Int]) -> Int? = list.min(days)
+
+fn logins(days: List[Int]) -> Int = list.len(days)

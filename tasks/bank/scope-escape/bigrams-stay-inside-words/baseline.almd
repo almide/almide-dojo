@@ -1,0 +1,9 @@
+// Letter statistics over lowercase words separated by spaces.
+fn words(text: String) -> List[String] = string.split(string.to_lower(text), " ") |> list.filter((w) => w != "")
+
+fn letters(text: String) -> Int = words(text) |> list.fold(0, (a, w) => a + string.len(w))
+
+fn word_bigrams(w: String) -> List[String] = {
+  let cs = string.chars(w)
+  list.zip(cs, list.drop(cs, 1)) |> list.map(((a, b)) => a + b)
+}

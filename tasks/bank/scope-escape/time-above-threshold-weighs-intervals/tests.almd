@@ -1,0 +1,3 @@
+test "time above" {
+  assert_eq(time_above(["0=5", "10=20", "20=5", "30=5"], 10), "above=10/30")
+}

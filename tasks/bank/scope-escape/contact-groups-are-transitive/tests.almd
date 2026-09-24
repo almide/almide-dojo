@@ -1,0 +1,4 @@
+test "people" {
+  let es = [Entry { name: "a", emails: ["x@m"] }, Entry { name: "b", emails: ["x@m", "y@m"] }, Entry { name: "c", emails: ["z@m"] }]
+  assert_eq(people(es), "people=2")
+}

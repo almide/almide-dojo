@@ -1,0 +1,8 @@
+test "hidden: repeats on one day" {
+  assert_eq(best_streak([1, 2, 2, 3]), "streak=3")
+  assert_eq(best_streak([5, 5, 5]), "streak=1")
+  assert_eq(best_streak([10, 9, 9, 8, 20, 21]), "streak=3")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(active_days([1, 1, 2]), 2)
+}

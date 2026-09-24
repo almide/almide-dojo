@@ -1,0 +1,17 @@
+// Address-book entries: a name and the emails it lists. Two entries belong
+// to the same person when they share an email — directly or through a chain
+// of other entries (A shares with B, B with C: A, B and C are one person).
+type Entry = { name: String, emails: List[String] }
+
+fn shares(a: Entry, b: Entry) -> Bool = a.emails |> list.any((e) => list.contains(b.emails, e))
+
+fn email_count(es: List[Entry]) -> Int = es |> list.flat_map((e) => e.emails) |> list.unique |> list.len
+
+// Groups of entries; a new entry merges EVERY group it shares with.
+fn people(es: List[Entry]) -> String = {
+  let groups = es |> list.fold([], (gs, e) => {
+    let (linked, rest) = list.partition(gs, (g) => g |> list.any((x) => shares(x, e)))
+    rest + [list.flatten(linked) + [e]]
+  })
+  "people=" + int.to_string(list.len(groups))
+}

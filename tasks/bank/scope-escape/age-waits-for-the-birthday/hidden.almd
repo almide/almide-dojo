@@ -1,0 +1,9 @@
+test "hidden: the birthday must have come" {
+  let ps = [Person { name: "c", born: "2008-10-05" }, Person { name: "d", born: "2008-09-24" }, Person { name: "e", born: "2008-12-31" }]
+  assert_eq(adults(ps, "2026-10-04"), "adults=1,minors=2")
+  assert_eq(adults(ps, "2026-10-05"), "adults=2,minors=1")
+}
+test "hidden: empty" {
+  assert_eq(adults([], "2026-01-01"), "adults=0,minors=0")
+  assert_eq(born_in([Person { name: "x", born: "2000-02-29" }], 2000), 1)
+}

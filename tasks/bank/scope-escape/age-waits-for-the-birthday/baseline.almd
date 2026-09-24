@@ -1,0 +1,13 @@
+// People with birth dates "YYYY-MM-DD". Ages are computed on a given day.
+type Person = { name: String, born: String }
+
+fn ymd(d: String) -> (Int, Int, Int) =
+  match string.split(d, "-") {
+    [y, m, dd] => (int.parse(y) ?? 0, int.parse(m) ?? 0, int.parse(dd) ?? 0),
+    _ => (0, 0, 0),
+  }
+
+fn born_in(ps: List[Person], year: Int) -> Int = ps |> list.count((p) => {
+  let (y, _, _) = ymd(p.born)
+  y == year
+})
