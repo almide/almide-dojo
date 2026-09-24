@@ -1,0 +1,14 @@
+test "hidden: plugins that depend on a skipped plugin are skipped too, in order" {
+  assert_eq(load("2.4", ["core 1.0", "shiny 2.10", "glow 1.0 core,shiny", "spark 1.0 glow", "plain 1.0 core"]) |> result.map((l) => show(l)),
+    ok("core plain | shiny skipped (needs host 2.10); glow skipped (depends on shiny); spark skipped (depends on glow)"))
+}
+test "hidden: a dependency that was never listed is still fatal" {
+  assert_eq(load("2.4", ["core 1.0", "shiny 9.0", "glow 1.0 ghost"]) |> result.map((l) => show(l)), err(MissingDep("glow", "ghost")))
+  assert_eq(load("2.4", ["glow 1.0 core", "core 1.0"]) |> result.map((l) => show(l)), err(MissingDep("glow", "core")))
+}
+test "hidden: versions compare numerically, the host's own version is fine" {
+  assert_eq(load("2.10", ["a 2.9", "b 2.10", "c 1.11"]) |> result.map((l) => show(l)), ok("a b c"))
+}
+test "hidden: a duplicate is still fatal after a skip" {
+  assert_eq(load("1.0", ["a 1.0", "b 5.0", "a 1.0"]) |> result.map((l) => show(l)), err(Duplicate("a")))
+}
