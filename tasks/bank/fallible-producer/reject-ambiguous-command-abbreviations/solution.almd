@@ -1,0 +1,28 @@
+// Console script runner. Each line is "<command> <args...>"; a command may be
+// abbreviated to any prefix of its name, and a few aliases are fixed. Blank
+// lines are skipped.
+let COMMANDS = ["status", "stash", "start", "stop", "stopall", "show", "set", "settings", "help"]
+let ALIASES = ["st": "status", "?": "help", "q": "stopall"]
+
+fn resolve(word: String) -> String! = match map.get(ALIASES, word) {
+  some(c) => ok(c),
+  none => {
+    guard not list.contains(COMMANDS, word) else ok(word)
+    let hits = COMMANDS |> list.filter((c) => string.starts_with(c, word))
+    match list.len(hits) {
+      0 => err("unknown command ${word}"),
+      1 => ok(list.first(hits) ?? word),
+      _ => err("ambiguous ${word}: ${hits |> list.join(", ")}"),
+    }
+  },
+}
+
+// Each line with its command written out in full.
+fn expand(lines: List[String]) -> List[String]! =
+  lines
+    |> list.filter((l) => string.trim(l) != "")
+    |> list.map((l) => {
+      let w = string.split(string.trim(l), " ") |> list.filter((x) => x != "")
+      let cmd = resolve(list.get(w, 0) ?? "")!
+      ([cmd] + list.drop(w, 1)) |> list.join(" ")
+    })!

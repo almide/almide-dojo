@@ -1,0 +1,6 @@
+test "an abbreviation with several meanings is rejected" {
+  assert(result.is_err(resolve("s")))
+}
+test "unique abbreviations still expand" {
+  assert_eq(expand(["stat web", "", "he", "sho logs 5"]), ok(["status web", "help", "show logs 5"]))
+}

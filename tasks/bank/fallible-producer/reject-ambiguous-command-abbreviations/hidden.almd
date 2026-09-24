@@ -1,0 +1,13 @@
+test "hidden: every candidate is listed in table order" {
+  assert_eq(resolve("sta"), err("ambiguous sta: status, stash, start"))
+  assert_eq(resolve("sto"), err("ambiguous sto: stop, stopall"))
+  assert_eq(resolve("s"), err("ambiguous s: status, stash, start, stop, stopall, show, set, settings"))
+}
+test "hidden: whole names and aliases are never ambiguous" {
+  assert_eq(expand(["stop web", "set x 1", "st", "q", "?"]), ok(["stop web", "set x 1", "status", "stopall", "help"]))
+  assert_eq(resolve("sett"), ok("settings"))
+}
+test "hidden: the first failing line wins" {
+  assert_eq(expand(["help", "zap", "se"]), err("unknown command zap"))
+  assert_eq(expand(["help", "se", "zap"]), err("ambiguous se: set, settings"))
+}
