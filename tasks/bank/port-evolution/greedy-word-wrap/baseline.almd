@@ -1,0 +1,16 @@
+// A line-breaking port: how a paragraph is cut into display lines.
+protocol Breaker {
+  fn lines(b: Self, text: String) -> List[String]
+}
+
+// Hard cut every `width` characters (width >= 1); empty text has no lines.
+type HardCut: Breaker = { width: Int }
+fn HardCut.lines(b: HardCut, text: String) -> List[String] =
+  if text == "" then [] else [string.take(text, b.width)] + b.lines(string.drop(text, b.width))
+
+// Paragraphs laid out one after another, a blank line between paragraphs.
+fn layout[B: Breaker](b: B, paragraphs: List[String]) -> String =
+  paragraphs |> list.map((p) => list.join(b.lines(p), "\n")) |> list.join("\n\n")
+
+fn line_count[B: Breaker](b: B, paragraphs: List[String]) -> Int =
+  paragraphs |> list.fold(0, (acc, p) => acc + list.len(b.lines(p)))

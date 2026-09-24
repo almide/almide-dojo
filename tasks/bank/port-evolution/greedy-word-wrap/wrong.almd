@@ -1,0 +1,42 @@
+// Plausible wrong patch: joins a word only while the line stays SHORTER than the
+// width, so a line never reaches exactly `width`. Passes the visible tests.
+// A line-breaking port: how a paragraph is cut into display lines.
+protocol Breaker {
+  fn lines(b: Self, text: String) -> List[String]
+}
+
+// Hard cut every `width` characters (width >= 1); empty text has no lines.
+type HardCut: Breaker = { width: Int }
+fn HardCut.lines(b: HardCut, text: String) -> List[String] =
+  if text == "" then [] else [string.take(text, b.width)] + b.lines(string.drop(text, b.width))
+
+// Pieces of at most `width` characters.
+fn pieces(word: String, width: Int) -> List[String] =
+  if string.len(word) <= width then [word] else [string.take(word, width)] + pieces(string.drop(word, width), width)
+
+// Greedy word wrap; over-long words are cut into pieces.
+type WordWrap: Breaker = { width: Int }
+fn WordWrap.lines(b: WordWrap, text: String) -> List[String] = {
+  let words = string.split(text, " ") |> list.filter((w) => w != "") |> list.flat_map((w) => pieces(w, b.width))
+  words |> list.fold([], (acc, w) => match list.last(acc) {
+    some(cur) =>
+      if string.len(cur) + 1 + string.len(w) < b.width then list.drop_end(acc, 1) + [cur + " " + w]
+      else acc + [w],
+    none => [w],
+  })
+}
+
+// Paragraphs laid out one after another, a blank line between paragraphs.
+fn layout[B: Breaker](b: B, paragraphs: List[String]) -> String =
+  paragraphs |> list.map((p) => list.join(b.lines(p), "\n")) |> list.join("\n\n")
+
+fn line_count[B: Breaker](b: B, paragraphs: List[String]) -> Int =
+  paragraphs |> list.fold(0, (acc, p) => acc + list.len(b.lines(p)))
+
+type Wrap = | Hard(HardCut) | Words(WordWrap)
+
+fn layout_with(w: Wrap, paragraphs: List[String]) -> String =
+  match w {
+    Hard(h) => layout(h, paragraphs),
+    Words(ww) => layout(ww, paragraphs),
+  }
