@@ -1,0 +1,6 @@
+test "a crashed worker drops out and its job runs again" {
+  assert_eq(dispatch(Plan { crashes: ["b:j2"], slow: [] }, ["a", "b"], ["j1", "j2", "j3"]), ok(["j1@a", "j3@a", "j2@a"]))
+}
+test "a timeout is still fatal" {
+  assert_eq(dispatch(Plan { crashes: [], slow: ["j2"] }, ["a", "b"], ["j1", "j2"]), err(Timeout("j2")))
+}
