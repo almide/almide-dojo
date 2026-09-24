@@ -1,0 +1,12 @@
+// Boolean settings as typed: "true", "yes", "on", "1" mean true and "false",
+// "no", "off", "0" mean false, in any case. Anything else is not a boolean.
+fn parse_flag(value: String) -> Bool? =
+  match string.to_lower(value) {
+    "true" | "yes" | "on" | "1" => some(true),
+    "false" | "no" | "off" | "0" => some(false),
+    _ => none,
+  }
+
+fn enabled(value: String, default: Bool) -> Bool = parse_flag(value) ?? default
+
+fn is_bool(value: String) -> Bool = option.is_some(parse_flag(value))

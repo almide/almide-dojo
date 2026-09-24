@@ -1,0 +1,7 @@
+// Resource probe: __K__ tournaments of 2,000 games, one text each. Each game
+// list belongs to its own step, so the batch grows by the input texts only;
+// parsing every tournament first keeps all the game lists live.
+effect fn main() -> Unit = {
+  let ts = list.range(0, __K__) |> list.map((i) => string.repeat("a-b:1/2;", 2000) + "c-d:1-0")
+  println(int.to_string(winners(ts) |> list.fold(0, (a, s) => a + string.len(s))))
+}

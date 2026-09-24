@@ -1,0 +1,5 @@
+test "hidden: hyphens separate parts" {
+  assert_eq(initials("Jean-Luc Picard"), "JLP")
+  assert_eq(signature("mary-jane"), "mary-jane (MJ)")
+  assert_eq(initials("-x-"), "X")
+}

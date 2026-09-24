@@ -1,0 +1,7 @@
+// Resource probe: the same 500 values checked __K__ times. The helper must
+// allocate no more per value than the inline match did.
+effect fn main() -> Unit = {
+  let vs = list.range(0, 500) |> list.map((i) => list.get(["Yes", "off", "maybe", "1", "FALSE"], i % 5) ?? "x")
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (vs |> list.count((v) => is_bool(v))))
+  println(int.to_string(t))
+}

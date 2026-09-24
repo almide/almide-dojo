@@ -1,0 +1,4 @@
+test "adults" {
+  let ps = [Person { name: "a", born: "1990-01-01" }, Person { name: "b", born: "2015-06-01" }]
+  assert_eq(adults(ps, "2026-09-24"), "adults=1,minors=1")
+}

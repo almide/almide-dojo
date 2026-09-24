@@ -1,0 +1,3 @@
+test "last numbers" {
+  assert_eq(last_numbers(["1\n2\n2", "1\n1"]), ["1.2", "2"])
+}

@@ -1,0 +1,18 @@
+// Elections, one text per district: ballots separated by ",". A ballot names
+// a candidate; an empty ballot is spoilt and does not count at all.
+fn ballots(district: String) -> List[String] = string.split(district, ",") |> list.map((b) => string.trim(b))
+
+fn valid(district: String) -> List[String] = ballots(district) |> list.filter((b) => b != "")
+
+fn turnout(district: String) -> Int = list.len(ballots(district))
+
+// Each district's tally is built and dropped inside its own step.
+fn results(districts: List[String]) -> List[String] =
+  districts |> list.map((d) => {
+    let vs = valid(d)
+    let tally = vs |> list.fold(map.new(), (m, b) => map.set(m, b, (map.get(m, b) ?? 0) + 1))
+    match map.entries(tally) |> list.find(((_, n)) => n * 2 > list.len(vs)) {
+      some((c, _)) => c,
+      none => "no majority",
+    }
+  })

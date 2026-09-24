@@ -1,0 +1,4 @@
+test "unique marker" {
+  assert_eq(unique_marker("aabc")("m"), "m: b")
+  assert_eq(unique_marker("aa")("m"), "m: none")
+}

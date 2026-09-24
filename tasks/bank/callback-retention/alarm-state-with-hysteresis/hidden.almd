@@ -1,0 +1,9 @@
+test "hidden: hysteresis keeps the state" {
+  assert_eq(alarm_panel([85, 75])("a"), "a: ALARM")
+  assert_eq(alarm_panel([60, 75])("b"), "b: ok")
+  assert_eq(alarm_panel([85, 70, 79])("c"), "c: ok")
+}
+test "hidden: empty and peak" {
+  assert_eq(alarm_panel([])("d"), "d: ok")
+  assert_eq(peak([1, 9]), 9)
+}

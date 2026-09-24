@@ -1,0 +1,7 @@
+// Resource probe: one booking checked against the same 1,000 bookings __K__
+// times. The inline test allocated nothing per booking.
+effect fn main() -> Unit = {
+  let bs = list.range(0, 1000) |> list.map((i) => (i * 30, i * 30 + 45))
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + clashes_with(bs, (600, 700)))
+  println(int.to_string(t))
+}

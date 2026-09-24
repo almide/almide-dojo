@@ -1,0 +1,9 @@
+test "hidden: durations, not sample counts" {
+  assert_eq(time_above(["0=50", "100=1", "101=50", "102=1"], 10), "above=101/102")
+  assert_eq(time_above(["0=1", "1=99", "2=99", "3=99", "60=1"], 10), "above=59/60")
+}
+test "hidden: single and empty" {
+  assert_eq(time_above(["5=100"], 0), "above=0/0")
+  assert_eq(time_above([], 0), "above=0/0")
+  assert_eq(peak(["1=3", "x", "2=9"]), some(9))
+}

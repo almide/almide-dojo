@@ -1,0 +1,25 @@
+// People with birth dates "YYYY-MM-DD". Ages are computed on a given day.
+type Person = { name: String, born: String }
+
+fn ymd(d: String) -> (Int, Int, Int) =
+  match string.split(d, "-") {
+    [y, m, dd] => (int.parse(y) ?? 0, int.parse(m) ?? 0, int.parse(dd) ?? 0),
+    _ => (0, 0, 0),
+  }
+
+fn born_in(ps: List[Person], year: Int) -> Int = ps |> list.count((p) => {
+  let (y, _, _) = ymd(p.born)
+  y == year
+})
+
+fn age_on(born: String, today: String) -> Int = {
+  let (by, bm, bd) = ymd(born)
+  let (ty, tm, td) = ymd(today)
+  ty - by - (if tm < bm or (tm == bm and td < bd) then 1 else 0)
+}
+
+// Ages are computed per person; nothing is kept but the two counts.
+fn adults(ps: List[Person], today: String) -> String = {
+  let n = ps |> list.count((p) => age_on(p.born, today) >= 18)
+  "adults=" + int.to_string(n) + ",minors=" + int.to_string(list.len(ps) - n)
+}

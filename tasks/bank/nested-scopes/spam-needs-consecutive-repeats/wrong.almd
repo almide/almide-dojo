@@ -1,0 +1,22 @@
+// Chat channels, one text each: "user|message" lines separated by "\n".
+// A user spams when they post the SAME message three or more times IN A ROW
+// (consecutive lines of the channel).
+type Post = { user: String, text: String }
+
+fn parse_post(line: String) -> Post? =
+  string.index_of(line, "|") |> option.map((i) => Post { user: string.slice(line, 0, i), text: string.drop(line, i + 1) })
+
+fn posts(channel: String) -> List[Post] = string.lines(channel) |> list.filter_map((l) => parse_post(l))
+
+fn authors(channel: String) -> List[String] = posts(channel) |> list.map((p) => p.user) |> list.unique
+
+fn busiest(channel: String) -> String =
+  map.entries(list.group_by(posts(channel), (p) => p.user)) |> list.sort_by(((_, ps)) => 0 - list.len(ps)) |> list.first |> option.map(((u, _)) => u) ?? "-"
+
+// Plausible wrong patch: counts how often each (user, message) appears in the
+// channel, wherever it appears.
+fn spammers(channels: List[String]) -> List[String] =
+  channels |> list.map((c) => {
+    let ps = posts(c)
+    ps |> list.filter((p) => ps |> list.count((q) => q == p) >= 3) |> list.map((p) => p.user) |> list.unique |> list.join(",")
+  })

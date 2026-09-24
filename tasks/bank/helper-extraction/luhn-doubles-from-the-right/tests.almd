@@ -1,0 +1,5 @@
+test "luhn" {
+  assert_eq(valid("4539 1488 0343 6467"), true)
+  assert_eq(luhn_sum("0"), 0)
+  assert_eq(check_digit("123"), 0)
+}

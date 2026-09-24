@@ -1,0 +1,20 @@
+// Luhn check digits. Counting from the RIGHTMOST digit (position 1), every
+// digit in an even position is doubled (minus 9 when above 9); the number is
+// valid when the sum is a multiple of 10. Spaces are ignored.
+fn digits(s: String) -> List[Int] = string.chars(s) |> list.filter((c) => c != " ") |> list.map((c) => int.parse(c) ?? 0)
+
+fn valid(s: String) -> Bool = {
+  let sum = list.reverse(digits(s)) |> list.enumerate |> list.fold(0, (a, p) => {
+    let (i, d) = p
+    if i % 2 == 1 then a + (if d * 2 > 9 then d * 2 - 9 else d * 2) else a + d
+  })
+  sum % 10 == 0
+}
+
+fn check_digit(partial: String) -> Int = {
+  let sum = list.reverse(digits(partial + "0")) |> list.enumerate |> list.fold(0, (a, p) => {
+    let (i, d) = p
+    if i % 2 == 1 then a + (if d * 2 > 9 then d * 2 - 9 else d * 2) else a + d
+  })
+  (10 - sum % 10) % 10
+}

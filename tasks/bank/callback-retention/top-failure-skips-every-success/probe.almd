@@ -1,0 +1,7 @@
+// Resource probe: __K__ closures over fresh 20,000-code logs (all failures),
+// all held live. Capturing one code grows by a few bytes each; capturing the
+// failure codes grows by the whole log.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) => top_failure(list.range(0, 20000 + i) |> list.map((j) => 400 + j % 7)))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("s")))))
+}

@@ -1,0 +1,11 @@
+// Daily closing prices of a fund.
+fn change(prices: List[Int]) -> Int = (list.last(prices) ?? 0) - (list.first(prices) ?? 0)
+
+fn range_of(prices: List[Int]) -> Int = (list.max(prices) ?? 0) - (list.min(prices) ?? 0)
+
+// Plausible wrong patch: uses the overall high minus the overall low, which
+// ignores whether the low came after the high.
+fn drawdown_note(prices: List[Int]) -> (String) -> String = {
+  let worst = range_of(prices)
+  (fund) => fund + ": max drawdown " + int.to_string(worst)
+}

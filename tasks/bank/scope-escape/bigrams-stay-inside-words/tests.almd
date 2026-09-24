@@ -1,0 +1,4 @@
+test "top bigram" {
+  assert_eq(top_bigram("banana"), "an x2")
+  assert_eq(top_bigram(""), "none")
+}

@@ -1,0 +1,10 @@
+test "hidden: nothing climbs above the root" {
+  assert_eq(normalize("/../a"), "/a")
+  assert_eq(normalize("/a/../../b"), "/b")
+  assert_eq(normalize("/.."), "/")
+}
+test "hidden: plain cases" {
+  assert_eq(normalize("//x//y/"), "/x/y")
+  assert_eq(normalize("/"), "/")
+  assert_eq(mentions_parent("/a/.."), true)
+}

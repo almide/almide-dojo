@@ -1,0 +1,18 @@
+// Letter statistics over lowercase words separated by spaces.
+fn words(text: String) -> List[String] = string.split(string.to_lower(text), " ") |> list.filter((w) => w != "")
+
+fn letters(text: String) -> Int = words(text) |> list.fold(0, (a, w) => a + string.len(w))
+
+fn word_bigrams(w: String) -> List[String] = {
+  let cs = string.chars(w)
+  list.zip(cs, list.drop(cs, 1)) |> list.map(((a, b)) => a + b)
+}
+
+// Pairs are counted per word; the table stays local.
+fn top_bigram(text: String) -> String = {
+  let counts = words(text) |> list.flat_map((w) => word_bigrams(w)) |> list.fold(map.new(), (m, p) => map.set(m, p, (map.get(m, p) ?? 0) + 1))
+  match map.entries(counts) |> list.sort_by(((p, _)) => p) |> list.sort_by(((_, n)) => 0 - n) |> list.first {
+    some((p, n)) => p + " x" + int.to_string(n),
+    none => "none",
+  }
+}

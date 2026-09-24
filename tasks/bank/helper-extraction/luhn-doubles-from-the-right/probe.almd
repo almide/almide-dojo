@@ -1,0 +1,7 @@
+// Resource probe: the same 200 card numbers validated __K__ times. The
+// helper must allocate no more per number than the inline code did.
+effect fn main() -> Unit = {
+  let cards = list.range(0, 200) |> list.map((i) => "4539 1488 0343 " + string.pad_start(int.to_string(i), 4, "0"))
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (cards |> list.count((c) => valid(c))))
+  println(int.to_string(t))
+}

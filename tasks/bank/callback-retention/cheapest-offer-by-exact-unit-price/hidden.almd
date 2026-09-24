@@ -1,0 +1,9 @@
+test "hidden: exact fractions" {
+  assert_eq(best_offer(["3 for 250", "1 for 83"])("a"), "a: 1 for 83")
+  assert_eq(best_offer(["1 for 84", "3 for 250"])("d"), "d: 3 for 250")
+  assert_eq(best_offer(["3 for 10", "2 for 7"])("b"), "b: 3 for 10")
+}
+test "hidden: ties go to the earlier offer" {
+  assert_eq(best_offer(["2 for 10", "1 for 5"])("c"), "c: 2 for 10")
+  assert_eq(valid_offers(["0 for 5", "1 for 1"]), 1)
+}

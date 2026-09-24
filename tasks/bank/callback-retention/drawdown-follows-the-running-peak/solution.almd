@@ -1,0 +1,17 @@
+// Daily closing prices of a fund.
+fn change(prices: List[Int]) -> Int = (list.last(prices) ?? 0) - (list.first(prices) ?? 0)
+
+fn range_of(prices: List[Int]) -> Int = (list.max(prices) ?? 0) - (list.min(prices) ?? 0)
+
+// Walk with the running peak; the closure keeps the largest fall.
+fn drawdown_note(prices: List[Int]) -> (String) -> String = {
+  let (_, worst) = prices |> list.fold((none, 0), (st, p) => {
+    let (peak_so_far, w) = st
+    let top = match peak_so_far {
+      some(t) => int.max(t, p),
+      none => p,
+    }
+    (some(top), int.max(w, top - p))
+  })
+  (fund) => fund + ": max drawdown " + int.to_string(worst)
+}

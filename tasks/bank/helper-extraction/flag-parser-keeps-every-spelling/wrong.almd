@@ -1,0 +1,12 @@
+// Plausible wrong patch: the helper keeps only the canonical spellings
+// "true" and "false".
+fn parse_flag(value: String) -> Bool? =
+  match string.to_lower(value) {
+    "true" => some(true),
+    "false" => some(false),
+    _ => none,
+  }
+
+fn enabled(value: String, default: Bool) -> Bool = parse_flag(value) ?? default
+
+fn is_bool(value: String) -> Bool = option.is_some(parse_flag(value))

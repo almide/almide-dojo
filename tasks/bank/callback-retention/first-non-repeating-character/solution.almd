@@ -1,0 +1,12 @@
+// Character statistics of a text (case-sensitive).
+fn occurrences(text: String, c: String) -> Int = string.count(text, c)
+
+fn distinct_chars(text: String) -> Int = list.len(list.unique(string.chars(text)))
+
+// The character is found now; the closure keeps only it.
+fn unique_marker(text: String) -> (String) -> String = {
+  let cs = string.chars(text)
+  let counts = cs |> list.fold(map.new(), (m, c) => map.set(m, c, (map.get(m, c) ?? 0) + 1))
+  let found = cs |> list.find((c) => map.get(counts, c) == some(1))
+  (label) => label + ": " + (found ?? "none")
+}

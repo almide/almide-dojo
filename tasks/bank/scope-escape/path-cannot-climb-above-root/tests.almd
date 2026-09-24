@@ -1,0 +1,4 @@
+test "normalize" {
+  assert_eq(normalize("/a/./b/../c"), "/a/c")
+  assert_eq(normalize("a/b"), "relative path")
+}

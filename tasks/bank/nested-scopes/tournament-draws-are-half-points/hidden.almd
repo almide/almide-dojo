@@ -1,0 +1,7 @@
+test "hidden: draws are half points" {
+  assert_eq(winners(["a-b:1/2;c-a:1/2;b-c:1/2;c-b:1/2", "x-y:0-1;x-z:1/2;y-z:1/2"]), ["b 1.5", "y 1.5"])
+}
+test "hidden: ties and helpers" {
+  assert_eq(winners(["p-q:1/2"]), ["p 0.5"])
+  assert_eq(decisive("a-b:1-0;a-c:1/2"), 1)
+}

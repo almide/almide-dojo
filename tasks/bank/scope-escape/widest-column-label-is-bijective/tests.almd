@@ -1,0 +1,4 @@
+test "rightmost" {
+  assert_eq(rightmost(["A", "C", "B"]), "col=3")
+  assert_eq(rightmost(["A", "a"]), "bad label: a")
+}

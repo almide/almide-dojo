@@ -1,0 +1,7 @@
+// Resource probe: __K__ documents of 6,000 headings, one text each. Each
+// document's level list belongs to its own step, so the batch grows by the
+// input texts only; parsing every document first keeps all the level lists.
+effect fn main() -> Unit = {
+  let docs = list.range(0, __K__) |> list.map((i) => string.repeat("1\n2\n", 3000) + int.to_string(i % 2 + 1))
+  println(int.to_string(last_numbers(docs) |> list.fold(0, (a, s) => a + string.len(s))))
+}

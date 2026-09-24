@@ -1,0 +1,18 @@
+// Character statistics of a text (case-sensitive).
+fn occurrences(text: String, c: String) -> Int = string.count(text, c)
+
+fn distinct_chars(text: String) -> Int = list.len(list.unique(string.chars(text)))
+
+// Plausible wrong patch: takes the first character that is not equal to the
+// one after it, so a character that repeats LATER is still picked.
+fn unique_marker(text: String) -> (String) -> String = {
+  let cs = string.chars(text)
+  let found = list.zip(cs, list.drop(cs, 1) + [""]) |> list.enumerate |> list.find(((i, p)) => {
+    let (c, next) = p
+    c != next and (i == 0 or list.get(cs, i - 1) != some(c))
+  }) |> option.map(((_, p)) => {
+    let (c, _) = p
+    c
+  })
+  (label) => label + ": " + (found ?? "none")
+}

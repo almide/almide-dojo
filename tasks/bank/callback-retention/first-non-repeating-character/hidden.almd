@@ -1,0 +1,8 @@
+test "hidden: repeats later in the text disqualify" {
+  assert_eq(unique_marker("abab c")("a"), "a:  ")
+  assert_eq(unique_marker("xyzx")("b"), "b: y")
+  assert_eq(unique_marker("Aa")("c"), "c: A")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(distinct_chars("abca"), 3)
+}

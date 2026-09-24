@@ -1,0 +1,8 @@
+test "hidden: sub-counters restart" {
+  assert_eq(last_numbers(["1\n2\n2\n1\n2", "1\n2\n1\n2\n2\n2"]), ["2.1", "2.3"])
+  assert_eq(last_numbers(["2\n2", ""]), ["0.2", ""])
+}
+test "hidden: documents are separate" {
+  assert_eq(last_numbers(["1\n1\n1", "2"]), ["3", "0.1"])
+  assert_eq(chapters("1\n2\n1"), 2)
+}

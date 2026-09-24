@@ -1,0 +1,42 @@
+// Chess tournaments, one text each: games "white-black:result" separated by
+// ";", result "1-0", "0-1" or "1/2" (a draw, half a point each).
+fn games(t: String) -> List[(String, String, String)] =
+  string.split(t, ";") |> list.filter_map((g) => match string.split(g, ":") {
+    [players, r] => match string.split(players, "-") {
+      [w, b] => some((w, b, r)),
+      _ => none,
+    },
+    _ => none,
+  })
+
+fn players(t: String) -> List[String] = games(t) |> list.flat_map(((w, b, _)) => [w, b]) |> list.unique
+
+fn decisive(t: String) -> Int = games(t) |> list.count(((_, _, r)) => r != "1/2")
+
+// Plausible wrong patch: parses every tournament's games first and scores
+// afterwards, so every game list is live at once.
+fn winners(ts: List[String]) -> List[String] = {
+  let parsed = ts |> list.map((t) => (games(t), players(t)))
+  parsed |> list.map(((gs, ps)) => {
+    let halves = gs |> list.fold(map.new(), (m, g) => {
+      let (w, b, r) = g
+      let (hw, hb) = match r {
+        "1-0" => (2, 0),
+        "0-1" => (0, 2),
+        _ => (1, 1),
+      }
+      map.set(map.set(m, w, (map.get(m, w) ?? 0) + hw), b, (map.get(m, b) ?? 0) + hb)
+    })
+    let best = ps |> list.fold(none, (acc, p) => {
+      let h = map.get(halves, p) ?? 0
+      match acc {
+        some((_, bh)) => if h > bh then some((p, h)) else acc,
+        none => some((p, h)),
+      }
+    })
+    match best {
+      some((p, h)) => p + " " + int.to_string(h / 2) + (if h % 2 == 1 then ".5" else ""),
+      none => "-",
+    }
+  })
+}

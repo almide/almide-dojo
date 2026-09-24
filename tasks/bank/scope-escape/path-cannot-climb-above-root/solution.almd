@@ -1,0 +1,19 @@
+// Absolute paths like "/a/./b/../c". "." is the current directory and ".." the
+// parent; ".." at the root stays at the root. Empty segments are ignored.
+fn segments(p: String) -> List[String] = string.split(p, "/") |> list.filter((s) => s != "")
+
+fn is_absolute(p: String) -> Bool = string.starts_with(p, "/")
+
+fn mentions_parent(p: String) -> Bool = list.contains(segments(p), "..")
+
+// A stack of directory names; ".." pops only when there is something to pop.
+fn normalize(p: String) -> String =
+  if not is_absolute(p) then "relative path"
+  else {
+    let stack = segments(p) |> list.fold([], (st, s) => match s {
+      "." => st,
+      ".." => list.drop_end(st, 1),
+      _ => st + [s],
+    })
+    "/" + list.join(stack, "/")
+  }

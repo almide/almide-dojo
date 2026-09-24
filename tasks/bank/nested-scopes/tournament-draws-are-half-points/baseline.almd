@@ -1,0 +1,14 @@
+// Chess tournaments, one text each: games "white-black:result" separated by
+// ";", result "1-0", "0-1" or "1/2" (a draw, half a point each).
+fn games(t: String) -> List[(String, String, String)] =
+  string.split(t, ";") |> list.filter_map((g) => match string.split(g, ":") {
+    [players, r] => match string.split(players, "-") {
+      [w, b] => some((w, b, r)),
+      _ => none,
+    },
+    _ => none,
+  })
+
+fn players(t: String) -> List[String] = games(t) |> list.flat_map(((w, b, _)) => [w, b]) |> list.unique
+
+fn decisive(t: String) -> Int = games(t) |> list.count(((_, _, r)) => r != "1/2")

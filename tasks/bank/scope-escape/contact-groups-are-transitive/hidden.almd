@@ -1,0 +1,10 @@
+test "hidden: chains link entries" {
+  let es = [Entry { name: "a", emails: ["1"] }, Entry { name: "c", emails: ["3"] }, Entry { name: "b", emails: ["1", "3"] }]
+  assert_eq(people(es), "people=1")
+  let fs = [Entry { name: "p", emails: ["a"] }, Entry { name: "q", emails: ["b"] }, Entry { name: "r", emails: ["c"] }, Entry { name: "s", emails: ["c", "a"] }]
+  assert_eq(people(fs), "people=2")
+}
+test "hidden: empty and emailless" {
+  assert_eq(people([Entry { name: "n", emails: [] }, Entry { name: "o", emails: [] }]), "people=2")
+  assert_eq(people([]), "people=0")
+}

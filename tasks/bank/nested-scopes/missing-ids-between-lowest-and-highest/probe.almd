@@ -1,0 +1,7 @@
+// Resource probe: __K__ streams of 6,000 small ids, one text each. Each id
+// list belongs to its own step, so the batch grows by the input texts only;
+// parsing every stream first keeps all the id lists live.
+effect fn main() -> Unit = {
+  let ss = list.range(0, __K__) |> list.map((i) => string.repeat("1 2 ", 3000) + int.to_string(i + 3))
+  println(int.to_string(gaps(ss) |> list.fold(0, (a, n) => a + n)))
+}

@@ -1,0 +1,7 @@
+// Absolute paths like "/a/./b/../c". "." is the current directory and ".." the
+// parent; ".." at the root stays at the root. Empty segments are ignored.
+fn segments(p: String) -> List[String] = string.split(p, "/") |> list.filter((s) => s != "")
+
+fn is_absolute(p: String) -> Bool = string.starts_with(p, "/")
+
+fn mentions_parent(p: String) -> Bool = list.contains(segments(p), "..")

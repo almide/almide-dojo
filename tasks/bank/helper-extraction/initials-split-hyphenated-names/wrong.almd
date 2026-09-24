@@ -1,0 +1,8 @@
+// Plausible wrong patch: the helper splits on spaces only, so "Jean-Luc"
+// yields a single "J".
+fn initials(name: String) -> String =
+  string.split(name, " ") |> list.filter((p) => p != "") |> list.map((p) => string.to_upper(string.take(p, 1))) |> list.join("")
+
+fn avatar(name: String) -> String = initials(name)
+
+fn signature(name: String) -> String = name + " (" + initials(name) + ")"

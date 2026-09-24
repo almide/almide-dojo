@@ -1,0 +1,13 @@
+// Plausible wrong patch: the helper builds the doubled digit as text and
+// adds its characters ("16" -> 1 + 6). Same sum — but strings per digit.
+fn digits(s: String) -> List[Int] = string.chars(s) |> list.filter((c) => c != " ") |> list.map((c) => int.parse(c) ?? 0)
+
+fn luhn_sum(s: String) -> Int =
+  list.reverse(digits(s)) |> list.enumerate |> list.fold(0, (a, p) => {
+    let (i, d) = p
+    if i % 2 == 1 then a + (string.chars(int.to_string(d * 2)) |> list.map((c) => int.parse(c) ?? 0) |> list.sum) else a + d
+  })
+
+fn valid(s: String) -> Bool = luhn_sum(s) % 10 == 0
+
+fn check_digit(partial: String) -> Int = (10 - luhn_sum(partial + "0") % 10) % 10

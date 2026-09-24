@@ -1,0 +1,6 @@
+// HTTP status codes from an access log. Every 2xx code is a success; 3xx, 4xx
+// and 5xx are not.
+fn is_success(code: Int) -> Bool = code >= 200 and code < 300
+
+fn success_rate(codes: List[Int]) -> Int =
+  if list.is_empty(codes) then 0 else (codes |> list.count((c) => is_success(c))) * 100 / list.len(codes)

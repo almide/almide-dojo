@@ -1,0 +1,16 @@
+// Spreadsheet column labels: A..Z, then AA, AB, ... (bijective base 26: A is
+// 1, Z is 26, AA is 27, AZ is 52, BA is 53).
+fn letter_value(c: String) -> Int = (string.codepoint(c) ?? 64) - 64
+
+fn is_label(s: String) -> Bool = s != "" and (string.chars(s) |> list.all((c) => c >= "A" and c <= "Z"))
+
+fn labels_ok(ls: List[String]) -> Bool = ls |> list.all((l) => is_label(l))
+
+fn column_number(l: String) -> Int = string.chars(l) |> list.fold(0, (n, c) => n * 26 + letter_value(c))
+
+// Column numbers are computed per label; only the maximum is returned.
+fn rightmost(ls: List[String]) -> String =
+  match ls |> list.find((l) => not is_label(l)) {
+    some(bad) => "bad label: " + bad,
+    none => "col=" + int.to_string(ls |> list.map((l) => column_number(l)) |> list.max ?? 0),
+  }

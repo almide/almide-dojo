@@ -1,0 +1,7 @@
+// Resource probe: the same 400 labels shortened __K__ times. The helper must
+// allocate no more per label than the inline code did.
+effect fn main() -> Unit = {
+  let labels = list.range(0, 400) |> list.map((i) => "a rather long label number " + int.to_string(i))
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (labels |> list.fold(0, (a, l) => a + string.len(title(l, 12)))))
+  println(int.to_string(t))
+}

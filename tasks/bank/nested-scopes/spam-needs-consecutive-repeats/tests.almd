@@ -1,0 +1,3 @@
+test "spammers" {
+  assert_eq(spammers(["bob|hi\nbob|hi\nbob|hi\nann|yo", "ann|x"]), ["bob", ""])
+}

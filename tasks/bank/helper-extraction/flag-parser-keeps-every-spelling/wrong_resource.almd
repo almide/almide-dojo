@@ -1,0 +1,12 @@
+// Plausible wrong patch: the helper keeps the spellings in two lists. Same
+// answers — but both lists are built on every call.
+fn parse_flag(value: String) -> Bool? = {
+  let v = string.to_lower(value)
+  if list.contains(["true", "yes", "on", "1"], v) then some(true)
+  else if list.contains(["false", "no", "off", "0"], v) then some(false)
+  else none
+}
+
+fn enabled(value: String, default: Bool) -> Bool = parse_flag(value) ?? default
+
+fn is_bool(value: String) -> Bool = option.is_some(parse_flag(value))

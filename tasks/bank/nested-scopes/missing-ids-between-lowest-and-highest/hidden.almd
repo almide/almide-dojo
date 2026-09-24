@@ -1,0 +1,7 @@
+test "hidden: lowest to highest, not arrival order" {
+  assert_eq(gaps(["5 1 3", "10 2 2 3"]), [2, 6])
+}
+test "hidden: empty and full" {
+  assert_eq(gaps(["", "3 2 1"]), [0, 0])
+  assert_eq(first_arrival("9 1"), some(9))
+}

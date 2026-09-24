@@ -1,0 +1,9 @@
+test "hidden: biggest lines first" {
+  assert_eq(pareto([("a", 10), ("b", 10), ("c", 80)])("x"), "x: 1 of 3 lines make 80%")
+  assert_eq(pareto([("a", 5), ("b", 40), ("c", 15), ("d", 40)])("y"), "y: 2 of 4 lines make 80%")
+}
+test "hidden: exact threshold and empty" {
+  assert_eq(pareto([("a", 4), ("b", 1)])("z"), "z: 1 of 2 lines make 80%")
+  assert_eq(pareto([])("e"), "e: 0 of 0 lines make 80%")
+  assert_eq(biggest([("p", 1), ("q", 3)]), "q")
+}

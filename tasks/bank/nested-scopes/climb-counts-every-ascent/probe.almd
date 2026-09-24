@@ -1,0 +1,7 @@
+// Resource probe: __K__ routes of 6,000 points, one text each. Each height
+// list belongs to its own step, so the batch grows by the input texts only;
+// parsing every route first keeps all the height lists live.
+effect fn main() -> Unit = {
+  let routes = list.range(0, __K__) |> list.map((i) => string.repeat("1;2;", 3000) + int.to_string(i))
+  println(int.to_string(total_climbs(routes) |> list.fold(0, (a, n) => a + n)))
+}

@@ -1,0 +1,14 @@
+// Bookings as half-open minute ranges [start, end): a booking ending at 600
+// and one starting at 600 do NOT overlap.
+fn overlap(s1: Int, e1: Int, s2: Int, e2: Int) -> Bool = s1 < e2 and s2 < e1
+
+fn conflicts(a: (Int, Int), b: (Int, Int)) -> Bool = {
+  let (s1, e1) = a
+  let (s2, e2) = b
+  overlap(s1, e1, s2, e2)
+}
+
+fn clashes_with(bookings: List[(Int, Int)], new_b: (Int, Int)) -> Int = {
+  let (s2, e2) = new_b
+  bookings |> list.count(((s1, e1)) => overlap(s1, e1, s2, e2))
+}

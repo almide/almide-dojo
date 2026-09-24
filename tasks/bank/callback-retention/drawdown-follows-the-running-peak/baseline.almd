@@ -1,0 +1,4 @@
+// Daily closing prices of a fund.
+fn change(prices: List[Int]) -> Int = (list.last(prices) ?? 0) - (list.first(prices) ?? 0)
+
+fn range_of(prices: List[Int]) -> Int = (list.max(prices) ?? 0) - (list.min(prices) ?? 0)

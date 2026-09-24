@@ -1,0 +1,7 @@
+// Initials of full names: the first letter of every name part, uppercase.
+// Parts are separated by spaces OR hyphens ("Jean-Luc Picard" is "JLP").
+fn avatar(name: String) -> String =
+  string.split(string.replace(name, "-", " "), " ") |> list.filter((p) => p != "") |> list.map((p) => string.to_upper(string.take(p, 1))) |> list.join("")
+
+fn signature(name: String) -> String =
+  name + " (" + (string.split(string.replace(name, "-", " "), " ") |> list.filter((p) => p != "") |> list.map((p) => string.to_upper(string.take(p, 1))) |> list.join("")) + ")"

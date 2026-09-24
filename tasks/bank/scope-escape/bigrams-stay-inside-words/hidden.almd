@@ -1,0 +1,9 @@
+test "hidden: pairs stay inside words" {
+  assert_eq(top_bigram("ab ba ab"), "ab x2")
+  assert_eq(top_bigram("xa ay ya"), "ay x1")
+}
+test "hidden: case and ties" {
+  assert_eq(top_bigram("THE the"), "he x2")
+  assert_eq(top_bigram("a b"), "none")
+  assert_eq(letters("ab  c"), 3)
+}

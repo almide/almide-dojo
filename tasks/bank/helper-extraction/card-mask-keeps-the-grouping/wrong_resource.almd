@@ -1,0 +1,14 @@
+// Plausible wrong patch: the helper numbers the characters and asks, for
+// each digit, how many digits come after it. Same text — but a numbered copy
+// and a count scan per character.
+fn mask(card: String) -> String = {
+  let cs = string.chars(card) |> list.enumerate
+  cs |> list.map(((i, c)) => {
+    let after = list.drop(cs, i + 1) |> list.count(((_, d)) => d != " ")
+    if c == " " or after < 4 then c else "*"
+  }) |> list.join("")
+}
+
+fn receipt_line(card: String) -> String = "card " + mask(card)
+
+fn last4(card: String) -> String = string.chars(card) |> list.filter((c) => c != " ") |> list.take_end(4) |> list.join("")

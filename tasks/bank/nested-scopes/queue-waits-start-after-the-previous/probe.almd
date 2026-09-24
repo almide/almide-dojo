@@ -1,0 +1,7 @@
+// Resource probe: __K__ queues of 4,000 customers, one text each. Each
+// customer list belongs to its own step, so the batch grows by the input
+// texts only; parsing every queue first keeps all the customer lists live.
+effect fn main() -> Unit = {
+  let queues = list.range(0, __K__) |> list.map((i) => string.repeat("1:1,", 4000) + int.to_string(i) + ":1")
+  println(int.to_string(total_waits(queues) |> list.fold(0, (a, n) => a + n)))
+}

@@ -1,0 +1,4 @@
+// Character statistics of a text (case-sensitive).
+fn occurrences(text: String, c: String) -> Int = string.count(text, c)
+
+fn distinct_chars(text: String) -> Int = list.len(list.unique(string.chars(text)))

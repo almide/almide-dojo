@@ -1,0 +1,9 @@
+// Character statistics of a text (case-sensitive).
+fn occurrences(text: String, c: String) -> Int = string.count(text, c)
+
+fn distinct_chars(text: String) -> Int = list.len(list.unique(string.chars(text)))
+
+// Plausible wrong patch: the closure searches when it runs, so it captures
+// `text` and keeps the whole text alive.
+fn unique_marker(text: String) -> (String) -> String =
+  (label) => label + ": " + (string.chars(text) |> list.find((c) => string.count(text, c) == 1) ?? "none")
