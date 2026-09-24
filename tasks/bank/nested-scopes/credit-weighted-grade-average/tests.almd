@@ -1,0 +1,3 @@
+test "averages" {
+  assert_eq(averages(["80:3,60:3", ""]), ["70", "n/a"])
+}

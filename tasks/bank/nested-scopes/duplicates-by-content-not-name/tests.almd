@@ -1,0 +1,3 @@
+test "redundant" {
+  assert_eq(redundant(["a 10 x1\na 10 x1\nc 5 y", "d 1 z"]), [1, 0])
+}

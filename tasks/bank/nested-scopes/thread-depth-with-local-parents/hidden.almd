@@ -1,0 +1,8 @@
+test "hidden: parents are local to their conversation" {
+  assert_eq(depths(["a>-\nb>a", "c>a\nd>c"]), [2, 2])
+  assert_eq(depths(["m>-\nn>m\no>n", "q>o"]), [3, 1])
+}
+test "hidden: empty and orphans" {
+  assert_eq(depths(["", "z>nowhere"]), [0, 1])
+  assert_eq(topics("a>-\nb>-\nc>a"), 2)
+}

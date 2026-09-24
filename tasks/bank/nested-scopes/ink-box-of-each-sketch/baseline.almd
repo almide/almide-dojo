@@ -1,0 +1,7 @@
+// ASCII sketches, one text each: rows separated by "\n", "#" is ink, any other
+// character is paper.
+fn rows(sketch: String) -> List[String] = string.split(sketch, "\n")
+
+fn ink(sketch: String) -> Int = rows(sketch) |> list.fold(0, (a, r) => a + string.count(r, "#"))
+
+fn blank(sketch: String) -> Bool = ink(sketch) == 0

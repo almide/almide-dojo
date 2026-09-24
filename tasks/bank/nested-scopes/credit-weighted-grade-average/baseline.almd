@@ -1,0 +1,17 @@
+// Transcripts, one text per student: "grade:credits" entries separated by
+// ",", grades 0-100. The average is weighted by credits and rounded down;
+// courses with 0 credits do not count. Malformed entries are skipped.
+type Course = { grade: Int, credits: Int }
+
+fn parse_course(e: String) -> Course? = {
+  let i = string.index_of(e, ":")!
+  let g = int.parse(string.slice(e, 0, i))?!
+  let c = int.parse(string.drop(e, i + 1))?!
+  some(Course { grade: g, credits: c })
+}
+
+fn entries(t: String) -> List[Course] = string.split(t, ",") |> list.filter_map((e) => parse_course(e))
+
+fn credits(t: String) -> Int = entries(t) |> list.map((c) => c.credits) |> list.sum
+
+fn failed(t: String) -> Int = entries(t) |> list.count((c) => c.grade < 50 and c.credits > 0)

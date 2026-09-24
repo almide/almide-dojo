@@ -1,0 +1,15 @@
+// Request logs per client, one text each: request times in seconds separated
+// by ",", in strictly increasing order. The limit is at most `limit` requests in ANY
+// 60-second window [t - 59, t].
+fn times(log: String) -> List[Int] =
+  if string.trim(log) == "" then [] else string.split(log, ",") |> list.map((t) => int.parse(string.trim(t)) ?? 0)
+
+fn requests(log: String) -> Int = list.len(times(log))
+
+fn span(log: String) -> Int = {
+  let ts = times(log)
+  match (list.first(ts), list.last(ts)) {
+    (some(a), some(b)) => b - a,
+    _ => 0,
+  }
+}

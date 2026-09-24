@@ -1,0 +1,7 @@
+// Resource probe: __K__ clients of 3,000 requests, one text each. Each time
+// list belongs to its own step, so the batch grows by the input texts only;
+// parsing every client first keeps all the time lists live.
+effect fn main() -> Unit = {
+  let logs = list.range(0, __K__) |> list.map((i) => list.range(0, 3000) |> list.map((j) => int.to_string(j * 7 + i)) |> list.join(","))
+  println(int.to_string(violations(logs, 5) |> list.fold(0, (a, n) => a + n)))
+}

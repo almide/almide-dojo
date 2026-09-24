@@ -1,0 +1,14 @@
+// Tennis scores, one text per match: sets "games-games" from player A's side,
+// separated by spaces ("6-4 3-6 7-5"). A set is won by whoever has more games
+// in it.
+fn sets(m: String) -> List[(Int, Int)] =
+  string.split(m, " ") |> list.filter_map((s) => match string.split(s, "-") {
+    [a, b] => option.zip(int.parse(a)?, int.parse(b)?),
+    _ => none,
+  })
+
+fn games(m: String) -> (Int, Int) = sets(m) |> list.fold((0, 0), (acc, s) => {
+  let (ga, gb) = acc
+  let (a, b) = s
+  (ga + a, gb + b)
+})

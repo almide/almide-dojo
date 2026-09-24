@@ -1,0 +1,7 @@
+// Resource probe: __K__ "matches" of 5,000 sets, one text each. Each set list
+// belongs to its own step, so the batch grows by the input texts only;
+// parsing every match first keeps all the set lists live.
+effect fn main() -> Unit = {
+  let ms = list.range(0, __K__) |> list.map((i) => string.repeat("6-4 ", 5000) + int.to_string(i) + "-0")
+  println(int.to_string(winners(ms) |> list.fold(0, (a, s) => a + string.len(s))))
+}

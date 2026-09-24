@@ -1,0 +1,7 @@
+test "hidden: credits weigh" {
+  assert_eq(averages(["90:4,50:1", "100:0,40:2"]), ["82", "40"])
+  assert_eq(averages(["70:0"]), ["n/a"])
+}
+test "hidden: helpers unchanged" {
+  assert_eq(credits("1:2,x,3:4"), 6)
+}

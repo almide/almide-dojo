@@ -1,0 +1,8 @@
+test "hidden: the window slides across minute boundaries" {
+  assert_eq(violations(["50,55,65"], 2), [1])
+  assert_eq(violations(["0,59,60,119"], 1), [3])
+}
+test "hidden: empty clients" {
+  assert_eq(violations(["", "5"], 0), [0, 1])
+  assert_eq(span("5, 9,20"), 15)
+}

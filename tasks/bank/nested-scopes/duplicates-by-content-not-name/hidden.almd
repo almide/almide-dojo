@@ -1,0 +1,8 @@
+test "hidden: content decides, not names" {
+  assert_eq(redundant(["a 10 x1\na 10 x2\nb 10 x1"]), [1])
+  assert_eq(redundant(["p 3 h\nq 4 h\nr 3 h\ns 3 h"]), [2])
+}
+test "hidden: empty folders" {
+  assert_eq(redundant(["", "junk"]), [0, 0])
+  assert_eq(folder_size("a 1 h\nb 2 h"), 3)
+}
