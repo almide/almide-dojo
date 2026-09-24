@@ -1,0 +1,19 @@
+test "hidden: exact message names both paths" {
+  assert_eq(resolve("a/b", "../../../c"), err("a/b + ../../../c escapes the root"))
+  assert_eq(resolve(".", ".."), err(". + .. escapes the root"))
+}
+test "hidden: climbing up to the root itself is fine, the base counts" {
+  assert_eq(resolve("a/b", "../../c"), ok("c"))
+  assert_eq(resolve("a/b", "../.."), ok("."))
+  assert_eq(resolve("a/../b", "../c"), ok("c"))
+}
+test "hidden: escaping on the way counts even if the path comes back down" {
+  assert_eq(resolve("a", "../../a/b"), err("a + ../../a/b escapes the root"))
+  assert_eq(resolve("x/..", "../y"), err("x/.. + ../y escapes the root"))
+  assert_eq(resolve("..", "a/b"), err(".. + a/b escapes the root"))
+}
+test "hidden: older errors win, the first bad path of a list is reported" {
+  assert_eq(resolve("/a", "../../.."), err("absolute path not allowed: /a"))
+  assert_eq(resolve("a", "..//.."), err("empty segment in ..//.."))
+  assert_eq(resolve_all("a", ["b", "../..", "/x"]), err("a + ../.. escapes the root"))
+}

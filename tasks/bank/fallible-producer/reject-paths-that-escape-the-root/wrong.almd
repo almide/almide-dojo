@@ -1,0 +1,36 @@
+// Plausible wrong patch: counts where the walk ENDS (base depth plus the
+// downs minus the ups of `rel`), so a walk that dips above the root and comes
+// back down passes, and a base that itself climbs above the root is not seen.
+// Path resolver for a sandboxed file tree. Paths are relative, "/"-separated;
+// "." is the current directory and ".." the parent. `resolve(base, rel)` joins
+// a relative path onto a base directory; "." stands for the root itself.
+fn segments(p: String) -> List[String]! = {
+  guard not string.starts_with(p, "/") else err("absolute path not allowed: ${p}")
+  if p == "" or p == "." then ok([])
+  else {
+    let parts = string.split(p, "/")
+    guard not list.contains(parts, "") else err("empty segment in ${p}")
+    ok(parts)
+  }
+}
+
+fn walk(stack: List[String], parts: List[String]) -> List[String] =
+  parts |> list.fold(stack, (st, s) =>
+    match s {
+      "." => st,
+      ".." => list.drop_end(st, 1),
+      _ => st + [s],
+    })
+
+fn show(stack: List[String]) -> String = if list.is_empty(stack) then "." else list.join(stack, "/")
+
+fn resolve(base: String, rel: String) -> String! = {
+  let b = segments(base)!
+  let r = segments(rel)!
+  let net = list.len(walk([], b)) + (r |> list.count((s) => s != ".." and s != ".")) - (r |> list.count((s) => s == ".."))
+  guard net >= 0 else err("${base} + ${rel} escapes the root")
+  show(walk([], b + r))
+}
+
+fn resolve_all(base: String, rels: List[String]) -> List[String]! =
+  rels |> list.map((r) => resolve(base, r)!)!

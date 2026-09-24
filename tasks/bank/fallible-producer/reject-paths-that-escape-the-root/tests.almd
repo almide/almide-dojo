@@ -1,0 +1,7 @@
+test "going above the root is an error" {
+  assert(result.is_err(resolve("a", "../../..")))
+}
+test "ordinary paths still resolve" {
+  assert_eq(resolve("docs/img", "../txt/./a.md"), ok("docs/txt/a.md"))
+  assert_eq(resolve(".", "a/.."), ok("."))
+}
