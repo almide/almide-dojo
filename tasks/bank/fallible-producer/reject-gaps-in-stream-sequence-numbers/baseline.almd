@@ -1,0 +1,37 @@
+// Message reassembly. Each line is "<stream> <seq> <text...>"; streams are
+// interleaved, and each stream's messages are joined in arrival order.
+type Msg = { stream: String, seq: Int, text: String }
+
+fn parse_msg(line: String) -> Msg! = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) >= 3 else err("bad line: ${line}")
+  let stream = list.get(w, 0) ?? ""
+  let raw = list.get(w, 1) ?? ""
+  let seq = int.parse(raw) |> result.map_err((_) => "bad seq ${raw} in stream ${stream}")!
+  guard seq >= 1 else err("bad seq ${raw} in stream ${stream}")
+  Msg { stream: stream, seq: seq, text: list.drop(w, 2) |> list.join(" ") }
+}
+
+fn accept(last: Map[String, Int], m: Msg) -> Map[String, Int]! =
+  match map.get(last, m.stream) {
+    none => ok(map.set(last, m.stream, m.seq)),
+    some(prev) => {
+      guard m.seq > prev else err("duplicate seq ${int.to_string(m.seq)} in stream ${m.stream}")
+      ok(map.set(last, m.stream, m.seq))
+    },
+  }
+
+// "a: hello world | b: hi", streams in order of first appearance.
+fn reassemble(lines: List[String]) -> String! = {
+  var last: Map[String, Int] = [:]
+  var order: List[String] = []
+  var texts: Map[String, String] = [:]
+  for line in lines {
+    let m = parse_msg(line)!
+    last = accept(last, m)!
+    let before = map.get(texts, m.stream)
+    order = if before == none then order + [m.stream] else order
+    texts = map.set(texts, m.stream, match before { some(t) => "${t} ${m.text}", none => m.text })
+  }
+  order |> list.map((s) => "${s}: ${map.get(texts, s) ?? ""}") |> list.join(" | ")
+}

@@ -1,0 +1,6 @@
+test "a skipped sequence number is an error" {
+  assert(result.is_err(reassemble(["a 1 hello", "a 3 world"])))
+}
+test "interleaved streams still reassemble" {
+  assert_eq(reassemble(["a 1 hello", "b 1 hi", "a 2 world", "b 2 there"]), ok("a: hello world | b: hi there"))
+}
