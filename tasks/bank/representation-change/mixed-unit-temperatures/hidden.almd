@@ -1,0 +1,15 @@
+test "hidden: exact comparison across scales" {
+  assert_eq(warmest([reading("c", C(211)), reading("f", F(700))]), some("f"))
+  assert_eq(warmest([reading("c", C(1000)), reading("f", F(2120))]), some("c"))
+  assert_eq(warmest([reading("f", F(-400)), reading("c", C(-400))]), some("f"))
+  assert_eq(warmest([]), none)
+}
+test "hidden: too_cold is strict and exact" {
+  let rs = [reading("a", F(310)), reading("b", C(-5)), reading("c", F(330)), reading("d", C(6))]
+  assert_eq(too_cold(rs, -5), ["a"])
+  assert_eq(too_cold(rs, 6), ["a", "b", "c"])
+}
+test "hidden: negative renders" {
+  assert_eq(render(reading("x", C(-5))), "x -0.5C")
+  assert_eq(render(reading("y", F(-400))), "y -40.0F")
+}

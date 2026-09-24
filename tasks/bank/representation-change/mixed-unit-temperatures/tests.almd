@@ -1,0 +1,8 @@
+test "two scales" {
+  assert_eq(render(reading("den", F(705))), "den 70.5F")
+  assert_eq(render(reading("hall", C(215))), "hall 21.5C")
+  assert_eq(warmest([reading("a", C(200)), reading("b", F(800))]), some("b"))
+}
+test "too cold in celsius" {
+  assert_eq(too_cold([reading("a", F(320)), reading("b", C(50))], 10), ["a"])
+}
