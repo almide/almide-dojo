@@ -1,0 +1,29 @@
+// Code snippet checker. Brackets ( [ { and their closers are tracked outside
+// string literals; a string is "..." with \" and \\ escapes. The report is the
+// deepest bracket nesting. Positions are 0-based character offsets.
+type Scan = { depth: Int, deepest: Int, in_str: Bool, escaped: Bool, str_start: Int }
+
+fn step(s: Scan, c: String, i: Int) -> Scan! =
+  if s.in_str then {
+    if s.escaped then ok({ ...s, escaped: false })
+    else if c == "\\" then ok({ ...s, escaped: true })
+    else if c == "\"" then ok({ ...s, in_str: false })
+    else ok(s)
+  } else if c == "\"" then ok({ ...s, in_str: true, str_start: i })
+  else if c == "(" or c == "[" or c == "{" then ok({ ...s, depth: s.depth + 1, deepest: int.max(s.deepest, s.depth + 1) })
+  else if c == ")" or c == "]" or c == "}" then {
+    guard s.depth > 0 else err("unmatched ${c} at ${int.to_string(i)}")
+    ok({ ...s, depth: s.depth - 1 })
+  } else ok(s)
+
+fn scan(src: String) -> Scan! = {
+  let st = string.chars(src) |> list.enumerate |> list.fold(Scan { depth: 0, deepest: 0, in_str: false, escaped: false, str_start: 0 }, (s, p) => step(s, p.1, p.0)!)!
+  guard not st.in_str else err("unterminated string at ${int.to_string(st.str_start)}")
+  guard st.depth == 0 else err("${int.to_string(st.depth)} unclosed bracket(s)")
+  st
+}
+
+fn deepest(src: String) -> Int! = {
+  let st = scan(src)!
+  st.deepest
+}
