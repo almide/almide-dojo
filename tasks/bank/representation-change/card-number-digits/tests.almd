@@ -1,0 +1,7 @@
+test "digits only" {
+  let c = card("ann", "4111 1111 1111 3456")
+  assert_eq(c.digits, "4111111111113456")
+  assert_eq(grouped(c), "4111 1111 1111 3456")
+  assert_eq(masked(c), "**** **** **** 3456")
+  assert_eq(last4(c), "3456")
+}

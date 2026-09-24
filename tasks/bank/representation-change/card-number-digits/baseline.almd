@@ -1,0 +1,19 @@
+// Saved payment cards. `number` is kept exactly as printed on a 16-digit card:
+// four groups of four digits separated by single spaces.
+type Card: Eq, Repr = { holder: String, number: String }
+
+fn card(holder: String, number: String) -> Card = Card { holder: holder, number: number }
+
+fn digits(c: Card) -> String = string.replace(c.number, " ", "")
+
+fn last4(c: Card) -> String = string.take_end(digits(c), 4)
+
+// Every group but the last replaced by "****".
+fn masked(c: Card) -> String =
+  string.split(c.number, " ") |> list.enumerate |> list.map((p) => if p.0 < 3 then "****" else p.1) |> list.join(" ")
+
+fn label(c: Card) -> String = c.holder + " " + masked(c)
+
+// Cards whose number ends with `tail`, in list order.
+fn ending_in(cs: List[Card], tail: String) -> List[String] =
+  cs |> list.filter((c) => string.ends_with(digits(c), tail)) |> list.map((c) => c.holder)

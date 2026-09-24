@@ -1,0 +1,12 @@
+test "hidden: masking keeps exactly the last four digits" {
+  let amex = card("bo", "3782 822463 10005")
+  assert_eq(grouped(amex), "3782 8224 6310 005")
+  assert_eq(masked(amex), "**** **** ***0 005")
+  assert_eq(label(card("cy", "1234 5678 9012")), "cy **** **** 9012")
+  assert_eq(masked(card("dee", "1234567890123456789")), "**** **** **** ***6 789")
+}
+test "hidden: lookups" {
+  let cs = [card("a", "1111 2222 3333 4444"), card("b", "5555 6666 7777 444")]
+  assert_eq(ending_in(cs, "444"), ["a", "b"])
+  assert_eq(last4(card("q", "123456789012 7")), "0127")
+}
