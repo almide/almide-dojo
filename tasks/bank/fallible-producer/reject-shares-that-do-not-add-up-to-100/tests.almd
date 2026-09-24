@@ -1,0 +1,6 @@
+test "shares that do not add up to 100 are rejected" {
+  assert_eq(allocate(1000, ["a 50", "b 40"]), err("shares add up to 90.0%, not 100%"))
+}
+test "a full split still allocates" {
+  assert_eq(allocate(1000, ["a 50", "b 50"]), ok(["a: 500", "b: 500"]))
+}
