@@ -1,0 +1,23 @@
+// A cursor-paged feed port: up to `limit` item ids greater than `after`, ascending.
+protocol Feed {
+  fn page(f: Self, after: Int, limit: Int) -> List[Int]
+}
+
+// A sorted list of distinct ids.
+type Stream: Feed = { ids: List[Int] }
+fn Stream.page(f: Stream, after: Int, limit: Int) -> List[Int] =
+  f.ids |> list.filter((i) => i > after) |> list.take(limit)
+
+// Every item, fetched page by page (limit >= 1): each page continues after the last
+// id of the previous one, until an empty page.
+fn all_items[F: Feed](f: F, limit: Int) -> List[Int] = drain(f, -1, limit)
+
+fn drain[F: Feed](f: F, after: Int, limit: Int) -> List[Int] = {
+  let p = f.page(after, limit)
+  match list.last(p) {
+    some(last) => p + drain(f, last, limit),
+    none => [],
+  }
+}
+
+fn pages[F: Feed](f: F, limit: Int) -> Int = (list.len(all_items(f, limit)) + limit - 1) / limit

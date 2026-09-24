@@ -1,0 +1,8 @@
+test "merged feed" {
+  let m = Merged { left: Stream { ids: [1, 4, 9] }, right: Stream { ids: [2, 3, 10] } }
+  assert_eq(m.page(0, 3), [1, 2, 3])
+  assert_eq(everything(Two(m), 2), [1, 2, 3, 4, 9, 10])
+}
+test "one stream" {
+  assert_eq(everything(One(Stream { ids: [5, 6, 7] }), 2), [5, 6, 7])
+}

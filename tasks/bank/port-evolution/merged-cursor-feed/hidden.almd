@@ -1,0 +1,13 @@
+test "hidden: shared ids appear once and pages stay full" {
+  let m = Merged { left: Stream { ids: [1, 2, 3, 5] }, right: Stream { ids: [2, 3, 4, 5] } }
+  assert_eq(m.page(0, 3), [1, 2, 3])
+  assert_eq(m.page(3, 3), [4, 5])
+  assert_eq(everything(Two(m), 1), [1, 2, 3, 4, 5])
+  assert_eq(everything(Two(m), 4), [1, 2, 3, 4, 5])
+}
+test "hidden: empty sides" {
+  let m = Merged { left: Stream { ids: [] }, right: Stream { ids: [7, 8] } }
+  assert_eq(everything(Two(m), 5), [7, 8])
+  assert_eq(pages(m, 1), 2)
+  assert_eq(everything(Two(Merged { left: Stream { ids: [] }, right: Stream { ids: [] } }), 3), [])
+}
