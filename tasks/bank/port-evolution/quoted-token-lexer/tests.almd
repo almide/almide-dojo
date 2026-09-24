@@ -1,0 +1,8 @@
+test "quoted tokens" {
+  assert_eq(run(Shell(Quoted {}), "say \"hello world\" now"), ok("say(hello world|now)"))
+  assert_eq(run(Shell(Quoted {}), "echo \"oops"), err("unterminated quote"))
+}
+test "plain mode" {
+  assert_eq(run(Plain(Spaces {}), "  ls   -l "), ok("ls(-l)"))
+  assert_eq(run(Plain(Spaces {}), "   "), err("empty line"))
+}
