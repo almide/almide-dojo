@@ -1,0 +1,15 @@
+test "hidden: stored names in mixed case" {
+  let r = Relaxed { inner: Exact { entries: [("McDonald", 31), ("Alice", 40)] } }
+  assert_eq(lookup_with(Loose(r), ["mcdonald", "MCDONALD", " alice"]), ["mcdonald: 31", "MCDONALD: 31", " alice: 40"])
+}
+test "hidden: first stored match wins" {
+  let r = Relaxed { inner: Exact { entries: [("ANN", 1), ("ann", 2), ("Ann", 3)] } }
+  assert_eq(r.find("aNn"), some(1))
+  assert_eq(r.find("anne"), none)
+}
+test "hidden: dial through the relaxed directory" {
+  let r = Relaxed { inner: Exact { entries: [("Zed", 0), ("Yu", 5)] } }
+  assert_eq(dial(r, "YU"), ok("ext 5"))
+  assert_eq(dial(r, "zed"), err("extension disabled for zed"))
+  assert_eq(dial(r, "x"), err("no extension for x"))
+}

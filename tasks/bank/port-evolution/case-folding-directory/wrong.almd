@@ -1,0 +1,39 @@
+// Plausible wrong patch: folds only the QUERY and asks the exact directory, so a
+// stored name with capitals is never found. Passes the visible tests.
+// A directory port: the phone extension for a name.
+protocol Directory {
+  fn find(d: Self, name: String) -> Int?
+}
+
+// Names exactly as stored (mixed case allowed).
+type Exact: Directory = { entries: List[(String, Int)] }
+fn Exact.find(d: Exact, name: String) -> Int? =
+  d.entries |> list.find((e) => e.0 == name) |> option.map((e) => e.1)
+
+fn fold(s: String) -> String = string.to_lower(string.trim(s))
+
+// Case- and space-insensitive; the first stored match wins.
+type Relaxed: Directory = { inner: Exact }
+fn Relaxed.find(d: Relaxed, name: String) -> Int? = d.inner.find(fold(name))
+
+// "name: ext" or "name: unknown", in order.
+fn lookup_all[D: Directory](d: D, names: List[String]) -> List[String] =
+  names |> list.map((n) => n + ": " + (match d.find(n) {
+    some(x) => int.to_string(x),
+    none => "unknown",
+  }))
+
+// The dial string for a name: "ext <n>", or an error for an unknown name.
+fn dial[D: Directory](d: D, name: String) -> String! = {
+  let ext = option.to_result(d.find(name), "no extension for " + name)!
+  guard ext > 0 else err("extension disabled for " + name)
+  "ext " + int.to_string(ext)
+}
+
+type Mode = | Strict(Exact) | Loose(Relaxed)
+
+fn lookup_with(m: Mode, names: List[String]) -> List[String] =
+  match m {
+    Strict(e) => lookup_all(e, names),
+    Loose(r) => lookup_all(r, names),
+  }
