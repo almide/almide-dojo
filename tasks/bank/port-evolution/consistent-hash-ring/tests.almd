@@ -1,0 +1,8 @@
+test "ring placement" {
+  let r = Ring { points: [(100, "a"), (500, "b"), (900, "c")] }
+  assert_eq(hash("x"), 120)
+  assert_eq(place_with(Consistent(r), ["x"]), ["x@b"])
+}
+test "modulo" {
+  assert_eq(place_with(Spread(Modulo { nodes: ["n0", "n1"] }), ["x"]), ["x@n0"])
+}
