@@ -1,0 +1,10 @@
+let BOOK = [
+  Coupon { code: "TEN", off_pct: 10, min_cents: 0, expires: 20261231 },
+  Coupon { code: "OLD", off_pct: 50, min_cents: 0, expires: 20240101 },
+]
+test "an expired coupon is ignored with a note" {
+  assert_eq(checkout(BOOK, 1000, ["OLD", "TEN"], 20260924) |> result.map((c) => receipt(c)), ok("900 [OLD expired, TEN -100]"))
+}
+test "an unknown coupon is still fatal" {
+  assert_eq(checkout(BOOK, 1000, ["NOPE"], 20260924) |> result.map((c) => receipt(c)), err(Unknown("NOPE")))
+}
