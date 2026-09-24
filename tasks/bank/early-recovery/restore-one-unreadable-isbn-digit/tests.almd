@@ -1,0 +1,6 @@
+test "one unreadable digit is restored from the check digit" {
+  assert_eq(import_catalog(["0-306-4?615-2 Physics"]) |> result.map((c) => show(c)), ok("0306406152 Physics | restored position 5 of 0-306-4?615-2 as 0"))
+}
+test "a wrong checksum is still fatal" {
+  assert_eq(import_catalog(["0306406153 Physics"]) |> result.map((c) => show(c)), err(BadChecksum("0306406153")))
+}

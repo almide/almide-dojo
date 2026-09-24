@@ -1,0 +1,15 @@
+test "hidden: an unreadable last character may be restored as X" {
+  assert_eq(import_catalog(["080442957? Text"]) |> result.map((c) => show(c)), ok("080442957X Text | restored position 9 of 080442957? as X"))
+}
+test "hidden: an unreadable digit that would have to be ten elsewhere cannot be restored" {
+  assert_eq(import_catalog(["0?06406155 Bad"]) |> result.map((c) => show(c)), err(BadChecksum("0?06406155")))
+}
+test "hidden: two unreadable characters stay a bad character, as before" {
+  assert_eq(import_catalog(["0?0640615? Two"]) |> result.map((c) => show(c)), err(BadChar("0?0640615?", 1)))
+}
+test "hidden: other errors keep their payloads; notes follow the lines" {
+  assert_eq(import_catalog(["019852663? A", "0198526636 B", "03064061?2 C"]) |> result.map((c) => show(c)),
+    ok("0198526636 A; 0198526636 B; 0306406152 C | restored position 9 of 019852663? as 6; restored position 8 of 03064061?2 as 5"))
+  assert_eq(import_catalog(["0-306-4?615-2 A", "12345 B"]) |> result.map((c) => show(c)), err(BadLength("12345")))
+  assert_eq(import_catalog(["0?06406152 A", "03064061a2 B"]) |> result.map((c) => show(c)), err(BadChar("03064061a2", 8)))
+}

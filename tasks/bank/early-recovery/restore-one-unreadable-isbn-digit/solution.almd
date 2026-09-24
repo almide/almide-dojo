@@ -1,0 +1,57 @@
+// Catalog import from scanned ISBN-10 codes ("0-306-40615-2"). Dashes are
+// ignored; the last character may be "X" (ten). A code is valid when
+// sum((10 - i) * digit_i) over positions i = 0..9 is divisible by 11.
+type IsbnErr: Eq, Repr = | BadLength(String) | BadChar(String, Int) | BadChecksum(String)
+type Catalog: Eq, Repr = { books: List[String], notes: List[String] }
+
+fn value(c: String, i: Int) -> Int? =
+  if string.is_digit(c) then int.parse(c)? else if c == "X" and i == 9 then some(10) else none
+
+fn checksum_ok(vals: List[Int]) -> Bool =
+  (vals |> list.enumerate |> list.fold(0, (acc, p) => acc + (10 - p.0) * p.1)) % 11 == 0
+
+fn read_isbn(raw: String) -> String!IsbnErr = {
+  let cs = string.chars(raw) |> list.filter((c) => c != "-")
+  guard list.len(cs) == 10 else err(BadLength(raw))
+  let vals = cs |> list.enumerate |> list.map((p) => match value(p.1, p.0) {
+    some(v) => ok(v),
+    none => err(BadChar(raw, p.0)),
+  }) |> list.map((r) => r!)!
+  guard checksum_ok(vals) else err(BadChecksum(raw))
+  list.join(cs, "")
+}
+
+fn restore(raw: String) -> (String, String)!IsbnErr = {
+  let cs = string.chars(raw) |> list.filter((c) => c != "-")
+  let i = list.index_of(cs, "?") ?? 0
+  let tries = if i == 9 then ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "X"] else ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+  match list.find(tries, (d) => result.is_ok(read_isbn(list.join(list.set(cs, i, d), "")))) {
+    some(d) => ok((list.join(list.set(cs, i, d), ""), "restored position ${int.to_string(i)} of ${raw} as ${d}")),
+    none => err(BadChecksum(raw)),
+  }
+}
+
+fn import_catalog(lines: List[String]) -> Catalog!IsbnErr = {
+  var books: List[String] = []
+  var notes: List[String] = []
+  for line in lines {
+    let sp = string.index_of(line, " ") ?? string.len(line)
+    let raw = string.slice(line, 0, sp)
+    let code = match read_isbn(raw) {
+      ok(c) => ok(c),
+      err(BadChar(r, pos)) if list.get(string.chars(r) |> list.filter((c) => c != "-"), pos) == some("?") and string.count(r, "?") == 1 => {
+        let fixed = restore(r)!
+        notes = notes + [fixed.1]
+        ok(fixed.0)
+      },
+      err(e) => err(e),
+    }!
+    books = books + ["${code} ${string.trim(string.drop(line, sp))}"]
+  }
+  Catalog { books: books, notes: notes }
+}
+
+fn show(c: Catalog) -> String = {
+  let b = list.join(c.books, "; ")
+  if list.is_empty(c.notes) then b else "${b} | ${list.join(c.notes, "; ")}"
+}
