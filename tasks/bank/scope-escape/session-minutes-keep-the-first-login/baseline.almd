@@ -1,0 +1,25 @@
+// An access log, one event per line: "<minute> <user> in" or
+// "<minute> <user> out", in time order.
+type Ev = { at: Int, user: String, login: Bool }
+
+fn parse_event(line: String) -> Result[Ev, String] =
+  match string.split(line, " ") {
+    [t, u, k] => match int.parse(t) {
+      ok(at) => match k {
+        "in" => ok(Ev { at: at, user: u, login: true }),
+        "out" => ok(Ev { at: at, user: u, login: false }),
+        _ => err("bad kind: " + line),
+      },
+      err(_) => err("bad time: " + line),
+    },
+    _ => err("bad event: " + line),
+  }
+
+fn parse_log(lines: List[String]) -> Result[List[Ev], String] =
+  lines |> list.map((l) => parse_event(l)!)
+
+// Distinct users, in order of first appearance.
+fn users(lines: List[String]) -> Result[List[String], String] = {
+  let evs = parse_log(lines)!
+  ok(evs |> list.fold([], (acc, e) => if list.contains(acc, e.user) then acc else acc + [e.user]))
+}

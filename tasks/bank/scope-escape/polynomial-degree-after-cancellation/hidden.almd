@@ -1,0 +1,13 @@
+test "hidden: cancellation lowers the degree" {
+  assert_eq(leading(["3x^2", "-x", "-3x^2", "4"]), "deg=1,lead=-1")
+  assert_eq(leading(["x^3", "x^3", "-x^3"]), "deg=3,lead=1")
+  assert_eq(leading(["0x^5", "2"]), "deg=0,lead=2")
+}
+test "hidden: zero polynomial and errors" {
+  assert_eq(leading(["x", "-x"]), "zero")
+  assert_eq(leading([]), "zero")
+  assert_eq(leading(["2x", "3y", "x^"]), "bad term: 3y")
+}
+test "hidden: at_one unchanged" {
+  assert_eq(at_one(["-x^2", "x", "+x"]), ok(1))
+}

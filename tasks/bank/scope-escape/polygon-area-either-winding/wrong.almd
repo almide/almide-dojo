@@ -1,0 +1,43 @@
+// Polygons with integer vertices "x,y;x,y;...", listed in order around the
+// boundary, clockwise OR counter-clockwise.
+fn parse_vertex(s: String) -> Result[(Int, Int), String] =
+  match string.split(s, ",") {
+    [a, b] => match int.parse(a) {
+      ok(x) => match int.parse(b) {
+        ok(y) => ok((x, y)),
+        err(_) => err("bad vertex: " + s),
+      },
+      err(_) => err("bad vertex: " + s),
+    },
+    _ => err("bad vertex: " + s),
+  }
+
+fn parse_polygon(s: String) -> Result[List[(Int, Int)], String] =
+  if s == "" then ok([]) else string.split(s, ";") |> list.map((v) => parse_vertex(v)!)
+
+// Manhattan perimeter, closing edge included.
+fn perimeter(s: String) -> Result[Int, String] = {
+  let vs = parse_polygon(s)!
+  let closed = vs + (list.first(vs) |> option.to_list)
+  ok(list.zip(closed, list.drop(closed, 1)) |> list.fold(0, (acc, e) => {
+    let ((x1, y1), (x2, y2)) = e
+    acc + int.abs(x2 - x1) + int.abs(y2 - y1)
+  }))
+}
+
+// Plausible wrong patch: the textbook shoelace sum without the absolute value,
+// so a clockwise polygon comes out negative.
+fn area2(s: String) -> String =
+  match parse_polygon(s) {
+    err(e) => e,
+    ok(vs) =>
+      if list.len(vs) < 3 then "area2=0"
+      else {
+        let closed = vs + (list.first(vs) |> option.to_list)
+        let twice = list.zip(closed, list.drop(closed, 1)) |> list.fold(0, (acc, e) => {
+          let ((x1, y1), (x2, y2)) = e
+          acc + x1 * y2 - x2 * y1
+        })
+        "area2=" + int.to_string(twice)
+      },
+  }

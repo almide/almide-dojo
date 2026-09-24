@@ -1,0 +1,4 @@
+test "leading term" {
+  assert_eq(leading(["3x^2", "x", "5"]), "deg=2,lead=3")
+  assert_eq(leading(["x^q"]), "bad term: x^q")
+}

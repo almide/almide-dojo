@@ -1,0 +1,42 @@
+// An access log, one event per line: "<minute> <user> in" or
+// "<minute> <user> out", in time order.
+type Ev = { at: Int, user: String, login: Bool }
+
+fn parse_event(line: String) -> Result[Ev, String] =
+  match string.split(line, " ") {
+    [t, u, k] => match int.parse(t) {
+      ok(at) => match k {
+        "in" => ok(Ev { at: at, user: u, login: true }),
+        "out" => ok(Ev { at: at, user: u, login: false }),
+        _ => err("bad kind: " + line),
+      },
+      err(_) => err("bad time: " + line),
+    },
+    _ => err("bad event: " + line),
+  }
+
+fn parse_log(lines: List[String]) -> Result[List[Ev], String] =
+  lines |> list.map((l) => parse_event(l)!)
+
+// Distinct users, in order of first appearance.
+fn users(lines: List[String]) -> Result[List[String], String] = {
+  let evs = parse_log(lines)!
+  ok(evs |> list.fold([], (acc, e) => if list.contains(acc, e.user) then acc else acc + [e.user]))
+}
+
+// Open sessions keep their FIRST start; the tables stay local to this call.
+fn usage(lines: List[String]) -> String =
+  match parse_log(lines) {
+    err(e) => e,
+    ok(evs) => {
+      let (_, spent) = evs |> list.fold((map.new(), map.new()), (st, e) => {
+        let (open, tot) = st
+        if e.login then (if map.contains(open, e.user) then st else (map.set(open, e.user, e.at), tot))
+        else match map.get(open, e.user) {
+          some(start) => (map.remove(open, e.user), map.set(tot, e.user, (map.get(tot, e.user) ?? 0) + e.at - start)),
+          none => st,
+        }
+      })
+      map.entries(spent) |> list.sort_by(((u, _)) => u) |> list.map(((u, m)) => u + "=" + int.to_string(m)) |> list.join(",")
+    },
+  }

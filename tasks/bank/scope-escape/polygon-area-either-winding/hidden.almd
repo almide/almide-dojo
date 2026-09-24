@@ -1,0 +1,12 @@
+test "hidden: clockwise is positive" {
+  assert_eq(area2("0,0;0,3;4,0"), "area2=12")
+  assert_eq(area2("0,0;0,2;2,2;2,0"), "area2=8")
+}
+test "hidden: degenerate and offset" {
+  assert_eq(area2("1,1;5,5"), "area2=0")
+  assert_eq(area2(""), "area2=0")
+  assert_eq(area2("10,10;14,10;14,13"), "area2=12")
+}
+test "hidden: perimeter unchanged" {
+  assert_eq(perimeter("0,0;2,0;2,2"), ok(8))
+}

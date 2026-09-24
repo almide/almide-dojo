@@ -1,0 +1,4 @@
+test "area" {
+  assert_eq(area2("0,0;4,0;4,3"), "area2=12")
+  assert_eq(area2("0,0;x,1"), "bad vertex: x,1")
+}

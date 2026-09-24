@@ -1,0 +1,4 @@
+test "diffstat" {
+  assert_eq(diffstat(["a", "b"], ["a", "c"]), "added=1,removed=1")
+  assert_eq(diffstat(["a", "b"], ["b", "a"]), "added=0,removed=0")
+}

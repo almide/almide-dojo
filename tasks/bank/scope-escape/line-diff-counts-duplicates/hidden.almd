@@ -1,0 +1,10 @@
+test "hidden: duplicates count" {
+  assert_eq(diffstat(["x", "x", "y"], ["x", "y"]), "added=0,removed=1")
+  assert_eq(diffstat(["", ""], ["", "", "", "z"]), "added=2,removed=0")
+  assert_eq(diffstat(["a"], ["A", "a "]), "added=2,removed=1")
+}
+test "hidden: empty sides and describe" {
+  assert_eq(diffstat([], []), "added=0,removed=0")
+  assert_eq(diffstat(["q", "q"], []), "added=0,removed=2")
+  assert_eq(describe(["a"], ["b", "c"]), "changed (+1 lines)")
+}

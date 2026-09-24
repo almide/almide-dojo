@@ -1,0 +1,19 @@
+// Two versions of a text file, as lists of lines. Lines compare exactly
+// (case and spaces matter).
+fn changed(old: List[String], new_lines: List[String]) -> Bool = old != new_lines
+
+fn line_count_delta(old: List[String], new_lines: List[String]) -> String = {
+  let d = list.len(new_lines) - list.len(old)
+  if d > 0 then "+" + int.to_string(d) else int.to_string(d)
+}
+
+fn describe(old: List[String], new_lines: List[String]) -> String =
+  if changed(old, new_lines) then "changed (" + line_count_delta(old, new_lines) + " lines)" else "unchanged"
+
+// Plausible wrong patch: set difference both ways, so a duplicated line is
+// counted once whatever its multiplicity.
+fn diffstat(old: List[String], new_lines: List[String]) -> String = {
+  let a = set.from_list(old)
+  let b = set.from_list(new_lines)
+  "added=" + int.to_string(set.len(set.difference(b, a))) + ",removed=" + int.to_string(set.len(set.difference(a, b)))
+}

@@ -1,0 +1,4 @@
+test "largest directory" {
+  assert_eq(largest_dir(["a/x 5", "b/y 7", "top 100"]), "b=7")
+  assert_eq(largest_dir(["a/x -1"]), "negative size: a/x -1")
+}
