@@ -1,0 +1,40 @@
+// Plausible wrong patch: works on the signed amount, and `/` and `%` truncate
+// toward zero, so negative amounts never round away from zero.
+// A rounding-policy port: turns an amount in mills (tenths of a cent) into cents.
+protocol Rounding {
+  fn cents(r: Self, mills: Int) -> Int
+}
+
+// Halves round away from zero: 25 mills -> 3 cents, -25 -> -3.
+type HalfUp: Rounding = {}
+fn HalfUp.cents(r: HalfUp, mills: Int) -> Int = {
+  let q = (int.abs(mills) + 5) / 10
+  if mills < 0 then 0 - q else q
+}
+
+// Exact halves go to the even cent; the negative side mirrors the positive one.
+type HalfEven: Rounding = {}
+fn HalfEven.cents(r: HalfEven, mills: Int) -> Int = {
+  let q = mills / 10
+  let rem = mills % 10
+  if rem > 5 or (rem == 5 and q % 2 == 1) then q + 1 else q
+}
+
+// Every line rounded on its own, and the sum of the rounded lines.
+fn settle[R: Rounding](r: R, lines: List[Int]) -> (List[Int], Int) = {
+  let rounded = lines |> list.map((m) => r.cents(m))
+  (rounded, list.sum(rounded))
+}
+
+fn statement[R: Rounding](r: R, lines: List[Int]) -> String = {
+  let (rounded, total) = settle(r, lines)
+  (rounded |> list.map((c) => int.to_string(c)) |> list.join(" + ")) + " = " + int.to_string(total)
+}
+
+type Policy = | Commercial(HalfUp) | Bankers(HalfEven)
+
+fn statement_with(p: Policy, lines: List[Int]) -> String =
+  match p {
+    Commercial(h) => statement(h, lines),
+    Bankers(b) => statement(b, lines),
+  }

@@ -1,0 +1,4 @@
+test "bankers rounding" {
+  assert_eq(statement_with(Bankers(HalfEven {}), [25, 35, 44, 46]), "2 + 4 + 4 + 5 = 15")
+  assert_eq(statement_with(Commercial(HalfUp {}), [25, 35]), "3 + 4 = 7")
+}
