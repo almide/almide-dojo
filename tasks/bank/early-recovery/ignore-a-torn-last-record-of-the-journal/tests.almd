@@ -1,0 +1,6 @@
+test "a torn final record is ignored" {
+  assert_eq(replay(["set a 1", "set b"]) |> result.map((r) => dump(r)), ok("a=1 (1 applied) | ignored torn record at line 2"))
+}
+test "a torn record in the middle is still fatal" {
+  assert_eq(replay(["set a 1", "set b", "set c 3"]) |> result.map((r) => dump(r)), err(Truncated(2)))
+}
