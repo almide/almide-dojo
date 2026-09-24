@@ -1,0 +1,6 @@
+test "an unset PORT defaults to 8080" {
+  assert_eq(load(["ADMIN_PORT": "9000"]), ok(Server { port: 8080, admin: 9000, workers: 4, notes: ["PORT not set, using 8080", "WORKERS not set, using 4"] }))
+}
+test "ADMIN_PORT is still checked" {
+  assert_eq(load(["PORT": "80", "ADMIN_PORT": "0"]), err(Invalid("ADMIN_PORT", "0")))
+}

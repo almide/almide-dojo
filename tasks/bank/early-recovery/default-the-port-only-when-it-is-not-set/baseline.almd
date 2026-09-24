@@ -1,0 +1,34 @@
+// Server settings from environment variables. PORT and ADMIN_PORT are
+// required ports (1-65535) and must differ; WORKERS (1-64) is optional.
+type CfgErr: Eq, Repr = | Missing(String) | Invalid(String, String) | Clash(String, String)
+type Server: Eq, Repr = { port: Int, admin: Int, workers: Int, notes: List[String] }
+
+fn lookup(env: Map[String, String], key: String) -> String!CfgErr =
+  match map.get(env, key) {
+    some(v) => ok(v),
+    none => err(Missing(key)),
+  }
+
+fn number(key: String, raw: String, lo: Int, hi: Int) -> Int!CfgErr =
+  match int.parse(string.trim(raw)) {
+    ok(n) => if n >= lo and n <= hi then ok(n) else err(Invalid(key, raw)),
+    err(_) => err(Invalid(key, raw)),
+  }
+
+fn port(env: Map[String, String], key: String) -> Int!CfgErr =
+  number(key, lookup(env, key)!, 1, 65535)
+
+fn load(env: Map[String, String]) -> Server!CfgErr = {
+  var notes: List[String] = []
+  let p = port(env, "PORT")!
+  let a = port(env, "ADMIN_PORT")!
+  guard a != p else err(Clash("ADMIN_PORT", "PORT"))
+  let w = match map.get(env, "WORKERS") {
+    some(raw) => number("WORKERS", raw, 1, 64)!,
+    none => {
+      notes = notes + ["WORKERS not set, using 4"]
+      4
+    },
+  }
+  Server { port: p, admin: a, workers: w, notes: notes }
+}

@@ -1,0 +1,6 @@
+test "a leap second at the end of June is accepted" {
+  assert_eq(timing(["2015-06-30 23:59:59 a", "2015-06-30 23:59:60 b"]), ok(Report { gaps: [1], notes: ["leap second at 2015-06-30 23:59:60"] }))
+}
+test "a bad minute is still an error" {
+  assert_eq(timing(["2015-06-30 23:60:00 a"]), err(BadField("2015-06-30 23:60:00", "minute")))
+}

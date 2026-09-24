@@ -1,0 +1,12 @@
+test "hidden: a conflicting set stays fatal" {
+  assert_eq(replay(["set a 1 @0", "set a 2 @1", "set a 9 @1"]), err(Conflict("a", 1, 2)))
+  assert_eq(replay(["set a 1 @0", "set a 5 @0"]), err(Conflict("a", 0, 1)))
+}
+test "hidden: the retry is a write, later stale reads conflict" {
+  assert_eq(replay(["set a 1 @0", "add a 2 @0", "set b 7 @0", "add a 3 @0", "add b -2 @1"]), ok(Outcome { values: ["a=6 v3", "b=5 v2"], notes: ["retried add a at version 1", "retried add a at version 2"] }))
+  assert_eq(replay(["set a 1 @0", "add a 2 @0", "set a 0 @1"]), err(Conflict("a", 1, 2)))
+}
+test "hidden: other errors keep their payloads" {
+  assert_eq(replay(["set a 1 @0", "add a 1 @7", "add z 1 @3"]), err(NoKey("z")))
+  assert_eq(replay(["set a 1 @0", "add a 1 @7", "add a x @1"]), err(BadOp("add a x @1")))
+}

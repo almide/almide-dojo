@@ -1,0 +1,15 @@
+test "hidden: only 23:59:60 on June 30 or December 31" {
+  assert_eq(timing(["2016-03-31 23:59:60 x"]), err(BadField("2016-03-31 23:59:60", "second")))
+  assert_eq(timing(["2016-12-31 12:00:60 x"]), err(BadField("2016-12-31 12:00:60", "second")))
+  assert_eq(timing(["2016-12-31 23:59:61 x"]), err(BadField("2016-12-31 23:59:61", "second")))
+  assert_eq(timing(["2016-06-29 23:59:60 x"]), err(BadField("2016-06-29 23:59:60", "second")))
+}
+test "hidden: the leap second is one second before midnight, also across the year" {
+  assert_eq(timing(["2016-12-31 23:59:58 a", "2016-12-31 23:59:60 b", "2017-01-01 00:00:01 c"]), ok(Report { gaps: [2, 1], notes: ["leap second at 2016-12-31 23:59:60"] }))
+  assert_eq(timing(["2016-12-31 23:59:60 b", "2017-01-01 00:00:00 c"]), ok(Report { gaps: [0], notes: ["leap second at 2016-12-31 23:59:60"] }))
+  assert_eq(timing(["2016-12-31 23:59:60 b", "2016-12-31 23:59:59 c"]), err(Backwards("2016-12-31 23:59:59")))
+}
+test "hidden: every line is read first; notes in line order" {
+  assert_eq(timing(["2015-06-30 23:59:60 a", "2015-06-31 00:00:00 b"]), err(BadField("2015-06-31 00:00:00", "day")))
+  assert_eq(timing(["2015-06-30 23:59:60 a", "2015-12-31 23:59:60 b"]), ok(Report { gaps: [15897600], notes: ["leap second at 2015-06-30 23:59:60", "leap second at 2015-12-31 23:59:60"] }))
+}

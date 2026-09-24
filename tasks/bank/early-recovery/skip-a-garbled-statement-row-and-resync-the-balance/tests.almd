@@ -1,0 +1,6 @@
+test "a garbled row is skipped and the next row resyncs the balance" {
+  assert_eq(check(1000, ["2024-03-01 -200 800", "2024-03-02 x7 ?", "2024-03-03 50 1350", "2024-03-04 -350 1000"]), ok(Checked { closing: 1000, rows: 3, warnings: ["line 2: skipped malformed row"] }))
+}
+test "a wrong balance is still fatal" {
+  assert_eq(check(1000, ["2024-03-01 -200 900"]), err(Mismatch(1, 800, 900)))
+}

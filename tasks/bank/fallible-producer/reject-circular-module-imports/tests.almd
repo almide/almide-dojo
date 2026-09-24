@@ -1,0 +1,6 @@
+test "a cycle is rejected" {
+  assert(result.is_err(build_order(["app: ui", "ui: widgets", "widgets: ui"])))
+}
+test "an acyclic program still builds in order" {
+  assert_eq(build_order(["app: ui, net", "ui: gfx", "net:", "gfx:"]), ok(["gfx", "ui", "net", "app"]))
+}

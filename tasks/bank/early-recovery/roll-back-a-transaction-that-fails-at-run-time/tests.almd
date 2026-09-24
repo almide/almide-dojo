@@ -1,0 +1,6 @@
+test "a failing transaction is rolled back" {
+  assert_eq(run(["SET a 1", "BEGIN", "SET a 2", "INCR b", "COMMIT"]), ok(Run { store: ["a=1"], notes: ["line 4: rolled back transaction from line 2"] }))
+}
+test "outside a transaction the error is still fatal" {
+  assert_eq(run(["SET a x", "INCR a"]), err(NotANumber(2, "a")))
+}

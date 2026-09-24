@@ -1,0 +1,35 @@
+// Dashboard layout on a grid 12 columns wide and as tall as needed. Each line
+// is "<panel> <col>,<row> <width>x<height>"; col and row start at 0.
+type Panel: Eq, Repr = { name: String, x: Int, y: Int, w: Int, h: Int }
+
+let COLUMNS = 12
+
+fn pair(s: String, sep: String, line: String) -> (Int, Int)! = {
+  let p = string.split(s, sep)
+  guard list.len(p) == 2 else err("bad line: ${line}")
+  let a = int.parse(list.get(p, 0) ?? "") |> result.map_err((_) => "bad number in: ${line}")!
+  let b = int.parse(list.get(p, 1) ?? "") |> result.map_err((_) => "bad number in: ${line}")!
+  (a, b)
+}
+
+fn parse_panel(line: String) -> Panel! = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) == 3 else err("bad line: ${line}")
+  let at = pair(list.get(w, 1) ?? "", ",", line)!
+  let size = pair(list.get(w, 2) ?? "", "x", line)!
+  guard at.0 >= 0 and at.1 >= 0 else err("panel ${list.get(w, 0) ?? ""} starts off the grid")
+  guard size.0 > 0 and size.1 > 0 else err("panel ${list.get(w, 0) ?? ""} is empty")
+  guard at.0 + size.0 <= COLUMNS else err("panel ${list.get(w, 0) ?? ""} is wider than the grid allows")
+  Panel { name: list.get(w, 0) ?? "", x: at.0, y: at.1, w: size.0, h: size.1 }
+}
+
+fn layout(lines: List[String]) -> List[Panel]! =
+  lines |> list.map((l) => parse_panel(l)!)!
+
+// Rows the dashboard needs, and the share of those cells that panels cover.
+fn summary(lines: List[String]) -> String! = {
+  let ps = layout(lines)!
+  let rows = ps |> list.fold(0, (m, p) => int.max(m, p.y + p.h))
+  let used = ps |> list.fold(0, (a, p) => a + p.w * p.h)
+  "${int.to_string(rows)} rows, ${int.to_string(used)}/${int.to_string(rows * COLUMNS)} cells"
+}

@@ -1,0 +1,6 @@
+test "a conflicting add is applied to the current value" {
+  assert_eq(replay(["set hits 10 @0", "add hits 5 @1", "add hits 1 @1"]), ok(Outcome { values: ["hits=16 v3"], notes: ["retried add hits at version 2"] }))
+}
+test "an add on a missing key is still fatal" {
+  assert_eq(replay(["add hits 1 @0"]), err(NoKey("hits")))
+}

@@ -1,0 +1,43 @@
+// Indented outline -> numbered outline. An item indented deeper than the
+// item before it starts a sub-list of that item; a shallower item closes the
+// sub-lists that are deeper than it. Blank lines are skipped but still counted
+// in line numbers (from 1).
+type Level = { col: Int, n: Int }
+
+fn indent(s: String, i: Int) -> Int =
+  if string.slice(s, i, i + 1) == " " then indent(s, i + 1) else i
+
+fn drop_deeper(stack: List[Level], col: Int) -> List[Level] =
+  match list.last(stack) {
+    some(top) => if top.col > col then drop_deeper(list.take(stack, list.len(stack) - 1), col) else stack,
+    none => stack,
+  }
+
+fn outline(lines: List[String]) -> List[String]! = {
+  var stack: List[Level] = []
+  var out: List[String] = []
+  for p in list.enumerate(lines) {
+    let no = int.to_string(p.0 + 1)
+    let line = p.1
+    if string.trim(line) != "" then {
+      let col = indent(line, 0)
+      guard not string.contains(string.slice(line, 0, col + 1), "\t") else err("tab in indentation at line ${no}")
+      guard not list.is_empty(stack) or col == 0 else err("first item is indented at line ${no}")
+      let open = drop_deeper(stack, col)
+      let top_col = match list.last(open) {
+        some(top) => top.col,
+        none => col,
+      }
+      guard list.len(open) == list.len(stack) or top_col == col else err("line ${no}: column ${int.to_string(col)} does not match an open level")
+      stack = match list.last(open) {
+        some(top) =>
+          if top.col == col then list.take(open, list.len(open) - 1) + [Level { col: col, n: top.n + 1 }]
+          else open + [Level { col: col, n: 1 }],
+        none => [Level { col: col, n: 1 }],
+      }
+      let label = stack |> list.map((l) => int.to_string(l.n)) |> list.join(".")
+      out = out + ["${label} ${string.trim(line)}"]
+    }
+  }
+  out
+}

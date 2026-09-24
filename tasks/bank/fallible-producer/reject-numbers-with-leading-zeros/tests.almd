@@ -1,0 +1,6 @@
+test "a leading zero is rejected" {
+  assert(result.is_err(numbers("[1, 02]")))
+}
+test "valid numbers still read" {
+  assert_eq(numbers("[1, -2.5, 3e2, 10]"), ok(["1", "-2.5", "3e2", "10"]))
+}

@@ -1,0 +1,18 @@
+let HKEYS = [Key { id: "old", secret: 5, retired: some(7200) }, Key { id: "new", secret: 11, retired: none }]
+
+fn signed(at: Int, key: String, secret: Int, body: String) -> String =
+  "${int.to_string(at)} ${key} ${int.to_string(sign(body, secret))} ${body}"
+
+test "hidden: a grace-hour message still needs a valid signature" {
+  assert_eq(inbox(HKEYS, ["7300 old 12345 forged body"]), err(BadSignature(1)))
+  assert_eq(inbox(HKEYS, [signed(7300, "old", 11, "wrong secret")]), err(BadSignature(1)))
+}
+test "hidden: the grace hour ends exactly 3600 seconds after retirement" {
+  assert_eq(inbox(HKEYS, [signed(10799, "old", 5, "last")]), ok(Inbox { messages: ["old: last"], notes: ["line 1: accepted retired key old"] }))
+  assert_eq(inbox(HKEYS, [signed(10800, "old", 5, "too late")]), err(RetiredKey(1, "old")))
+}
+test "hidden: order of lines, notes, and other errors" {
+  assert_eq(inbox(HKEYS, [signed(100, "old", 5, "a b"), signed(7200, "old", 5, "c"), signed(7300, "new", 11, "d"), signed(8000, "old", 5, "e")]), ok(Inbox { messages: ["old: a b", "old: c", "new: d", "old: e"], notes: ["line 2: accepted retired key old", "line 4: accepted retired key old"] }))
+  assert_eq(inbox(HKEYS, [signed(7300, "old", 5, "x"), "nope"]), err(BadLine(2)))
+  assert_eq(inbox(HKEYS, [signed(7300, "old", 5, "x"), signed(1, "gone", 5, "y")]), err(UnknownKey(2, "gone")))
+}

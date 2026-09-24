@@ -1,0 +1,6 @@
+test "a path that returns to a cell is rejected" {
+  assert(result.is_err(walk("F1 R F1 R F1 R F1")))
+}
+test "a spiral still summarises" {
+  assert_eq(summary("F1 R F1 R F2 R F2 R F3"), ok("at (-1,2) facing N, box (-1,-1)-(1,2)"))
+}

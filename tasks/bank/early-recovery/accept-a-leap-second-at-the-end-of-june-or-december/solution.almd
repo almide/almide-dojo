@@ -1,0 +1,55 @@
+// Event log timing. Each line starts with a UTC timestamp
+// "YYYY-MM-DD HH:MM:SS"; the report gives the seconds between consecutive
+// events. Times must not go backwards.
+type TimeErr: Eq, Repr = | BadFormat(String) | BadField(String, String) | Backwards(String)
+type Report: Eq, Repr = { gaps: List[Int], notes: List[String] }
+
+let DAYS_IN = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
+fn leap(y: Int) -> Bool = (y % 4 == 0 and y % 100 != 0) or y % 400 == 0
+
+fn day_number(y: Int, m: Int, d: Int) -> Int = {
+  let py = y - 1
+  let before = list.take(DAYS_IN, m - 1) |> list.fold(0, (a, n) => a + n)
+  py * 365 + py / 4 - py / 100 + py / 400 + before + (if m > 2 and leap(y) then 1 else 0) + d
+}
+
+fn field(raw: String, s: String, name: String, lo: Int, hi: Int) -> Int!TimeErr =
+  match int.parse(s) {
+    ok(n) => if n >= lo and n <= hi then ok(n) else err(BadField(raw, name)),
+    err(_) => err(BadField(raw, name)),
+  }
+
+// Seconds since the start of year 1.
+fn stamp(line: String) -> Int!TimeErr = {
+  let raw = string.slice(line, 0, 19)
+  let parts = string.split(raw, " ")
+  let date = string.split(list.get(parts, 0) ?? "", "-")
+  let time = string.split(list.get(parts, 1) ?? "", ":")
+  guard string.len(raw) == 19 and list.len(date) == 3 and list.len(time) == 3 else err(BadFormat(line))
+  let y = field(raw, list.get(date, 0) ?? "", "year", 1, 9999)!
+  let m = field(raw, list.get(date, 1) ?? "", "month", 1, 12)!
+  let top = (list.get(DAYS_IN, m - 1) ?? 31) + (if m == 2 and leap(y) then 1 else 0)
+  let d = field(raw, list.get(date, 2) ?? "", "day", 1, top)!
+  let h = field(raw, list.get(time, 0) ?? "", "hour", 0, 23)!
+  let mi = field(raw, list.get(time, 1) ?? "", "minute", 0, 59)!
+  let end_of_half = (m == 6 and d == 30) or (m == 12 and d == 31)
+  let s = field(raw, list.get(time, 2) ?? "", "second", 0, if end_of_half and h == 23 and mi == 59 then 60 else 59)!
+  day_number(y, m, d) * 86400 + h * 3600 + mi * 60 + s
+}
+
+// Seconds from event i - 1 to event i.
+fn gap(ts: List[Int], lines: List[String], i: Int) -> Int!TimeErr = {
+  let a = list.get(ts, i - 1) ?? 0
+  let b = list.get(ts, i) ?? 0
+  guard b >= a else err(Backwards(string.slice(list.get(lines, i) ?? "", 0, 19)))
+  b - a
+}
+
+fn timing(lines: List[String]) -> Report!TimeErr = {
+  var notes: List[String] = []
+  let ts = lines |> list.map((l) => stamp(l)!)!
+  notes = lines |> list.filter((l) => string.slice(l, 17, 19) == "60") |> list.map((l) => "leap second at ${string.slice(l, 0, 19)}")
+  let gaps = list.range(1, list.len(ts)) |> list.map((i) => gap(ts, lines, i)!)!
+  Report { gaps: gaps, notes: notes }
+}

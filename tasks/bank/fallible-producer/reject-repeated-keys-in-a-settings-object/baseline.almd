@@ -1,0 +1,72 @@
+// Settings documents: nested objects without spaces, keys of lowercase letters
+// and "_", values that are numbers or objects: "{port:80,tls:{on:1,min:12}}".
+// Positions are 0-based offsets into the document.
+type Node = | Num(Int) | Obj(List[Field])
+type Field = { key: String, at: Int, value: Node }
+type Parsed = { node: Node, next: Int }
+
+let MAX = 65535
+
+fn run_end(s: String, i: Int, ok_char: (String) -> Bool) -> Int =
+  if i < string.len(s) and ok_char(string.slice(s, i, i + 1)) then run_end(s, i + 1, ok_char) else i
+
+fn value(s: String, i: Int) -> Parsed! =
+  if string.slice(s, i, i + 1) == "{" then object(s, i + 1, [])
+  else {
+    let j = run_end(s, i, (c) => string.is_digit(c))
+    guard j > i else err("bad value at ${int.to_string(i)}")
+    ok(Parsed { node: Num(int.parse(string.slice(s, i, j)) ?? 0), next: j })
+  }
+
+// `i` is just after "{" or after a ",".
+fn object(s: String, i: Int, fields: List[Field]) -> Parsed! =
+  if list.is_empty(fields) and string.slice(s, i, i + 1) == "}" then ok(Parsed { node: Obj([]), next: i + 1 })
+  else {
+    let k = run_end(s, i, (c) => string.is_lower(c) or c == "_")
+    guard k > i else err("expected key at ${int.to_string(i)}")
+    guard string.slice(s, k, k + 1) == ":" else err("expected : at ${int.to_string(k)}")
+    let v = value(s, k + 1)!
+    let all = fields + [Field { key: string.slice(s, i, k), at: i, value: v.node }]
+    match string.slice(s, v.next, v.next + 1) {
+      "," => object(s, v.next + 1, all),
+      "}" => ok(Parsed { node: Obj(all), next: v.next + 1 }),
+      _ => err("expected , or } at ${int.to_string(v.next)}"),
+    }
+  }
+
+fn parse(doc: String) -> Node! = {
+  guard string.slice(doc, 0, 1) == "{" else err("expected { at 0")
+  let p = object(doc, 1, [])!
+  guard p.next == string.len(doc) else err("trailing text at ${int.to_string(p.next)}")
+  p.node
+}
+
+fn join_path(prefix: String, key: String) -> String =
+  if prefix == "" then key else "${prefix}.${key}"
+
+// The first number above MAX, in document order.
+fn too_large(prefix: String, fields: List[Field]) -> Option[String] =
+  fields |> list.fold(none, (found, f) => match found {
+    some(x) => some(x),
+    none => match f.value {
+      Num(v) => if v > MAX then some("value ${join_path(prefix, f.key)} at ${int.to_string(f.at)} is too large") else none,
+      Obj(inner) => too_large(join_path(prefix, f.key), inner),
+    },
+  })
+
+fn flatten(prefix: String, fields: List[Field]) -> List[String] =
+  fields |> list.flat_map((f) => match f.value {
+    Num(v) => ["${join_path(prefix, f.key)}=${int.to_string(v)}"],
+    Obj(inner) => flatten(join_path(prefix, f.key), inner),
+  })
+
+fn settings(doc: String) -> List[String]! = {
+  let fields = match parse(doc)! {
+    Obj(fs) => fs,
+    Num(_) => [],
+  }
+  match too_large("", fields) {
+    some(msg) => err(msg),
+    none => ok(flatten("", fields)),
+  }
+}

@@ -1,0 +1,40 @@
+// Job dispatcher. Jobs are taken from the front of the queue and handed to the
+// workers in turn (round robin, starting with the first worker). The plan says
+// which jobs time out and which worker crashes on which job ("<worker>:<job>").
+type RunErr: Eq, Repr = | Crashed(String, String) | Timeout(String) | BadJob(String)
+type Plan = { crashes: List[String], slow: List[String] }
+
+fn run(p: Plan, worker: String, job: String) -> String!RunErr = {
+  guard string.starts_with(job, "j") and string.len(job) > 1 else err(BadJob(job))
+  guard not list.contains(p.slow, job) else err(Timeout(job))
+  guard not list.contains(p.crashes, "${worker}:${job}") else err(Crashed(worker, job))
+  "${job}@${worker}"
+}
+
+// "<job>@<worker>" for every job, in the order they finished.
+fn dispatch(p: Plan, workers: List[String], jobs: List[String]) -> List[String]!RunErr = {
+  var ring = workers
+  var queue = jobs
+  var next = 0
+  var done: List[String] = []
+  while not list.is_empty(queue) {
+    let job = list.first(queue) ?? ""
+    queue = list.drop(queue, 1)
+    match run(p, list.get(ring, next) ?? "", job) {
+      ok(line) => {
+        done = done + [line]
+        next = (next + 1) % list.len(ring)
+        ok(())
+      },
+      err(Crashed(w, j)) => {
+        guard list.len(ring) > 1 else err(Crashed(w, j))
+        ring = list.take(ring, next) + list.drop(ring, next + 1)
+        next = (next + 1) % list.len(ring)
+        queue = queue + [job]
+        ok(())
+      },
+      err(e) => err(e),
+    }!
+  }
+  done
+}

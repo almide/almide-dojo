@@ -1,0 +1,8 @@
+test "a division by zero gives 0 and a warning" {
+  let o = eval("4 0 /")
+  assert_eq(o |> result.map((x) => x.value), ok(0))
+  assert(o |> result.map((x) => list.contains(x.warnings, "token 2: division by zero, using 0")) ?? false)
+}
+test "a bad token is still fatal" {
+  assert_eq(eval("1 2 x +"), err(BadToken(2, "x")))
+}

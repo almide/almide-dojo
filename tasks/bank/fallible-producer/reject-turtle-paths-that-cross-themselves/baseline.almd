@@ -1,0 +1,60 @@
+// Turtle on a grid. It starts on cell (0,0) facing north (y grows north).
+// A program is space-separated commands: "F<n>" moves n cells forward (n > 0),
+// "L" and "R" turn 90 degrees on the spot. Commands are numbered from 0.
+type Cmd = | Fwd(Int) | Left | Right
+type Turtle: Eq, Repr = { x: Int, y: Int, dir: Int }
+
+let HEADINGS = ["N", "E", "S", "W"]
+
+fn delta(dir: Int) -> (Int, Int) = match dir {
+  0 => (0, 1),
+  1 => (1, 0),
+  2 => (0, -1),
+  _ => (-1, 0),
+}
+
+fn command(tok: String, i: Int) -> Cmd! = match tok {
+  "L" => ok(Left),
+  "R" => ok(Right),
+  _ => {
+    guard string.starts_with(tok, "F") else err("bad command ${tok} at ${int.to_string(i)}")
+    let n = int.parse(string.slice(tok, 1, string.len(tok))) |> result.map_err((_) => "bad command ${tok} at ${int.to_string(i)}")!
+    guard n > 0 else err("empty move at ${int.to_string(i)}")
+    ok(Fwd(n))
+  },
+}
+
+fn program(src: String) -> List[Cmd]! =
+  string.split(src, " ") |> list.filter((t) => t != "") |> list.enumerate |> list.map((p) => command(p.1, p.0)!)!
+
+fn step(t: Turtle, c: Cmd) -> Turtle = match c {
+  Left => Turtle { x: t.x, y: t.y, dir: (t.dir + 3) % 4 },
+  Right => Turtle { x: t.x, y: t.y, dir: (t.dir + 1) % 4 },
+  Fwd(n) => {
+    let d = delta(t.dir)
+    Turtle { x: t.x + d.0 * n, y: t.y + d.1 * n, dir: t.dir }
+  },
+}
+
+// The turtle after each command.
+fn walk(src: String) -> List[Turtle]! = {
+  let cmds = program(src)!
+  var t = Turtle { x: 0, y: 0, dir: 0 }
+  var trail: List[Turtle] = []
+  for c in cmds {
+    t = step(t, c)
+    trail = trail + [t]
+  }
+  trail
+}
+
+fn summary(src: String) -> String! = {
+  let trail = walk(src)!
+  let all = [Turtle { x: 0, y: 0, dir: 0 }] + trail
+  let last = list.last(all) ?? Turtle { x: 0, y: 0, dir: 0 }
+  let xs = all |> list.map((t) => t.x)
+  let ys = all |> list.map((t) => t.y)
+  let lo = "(${int.to_string(list.min(xs) ?? 0)},${int.to_string(list.min(ys) ?? 0)})"
+  let hi = "(${int.to_string(list.max(xs) ?? 0)},${int.to_string(list.max(ys) ?? 0)})"
+  "at (${int.to_string(last.x)},${int.to_string(last.y)}) facing ${list.get(HEADINGS, last.dir) ?? "?"}, box ${lo}-${hi}"
+}

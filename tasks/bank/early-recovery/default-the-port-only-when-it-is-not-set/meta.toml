@@ -1,0 +1,8 @@
+kind = "modify"
+family = "dojo:early-recovery"
+contracts = ["C-217"]
+oracles = ["behaviour", "cross-target"]
+resource_oracle = "not-needed"
+difficulty = "hard"
+expected_loc = 6
+timeout_sec = 60

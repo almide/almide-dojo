@@ -1,0 +1,14 @@
+test "hidden: exact message, earliest panels first" {
+  assert_eq(layout(["a 0,0 4x4", "b 8,0 4x4", "c 2,2 8x1", "d 0,0 1x1"]), err("panel c overlaps panel a"))
+}
+test "hidden: crossing panels and panels at the same place overlap" {
+  assert_eq(layout(["wide 0,2 12x1", "tall 5,0 1x6"]), err("panel tall overlaps panel wide"))
+  assert_eq(layout(["top 0,0 3x3", "copy 0,0 3x3"]), err("panel copy overlaps panel top"))
+  assert_eq(layout(["big 0,0 12x8", "small 4,3 2x2"]), err("panel small overlaps panel big"))
+}
+test "hidden: touching edges and corners is fine" {
+  assert_eq(summary(["a 0,0 4x4", "b 4,0 4x4", "c 0,4 4x1", "d 4,4 8x2", "e 8,1 4x3"]), ok("6 rows, 64/72 cells"))
+}
+test "hidden: line errors come before overlaps" {
+  assert_eq(layout(["a 0,0 4x4", "b 1,1 2x2", "c 10,0 3x1"]), err("panel c is wider than the grid allows"))
+}

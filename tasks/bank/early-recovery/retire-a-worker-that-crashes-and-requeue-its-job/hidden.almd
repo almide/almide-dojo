@@ -1,0 +1,12 @@
+test "hidden: the rotation continues with the worker after the crashed one" {
+  assert_eq(dispatch(Plan { crashes: ["b:j2"], slow: [] }, ["a", "b", "c"], ["j1", "j2", "j3", "j4", "j5"]), ok(["j1@a", "j3@c", "j4@a", "j5@c", "j2@a"]))
+  assert_eq(dispatch(Plan { crashes: ["a:j1"], slow: [] }, ["a", "b", "c"], ["j1", "j2", "j3"]), ok(["j2@b", "j3@c", "j1@b"]))
+}
+test "hidden: a requeued job can crash again" {
+  assert_eq(dispatch(Plan { crashes: ["a:j1", "c:j1"], slow: [] }, ["a", "b", "c"], ["j1", "j2", "j3", "j4"]), ok(["j2@b", "j3@c", "j4@b", "j1@b"]))
+}
+test "hidden: the last worker's crash is fatal, other errors keep their payloads" {
+  assert_eq(dispatch(Plan { crashes: ["a:j1", "b:j1"], slow: [] }, ["a", "b"], ["j1", "j2"]), err(Crashed("b", "j1")))
+  assert_eq(dispatch(Plan { crashes: ["a:j1"], slow: ["j3"] }, ["a", "b"], ["j1", "j2", "j3"]), err(Timeout("j3")))
+  assert_eq(dispatch(Plan { crashes: ["a:j1"], slow: [] }, ["a", "b"], ["j1", "x"]), err(BadJob("x")))
+}
