@@ -1,0 +1,38 @@
+// A routing port: the handler for a request path, if any.
+protocol Router {
+  fn route(r: Self, path: String) -> String?
+}
+
+// Exact paths only.
+type Table: Router = { routes: Map[String, String] }
+fn Table.route(t: Table, path: String) -> String? = map.get(t.routes, path)
+
+// Serves `inner` below `prefix`, on whole path segments.
+type Mount: Router = { prefix: String, inner: Table }
+fn Mount.route(m: Mount, path: String) -> String? =
+  if path == m.prefix then m.inner.route("/")
+  else match string.strip_prefix(path, m.prefix + "/") {
+    some(rest) => m.inner.route("/" + rest),
+    none => none,
+  }
+
+// "path -> handler" or "path -> 404", in request order.
+fn dispatch[R: Router](r: R, paths: List[String]) -> List[String] =
+  paths |> list.map((p) => p + " -> " + (r.route(p) ?? "404"))
+
+fn served[R: Router](r: R, paths: List[String]) -> Int =
+  paths |> list.count((p) => option.is_some(r.route(p)))
+
+type App = | Plain(Table) | Mounted(Mount)
+
+fn dispatch_app(a: App, paths: List[String]) -> List[String] =
+  match a {
+    Plain(t) => dispatch(t, paths),
+    Mounted(m) => dispatch(m, paths),
+  }
+
+fn served_app(a: App, paths: List[String]) -> Int =
+  match a {
+    Plain(t) => served(t, paths),
+    Mounted(m) => served(m, paths),
+  }

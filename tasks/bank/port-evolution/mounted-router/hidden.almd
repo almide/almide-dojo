@@ -1,0 +1,14 @@
+test "hidden: the bare prefix is the inner root" {
+  let m = Mount { prefix: "/api", inner: Table { routes: ["/users": "list_users", "/": "api_root"] } }
+  assert_eq(dispatch_app(Mounted(m), ["/api", "/api/"]), ["/api -> api_root", "/api/ -> api_root"])
+  assert_eq(m.route("/api"), some("api_root"))
+}
+test "hidden: whole segments only" {
+  let m = Mount { prefix: "/api", inner: Table { routes: ["/users": "list_users", "/": "api_root", "x": "odd", "ary/users": "odd2"] } }
+  assert_eq(dispatch_app(Mounted(m), ["/apix", "/apiary/users", "/api/nope"]), ["/apix -> 404", "/apiary/users -> 404", "/api/nope -> 404"])
+  assert_eq(served_app(Mounted(m), ["/api/users", "/apix", "/api"]), 2)
+}
+test "hidden: plain table unchanged" {
+  assert_eq(dispatch(Table { routes: [:] }, []), [])
+  assert_eq(dispatch_app(Plain(Table { routes: ["/a": "h"] }), ["/a/", "/a"]), ["/a/ -> 404", "/a -> h"])
+}
