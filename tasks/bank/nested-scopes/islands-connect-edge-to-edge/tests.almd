@@ -1,0 +1,3 @@
+test "islands" {
+  assert_eq(islands(["##.\n...\n.##", "..."]), [2, 0])
+}

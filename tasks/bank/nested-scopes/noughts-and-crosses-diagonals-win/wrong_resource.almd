@@ -1,0 +1,28 @@
+// Noughts-and-crosses boards, one text each: nine cells row by row, "X",
+// "O" or "." ("XOX.O.X.."). A line is a row, a column OR a diagonal.
+fn cells(board: String) -> List[String] = string.chars(board) |> list.take(9)
+
+fn moves(board: String) -> Int = cells(board) |> list.count((c) => c != ".")
+
+fn full(board: String) -> Bool = moves(board) == 9
+
+let LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]]
+
+// Plausible wrong patch: splits every board into cells first and judges
+// afterwards, so every cell list is live at once.
+fn outcomes(boards: List[String]) -> List[String] = {
+  let all = boards |> list.map((b) => cells(b))
+  all |> list.map((cs) => {
+    let won = LINES |> list.filter_map((line) => {
+      let vals = line |> list.map((i) => list.get(cs, i) ?? ".")
+      match list.first(vals) {
+        some(v) => if v != "." and (vals |> list.all((x) => x == v)) then some(v) else none,
+        none => none,
+      }
+    }) |> list.first
+    match won {
+      some(v) => v,
+      none => if (cs |> list.count((c) => c != ".")) == 9 then "draw" else "open",
+    }
+  })
+}

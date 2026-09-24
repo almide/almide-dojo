@@ -1,0 +1,7 @@
+// Resource probe: __K__ accounts with 3,000 password changes, one text each.
+// Each history belongs to its own step, so the batch grows by the input
+// texts only; splitting every history first keeps them all live.
+effect fn main() -> Unit = {
+  let accts = list.range(0, __K__) |> list.map((i) => string.repeat("a,b,c,d,", 750) + int.to_string(i))
+  println(int.to_string(refused(accts) |> list.fold(0, (a, n) => a + n)))
+}

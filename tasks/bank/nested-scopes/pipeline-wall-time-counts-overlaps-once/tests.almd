@@ -1,0 +1,3 @@
+test "wall times" {
+  assert_eq(wall_times(["build:0:10;test:10:25", ""]), [25, 0])
+}

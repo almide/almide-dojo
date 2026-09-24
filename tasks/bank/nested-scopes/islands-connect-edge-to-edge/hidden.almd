@@ -1,0 +1,7 @@
+test "hidden: corners do not connect" {
+  assert_eq(islands(["#.\n.#", "#.#\n.#.\n#.#"]), [2, 5])
+}
+test "hidden: shapes and ragged rows" {
+  assert_eq(islands(["###\n#.#\n###", "#\n##\n..#"]), [1, 2])
+  assert_eq(land("#.\n##"), 3)
+}

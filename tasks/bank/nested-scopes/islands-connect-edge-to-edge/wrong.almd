@@ -1,0 +1,32 @@
+// Maps, one text each: rows separated by "\n", "#" land and "." water. Land
+// cells belong to the same island when they touch EDGE TO EDGE (up, down,
+// left, right); touching only at a corner does not connect them.
+fn grid(m: String) -> List[String] = string.split(m, "\n")
+
+fn land(m: String) -> Int = grid(m) |> list.fold(0, (a, r) => a + string.count(r, "#"))
+
+fn is_land(g: List[String], r: Int, c: Int) -> Bool = (list.get(g, r) |> option.flat_map((row) => string.get(row, c))) == some("#")
+
+fn flood(g: List[String], stack: List[(Int, Int)], seen: Set[(Int, Int)]) -> Set[(Int, Int)] =
+  match list.last(stack) {
+    none => seen,
+    some((r, c)) => {
+      let rest = list.drop_end(stack, 1)
+      if set.contains(seen, (r, c)) or not is_land(g, r, c) then flood(g, rest, seen)
+      else flood(g, rest + [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1), (r - 1, c - 1), (r - 1, c + 1), (r + 1, c - 1), (r + 1, c + 1)], set.insert(seen, (r, c)))
+    },
+  }
+
+// Plausible wrong patch: floods through all eight neighbours, so cells that
+// only touch at a corner join one island.
+fn islands(maps: List[String]) -> List[Int] =
+  maps |> list.map((m) => {
+    let g = grid(m)
+    let cells = g |> list.enumerate |> list.flat_map(((r, row)) => list.range(0, string.len(row)) |> list.map((c) => (r, c)))
+    let (_, count) = cells |> list.fold((set.new(), 0), (st, rc) => {
+      let (seen, n) = st
+      let (r, c) = rc
+      if set.contains(seen, rc) or not is_land(g, r, c) then st else (flood(g, [rc], seen), n + 1)
+    })
+    count
+  })

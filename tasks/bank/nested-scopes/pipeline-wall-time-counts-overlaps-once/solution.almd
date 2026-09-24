@@ -1,0 +1,24 @@
+// CI pipelines, one text each: stages "name:start:end" (seconds) separated by
+// ";". Stages may run in PARALLEL and overlap.
+type Stage = { name: String, start: Int, stop: Int }
+
+fn stages(p: String) -> List[Stage] =
+  string.split(p, ";") |> list.filter_map((s) => match string.split(s, ":") {
+    [n, a, b] => option.zip(int.parse(a)?, int.parse(b)?) |> option.map(((x, y)) => Stage { name: n, start: x, stop: y }),
+    _ => none,
+  })
+
+fn cpu_time(p: String) -> Int = stages(p) |> list.map((s) => s.stop - s.start) |> list.sum
+
+fn slowest_stage(p: String) -> String =
+  stages(p) |> list.sort_by((s) => s.start - s.stop) |> list.first |> option.map((s) => s.name) ?? "-"
+
+// Each pipeline's stages are parsed and measured inside its own step.
+fn wall_times(ps: List[String]) -> List[Int] =
+  ps |> list.map((p) => {
+    let ss = stages(p)
+    match option.zip(ss |> list.map((s) => s.start) |> list.min, ss |> list.map((s) => s.stop) |> list.max) {
+      some((a, b)) => b - a,
+      none => 0,
+    }
+  })

@@ -1,0 +1,13 @@
+// Invoices, one text each: line amounts in cents separated by ";". The law
+// here requires VAT (20%) to be computed and ROUNDED DOWN ON EACH LINE, then
+// added up — not computed once on the invoice total.
+fn amounts(inv: String) -> List[Int] =
+  if inv == "" then [] else string.split(inv, ";") |> list.map((x) => int.parse(string.trim(x)) ?? 0)
+
+fn net(inv: String) -> Int = amounts(inv) |> list.fold(0, (acc, a) => acc + a)
+
+fn line_vat(cents: Int) -> Int = cents * 20 / 100
+
+// Each invoice's lines are parsed and taxed inside its own step.
+fn vat_totals(invoices: List[String]) -> List[Int] =
+  invoices |> list.map((inv) => amounts(inv) |> list.map((a) => line_vat(a)) |> list.sum)

@@ -1,0 +1,8 @@
+// Attendance registers, one text per student: a letter per school day, "P"
+// present, "A" absent, "E" excused. Excused days are not held against the
+// student: they count neither as present nor as a school day.
+fn marks(reg: String) -> List[String] = string.chars(reg) |> list.filter((c) => c == "P" or c == "A" or c == "E")
+
+fn absences(reg: String) -> Int = marks(reg) |> list.count((c) => c == "A")
+
+fn perfect(reg: String) -> Bool = absences(reg) == 0

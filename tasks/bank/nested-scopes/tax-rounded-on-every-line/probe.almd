@@ -1,0 +1,7 @@
+// Resource probe: __K__ invoices of 6,000 small lines, one text each. Each
+// amount list belongs to its own step, so the batch grows by the input texts
+// only; parsing every invoice first keeps all the amount lists live.
+effect fn main() -> Unit = {
+  let invs = list.range(0, __K__) |> list.map((i) => string.repeat("7;", 6000) + int.to_string(i))
+  println(int.to_string(vat_totals(invs) |> list.fold(0, (a, n) => a + n)))
+}

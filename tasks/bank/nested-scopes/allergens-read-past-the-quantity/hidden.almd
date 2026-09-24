@@ -1,0 +1,8 @@
+test "hidden: quantities are not part of the name" {
+  let t = map.from_list([("eggs", "egg"), ("flour", "gluten"), ("milk", "dairy"), ("wheat bran", "gluten")])
+  assert_eq(allergens(t, ["2 eggs;200g flour;1 wheat bran", "milk;3 milk"]), ["egg,gluten", "dairy"])
+}
+test "hidden: nothing known" {
+  let t = map.from_list([("nuts", "nut")])
+  assert_eq(allergens(t, ["salt;1 pepper", ""]), ["", ""])
+}

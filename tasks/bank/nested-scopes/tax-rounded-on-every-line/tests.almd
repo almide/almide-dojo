@@ -1,0 +1,3 @@
+test "vat totals" {
+  assert_eq(vat_totals(["100;200", "50"]), [60, 10])
+}

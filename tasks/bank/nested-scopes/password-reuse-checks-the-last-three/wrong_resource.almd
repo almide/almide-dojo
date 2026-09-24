@@ -1,0 +1,14 @@
+// Password change histories, one text per account: password fingerprints in
+// the order they were set, separated by ",". A new password is refused when
+// it equals one of the LAST THREE passwords before it; older ones may be
+// reused.
+fn history(h: String) -> List[String] = string.split(h, ",") |> list.filter((x) => x != "")
+
+fn changes(h: String) -> Int = int.max(0, list.len(history(h)) - 1)
+
+// Plausible wrong patch: splits every history first and checks afterwards,
+// so every history list is live at once.
+fn refused(accounts: List[String]) -> List[Int] = {
+  let all = accounts |> list.map((a) => history(a))
+  all |> list.map((hs) => list.range(1, list.len(hs)) |> list.count((i) => list.contains(list.slice(hs, int.max(0, i - 3), i), list.get(hs, i) ?? "")))
+}

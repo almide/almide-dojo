@@ -1,0 +1,3 @@
+test "outcomes" {
+  assert_eq(outcomes(["XXXOO....", "XOXOOXXXO", "X........"]), ["X", "draw", "open"])
+}
