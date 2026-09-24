@@ -1,0 +1,7 @@
+test "overrides" {
+  let none_: List[String] = []
+  let base = Index { packages: ["a": ["b"], "b": ["c"], "c": none_] }
+  let p = Pinned { base: base, overrides: ["tool": ["c", "a"]] }
+  assert_eq(plan(Locked(p), "tool"), ok("c > b > a > tool"))
+  assert_eq(plan(Plain(base), "a"), ok("c > b > a"))
+}
