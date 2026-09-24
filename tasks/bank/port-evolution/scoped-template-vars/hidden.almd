@@ -1,0 +1,11 @@
+test "hidden: an empty inner value shadows" {
+  let s = Scoped { inner: MapVars { values: ["suffix": ""] }, outer: MapVars { values: ["suffix": "-dev"] } }
+  assert_eq(render(Nested(s), "app{suffix}"), ok("app"))
+  assert_eq(s.get("suffix"), some(""))
+}
+test "hidden: unknown and unclosed" {
+  let s = Scoped { inner: MapVars { values: [:] }, outer: MapVars { values: ["a": "1"] } }
+  assert_eq(render(Nested(s), "{a}{b}"), err("unknown variable: b"))
+  assert_eq(render(Nested(s), "x {a"), err("unclosed {a"))
+  assert_eq(render(Nested(s), ""), ok(""))
+}
