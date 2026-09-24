@@ -1,0 +1,35 @@
+// A shipping-rate port: the cost in cents of a parcel of `grams`, or none when
+// the carrier cannot take it. `subtotal` is the basket value in cents.
+protocol Shipping {
+  fn cost(s: Self, grams: Int, subtotal: Int) -> Int?
+}
+
+// A price per started kilogram, up to a weight limit.
+type ByWeight: Shipping = { per_kg: Int, max_grams: Int }
+fn ByWeight.cost(s: ByWeight, grams: Int, subtotal: Int) -> Int? =
+  if grams > s.max_grams then none else some((grams + 999) / 1000 * s.per_kg)
+
+// One price for anything up to a weight limit.
+type FlatRate: Shipping = { cents: Int, max_grams: Int }
+fn FlatRate.cost(s: FlatRate, grams: Int, subtotal: Int) -> Int? = if grams > s.max_grams then none else some(s.cents)
+
+// Free when the basket reaches the threshold; never takes what `inner` refuses.
+type FreeOver: Shipping = { inner: ByWeight, threshold: Int }
+fn FreeOver.cost(s: FreeOver, grams: Int, subtotal: Int) -> Int? =
+  s.inner.cost(grams, subtotal) |> option.map((c) => if subtotal >= s.threshold then 0 else c)
+
+fn quote[S: Shipping](s: S, grams: Int, subtotal: Int) -> String =
+  match s.cost(grams, subtotal) {
+    some(0) => "free shipping",
+    some(c) => "shipping " + int.to_string(c),
+    none => "cannot ship",
+  }
+
+type Carrier = | Weight(ByWeight) | Flat(FlatRate) | Promo(FreeOver)
+
+fn quote_with(c: Carrier, grams: Int, subtotal: Int) -> String =
+  match c {
+    Weight(w) => quote(w, grams, subtotal),
+    Flat(f) => quote(f, grams, subtotal),
+    Promo(p) => quote(p, grams, subtotal),
+  }
