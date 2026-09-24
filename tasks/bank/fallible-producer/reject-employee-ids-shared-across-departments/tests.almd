@@ -1,0 +1,6 @@
+test "an id used by two departments is an error" {
+  assert(result.is_err(headcounts(["[ops]", "7 Ann", "[sales]", "7 Bo"])))
+}
+test "distinct ids still count" {
+  assert_eq(headcounts(["[ops]", "7 Ann", "8 Cy", "[sales]", "9 Bo"]), ok("ops=2 sales=1"))
+}

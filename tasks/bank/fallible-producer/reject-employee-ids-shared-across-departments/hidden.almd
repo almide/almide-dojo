@@ -1,0 +1,15 @@
+test "hidden: exact message names the first department that used the id" {
+  assert_eq(headcounts(["[ops]", "7 Ann", "[hr]", "3 Di", "[sales]", "3 Bo"]), err("id 3 used in hr and sales"))
+}
+test "hidden: a repeat inside one department keeps its old message" {
+  assert_eq(headcounts(["[ops]", "7 Ann", "7 Ann Again"]), err("duplicate id 7 in ops"))
+  assert_eq(headcounts(["[ops]", "7 Ann", "[sales]", "8 Bo", "8 Bo"]), err("duplicate id 8 in sales"))
+}
+test "hidden: a department name may repeat, ids are still company-wide" {
+  assert_eq(headcounts(["[ops]", "1 A", "[ops]", "1 B"]), err("id 1 used in ops and ops"))
+  assert_eq(headcounts(["[ops]", "1 A", "[x]", "[ops]", "2 B"]), ok("ops=1 x=0 ops=1"))
+}
+test "hidden: older errors keep their text and the first bad line wins" {
+  assert_eq(headcounts(["[a]", "1 X", "[b]", "zz Y", "1 Z"]), err("bad id zz in b"))
+  assert_eq(headcounts(["1 X", "[a]"]), err("person outside a department: 1 X"))
+}
