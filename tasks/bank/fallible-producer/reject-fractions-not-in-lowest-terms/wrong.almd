@@ -1,0 +1,40 @@
+// Plausible wrong patch: only looks for a shared factor of 2, so 3/9 and 10/15
+// (reducible by 3 and 5) are accepted.
+// Recipe scaler. Each ingredient is "<qty> <unit> <name...>" where qty is a
+// whole number ("2") or a fraction ("3/4"). `scale` multiplies every quantity
+// by n and prints the result as a reduced fraction.
+type Qty: Eq, Repr = { num: Int, den: Int }
+type Item: Eq, Repr = { qty: Qty, unit: String, name: String }
+
+fn gcd(a: Int, b: Int) -> Int = if b == 0 then a else gcd(b, a % b)
+
+fn parse_qty(s: String) -> Qty! = {
+  let parts = string.split(s, "/")
+  guard list.len(parts) <= 2 else err("bad quantity ${s}")
+  let num = int.parse(list.get(parts, 0) ?? "") |> result.map_err((_) => "bad quantity ${s}")!
+  let den = if list.len(parts) == 2 then int.parse(list.get(parts, 1) ?? "") |> result.map_err((_) => "bad quantity ${s}")! else 1
+  guard den != 0 else err("zero denominator in ${s}")
+  guard num > 0 and den > 0 else err("quantity must be positive: ${s}")
+  let q = Qty { num: num, den: den }
+  guard not (num % 2 == 0 and den % 2 == 0) else err("${s} is not in lowest terms (use ${show_qty(q)})")
+  q
+}
+
+fn parse_item(line: String) -> Item! = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) >= 3 else err("bad line: ${line}")
+  let q = parse_qty(list.get(w, 0) ?? "")!
+  Item { qty: q, unit: list.get(w, 1) ?? "", name: list.drop(w, 2) |> list.join(" ") }
+}
+
+fn show_qty(q: Qty) -> String = {
+  let g = gcd(q.num, q.den)
+  let n = q.num / g
+  let d = q.den / g
+  if d == 1 then int.to_string(n) else "${int.to_string(n)}/${int.to_string(d)}"
+}
+
+fn scale(lines: List[String], n: Int) -> List[String]! = {
+  let items = lines |> list.map((l) => parse_item(l)!)!
+  items |> list.map((i) => "${show_qty(Qty { num: i.qty.num * n, den: i.qty.den })} ${i.unit} ${i.name}")
+}
