@@ -1,0 +1,8 @@
+// Resource probe: __K__ locators over fresh 4,000-line logs, all held live.
+// Capturing (number, message) grows by a few bytes each; capturing `lines`
+// grows by the whole log.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) =>
+    locator(list.range(0, 4000) |> list.map((j) => if j == 3999 - i then "error: at " + int.to_string(j) else "step " + int.to_string(j) + " ok")))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("log")))))
+}

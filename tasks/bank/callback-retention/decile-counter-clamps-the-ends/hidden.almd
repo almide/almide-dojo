@@ -1,0 +1,14 @@
+test "hidden: 100 is in the top decile" {
+  let f = decile_counter([100, 90, 99])
+  assert_eq(f(100), "90-100: 3")
+  assert_eq(f(95), "90-100: 3")
+}
+test "hidden: clamping on both sides" {
+  let f = decile_counter([-5, 0, 250, 101])
+  assert_eq(f(-1), "0-9: 2")
+  assert_eq(f(1000), "90-100: 2")
+  assert_eq(decile_counter([])(50), "50-59: 0")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(in_range([-1, 0, 100, 101]), 2)
+}

@@ -1,0 +1,8 @@
+// Resource probe: __K__ checkers over fresh 4,000-line flag files (mostly
+// comments), all held live. Capturing the enabled set grows by a few names
+// each; capturing `lines` grows by the whole file.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) =>
+    flag_check(list.range(0, 4000) |> list.map((j) => if j % 400 == 0 then "f" + int.to_string(j / 400) + "=on" else "# comment line " + int.to_string(j + i))))
+  println(int.to_string(fs |> list.count((f) => f("f3"))))
+}

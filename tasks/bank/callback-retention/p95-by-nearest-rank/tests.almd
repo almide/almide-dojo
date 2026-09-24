@@ -1,0 +1,5 @@
+test "p95" {
+  let f = p95_label([5, 1, 9, 3, 7, 2, 8, 4, 6, 10])
+  assert_eq(f("/api"), "/api p95=10ms")
+  assert_eq(p95_label([])("/x"), "/x p95=n/a")
+}

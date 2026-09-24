@@ -1,0 +1,6 @@
+test "flags" {
+  let f = flag_check(["# flags", "dark=on", "beta=off"])
+  assert_eq(f("dark"), true)
+  assert_eq(f("beta"), false)
+  assert_eq(f("nope"), false)
+}

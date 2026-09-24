@@ -1,0 +1,22 @@
+// A feature-flag file: "name=on" / "name=off" lines, "#" comments and blank
+// lines. A flag set more than once takes its LAST value. Names and values are
+// trimmed; any value other than "on" means off.
+fn parse_flag(line: String) -> (String, Bool)? = {
+  let t = string.trim(line)
+  if t == "" or string.starts_with(t, "#") then none
+  else match string.index_of(t, "=") {
+    some(i) => some((string.trim(string.slice(t, 0, i)), string.trim(string.drop(t, i + 1)) == "on")),
+    none => none,
+  }
+}
+
+fn flag_lines(lines: List[String]) -> Int = lines |> list.count((l) => option.is_some(parse_flag(l)))
+
+// Enabled names after applying every line in order; the closure keeps the set.
+fn flag_check(lines: List[String]) -> (String) -> Bool = {
+  let enabled = lines |> list.filter_map((l) => parse_flag(l)) |> list.fold(set.new(), (s, p) => {
+    let (name, on) = p
+    if on then set.insert(s, name) else set.remove(s, name)
+  })
+  (name) => set.contains(enabled, name)
+}

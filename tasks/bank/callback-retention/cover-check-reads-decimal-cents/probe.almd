@@ -1,0 +1,8 @@
+// Resource probe: __K__ checks over fresh 10,000-entry ledgers, all held live.
+// Capturing the balance grows by a few bytes each; capturing the amounts
+// grows by the whole ledger.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) =>
+    cover_check(list.range(0, 10000) |> list.map((j) => int.to_string(j % 7) + "." + int.to_string(j % 10 + i))) ?? ((w) => ""))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f(100)))))
+}

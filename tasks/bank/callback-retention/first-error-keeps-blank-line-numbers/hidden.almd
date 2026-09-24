@@ -1,0 +1,13 @@
+test "hidden: blank lines keep their numbers" {
+  let f = locator(["", "warming up", "", "error:  disk full "])
+  assert_eq(f("c.log"), "c.log:4: disk full")
+  assert_eq(f("d.log"), "d.log:4: disk full")
+}
+test "hidden: first line and empty log" {
+  assert_eq(locator(["error:x", "", "error: y"])("e"), "e:1: x")
+  assert_eq(locator([])("f"), "f: clean")
+  assert_eq(locator(["  error: indented"])("g"), "g: clean")
+}
+test "hidden: verdict unchanged" {
+  assert_eq(verdict(["error: a", "", "error:b"]), "2 errors")
+}

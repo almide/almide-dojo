@@ -1,0 +1,22 @@
+// Request latencies in milliseconds.
+fn sorted(ms: List[Int]) -> List[Int] = list.sort(ms)
+
+fn median(ms: List[Int]) -> Int? = list.get(sorted(ms), (list.len(ms) - 1) / 2)
+
+fn slow_count(ms: List[Int], limit: Int) -> Int = ms |> list.count((m) => m > limit)
+
+fn summary(ms: List[Int]) -> String =
+  match median(ms) {
+    some(m) => "n=" + int.to_string(list.len(ms)) + " median=" + int.to_string(m),
+    none => "n=0",
+  }
+
+// Nearest rank ceil(0.95 n) = (95 n + 99) / 100; the closure keeps the value.
+fn p95_label(ms: List[Int]) -> (String) -> String = {
+  let n = list.len(ms)
+  let v = list.get(sorted(ms), (95 * n + 99) / 100 - 1)
+  match v {
+    some(x) => (name) => name + " p95=" + int.to_string(x) + "ms",
+    none => (name) => name + " p95=n/a",
+  }
+}

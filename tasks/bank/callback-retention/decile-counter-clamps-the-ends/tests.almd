@@ -1,0 +1,6 @@
+test "deciles" {
+  let f = decile_counter([5, 12, 17, 95])
+  assert_eq(f(15), "10-19: 2")
+  assert_eq(f(3), "0-9: 1")
+  assert_eq(f(40), "40-49: 0")
+}

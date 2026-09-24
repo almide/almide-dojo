@@ -1,0 +1,15 @@
+test "hidden: the last line wins" {
+  let f = flag_check(["a=on", "b=off", "a = off", "b=on", "c=on", "c=yes"])
+  assert_eq(f("a"), false)
+  assert_eq(f("b"), true)
+  assert_eq(f("c"), false)
+}
+test "hidden: comments and empty" {
+  let f = flag_check(["#x=on", "", "  y = on  "])
+  assert_eq(f("#x"), false)
+  assert_eq(f("y"), true)
+  assert_eq(flag_check([])("y"), false)
+}
+test "hidden: flag_lines unchanged" {
+  assert_eq(flag_lines(["a=on", "#b=on", "c"]), 1)
+}

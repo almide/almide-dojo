@@ -1,0 +1,15 @@
+test "hidden: one decimal digit is tenths" {
+  let f = cover_check(["0.5", "1.5"])!
+  assert_eq(f(200), "ok, 0.00 left")
+  assert_eq(f(201), "short by 0.01")
+  let g = cover_check(["-0.5", "3"])!
+  assert_eq(g(0), "ok, 2.50 left")
+}
+test "hidden: errors and empty" {
+  assert_eq(result.to_err_option(cover_check(["1", "x.5", "1.2.3"])), some("bad amount: x.5"))
+  let e = cover_check([])!
+  assert_eq(e(1), "short by 0.01")
+}
+test "hidden: cents unchanged" {
+  assert_eq(cents("-7.05"), ok(-705))
+}
