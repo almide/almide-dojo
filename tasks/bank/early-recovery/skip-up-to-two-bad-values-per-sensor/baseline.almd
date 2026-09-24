@@ -1,0 +1,39 @@
+// Sensor log import. Each line is "<sensor>,<minute>,<value>"; minutes must be
+// increasing per sensor. The summary gives each sensor's reading count and mean
+// (rounded down), sensors in order of first appearance.
+type Reading: Eq, Repr = { sensor: String, minute: Int, value: Int }
+type Stats: Eq, Repr = { sensor: String, count: Int, sum: Int, last_minute: Int, skipped: Int }
+
+fn parse_reading(line: String) -> Reading! = {
+  let f = string.split(line, ",") |> list.map((x) => string.trim(x))
+  guard list.len(f) == 3 else err("wrong field count: ${line}")
+  let sensor = list.get(f, 0) ?? ""
+  let minute = int.parse(list.get(f, 1) ?? "") |> result.map_err((_) => "bad minute in: ${line}")!
+  let raw = list.get(f, 2) ?? ""
+  let value = int.parse(raw) |> result.map_err((_) => "bad value ${raw} in: ${line}")!
+  Reading { sensor: sensor, minute: minute, value: value }
+}
+
+fn record(all: List[Stats], r: Reading) -> List[Stats]! =
+  match list.find_index(all, (s) => s.sensor == r.sensor) {
+    none => ok(all + [Stats { sensor: r.sensor, count: 1, sum: r.value, last_minute: r.minute, skipped: 0 }]),
+    some(i) => {
+      let s = list.get(all, i) ?? Stats { sensor: r.sensor, count: 0, sum: 0, last_minute: 0, skipped: 0 }
+      guard r.minute > s.last_minute else err("time went backwards for ${r.sensor} at minute ${int.to_string(r.minute)}")
+      ok(list.set(all, i, { ...s, count: s.count + 1, sum: s.sum + r.value, last_minute: r.minute }))
+    },
+  }
+
+fn import_log(lines: List[String]) -> List[Stats]! =
+  lines |> list.filter((l) => string.trim(l) != "") |> list.fold([], (acc, l) => record(acc, parse_reading(l)!)!)!
+
+// "t1 3x mean 20; t2 1x mean 5 (2 skipped)"
+fn summary(lines: List[String]) -> String! = {
+  let st = import_log(lines)!
+  let parts = st |> list.map((s) => {
+    let mean = if s.count == 0 then "n/a" else int.to_string(s.sum / s.count)
+    let sk = if s.skipped == 0 then "" else " (${int.to_string(s.skipped)} skipped)"
+    "${s.sensor} ${int.to_string(s.count)}x mean ${mean}${sk}"
+  })
+  list.join(parts, "; ")
+}
