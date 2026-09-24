@@ -1,0 +1,10 @@
+test "hidden: small negative offsets keep the minus" {
+  assert_eq(line(invite("x", -30), 0), "x 23:30 (UTC-00:30)")
+  assert_eq(line(invite("y", -210), 100), "y 22:10 (UTC-03:30)")
+  assert_eq(line(invite("z", 0), 1439), "z 23:59 (UTC+00:00)")
+  assert_eq(line(invite("k", 345), 1200), "k 01:45 (UTC+05:45)")
+}
+test "hidden: ordering" {
+  let is = [invite("p", 0), invite("q", -30), invite("r", 0), invite("s", 840)]
+  assert_eq(west_to_east(is), ["q", "p", "r", "s"])
+}
