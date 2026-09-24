@@ -1,0 +1,19 @@
+// A partitioning port: which of `n` buckets (0 .. n-1) a key goes to (n >= 1).
+protocol Partitioner {
+  fn bucket(p: Self, key: String, n: Int) -> Int
+}
+
+// By key length.
+type ByLength: Partitioner = {}
+fn ByLength.bucket(p: ByLength, key: String, n: Int) -> Int = string.len(key) % n
+
+// The keys of each bucket, buckets 0 .. n-1, keys in input order.
+fn spread[P: Partitioner](p: P, keys: List[String], n: Int) -> List[List[String]] =
+  list.range(0, n) |> list.map((b) => keys |> list.filter((k) => p.bucket(k, n) == b))
+
+// "b0=2 b1=0 b2=1": how many keys land in each bucket.
+fn histogram[P: Partitioner](p: P, keys: List[String], n: Int) -> String =
+  spread(p, keys, n)
+    |> list.enumerate
+    |> list.map((e) => "b" + int.to_string(e.0) + "=" + int.to_string(list.len(e.1)))
+    |> list.join(" ")
