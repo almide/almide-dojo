@@ -1,0 +1,21 @@
+test "hidden: units must go from largest to smallest, exact message" {
+  assert_eq(seconds("30m1h"), err("unit h out of order in 30m1h"))
+  assert_eq(seconds("1d2s3m"), err("unit m out of order in 1d2s3m"))
+  assert_eq(seconds("5s5s"), err("unit s out of order in 5s5s"))
+}
+test "hidden: skipped units and zero amounts are fine" {
+  assert_eq(seconds("1d1s"), ok(86401))
+  assert_eq(seconds("0h5m0s"), ok(300))
+  assert_eq(seconds("90m"), ok(5400))
+}
+test "hidden: the first problem from the left wins" {
+  assert_eq(seconds("1h1h5x"), err("unit h out of order in 1h1h5x"))
+  assert_eq(seconds("1h5x1h"), err("unknown unit x in 1h5x1h"))
+  assert_eq(seconds("2m1h7"), err("unit h out of order in 2m1h7"))
+  assert_eq(seconds("2m1m7"), err("unit m out of order in 2m1m7"))
+}
+test "hidden: old messages and the first failing duration of a list" {
+  assert_eq(total(["1h", "  ", "1m1h"]), err("empty duration"))
+  assert_eq(total(["1m1h", "h"]), err("unit h out of order in 1m1h"))
+  assert_eq(seconds("12"), err("missing unit after 12 in 12"))
+}

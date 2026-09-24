@@ -1,0 +1,12 @@
+test "hidden: a truncated frame stays fatal, before or after a drop" {
+  assert_eq(decode([1, 9, 0, 3, 1, 2]) |> result.map((d) => show(d)), err(Truncated(3, 3)))
+  assert_eq(decode([2, 1, 1, 2, 2, 1, 1]) |> result.map((d) => show(d)), err(Truncated(4, 2)))
+}
+test "hidden: dropping skips exactly the bad frame, even when its payload looks like frames" {
+  assert_eq(decode([3, 1, 5, 5, 0, 1, 8, 8]) |> result.map((d) => show(d)), ok("[8] dropped 1"))
+  assert_eq(decode([2, 200, 100, 44, 2, 200, 100, 45]) |> result.map((d) => show(d)), ok("[200 100] dropped 1"))
+}
+test "hidden: several drops are counted, a stream may end on a dropped frame" {
+  assert_eq(decode([1, 1, 0, 1, 2, 0, 1, 3, 3, 1, 4, 5]) |> result.map((d) => show(d)), ok("[3] dropped 3"))
+  assert_eq(decode([]) |> result.map((d) => show(d)), ok("[] dropped 0"))
+}

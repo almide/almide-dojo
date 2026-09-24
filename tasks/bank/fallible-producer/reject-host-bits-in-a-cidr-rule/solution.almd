@@ -1,0 +1,45 @@
+// Firewall rules. Each line is "<allow|deny> <a.b.c.d>/<prefix>"; an address
+// matches a rule when its first <prefix> bits equal the rule's. The first
+// matching rule decides; with no match the answer is "deny".
+type Rule: Eq, Repr = { allow: Bool, net: Int, prefix: Int }
+
+fn parse_ip(s: String) -> Int! = {
+  let parts = string.split(s, ".")
+  guard list.len(parts) == 4 else err("bad address ${s}")
+  parts |> list.fold(0, (acc, p) => {
+    let n = int.parse(p) |> result.map_err((_) => "bad octet ${p} in ${s}")!
+    guard n >= 0 and n <= 255 else err("bad octet ${p} in ${s}")
+    acc * 256 + n
+  })!
+}
+
+fn mask(prefix: Int) -> Int =
+  if prefix == 0 then 0 else int.band(int.bshl(int.bnot(0), 32 - prefix), 4294967295)
+
+fn parse_rule(line: String) -> Rule! = {
+  let words = string.split(string.trim(line), " ") |> list.filter((w) => w != "")
+  guard list.len(words) == 2 else err("bad rule: ${line}")
+  let action = list.get(words, 0) ?? ""
+  guard action == "allow" or action == "deny" else err("bad action ${action}")
+  let cidr = list.get(words, 1) ?? ""
+  let slash = string.index_of(cidr, "/") ?? -1
+  guard slash > 0 else err("missing prefix in ${cidr}")
+  let net = parse_ip(string.slice(cidr, 0, slash))!
+  let ptext = string.slice(cidr, slash + 1, string.len(cidr))
+  let prefix = int.parse(ptext) |> result.map_err((_) => "bad prefix ${ptext}")!
+  guard prefix >= 0 and prefix <= 32 else err("bad prefix ${ptext}")
+  guard int.band(net, mask(prefix)) == net else err("host bits set in ${cidr}")
+  Rule { allow: action == "allow", net: net, prefix: prefix }
+}
+
+fn parse_rules(lines: List[String]) -> List[Rule]! =
+  lines |> list.filter((l) => string.trim(l) != "") |> list.map((l) => parse_rule(l)!)!
+
+fn decide(lines: List[String], ip: String) -> String! = {
+  let rules = parse_rules(lines)!
+  let addr = parse_ip(ip)!
+  match list.find(rules, (r) => int.band(addr, mask(r.prefix)) == int.band(r.net, mask(r.prefix))) {
+    some(r) => ok(if r.allow then "allow" else "deny"),
+    none => ok("deny"),
+  }
+}

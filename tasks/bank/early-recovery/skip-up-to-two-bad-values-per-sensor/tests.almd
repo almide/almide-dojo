@@ -1,0 +1,6 @@
+test "a reading with a bad value is skipped" {
+  assert_eq(summary(["t1,1,10", "t1,2,NaN", "t1,3,20"]), ok("t1 2x mean 15 (1 skipped)"))
+}
+test "a bad minute is still fatal" {
+  assert_eq(summary(["t1,1,10", "t1,x,20"]), err("bad minute in: t1,x,20"))
+}

@@ -1,0 +1,85 @@
+// S-expression calculator: "(+ 1 (* 2 3))". Operators: + and * (any number of
+// arguments), - (one argument negates, two subtract), max. Positions are
+// 0-based character offsets.
+type Expr: Eq, Repr = | Lit(Int) | Call(String, List[Expr], Int)
+type ParseErr: Eq, Repr =
+  | Unexpected(Int, String)
+  | Unclosed(Int)
+  | UnknownOp(Int, String)
+type Tok = { text: String, pos: Int }
+type Parsed = { expr: Expr, next: Int }
+type ParsedList = { items: List[Expr], next: Int }
+
+fn tokens(src: String) -> List[Tok] = scan(src, 0, [])
+
+fn scan(src: String, i: Int, acc: List[Tok]) -> List[Tok] = {
+  let c = string.slice(src, i, i + 1)
+  if i >= string.len(src) then acc
+  else if c == " " then scan(src, i + 1, acc)
+  else if c == "(" or c == ")" then scan(src, i + 1, acc + [Tok { text: c, pos: i }])
+  else {
+    let end = atom_end(src, i)
+    scan(src, end, acc + [Tok { text: string.slice(src, i, end), pos: i }])
+  }
+}
+
+fn atom_end(src: String, i: Int) -> Int = {
+  let c = string.slice(src, i, i + 1)
+  if i < string.len(src) and c != " " and c != "(" and c != ")" then atom_end(src, i + 1) else i
+}
+
+fn at(ts: List[Tok], i: Int) -> Tok = list.get(ts, i) ?? Tok { text: "", pos: -1 }
+
+fn parse_expr(ts: List[Tok], i: Int) -> Parsed!ParseErr = {
+  let t = at(ts, i)
+  if t.pos < 0 then err(Unexpected(-1, "end"))
+  else if t.text == "(" then {
+    let op = at(ts, i + 1)
+    guard op.pos >= 0 else err(Unclosed(t.pos))
+    guard list.contains(["+", "*", "-", "max"], op.text) else err(UnknownOp(op.pos, op.text))
+    let args = parse_args(ts, i + 2, [], t.pos)!
+    ok(Parsed { expr: Call(op.text, args.items, t.pos), next: args.next })
+  }
+  else if t.text == ")" then err(Unexpected(t.pos, ")"))
+  else match int.parse(t.text) {
+    ok(n) => ok(Parsed { expr: Lit(n), next: i + 1 }),
+    err(_) => err(Unexpected(t.pos, t.text)),
+  }
+}
+
+fn parse_args(ts: List[Tok], i: Int, acc: List[Expr], open: Int) -> ParsedList!ParseErr = {
+  let t = at(ts, i)
+  if t.pos < 0 then err(Unclosed(open))
+  else if t.text == ")" then ok(ParsedList { items: acc, next: i + 1 })
+  else {
+    let p = parse_expr(ts, i)!
+    parse_args(ts, p.next, acc + [p.expr], open)
+  }
+}
+
+fn parse(src: String) -> Expr!ParseErr = {
+  let ts = tokens(src)
+  let p = parse_expr(ts, 0)!
+  let rest = at(ts, p.next)
+  guard rest.pos < 0 else err(Unexpected(rest.pos, rest.text))
+  p.expr
+}
+
+fn eval(e: Expr) -> Int =
+  match e {
+    Lit(n) => n,
+    Call(op, args, _) => {
+      let vs = args |> list.map((a) => eval(a))
+      match op {
+        "+" => list.sum(vs),
+        "*" => list.product(vs),
+        "-" => if list.len(vs) == 1 then 0 - (list.first(vs) ?? 0) else (list.first(vs) ?? 0) - (list.get(vs, 1) ?? 0),
+        _ => list.max(vs) ?? 0,
+      }
+    },
+  }
+
+fn evaluate(src: String) -> Int!ParseErr = {
+  let e = parse(src)!
+  eval(e)
+}

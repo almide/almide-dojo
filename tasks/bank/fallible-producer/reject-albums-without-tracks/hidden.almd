@@ -1,0 +1,17 @@
+test "hidden: exact message, and the last album counts too" {
+  assert_eq(overview(["# Blue", "# Red", "3:00 Song"]), err("album Blue has no tracks"))
+  assert_eq(overview(["# Blue", "1:00 A", "# Red", ""]), err("album Red has no tracks"))
+  assert_eq(overview(["# Solo"]), err("album Solo has no tracks"))
+}
+test "hidden: an empty album is reported before later problems" {
+  assert_eq(overview(["# Blue", "# Red", "9:xx Bad"]), err("album Blue has no tracks"))
+  assert_eq(overview(["# Blue", "1:00 A", "1:00 A", "# Red"]), err("duplicate track A in Blue"))
+}
+test "hidden: an empty input and repeated album names stay valid" {
+  assert_eq(overview([]), ok(""))
+  assert_eq(overview(["", "# Mix", "0:59 X", "# Mix", "1:01 X"]), ok("Mix (1 tracks, 0:59); Mix (1 tracks, 1:01)"))
+}
+test "hidden: old messages untouched" {
+  assert_eq(overview(["1:00 Lost", "# A"]), err("track before any album: 1:00 Lost"))
+  assert_eq(overview(["# A", "1:5 X"]), err("bad duration 1:5 in A"))
+}

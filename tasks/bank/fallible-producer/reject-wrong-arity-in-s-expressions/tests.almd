@@ -1,0 +1,6 @@
+test "an operator with too few arguments is an error" {
+  assert_eq(evaluate("(+ 1)"), err(Arity(0, "+", 1)))
+}
+test "well-formed expressions still evaluate" {
+  assert_eq(evaluate("(+ 1 (* 2 3) (- 4))"), ok(3))
+}

@@ -1,0 +1,45 @@
+// Write-ahead journal replay. Each line is "set <key> <value>" or "del <key>";
+// lines are numbered from 1, blank lines included. Keys are lowercase words.
+type WalErr: Eq, Repr = | Truncated(Int) | UnknownOp(Int, String) | BadKey(Int, String)
+type Replay: Eq, Repr = { data: Map[String, String], applied: Int, notes: List[String] }
+
+fn check_key(n: Int, k: String) -> String!WalErr = {
+  guard k != "" and string.is_lower(k) and string.is_alpha(k) else err(BadKey(n, k))
+  k
+}
+
+fn apply(data: Map[String, String], n: Int, line: String) -> Map[String, String]!WalErr = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  let op = list.get(w, 0) ?? ""
+  match op {
+    "set" => {
+      guard list.len(w) >= 3 else err(Truncated(n))
+      let k = check_key(n, list.get(w, 1) ?? "")!
+      ok(map.set(data, k, list.drop(w, 2) |> list.join(" ")))
+    },
+    "del" => {
+      guard list.len(w) >= 2 else err(Truncated(n))
+      let k = check_key(n, list.get(w, 1) ?? "")!
+      ok(map.remove(data, k))
+    },
+    _ => err(UnknownOp(n, op)),
+  }
+}
+
+fn replay(lines: List[String]) -> Replay!WalErr = {
+  var data: Map[String, String] = [:]
+  var applied = 0
+  for p in list.enumerate(lines) {
+    if string.trim(p.1) != "" then {
+      data = apply(data, p.0 + 1, p.1)!
+      applied = applied + 1
+    } else ()
+  }
+  Replay { data: data, applied: applied, notes: [] }
+}
+
+fn dump(r: Replay) -> String = {
+  let kv = map.keys(r.data) |> list.sort |> list.map((k) => "${k}=${map.get(r.data, k) ?? ""}") |> list.join(" ")
+  let notes = if list.is_empty(r.notes) then "" else " | ${list.join(r.notes, "; ")}"
+  "${kv} (${int.to_string(r.applied)} applied)${notes}"
+}

@@ -1,0 +1,6 @@
+test "an album followed directly by another album is an error" {
+  assert(result.is_err(overview(["# Blue", "# Red", "3:00 Song"])))
+}
+test "a normal playlist still loads" {
+  assert_eq(overview(["# Blue", "3:05 One", "4:00 Two", "", "# Red", "3:00 Three"]), ok("Blue (2 tracks, 7:05); Red (1 tracks, 3:00)"))
+}

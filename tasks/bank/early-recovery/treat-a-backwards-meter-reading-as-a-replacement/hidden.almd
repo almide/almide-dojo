@@ -1,0 +1,14 @@
+test "hidden: consumption before and after a replacement both count" {
+  assert_eq(bill(["a": 100], ["a 130", "a 5", "a 25"]), ok("a used 50 (1 replaced)"))
+}
+test "hidden: several replacements, several meters" {
+  assert_eq(bill(["a": 10, "b": 0], ["a 20", "b 7", "a 3", "b 9", "a 1", "a 4", "b 9"]), ok("a used 13 (2 replaced); b used 9"))
+}
+test "hidden: an equal reading is not a replacement" {
+  assert_eq(bill(["a": 40], ["a 40", "a 40"]), ok("a used 0"))
+}
+test "hidden: bad lines stay fatal after a replacement" {
+  assert_eq(bill(["a": 100], ["a 5", "a -3"]), err("bad reading: a -3"))
+  assert_eq(bill(["a": 100], ["a 5", "a 6 7"]), err("bad line: a 6 7"))
+  assert_eq(bill(["a": 100], ["a 5", "z 1"]), err("unknown meter z"))
+}

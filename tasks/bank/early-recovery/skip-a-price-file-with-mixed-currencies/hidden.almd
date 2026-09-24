@@ -1,0 +1,20 @@
+test "hidden: nothing from a skipped file is kept, even lines before the bad one" {
+  let fs = [PriceFile { name: "a", lines: ["currency EUR", "tea 300 EUR", "jam 450 EUR", "oil 900 USD"] }, PriceFile { name: "b", lines: ["currency EUR", "salt 100 EUR"] }]
+  assert_eq(merge(fs) |> result.map((t) => show(t)), ok("salt=100 | skipped a"))
+}
+test "hidden: a sku from a skipped file is free for a later file" {
+  let fs = [PriceFile { name: "a", lines: ["currency EUR", "tea 300 EUR", "x 1 GBP"] }, PriceFile { name: "b", lines: ["currency USD", "tea 350 USD"] }]
+  assert_eq(merge(fs) |> result.map((t) => show(t)), ok("tea=350 | skipped a"))
+}
+test "hidden: an earlier bad price in the same file is still fatal" {
+  let fs = [PriceFile { name: "a", lines: ["currency EUR", "tea 0 EUR", "jam 5 USD"] }]
+  assert_eq(merge(fs) |> result.map((t) => show(t)), err(BadPrice("a", 2)))
+}
+test "hidden: other errors stay fatal, several files may be skipped" {
+  let fs = [PriceFile { name: "a", lines: ["currency EUR", "x 1 USD"] }, PriceFile { name: "b", lines: ["curr EUR"] }]
+  assert_eq(merge(fs) |> result.map((t) => show(t)), err(MissingHeader("b")))
+  let gs = [PriceFile { name: "a", lines: ["currency EUR", "x 1 USD"] }, PriceFile { name: "b", lines: ["currency EUR", "y 1 EUR", "y 2 EUR"] }]
+  assert_eq(merge(gs) |> result.map((t) => show(t)), err(DuplicateSku("y")))
+  let hs = [PriceFile { name: "a", lines: ["currency EUR", "x 1 USD"] }, PriceFile { name: "c", lines: ["currency EUR"] }, PriceFile { name: "b", lines: ["currency GBP", "y 1 EUR"] }]
+  assert_eq(merge(hs) |> result.map((t) => show(t)), ok(" | skipped a, b"))
+}

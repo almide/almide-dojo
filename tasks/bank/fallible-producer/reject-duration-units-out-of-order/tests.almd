@@ -1,0 +1,7 @@
+test "a repeated unit is rejected" {
+  assert(result.is_err(seconds("1h2h")))
+}
+test "ordinary durations still parse" {
+  assert_eq(seconds("1h30m"), ok(5400))
+  assert_eq(total(["2d", "5s", "1m1s"]), ok(172866))
+}

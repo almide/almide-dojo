@@ -1,0 +1,58 @@
+// Order event log. Each event is "<order> <event> [amount]", applied in order:
+//   created -> paid <amount> -> shipped -> delivered
+//   created | paid  -> cancelled -> refunded <amount> (repeatable, paid orders only)
+// Events are numbered from 1 in errors.
+type Order: Eq, Repr = { state: String, paid: Int, refunded: Int }
+
+fn next_state(state: String, ev: String) -> String? =
+  match (state, ev) {
+    ("none", "created") => some("created"),
+    ("created", "paid") => some("paid"),
+    ("paid", "shipped") => some("shipped"),
+    ("shipped", "delivered") => some("delivered"),
+    ("created", "cancelled") => some("cancelled"),
+    ("paid", "cancelled") => some("cancelled"),
+    ("cancelled", "refunded") => some("cancelled"),
+    _ => none,
+  }
+
+fn amount_of(k: Int, words: List[String]) -> Int! = {
+  let raw = list.get(words, 2) ?? ""
+  let n = int.parse(raw) |> result.map_err((_) => "event ${int.to_string(k)}: bad amount ${raw}")!
+  guard n > 0 else err("event ${int.to_string(k)}: bad amount ${raw}")
+  n
+}
+
+fn apply(orders: Map[String, Order], k: Int, line: String) -> Map[String, Order]! = {
+  let words = string.split(line, " ") |> list.filter((w) => w != "")
+  let id = list.get(words, 0) ?? ""
+  let ev = list.get(words, 1) ?? ""
+  let cur = map.get(orders, id) ?? Order { state: "none", paid: 0, refunded: 0 }
+  let to = match next_state(cur.state, ev) {
+    some(s) => ok(s),
+    none => err("event ${int.to_string(k)}: ${id} ${ev} not allowed after ${cur.state}"),
+  }!
+  let updated = match ev {
+    "paid" => { ...cur, state: to, paid: amount_of(k, words)! },
+    "refunded" => {
+      guard cur.paid > 0 else err("event ${int.to_string(k)}: refund without payment for ${id}")
+      let amt = amount_of(k, words)!
+      { ...cur, state: to, refunded: cur.refunded + amt }
+    },
+    _ => { ...cur, state: to },
+  }
+  map.set(orders, id, updated)
+}
+
+fn replay(events: List[String]) -> Map[String, Order]! =
+  events |> list.enumerate |> list.fold([:], (m, p) => apply(m, p.0 + 1, p.1)!)!
+
+// "o1 cancelled 30/10; o2 shipped 5/0" (paid/refunded), orders by id.
+fn status(events: List[String]) -> String! = {
+  let m = replay(events)!
+  let parts = map.keys(m) |> list.sort |> list.map((id) => {
+    let o = map.get(m, id) ?? Order { state: "none", paid: 0, refunded: 0 }
+    "${id} ${o.state} ${int.to_string(o.paid)}/${int.to_string(o.refunded)}"
+  })
+  list.join(parts, "; ")
+}

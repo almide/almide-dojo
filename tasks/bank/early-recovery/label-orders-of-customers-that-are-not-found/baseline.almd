@@ -1,0 +1,24 @@
+// Order labels. Each order names a customer id; the customer service answers
+// every lookup with a scripted reply: "name:<name>", "notfound", "forbidden" or
+// "down:<code>".
+type LookupErr: Eq, Repr = | NotFound(String) | Forbidden(String) | Unavailable(String, Int)
+type Order = { id: Int, customer: String }
+
+fn lookup(svc: Map[String, String], customer: String) -> String!LookupErr = {
+  let reply = map.get(svc, customer) ?? "notfound"
+  if string.starts_with(reply, "name:") then ok(string.drop(reply, 5))
+  else if reply == "forbidden" then err(Forbidden(customer))
+  else if string.starts_with(reply, "down:") then err(Unavailable(customer, int.parse(string.drop(reply, 5)) ?? 0))
+  else err(NotFound(customer))
+}
+
+fn label(svc: Map[String, String], o: Order) -> String!LookupErr = {
+  let name = lookup(svc, o.customer)!
+  "#${int.to_string(o.id)} for ${name}"
+}
+
+// One label per order, in order, then a footer with the count of labels.
+fn labels(svc: Map[String, String], orders: List[Order]) -> List[String]!LookupErr = {
+  let ls = orders |> list.map((o) => label(svc, o)!)!
+  ls + ["${int.to_string(list.len(ls))} labels"]
+}

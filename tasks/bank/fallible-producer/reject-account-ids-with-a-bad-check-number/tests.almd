@@ -1,0 +1,7 @@
+test "an id whose check number does not match is rejected" {
+  assert_eq(check_id("123456-01"), err("check number mismatch in 123456-01"))
+}
+test "a batch with valid ids still totals" {
+  assert_eq(check_id("123456-72"), ok("123456-72"))
+  assert_eq(batch_total(["123456-72 1000000-27 12.50", "1000000-27 123456-72 0.05"]), ok(1255))
+}

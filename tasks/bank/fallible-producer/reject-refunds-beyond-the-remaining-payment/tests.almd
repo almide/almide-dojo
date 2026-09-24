@@ -1,0 +1,6 @@
+test "refunding more than was paid is an error" {
+  assert(result.is_err(status(["o1 created", "o1 paid 30", "o1 cancelled", "o1 refunded 40"])))
+}
+test "a partial refund still works" {
+  assert_eq(status(["o1 created", "o1 paid 30", "o1 cancelled", "o1 refunded 10"]), ok("o1 cancelled 30/10"))
+}

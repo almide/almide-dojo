@@ -1,0 +1,45 @@
+// Price list merge. Every file starts with "currency <CODE>" and then has lines
+// "<sku> <cents> <CODE>". All files are merged into one price table; a sku may
+// be priced by only one file.
+type PriceErr: Eq, Repr =
+  | MissingHeader(String)
+  | BadPrice(String, Int)
+  | MixedCurrency(String, Int)
+  | DuplicateSku(String)
+type PriceFile = { name: String, lines: List[String] }
+type Table: Eq, Repr = { prices: Map[String, Int], skipped: List[String] }
+
+fn header(f: PriceFile) -> String!PriceErr = {
+  let w = string.split(list.first(f.lines) ?? "", " ")
+  guard list.len(w) == 2 and list.first(w) == some("currency") else err(MissingHeader(f.name))
+  ok(list.get(w, 1) ?? "")
+}
+
+fn add_line(t: Table, f: PriceFile, cur: String, n: Int, line: String) -> Table!PriceErr = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) == 3 else err(BadPrice(f.name, n))
+  let sku = list.get(w, 0) ?? ""
+  let cents = match int.parse(list.get(w, 1) ?? "") {
+    ok(c) if c > 0 => ok(c),
+    _ => err(BadPrice(f.name, n)),
+  }!
+  guard list.get(w, 2) == some(cur) else err(MixedCurrency(f.name, n))
+  guard not map.contains(t.prices, sku) else err(DuplicateSku(sku))
+  ok({ ...t, prices: map.set(t.prices, sku, cents) })
+}
+
+fn merge(files: List[PriceFile]) -> Table!PriceErr = {
+  var t = Table { prices: [:], skipped: [] }
+  for f in files {
+    let cur = header(f)!
+    for p in list.enumerate(list.drop(f.lines, 1)) {
+      t = add_line(t, f, cur, p.0 + 2, p.1)!
+    }
+  }
+  t
+}
+
+fn show(t: Table) -> String = {
+  let ps = map.keys(t.prices) |> list.sort |> list.map((k) => "${k}=${int.to_string(map.get(t.prices, k) ?? 0)}") |> list.join(" ")
+  if list.is_empty(t.skipped) then ps else "${ps} | skipped ${list.join(t.skipped, ", ")}"
+}

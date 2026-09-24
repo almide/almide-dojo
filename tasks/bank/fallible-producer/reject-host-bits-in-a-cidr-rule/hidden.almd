@@ -1,0 +1,16 @@
+test "hidden: host bits anywhere below the prefix, exact message" {
+  assert_eq(parse_rule("deny 10.1.0.0/8") |> result.map((r) => r.prefix), err("host bits set in 10.1.0.0/8"))
+  assert_eq(decide(["allow 192.168.0.0/16", "allow 172.16.0.1/12"], "1.1.1.1"), err("host bits set in 172.16.0.1/12"))
+}
+test "hidden: a network address need not end in zero" {
+  assert_eq(decide(["allow 10.0.0.128/25"], "10.0.0.200"), ok("allow"))
+  assert_eq(decide(["allow 10.0.0.128/25"], "10.0.0.100"), ok("deny"))
+  assert_eq(decide(["deny 1.2.3.4/32", "allow 0.0.0.0/0"], "1.2.3.4"), ok("deny"))
+  assert_eq(decide(["deny 1.2.3.4/32", "allow 0.0.0.0/0"], "9.9.9.9"), ok("allow"))
+}
+test "hidden: address and prefix errors come first, the first bad rule wins" {
+  assert_eq(decide(["allow 10.0.0.300/8"], "1.1.1.1"), err("bad octet 300 in 10.0.0.300"))
+  assert_eq(decide(["allow 10.0.0.1/33"], "1.1.1.1"), err("bad prefix 33"))
+  assert_eq(decide(["allow 10.0.0.1/8", "deny"], "1.1.1.1"), err("host bits set in 10.0.0.1/8"))
+  assert_eq(decide(["deny", "allow 10.0.0.1/8"], "1.1.1.1"), err("bad rule: deny"))
+}

@@ -1,0 +1,15 @@
+test "hidden: the budget is two bad values per sensor, the third is fatal" {
+  assert_eq(summary(["a,1,-", "a,2,-", "a,3,5", "a,4,?"]), err("too many bad values for a: a,4,?"))
+  assert_eq(summary(["a,1,x", "b,1,x", "a,2,x", "b,2,x", "a,3,1", "b,3,2"]), ok("a 1x mean 1 (2 skipped); b 1x mean 2 (2 skipped)"))
+}
+test "hidden: a sensor seen only with bad values is listed with no mean" {
+  assert_eq(summary(["z,1,err", "y,1,4"]), ok("z 0x mean n/a (1 skipped); y 1x mean 4"))
+}
+test "hidden: a skipped reading does not advance the sensor's clock" {
+  assert_eq(summary(["a,5,1", "a,9,bad", "a,7,3"]), ok("a 2x mean 2 (1 skipped)"))
+  assert_eq(summary(["a,5,1", "a,4,bad", "a,4,3"]), err("time went backwards for a at minute 4"))
+}
+test "hidden: other errors stay fatal" {
+  assert_eq(summary(["a,1,x", "a,2"]), err("wrong field count: a,2"))
+  assert_eq(summary(["a,1,x", "a,y,z"]), err("bad minute in: a,y,z"))
+}

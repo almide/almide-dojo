@@ -1,0 +1,6 @@
+test "two different content-length values are an error" {
+  assert(result.is_err(parse_message("Content-Length: 3\nContent-Length: 4\n\nabcd")))
+}
+test "a single content-length still cuts the body" {
+  assert_eq(parse_message("Host: x\nContent-Length: 2\n\nabcd") |> result.map((m) => summary(m)), ok("2 headers, body=ab"))
+}

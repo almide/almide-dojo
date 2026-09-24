@@ -1,0 +1,48 @@
+// Plausible wrong patch: keeps ZeroLength fatal and drops the frame on every
+// OTHER error, so a truncated frame is counted as dropped instead of failing.
+// Frame decoder. A stream is a list of bytes made of frames:
+//   <len> <payload: len bytes> <checksum>
+// where checksum = (sum of the payload bytes) % 256 and len is 1..255.
+type Frame = { payload: List[Int], next: Int }
+type FrameErr: Eq, Repr =
+  | ZeroLength(Int)
+  | Truncated(Int, Int)
+  | BadChecksum { at: Int, want: Int, got: Int }
+type Decoded: Eq, Repr = { frames: List[List[Int]], dropped: Int }
+
+fn read_frame(bytes: List[Int], pos: Int) -> Frame!FrameErr = {
+  let len = list.get(bytes, pos) ?? 0
+  guard len > 0 else err(ZeroLength(pos))
+  let end = pos + 1 + len
+  guard end < list.len(bytes) else err(Truncated(pos, len))
+  let payload = list.slice(bytes, pos + 1, end)
+  let got = list.get(bytes, end) ?? 0
+  let want = list.sum(payload) % 256
+  guard got == want else err(BadChecksum { at: pos, want: want, got: got })
+  Frame { payload: payload, next: end + 1 }
+}
+
+fn decode(bytes: List[Int]) -> Decoded!FrameErr = {
+  var frames: List[List[Int]] = []
+  var pos = 0
+  var dropped = 0
+  while pos < list.len(bytes) {
+    pos = match read_frame(bytes, pos) {
+      ok(f) => {
+        frames = frames + [f.payload]
+        ok(f.next)
+      },
+      err(ZeroLength(at)) => err(ZeroLength(at)),
+      err(_) => {
+        dropped = dropped + 1
+        ok(pos + 2 + (list.get(bytes, pos) ?? 0))
+      },
+    }!
+  }
+  Decoded { frames: frames, dropped: dropped }
+}
+
+fn show(d: Decoded) -> String = {
+  let fs = d.frames |> list.map((p) => p |> list.map((b) => int.to_string(b)) |> list.join(" ")) |> list.join(" | ")
+  "[${fs}] dropped ${int.to_string(d.dropped)}"
+}

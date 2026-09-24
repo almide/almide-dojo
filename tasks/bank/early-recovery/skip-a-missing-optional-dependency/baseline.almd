@@ -1,0 +1,34 @@
+// Install planner. Every package lists its dependencies; a dependency may be
+// optional and may be limited to one platform ("" = every platform). The plan
+// installs dependencies before their dependents (depth-first, in list order),
+// each package once.
+type Dep: Eq, Repr = { name: String, optional: Bool, platform: String }
+type Plan: Eq, Repr = { order: List[String], skipped: List[String] }
+
+fn dep(name: String) -> Dep = Dep { name: name, optional: false, platform: "" }
+fn opt(name: String) -> Dep = Dep { name: name, optional: true, platform: "" }
+fn only(name: String, platform: String) -> Dep = Dep { name: name, optional: false, platform: platform }
+fn leaf() -> List[Dep] = []
+
+fn visit(reg: Map[String, List[Dep]], platform: String, name: String, parent: String, path: List[String], plan: Plan) -> Plan! = {
+  guard not list.contains(path, name) else err("cycle: ${list.join(path + [name], " -> ")}")
+  guard not list.contains(plan.order, name) else ok(plan)
+  let deps = match map.get(reg, name) {
+    some(ds) => ok(ds),
+    none => err("missing package ${name} (required by ${parent})"),
+  }!
+  let after = deps |> list.fold(plan, (p, d) =>
+    if d.platform != "" and d.platform != platform then
+      Plan { order: p.order, skipped: p.skipped + ["${d.name} (${d.platform} only)"] }
+    else visit(reg, platform, d.name, name, path + [name], p)!
+  )!
+  Plan { order: after.order + [name], skipped: after.skipped }
+}
+
+fn plan(reg: Map[String, List[Dep]], platform: String, root: String) -> Plan! =
+  visit(reg, platform, root, "<root>", [], Plan { order: [], skipped: [] })
+
+fn show(p: Plan) -> String = {
+  let s = if list.is_empty(p.skipped) then "" else " skipped: ${list.join(p.skipped, ", ")}"
+  "${list.join(p.order, " ")}${s}"
+}

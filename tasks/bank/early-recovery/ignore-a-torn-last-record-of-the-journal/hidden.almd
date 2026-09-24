@@ -1,0 +1,15 @@
+test "hidden: trailing blank lines do not change which record is last" {
+  assert_eq(replay(["set a 1", "del", "", "  "]) |> result.map((r) => dump(r)), ok("a=1 (1 applied) | ignored torn record at line 2"))
+}
+test "hidden: only a torn record is forgiven at the end" {
+  assert_eq(replay(["set a 1", "se"]) |> result.map((r) => dump(r)), err(UnknownOp(2, "se")))
+  assert_eq(replay(["set a 1", "set B 2"]) |> result.map((r) => dump(r)), err(BadKey(2, "B")))
+}
+test "hidden: a torn record anywhere before the last one stays fatal" {
+  assert_eq(replay(["set a", "", "set b 2"]) |> result.map((r) => dump(r)), err(Truncated(1)))
+  assert_eq(replay(["del", "del"]) |> result.map((r) => dump(r)), err(Truncated(1)))
+}
+test "hidden: a journal whose only record is torn is empty" {
+  assert_eq(replay(["", "set"]) |> result.map((r) => dump(r)), ok(" (0 applied) | ignored torn record at line 2"))
+  assert_eq(replay(["set a 1 2", "del a", "set b x y"]) |> result.map((r) => dump(r)), ok("b=x y (3 applied)"))
+}
