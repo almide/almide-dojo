@@ -1,0 +1,10 @@
+test "squares are indexes" {
+  assert_eq(sq("a1"), Sq { index: 0 })
+  assert_eq(sq("e4"), Sq { index: 28 })
+  assert_eq(name(Sq { index: 63 }), "h8")
+  assert_eq(knight_moves(sq("d4")), ["e6", "f5", "f3", "e2", "c2", "b3", "b5", "c6"])
+}
+test "king and distance" {
+  assert_eq(king_moves(sq("d4")), ["d5", "e5", "e4", "e3", "d3", "c3", "c4", "c5"])
+  assert_eq(distance(sq("a1"), sq("c5")), 4)
+}

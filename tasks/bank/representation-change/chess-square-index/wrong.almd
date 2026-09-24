@@ -1,0 +1,35 @@
+// Plausible wrong patch: turns every step into an index offset and only checks
+// 0..63, so moves wrap from the h-file to the a-file. Passes the visible tests.
+// Chess squares as one index: rank * 8 + file (a1 = 0 .. h8 = 63).
+type Sq: Eq, Repr = { index: Int }
+
+let FILES = "abcdefgh"
+
+fn file_of(s: Sq) -> Int = s.index % 8
+fn rank_of(s: Sq) -> Int = s.index / 8
+
+fn sq(name: String) -> Sq = {
+  let file = string.index_of(FILES, string.take(name, 1)) ?? 0
+  let rank = (int.parse(string.drop(name, 1)) ?? 1) - 1
+  Sq { index: rank * 8 + file }
+}
+
+fn name(s: Sq) -> String = string.slice(FILES, file_of(s), file_of(s) + 1) + int.to_string(rank_of(s) + 1)
+
+fn on_board(f: Int, r: Int) -> Bool = f >= 0 and f < 8 and r >= 0 and r < 8
+
+// Targets reachable by the given index steps, in step order.
+fn targets(s: Sq, steps: List[Int]) -> List[String] =
+  steps
+    |> list.map((d) => s.index + d)
+    |> list.filter((i) => i >= 0 and i < 64)
+    |> list.map((i) => name(Sq { index: i }))
+
+let KNIGHT = [17, 10, -6, -15, -17, -10, 6, 15]
+let KING = [8, 9, 1, -7, -8, -9, -1, 7]
+
+fn knight_moves(s: Sq) -> List[String] = targets(s, KNIGHT)
+fn king_moves(s: Sq) -> List[String] = targets(s, KING)
+
+// King steps between two squares.
+fn distance(a: Sq, b: Sq) -> Int = int.max(int.abs(file_of(a) - file_of(b)), int.abs(rank_of(a) - rank_of(b)))

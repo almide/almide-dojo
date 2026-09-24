@@ -1,0 +1,13 @@
+test "hidden: no wrapping off the h-file" {
+  assert_eq(knight_moves(sq("h4")), ["g2", "f3", "f5", "g6"])
+  assert_eq(king_moves(sq("h8")), ["h7", "g7", "g8"])
+}
+test "hidden: no wrapping off the a-file" {
+  assert_eq(king_moves(sq("a5")), ["a6", "b6", "b5", "b4", "a4"])
+  assert_eq(knight_moves(sq("a1")), ["b3", "c2"])
+  assert_eq(knight_moves(sq("b8")), ["d7", "c6", "a6"])
+}
+test "hidden: distances" {
+  assert_eq(distance(sq("h1"), sq("a8")), 7)
+  assert_eq(distance(sq("e4"), sq("e4")), 0)
+}
