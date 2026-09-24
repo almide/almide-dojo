@@ -1,0 +1,4 @@
+test "streak" {
+  assert_eq(streak(["fail", "pass", "pass"])("app"), "app: 2 green in a row")
+  assert_eq(streak(["pass", "fail"])("app"), "app: 0 green in a row")
+}

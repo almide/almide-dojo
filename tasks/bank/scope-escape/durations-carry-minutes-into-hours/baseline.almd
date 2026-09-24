@@ -1,0 +1,20 @@
+// Durations written "<h>h<m>m", "<h>h" or "<m>m" ("1h30m", "2h", "45m").
+// Minutes may be written above 59 ("90m" is valid).
+fn parse_duration(s: String) -> Result[(Int, Int), String] = {
+  let (hpart, rest) = match string.index_of(s, "h") {
+    some(i) => (string.slice(s, 0, i), string.drop(s, i + 1)),
+    none => ("0", s),
+  }
+  let mpart = if rest == "" then "0" else string.strip_suffix(rest, "m") ?? "x"
+  match (int.parse(hpart), int.parse(mpart)) {
+    (ok(h), ok(m)) => if h >= 0 and m >= 0 then ok((h, m)) else err("bad duration: " + s),
+    _ => err("bad duration: " + s),
+  }
+}
+
+fn parse_all(ss: List[String]) -> Result[List[(Int, Int)], String] = ss |> list.map((s) => parse_duration(s)!)
+
+fn count_long(ss: List[String]) -> Result[Int, String] = {
+  let ds = parse_all(ss)!
+  ok(ds |> list.count(((h, m)) => h * 60 + m >= 60))
+}

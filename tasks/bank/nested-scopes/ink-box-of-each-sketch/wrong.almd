@@ -1,0 +1,20 @@
+// ASCII sketches, one text each: rows separated by "\n", "#" is ink, any other
+// character is paper.
+fn rows(sketch: String) -> List[String] = string.split(sketch, "\n")
+
+fn ink(sketch: String) -> Int = rows(sketch) |> list.fold(0, (a, r) => a + string.count(r, "#"))
+
+fn blank(sketch: String) -> Bool = ink(sketch) == 0
+
+// Plausible wrong patch: records one column per row with index_of and uses it
+// for both edges, so a second mark further right in the same row is missed.
+fn ink_boxes(sketches: List[String]) -> List[String] =
+  sketches |> list.map((s) => {
+    let marks = rows(s) |> list.enumerate |> list.filter_map(((r, row)) => string.index_of(row, "#") |> option.map((a) => (r, a)))
+    let rs = marks |> list.map(((r, _)) => r)
+    let cs = marks |> list.map(((_, c)) => c)
+    match (list.min(rs), list.max(rs), list.min(cs), list.max(cs)) {
+      (some(t), some(b), some(l), some(rr)) => int.to_string(rr - l + 1) + "x" + int.to_string(b - t + 1),
+      _ => "empty",
+    }
+  })

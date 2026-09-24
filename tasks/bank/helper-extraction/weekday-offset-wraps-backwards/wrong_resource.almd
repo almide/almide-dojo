@@ -1,0 +1,14 @@
+// Plausible wrong patch: the helper walks a week list rotated by the offset.
+// Same weekday — but a rotated week is allocated per call.
+let DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+fn shift(day: Int, offset: Int) -> Int = {
+  let k = ((offset % 7) + 7) % 7
+  let week = list.range(0, 7)
+  let rotated = list.drop(week, k) + list.take(week, k)
+  list.get(rotated, day) ?? 0
+}
+
+fn day_name(day: Int, offset: Int) -> String = list.get(DAYS, shift(day, offset)) ?? "?"
+
+fn is_weekend(day: Int, offset: Int) -> Bool = shift(day, offset) >= 5

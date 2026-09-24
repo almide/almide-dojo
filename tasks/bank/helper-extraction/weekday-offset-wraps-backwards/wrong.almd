@@ -1,0 +1,9 @@
+// Plausible wrong patch: the helper keeps only the familiar "% 7", which is
+// negative for a backwards move.
+let DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+fn shift(day: Int, offset: Int) -> Int = (day + offset) % 7
+
+fn day_name(day: Int, offset: Int) -> String = list.get(DAYS, shift(day, offset)) ?? "?"
+
+fn is_weekend(day: Int, offset: Int) -> Bool = shift(day, offset) >= 5

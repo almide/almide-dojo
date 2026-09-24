@@ -1,0 +1,3 @@
+test "kept" {
+  assert_eq(kept(["0 disk", "10 disk", "100 disk"]), "kept=2,dropped=1")
+}

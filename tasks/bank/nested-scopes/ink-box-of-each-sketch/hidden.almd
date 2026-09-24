@@ -1,0 +1,7 @@
+test "hidden: the rightmost mark sets the width" {
+  assert_eq(ink_boxes(["#.#\n...", "..#..#\n.#"]), ["3x1", "5x2"])
+}
+test "hidden: gaps and ragged rows" {
+  assert_eq(ink_boxes(["#\n\n\n#", ""]), ["1x4", "empty"])
+  assert_eq(ink("#.#\n#"), 3)
+}

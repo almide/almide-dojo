@@ -1,0 +1,7 @@
+test "hidden: case and prefixes" {
+  assert_eq(month_index("SEP"), some(8))
+  assert_eq(month_number("Janu"), some(1))
+  assert_eq(quarter("Jul"), some(3))
+  assert_eq(month_index("ju"), none)
+  assert_eq(month_index("mayday"), none)
+}

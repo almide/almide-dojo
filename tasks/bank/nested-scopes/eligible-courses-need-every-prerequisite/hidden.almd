@@ -1,0 +1,9 @@
+test "hidden: every prerequisite is needed" {
+  let cat = map.from_list([("a", []), ("b", []), ("c", ["a", "b"])])
+  assert_eq(eligible(cat, ["a", "a,b", "b,c"]), ["b", "c", "a"])
+}
+test "hidden: nothing left" {
+  let cat = map.from_list([("a", [])])
+  assert_eq(eligible(cat, ["a", ""]), ["", "a"])
+  assert_eq(eligible(cat, []), [])
+}

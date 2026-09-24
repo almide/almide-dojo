@@ -1,0 +1,5 @@
+test "plural" {
+  assert_eq(plural("city"), "cities")
+  assert_eq(plural("file"), "files")
+  assert_eq(count_label(1, "city"), "1 city")
+}

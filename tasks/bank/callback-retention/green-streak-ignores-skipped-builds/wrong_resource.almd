@@ -1,0 +1,13 @@
+// CI build results, oldest first: "pass", "fail" or "skip". A skipped build
+// says nothing about health.
+fn passes(builds: List[String]) -> Int = builds |> list.count((b) => b == "pass")
+
+fn fails(builds: List[String]) -> Int = builds |> list.count((b) => b == "fail")
+
+fn health(builds: List[String]) -> String =
+  if fails(builds) == 0 then "healthy" else int.to_string(fails(builds)) + " failures"
+
+// Plausible wrong patch: the closure walks the history when it runs, so it
+// captures `builds` and keeps the whole history alive.
+fn streak(builds: List[String]) -> (String) -> String =
+  (repo) => repo + ": " + int.to_string(list.reverse(builds) |> list.filter((b) => b != "skip") |> list.take_while((b) => b == "pass") |> list.len) + " green in a row"

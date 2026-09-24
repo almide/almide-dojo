@@ -1,0 +1,4 @@
+test "roman total" {
+  assert_eq(roman_total(["III", "X", "VI"]), "total=19")
+  assert_eq(roman_total(["X", "Q"]), "bad: Q")
+}

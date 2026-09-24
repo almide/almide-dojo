@@ -1,0 +1,4 @@
+test "eligible" {
+  let cat = map.from_list([("intro", []), ("algo", ["intro"])])
+  assert_eq(eligible(cat, ["", "intro"]), ["intro", "algo"])
+}

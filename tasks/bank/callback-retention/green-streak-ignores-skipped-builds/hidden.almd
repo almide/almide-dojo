@@ -1,0 +1,8 @@
+test "hidden: skips are transparent" {
+  assert_eq(streak(["pass", "skip", "pass"])("a"), "a: 2 green in a row")
+  assert_eq(streak(["fail", "pass", "skip", "skip"])("b"), "b: 1 green in a row")
+  assert_eq(streak(["skip"])("c"), "c: 0 green in a row")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(health(["skip", "pass"]), "healthy")
+}

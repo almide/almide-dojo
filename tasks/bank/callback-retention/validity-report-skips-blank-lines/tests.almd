@@ -1,0 +1,4 @@
+test "validity" {
+  assert_eq(validity(["a=1", "b=2"])("f"), "f: 2/2 valid")
+  assert_eq(validity(["a=1", "oops"])("f"), "f: 1/2 valid (first bad: oops)")
+}

@@ -1,0 +1,8 @@
+// Resource probe: __K__ students with 3,000 passed codes each, one text per
+// student. Each passed list belongs to its own step, so the batch grows by
+// the input texts only; splitting every transcript first keeps them all.
+effect fn main() -> Unit = {
+  let cat = map.from_list([("final", ["c1", "c2"])])
+  let ts = list.range(0, __K__) |> list.map((i) => list.range(0, 3000) |> list.map((j) => "c" + int.to_string(j)) |> list.join(","))
+  println(int.to_string(eligible(cat, ts) |> list.fold(0, (a, s) => a + string.len(s))))
+}

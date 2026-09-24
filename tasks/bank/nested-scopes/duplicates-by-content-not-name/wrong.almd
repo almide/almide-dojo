@@ -1,0 +1,20 @@
+// Folder listings, one text per folder: "name size hash" lines. Two files are
+// duplicates when they have the same SIZE and HASH, whatever their names.
+fn entries(folder: String) -> List[(String, Int, String)] =
+  string.split(folder, "\n") |> list.filter_map((l) => match string.split(l, " ") {
+    [n, s, h] => int.parse(s)? |> option.map((sz) => (n, sz, h)),
+    _ => none,
+  })
+
+fn folder_size(folder: String) -> Int = entries(folder) |> list.fold(0, (a, e) => {
+  let (_, s, _) = e
+  a + s
+})
+
+// Plausible wrong patch: groups by file NAME, the field that is easiest to
+// read, so renamed copies are missed and same-named files are merged.
+fn redundant(folders: List[String]) -> List[Int] =
+  folders |> list.map((f) => {
+    let names = entries(f) |> list.map(((n, _, _)) => n)
+    list.len(names) - list.len(list.unique(names))
+  })

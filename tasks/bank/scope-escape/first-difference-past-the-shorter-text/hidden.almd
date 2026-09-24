@@ -1,0 +1,8 @@
+test "hidden: extra lines are differences" {
+  assert_eq(first_diff("a\nb", "a"), "line 2")
+  assert_eq(first_diff("a", "a\n"), "line 2")
+  assert_eq(first_diff("", "x"), "line 1")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(line_count("a\n"), 2)
+}

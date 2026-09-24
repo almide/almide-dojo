@@ -1,0 +1,29 @@
+// A release feed: "<package> <version>" lines, versions "MAJOR.MINOR.PATCH"
+// compared numerically ("1.10.0" is newer than "1.9.0"). The feed is not in
+// release order.
+fn parse_release(line: String) -> (String, List[Int])? =
+  match string.split(line, " ") {
+    [p, v] => some((p, string.split(v, ".") |> list.map((x) => int.parse(x) ?? 0))),
+    _ => none,
+  }
+
+fn packages(feed: List[String]) -> List[String] =
+  feed |> list.filter_map((l) => parse_release(l)) |> list.map(((p, _)) => p) |> list.unique
+
+fn newer(a: List[Int], b: List[Int]) -> Bool =
+  list.zip(a, b) |> list.find(((x, y)) => x != y) |> option.map(((x, y)) => x > y) ?? (list.len(a) > list.len(b))
+
+fn show(v: List[Int]) -> String = v |> list.map((x) => int.to_string(x)) |> list.join(".")
+
+// Plausible wrong patch: parses the feed up front and searches it inside the
+// closure, so the closure captures every parsed release.
+fn latest_lookup(feed: List[String]) -> (String) -> String = {
+  let releases = feed |> list.filter_map((l) => parse_release(l))
+  (pkg) => releases |> list.filter(((p, _)) => p == pkg) |> list.fold(none, (acc, r) => {
+    let (_, v) = r
+    match acc {
+      some(cur) => if newer(v, cur) then some(v) else acc,
+      none => some(v),
+    }
+  }) |> option.map((v) => show(v)) ?? "unknown"
+}

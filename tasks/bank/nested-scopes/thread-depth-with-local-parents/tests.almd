@@ -1,0 +1,3 @@
+test "depths" {
+  assert_eq(depths(["a>-\nb>a\nc>b", "x>-"]), [3, 1])
+}

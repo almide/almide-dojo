@@ -1,0 +1,8 @@
+// Resource probe: __K__ converters over fresh 5,000-expense lists in two
+// currencies, all held live. Capturing the total grows by a few bytes each;
+// capturing `xs` grows by every expense.
+effect fn main() -> Unit = {
+  let rates = map.from_list([("EUR", 1085), ("GBP", 1270)])
+  let fs = list.range(0, __K__) |> list.map((i) => converter(list.range(0, 5000) |> list.map((j) => (if j % 2 == 0 then "EUR" else "GBP", j + i)), rates))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("USD")))))
+}

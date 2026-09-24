@@ -1,0 +1,7 @@
+test "hidden: shorthand everywhere" {
+  assert_eq(expand("#f80"), some("ff8800"))
+  assert_eq(red("#f80"), some(255))
+  assert_eq(red("#0F0"), some(0))
+  assert_eq(is_colour("#abc"), true)
+  assert_eq(expand("f80"), none)
+}

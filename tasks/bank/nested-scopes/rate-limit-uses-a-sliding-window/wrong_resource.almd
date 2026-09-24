@@ -1,0 +1,22 @@
+// Request logs per client, one text each: request times in seconds separated
+// by ",", in strictly increasing order. The limit is at most `limit` requests in ANY
+// 60-second window [t - 59, t].
+fn times(log: String) -> List[Int] =
+  if string.trim(log) == "" then [] else string.split(log, ",") |> list.map((t) => int.parse(string.trim(t)) ?? 0)
+
+fn requests(log: String) -> Int = list.len(times(log))
+
+fn span(log: String) -> Int = {
+  let ts = times(log)
+  match (list.first(ts), list.last(ts)) {
+    (some(a), some(b)) => b - a,
+    _ => 0,
+  }
+}
+
+// Plausible wrong patch: parses every client's times first and checks
+// afterwards, so every time list is live at once.
+fn violations(logs: List[String], limit: Int) -> List[Int] = {
+  let parsed = logs |> list.map((log) => times(log))
+  parsed |> list.map((ts) => ts |> list.count((t) => (ts |> list.count((u) => u >= t - 59 and u < t)) >= limit))
+}

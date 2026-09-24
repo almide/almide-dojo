@@ -1,0 +1,7 @@
+// Resource probe: the same 1,000 offsets checked __K__ times. The inline
+// arithmetic allocated nothing per check, so the count must not grow.
+effect fn main() -> Unit = {
+  let offsets = list.range(0, 1000) |> list.map((i) => i - 500)
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (offsets |> list.count((o) => is_weekend(2, o))))
+  println(int.to_string(t))
+}

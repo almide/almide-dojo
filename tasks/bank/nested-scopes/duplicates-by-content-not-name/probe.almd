@@ -1,0 +1,7 @@
+// Resource probe: __K__ folders of 1,500 small entries, one text each. Each
+// folder's keys belong to its own step, so the batch grows by the input texts
+// only; computing every folder's keys first keeps them all live.
+effect fn main() -> Unit = {
+  let folders = list.range(0, __K__) |> list.map((i) => string.repeat("f 1 h\n", 1500) + "g " + int.to_string(i) + " k")
+  println(int.to_string(redundant(folders) |> list.fold(0, (a, n) => a + n)))
+}

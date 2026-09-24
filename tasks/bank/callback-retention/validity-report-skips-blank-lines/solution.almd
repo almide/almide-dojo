@@ -1,0 +1,21 @@
+// A data file of "key=value" records. Blank lines are layout, not records.
+fn is_blank(line: String) -> Bool = string.trim(line) == ""
+
+fn is_record(line: String) -> Bool = match string.index_of(line, "=") {
+  some(i) => i > 0,
+  none => false,
+}
+
+fn records(lines: List[String]) -> Int = lines |> list.count((l) => is_record(l))
+
+// Counts and the first bad line are found now; the closure keeps them only.
+fn validity(lines: List[String]) -> (String) -> String = {
+  let content = lines |> list.filter((l) => not is_blank(l))
+  let n = list.len(content)
+  let v = content |> list.count((l) => is_record(l))
+  let bad = content |> list.find((l) => not is_record(l))
+  (file) => file + ": " + int.to_string(v) + "/" + int.to_string(n) + " valid" + (match bad {
+    some(b) => " (first bad: " + b + ")",
+    none => "",
+  })
+}

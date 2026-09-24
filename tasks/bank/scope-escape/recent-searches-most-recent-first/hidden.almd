@@ -1,0 +1,8 @@
+test "hidden: a repeated query counts at its latest position" {
+  assert_eq(recent(["a", "b", "a"], 2), "a | b")
+  assert_eq(recent(["x", "y", "x", "z", "y"], 3), "y | z | x")
+}
+test "hidden: short histories" {
+  assert_eq(recent(["q", "q"], 5), "q")
+  assert_eq(recent([], 2), "")
+}

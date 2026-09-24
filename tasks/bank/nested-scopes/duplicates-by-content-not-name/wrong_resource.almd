@@ -1,0 +1,19 @@
+// Folder listings, one text per folder: "name size hash" lines. Two files are
+// duplicates when they have the same SIZE and HASH, whatever their names.
+fn entries(folder: String) -> List[(String, Int, String)] =
+  string.split(folder, "\n") |> list.filter_map((l) => match string.split(l, " ") {
+    [n, s, h] => int.parse(s)? |> option.map((sz) => (n, sz, h)),
+    _ => none,
+  })
+
+fn folder_size(folder: String) -> Int = entries(folder) |> list.fold(0, (a, e) => {
+  let (_, s, _) = e
+  a + s
+})
+
+// Plausible wrong patch: computes every folder's content keys first and
+// counts afterwards, so every key list is live at once.
+fn redundant(folders: List[String]) -> List[Int] = {
+  let all = folders |> list.map((f) => entries(f) |> list.map(((_, s, h)) => int.to_string(s) + "/" + h))
+  all |> list.map((keys) => list.len(keys) - list.len(list.unique(keys)))
+}

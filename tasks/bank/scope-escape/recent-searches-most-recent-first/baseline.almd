@@ -1,0 +1,7 @@
+// A search history, oldest first. Queries compare exactly (case and spaces
+// matter).
+fn history_len(h: List[String]) -> Int = list.len(h)
+
+fn searched(h: List[String], q: String) -> Bool = list.contains(h, q)
+
+fn first_search(h: List[String]) -> String = list.first(h) ?? ""

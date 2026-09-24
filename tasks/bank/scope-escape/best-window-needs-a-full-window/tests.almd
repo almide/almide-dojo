@@ -1,0 +1,4 @@
+test "best window" {
+  assert_eq(best_window([1, 5, 2, 8], 2), "best=10")
+  assert_eq(best_window([1], 0), "window must be at least 1 day")
+}

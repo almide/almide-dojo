@@ -1,0 +1,5 @@
+test "hidden: lowest bit first" {
+  assert_eq(names(5), ["read", "exec"])
+  assert_eq(describe(15), "read+write+exec+admin")
+  assert_eq(describe(16 + 8), "admin")
+}

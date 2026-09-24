@@ -1,0 +1,8 @@
+// HTTP retry policy. Exactly these statuses are worth retrying: 408 (request
+// timeout), 429 (too many requests), 502, 503 and 504. Every other status —
+// including 500 and 501 — fails immediately.
+fn retryable(status: Int) -> Bool = status == 408 or status == 429 or status == 502 or status == 503 or status == 504
+
+fn should_retry(status: Int, attempt: Int, max_attempts: Int) -> Bool = attempt < max_attempts and retryable(status)
+
+fn retry_count(statuses: List[Int]) -> Int = statuses |> list.count((s) => retryable(s))

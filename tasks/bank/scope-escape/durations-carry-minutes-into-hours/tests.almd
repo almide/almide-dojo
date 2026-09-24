@@ -1,0 +1,4 @@
+test "total" {
+  assert_eq(total(["1h10m", "2h"]), "3h10m")
+  assert_eq(total(["x"]), "bad duration: x")
+}

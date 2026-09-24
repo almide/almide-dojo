@@ -1,0 +1,4 @@
+test "extremes" {
+  assert_eq(extremes([12, -35, 80])("oslo"), "oslo: -3.5..8.0")
+  assert_eq(extremes([])("x"), "x: no data")
+}

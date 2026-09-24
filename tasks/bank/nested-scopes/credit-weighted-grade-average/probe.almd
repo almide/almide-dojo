@@ -1,0 +1,7 @@
+// Resource probe: __K__ students with 4,000 entries, one text each. Each
+// entry list belongs to its own step, so the batch grows by the input texts
+// only; parsing every transcript first keeps all the entry lists live.
+effect fn main() -> Unit = {
+  let ts = list.range(0, __K__) |> list.map((i) => string.repeat("80:3,", 4000) + int.to_string(i) + ":1")
+  println(int.to_string(averages(ts) |> list.fold(0, (a, s) => a + string.len(s))))
+}

@@ -1,0 +1,6 @@
+// Comparing two versions of a text line by line (lines split on "\n").
+fn lines_of(text: String) -> List[String] = string.split(text, "\n")
+
+fn line_count(text: String) -> Int = list.len(lines_of(text))
+
+fn identical(a: String, b: String) -> Bool = a == b

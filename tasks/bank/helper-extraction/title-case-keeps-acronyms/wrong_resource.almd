@@ -1,0 +1,11 @@
+// Plausible wrong patch: the helper tests "all capitals" character by
+// character. Same words — but a character list and a string per character.
+fn title_word(w: String) -> String = {
+  let cs = string.chars(w)
+  let letters = cs |> list.filter((c) => string.to_lower(c) != c or string.to_upper(c) != c)
+  if not list.is_empty(letters) and (letters |> list.all((c) => string.to_upper(c) == c)) then w else string.capitalize(string.to_lower(w))
+}
+
+fn heading(s: String) -> String = string.split(s, " ") |> list.map((w) => title_word(w)) |> list.join(" ")
+
+fn menu_item(s: String) -> String = "> " + heading(s)

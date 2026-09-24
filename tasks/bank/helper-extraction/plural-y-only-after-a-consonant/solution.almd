@@ -1,0 +1,10 @@
+// English plurals for a small UI: "1 day", "2 days", "1 city", "3 cities".
+// A final "y" becomes "ies" only after a consonant ("city" -> "cities", but
+// "day" -> "days", "key" -> "keys"). Every other word just adds "s".
+fn plural(word: String) -> String =
+  if string.ends_with(word, "y") and not (["a", "e", "i", "o", "u"] |> list.contains(string.slice(word, string.len(word) - 2, string.len(word) - 1))) then string.drop_end(word, 1) + "ies"
+  else word + "s"
+
+fn count_label(n: Int, word: String) -> String = int.to_string(n) + " " + (if n == 1 then word else plural(word))
+
+fn heading(word: String) -> String = string.capitalize(plural(word))

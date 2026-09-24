@@ -1,0 +1,7 @@
+// Plausible wrong patch: the helper keeps the statuses in a list. Same
+// answers — but the list is built on every call.
+fn retryable(status: Int) -> Bool = [408, 429, 502, 503, 504] |> list.contains(status)
+
+fn should_retry(status: Int, attempt: Int, max_attempts: Int) -> Bool = attempt < max_attempts and retryable(status)
+
+fn retry_count(statuses: List[Int]) -> Int = statuses |> list.count((s) => retryable(s))

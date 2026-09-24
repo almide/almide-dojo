@@ -1,0 +1,8 @@
+// Resource probe: __K__ conversations of 1,500 messages, one text each. Each
+// conversation's messages and table belong to its own step, so the batch
+// grows by the input texts only; parsing every conversation first keeps all
+// the message lists live.
+effect fn main() -> Unit = {
+  let convs = list.range(0, __K__) |> list.map((i) => "m0>-\n" + (list.range(1, 1500) |> list.map((j) => "m" + int.to_string(j) + ">m" + int.to_string(j / 2)) |> list.join("\n")))
+  println(int.to_string(depths(convs) |> list.fold(0, (a, n) => a + n)))
+}

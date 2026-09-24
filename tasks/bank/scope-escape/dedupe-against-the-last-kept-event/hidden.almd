@@ -1,0 +1,8 @@
+test "hidden: dropped repeats do not extend the window" {
+  assert_eq(kept(["0 a", "50 a", "70 a"]), "kept=2,dropped=1")
+  assert_eq(kept(["0 a", "59 a", "60 a", "61 a"]), "kept=2,dropped=2")
+}
+test "hidden: ids are separate, malformed ignored" {
+  assert_eq(kept(["0 a", "1 b", "2 a", "x"]), "kept=2,dropped=1")
+  assert_eq(kept([]), "kept=0,dropped=0")
+}

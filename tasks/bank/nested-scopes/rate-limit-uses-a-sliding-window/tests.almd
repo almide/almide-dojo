@@ -1,0 +1,3 @@
+test "violations" {
+  assert_eq(violations(["0,1,2", "0,100"], 2), [1, 0])
+}

@@ -1,0 +1,4 @@
+test "reserve" {
+  let stock = map.from_list([("a", 5), ("b", 1)])
+  assert_eq(reserve(stock, ["a:2", "a:3", "a:1"]), "filled=2,refused=1")
+}

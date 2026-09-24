@@ -1,0 +1,28 @@
+// A release feed: "<package> <version>" lines, versions "MAJOR.MINOR.PATCH"
+// compared numerically ("1.10.0" is newer than "1.9.0"). The feed is not in
+// release order.
+fn parse_release(line: String) -> (String, List[Int])? =
+  match string.split(line, " ") {
+    [p, v] => some((p, string.split(v, ".") |> list.map((x) => int.parse(x) ?? 0))),
+    _ => none,
+  }
+
+fn packages(feed: List[String]) -> List[String] =
+  feed |> list.filter_map((l) => parse_release(l)) |> list.map(((p, _)) => p) |> list.unique
+
+fn newer(a: List[Int], b: List[Int]) -> Bool =
+  list.zip(a, b) |> list.find(((x, y)) => x != y) |> option.map(((x, y)) => x > y) ?? (list.len(a) > list.len(b))
+
+fn show(v: List[Int]) -> String = v |> list.map((x) => int.to_string(x)) |> list.join(".")
+
+// One newest version per package is kept; the feed is dropped.
+fn latest_lookup(feed: List[String]) -> (String) -> String = {
+  let best = feed |> list.filter_map((l) => parse_release(l)) |> list.fold(map.new(), (m, r) => {
+    let (p, v) = r
+    match map.get(m, p) {
+      some(cur) => if newer(v, cur) then map.set(m, p, v) else m,
+      none => map.set(m, p, v),
+    }
+  }) |> map.map((v) => show(v))
+  (pkg) => map.get(best, pkg) ?? "unknown"
+}

@@ -1,0 +1,4 @@
+test "changes" {
+  assert_eq(change_badge(["red", "red", "green"])("n1"), "n1: 1 changes")
+  assert_eq(change_badge([])("n2"), "n2: 0 changes")
+}

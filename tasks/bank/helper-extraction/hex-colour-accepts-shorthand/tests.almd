@@ -1,0 +1,5 @@
+test "expand" {
+  assert_eq(expand("#ff8800"), some("ff8800"))
+  assert_eq(red("#ff0000"), some(255))
+  assert_eq(is_colour("#12345z"), false)
+}

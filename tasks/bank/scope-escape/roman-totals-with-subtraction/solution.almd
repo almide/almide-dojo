@@ -1,0 +1,27 @@
+// Roman numerals (I V X L C D M). A smaller symbol written BEFORE a larger
+// one is subtracted: IV is 4, XC is 90.
+fn symbol_value(c: String) -> Int? =
+  match c {
+    "I" => some(1), "V" => some(5), "X" => some(10), "L" => some(50),
+    "C" => some(100), "D" => some(500), "M" => some(1000),
+    _ => none,
+  }
+
+fn well_formed(r: String) -> Bool = r != "" and (string.chars(r) |> list.all((c) => option.is_some(symbol_value(c))))
+
+fn valid_count(rs: List[String]) -> Int = rs |> list.count((r) => well_formed(r))
+
+fn value(r: String) -> Int = {
+  let vs = string.chars(r) |> list.filter_map((c) => symbol_value(c))
+  list.zip(vs, list.drop(vs, 1) + [0]) |> list.fold(0, (a, p) => {
+    let (v, next) = p
+    if v < next then a - v else a + v
+  })
+}
+
+// Digit values stay local to each numeral.
+fn roman_total(rs: List[String]) -> String =
+  match rs |> list.find((r) => not well_formed(r)) {
+    some(bad) => "bad: " + bad,
+    none => "total=" + int.to_string(rs |> list.fold(0, (a, r) => a + value(r))),
+  }

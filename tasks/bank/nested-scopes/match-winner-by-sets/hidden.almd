@@ -1,0 +1,7 @@
+test "hidden: sets decide, not games" {
+  assert_eq(winners(["6-0 5-7 5-7", "7-6 0-6 7-6"]), ["B", "A"])
+}
+test "hidden: unfinished matches" {
+  assert_eq(winners(["6-4 4-6", ""]), ["-", "-"])
+  assert_eq(games("6-4 x 7-5"), (13, 9))
+}

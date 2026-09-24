@@ -1,0 +1,8 @@
+test "hidden: returning states are changes" {
+  assert_eq(change_badge(["red", "green", "red"])("a"), "a: 2 changes")
+  assert_eq(change_badge(["red", "green", "amber", "red", "red"])("b"), "b: 3 changes")
+  assert_eq(change_badge(["x"])("c"), "c: 0 changes")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(seconds_in(["a", "b", "a"], "a"), 2)
+}

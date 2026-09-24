@@ -1,0 +1,25 @@
+// Conversations, one text each: "id>parent" lines (parent "-" for a new
+// topic). Message ids are only unique WITHIN a conversation; a message whose
+// parent is not in the same conversation starts a new topic.
+fn parse_msgs(conv: String) -> List[(String, String)] =
+  string.split(conv, "\n") |> list.filter_map((l) => match string.split(l, ">") {
+    [id, p] => some((id, p)),
+    _ => none,
+  })
+
+fn message_count(conv: String) -> Int = list.len(parse_msgs(conv))
+
+fn topics(conv: String) -> Int = parse_msgs(conv) |> list.count(((_, p)) => p == "-")
+
+// Plausible wrong patch: parses every conversation first and measures
+// afterwards, so every conversation's message list is live at once.
+fn depths(convs: List[String]) -> List[Int] = {
+  let parsed = convs |> list.map((c) => parse_msgs(c))
+  parsed |> list.map((msgs) => {
+    let table = msgs |> list.fold(map.new(), (m, msg) => {
+      let (id, p) = msg
+      map.set(m, id, (map.get(m, p) ?? 0) + 1)
+    })
+    map.values(table) |> list.max ?? 0
+  })
+}

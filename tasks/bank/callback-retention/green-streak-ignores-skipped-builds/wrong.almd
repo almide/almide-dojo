@@ -1,0 +1,15 @@
+// CI build results, oldest first: "pass", "fail" or "skip". A skipped build
+// says nothing about health.
+fn passes(builds: List[String]) -> Int = builds |> list.count((b) => b == "pass")
+
+fn fails(builds: List[String]) -> Int = builds |> list.count((b) => b == "fail")
+
+fn health(builds: List[String]) -> String =
+  if fails(builds) == 0 then "healthy" else int.to_string(fails(builds)) + " failures"
+
+// Plausible wrong patch: counts trailing passes directly, so a skipped build
+// ends the streak.
+fn streak(builds: List[String]) -> (String) -> String = {
+  let n = list.reverse(builds) |> list.take_while((b) => b == "pass") |> list.len
+  (repo) => repo + ": " + int.to_string(n) + " green in a row"
+}

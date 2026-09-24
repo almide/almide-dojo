@@ -1,0 +1,12 @@
+// Plausible wrong patch: the helper looks at the last two letters through a
+// reversed character list. Same plurals — but a character list per call.
+fn plural(word: String) -> String = {
+  let rev = string.chars(word) |> list.reverse
+  let last = list.get(rev, 0) ?? ""
+  let before = list.get(rev, 1) ?? ""
+  if last == "y" and not (["a", "e", "i", "o", "u"] |> list.contains(before)) then string.drop_end(word, 1) + "ies" else word + "s"
+}
+
+fn count_label(n: Int, word: String) -> String = int.to_string(n) + " " + (if n == 1 then word else plural(word))
+
+fn heading(word: String) -> String = string.capitalize(plural(word))

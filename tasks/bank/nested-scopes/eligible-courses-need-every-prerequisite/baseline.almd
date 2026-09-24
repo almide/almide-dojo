@@ -1,0 +1,7 @@
+// A course catalogue maps a course to its prerequisites. Transcripts are one
+// text per student: passed course codes separated by ",".
+fn passed(transcript: String) -> List[String] = string.split(transcript, ",") |> list.filter((c) => c != "")
+
+fn prerequisites(catalog: Map[String, List[String]], course: String) -> List[String] = map.get(catalog, course) ?? []
+
+fn has_passed(transcript: String, course: String) -> Bool = list.contains(passed(transcript), course)

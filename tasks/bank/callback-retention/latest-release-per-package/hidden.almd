@@ -1,0 +1,10 @@
+test "hidden: numeric comparison, any order" {
+  let f = latest_lookup(["web 1.10.0", "web 1.9.0", "db 0.2.0", "db 0.10.1"])
+  assert_eq(f("web"), "1.10.0")
+  assert_eq(f("db"), "0.10.1")
+}
+test "hidden: malformed lines ignored" {
+  let f = latest_lookup(["x", "api 3.0.0"])
+  assert_eq(f("api"), "3.0.0")
+  assert_eq(packages(["a 1.0.0", "a 2.0.0"]), ["a"])
+}

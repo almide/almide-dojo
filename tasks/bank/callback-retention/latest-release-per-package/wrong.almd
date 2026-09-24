@@ -1,0 +1,27 @@
+// A release feed: "<package> <version>" lines, versions "MAJOR.MINOR.PATCH"
+// compared numerically ("1.10.0" is newer than "1.9.0"). The feed is not in
+// release order.
+fn parse_release(line: String) -> (String, List[Int])? =
+  match string.split(line, " ") {
+    [p, v] => some((p, string.split(v, ".") |> list.map((x) => int.parse(x) ?? 0))),
+    _ => none,
+  }
+
+fn packages(feed: List[String]) -> List[String] =
+  feed |> list.filter_map((l) => parse_release(l)) |> list.map(((p, _)) => p) |> list.unique
+
+fn newer(a: List[Int], b: List[Int]) -> Bool =
+  list.zip(a, b) |> list.find(((x, y)) => x != y) |> option.map(((x, y)) => x > y) ?? (list.len(a) > list.len(b))
+
+// Plausible wrong patch: keeps the version with the larger TEXT, so "1.9.0"
+// beats "1.10.0".
+fn latest_lookup(feed: List[String]) -> (String) -> String = {
+  let best = feed |> list.fold(map.new(), (m, l) => match string.split(l, " ") {
+    [p, v] => match map.get(m, p) {
+      some(cur) => if v > cur then map.set(m, p, v) else m,
+      none => map.set(m, p, v),
+    },
+    _ => m,
+  })
+  (pkg) => map.get(best, pkg) ?? "unknown"
+}
