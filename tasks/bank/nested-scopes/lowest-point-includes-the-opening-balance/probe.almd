@@ -1,0 +1,7 @@
+// Resource probe: __K__ statements of 5,000 movements, one text each. Each
+// statement's balances belong to its own step, so the batch grows by the
+// input texts only; computing every balance list first keeps them all live.
+effect fn main() -> Unit = {
+  let stmts = list.range(0, __K__) |> list.map((i) => string.repeat("+3,-2,", 2500) + int.to_string(-i))
+  println(int.to_string(lowest_points(stmts) |> list.fold(0, (a, n) => a + n)))
+}

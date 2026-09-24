@@ -1,0 +1,19 @@
+// Timetables: one line per student, "name: SLOT SLOT ...", e.g.
+// "ann: MON9 TUE10 MON9". Slots are separated by single spaces.
+fn name_of(line: String) -> String = string.split(line, ":") |> list.first ?? ""
+
+fn slots(line: String) -> List[String] =
+  string.split(string.drop(line, string.len(name_of(line)) + 1), " ") |> list.filter((s) => s != "")
+
+fn load(line: String) -> Int = list.len(slots(line))
+
+// Plausible wrong patch: reports a slot every time it is seen again, so a
+// triple booking is listed twice.
+fn clashes(lines: List[String]) -> List[String] =
+  lines |> list.map((line) => {
+    let (_, dups) = slots(line) |> list.fold(([], []), (st, s) => {
+      let (seen, out) = st
+      if list.contains(seen, s) then (seen, out + [s]) else (seen + [s], out)
+    })
+    name_of(line) + ": " + (if list.is_empty(dups) then "ok" else list.join(dups, ","))
+  })

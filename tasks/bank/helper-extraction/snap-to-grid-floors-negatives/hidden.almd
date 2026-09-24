@@ -1,0 +1,7 @@
+test "hidden: negatives floor correctly" {
+  assert_eq(snap(-8, 5), -10)
+  assert_eq(snap(-7, 5), -5)
+  assert_eq(snap(-5, 10), 0)
+  assert_eq(snap(-16, 10), -20)
+  assert_eq(moved([-8, -10, 3], 5), 2)
+}

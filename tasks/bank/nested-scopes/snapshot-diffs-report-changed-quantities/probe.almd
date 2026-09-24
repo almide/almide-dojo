@@ -1,0 +1,10 @@
+// Resource probe: __K__ pairs of 1,500-item snapshots, one text per side.
+// Each pair's maps belong to its own step, so the batch grows by the input
+// texts only; parsing every pair first keeps all the maps live.
+effect fn main() -> Unit = {
+  let pairs = list.range(0, __K__) |> list.map((i) => {
+    let s = list.range(0, 1500) |> list.map((j) => "item" + int.to_string(j) + "=" + int.to_string(j % 9)) |> list.join(";")
+    (s, s + ";new" + int.to_string(i) + "=1")
+  })
+  println(int.to_string(diffs(pairs) |> list.fold(0, (a, s) => a + string.len(s))))
+}

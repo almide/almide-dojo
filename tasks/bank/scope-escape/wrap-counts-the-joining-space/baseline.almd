@@ -1,0 +1,8 @@
+// Text layout. Words are separated by runs of spaces; a line holds words
+// joined by single spaces.
+fn words(text: String) -> List[String] = string.split(text, " ") |> list.filter((w) => w != "")
+
+fn joined_length(ws: List[String]) -> Int =
+  if list.is_empty(ws) then 0 else (ws |> list.fold(0, (a, w) => a + string.len(w))) + list.len(ws) - 1
+
+fn fits_one_line(text: String, width: Int) -> Bool = joined_length(words(text)) <= width

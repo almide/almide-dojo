@@ -1,0 +1,22 @@
+// Dice rolls (any integers). Counts per value, values in order of first roll.
+fn counts(rolls: List[Int]) -> Map[Int, Int] =
+  rolls |> list.fold(map.new(), (m, r) => map.set(m, r, (map.get(m, r) ?? 0) + 1))
+
+fn distinct_values(rolls: List[Int]) -> Int = map.len(counts(rolls))
+
+fn seen(rolls: List[Int], v: Int) -> Bool = map.contains(counts(rolls), v)
+
+// The mode is chosen now (count desc, then value asc); the closure keeps it.
+fn mode_reporter(rolls: List[Int]) -> (String) -> String = {
+  let best = map.entries(counts(rolls)) |> list.fold(none, (acc, e) => {
+    let (v, n) = e
+    match acc {
+      some((bv, bn)) => if n > bn or (n == bn and v < bv) then some(e) else acc,
+      none => some(e),
+    }
+  })
+  match best {
+    some((v, n)) => (label) => label + ": mode " + int.to_string(v) + " x" + int.to_string(n),
+    none => (label) => label + ": no rolls",
+  }
+}

@@ -1,0 +1,20 @@
+// Text layout. Words are separated by runs of spaces; a line holds words
+// joined by single spaces.
+fn words(text: String) -> List[String] = string.split(text, " ") |> list.filter((w) => w != "")
+
+fn joined_length(ws: List[String]) -> Int =
+  if list.is_empty(ws) then 0 else (ws |> list.fold(0, (a, w) => a + string.len(w))) + list.len(ws) - 1
+
+fn fits_one_line(text: String, width: Int) -> Bool = joined_length(words(text)) <= width
+
+// Plausible wrong patch: the fit test forgets the space that joins the word
+// to the line, so lines can end up one character too long.
+fn wrap_stats(text: String, width: Int) -> String = {
+  let lines = words(text) |> list.fold([], (acc, w) =>
+    match list.last(acc) {
+      some(cur) => if string.len(cur) + string.len(w) <= width then list.drop_end(acc, 1) + [cur + " " + w] else acc + [w],
+      none => [w],
+    })
+  let longest = lines |> list.fold(0, (m, l) => int.max(m, string.len(l)))
+  "lines=" + int.to_string(list.len(lines)) + ",longest=" + int.to_string(longest)
+}

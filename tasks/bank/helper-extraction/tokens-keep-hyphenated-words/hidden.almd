@@ -1,0 +1,5 @@
+test "hidden: inner hyphens and apostrophes stay" {
+  assert_eq(tokens("a well-known fact, don't you think?"), ["a", "well-known", "fact", "don't", "you", "think"])
+  assert_eq(longest_word("x state-of-the-art y"), "state-of-the-art")
+  assert_eq(word_count("... -- !"), 1)
+}

@@ -1,0 +1,7 @@
+// Resource probe: the longest run of the same 600 values computed __K__ times.
+// The helper must allocate no more per value than the inline fold did.
+effect fn main() -> Unit = {
+  let xs = list.range(0, 600) |> list.map((i) => (i / 3) % 7)
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + longest_run(xs))
+  println(int.to_string(t))
+}

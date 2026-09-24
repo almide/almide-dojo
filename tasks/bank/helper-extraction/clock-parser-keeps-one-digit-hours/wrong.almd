@@ -1,0 +1,20 @@
+// Plausible wrong patch: the helper reads fixed columns "HH:MM", so a
+// one-digit hour like "9:05" no longer parses.
+fn clock(t: String) -> Int? = {
+  guard string.len(t) == 5 and string.get(t, 2) == some(":") else none
+  let h = int.parse(string.slice(t, 0, 2))?!
+  let m = int.parse(string.slice(t, 3, 5))?!
+  guard h >= 0 and h < 24 and m >= 0 and m < 60 else none
+  some(h * 60 + m)
+}
+
+fn duration(a: String, b: String) -> Int? = {
+  let ma = clock(a)!
+  let mb = clock(b)!
+  some(mb - ma)
+}
+
+fn total(spans: List[(String, String)]) -> Int = spans |> list.fold(0, (acc, s) => {
+  let (a, b) = s
+  acc + (duration(a, b) ?? 0)
+})

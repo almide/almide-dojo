@@ -1,0 +1,9 @@
+// Resource probe: 800 one-word documents and __K__ queries of 10 words that
+// each match every document. Each query's candidate lists belong to its own
+// step, so the batch grows by the query texts only; collecting every query's
+// lists first keeps 10 x 800 ids per query live.
+effect fn main() -> Unit = {
+  let docs = list.range(0, 800) |> list.map((i) => "common")
+  let queries = list.range(0, __K__) |> list.map((i) => string.repeat("common ", 10))
+  println(int.to_string(search_all(docs, queries) |> list.fold(0, (a, s) => a + string.len(s))))
+}

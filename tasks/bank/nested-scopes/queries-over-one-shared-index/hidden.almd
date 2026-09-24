@@ -1,0 +1,11 @@
+test "hidden: every word must match" {
+  let docs = ["red fox", "blue fox", "red hen", "Red Fox den"]
+  assert_eq(search_all(docs, ["red fox", "FOX den", "blue hen"]), ["0,3", "3", ""])
+}
+test "hidden: empty queries and repeats" {
+  assert_eq(search_all(["a b"], ["", "   ", "a a"]), ["", "", "0"])
+  assert_eq(search_all(["a"], []), [])
+}
+test "hidden: index unchanged" {
+  assert_eq(docs_with(build_index(["x x", "y x"]), "X"), [0, 1])
+}

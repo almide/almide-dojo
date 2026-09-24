@@ -1,0 +1,4 @@
+test "cheapest" {
+  assert_eq(cheapest([[-1, -2], [-3, 4]]), "cost=0")
+  assert_eq(cheapest([[1], [2, 3]]), "malformed")
+}

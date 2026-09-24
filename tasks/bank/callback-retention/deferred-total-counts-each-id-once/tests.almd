@@ -1,0 +1,4 @@
+test "deferred total" {
+  let f = deferred_total([("a", 100), ("b", 50), ("a", 100)], (n) => int.to_string(n) + "c")
+  assert_eq(f(), "150c")
+}

@@ -1,0 +1,12 @@
+// Snapping values to a grid of `step` (step >= 1): the nearest multiple, a
+// value exactly halfway going UP (toward +infinity). Works for negatives:
+// -8 snaps to -10 with step 5, -7 to -5.
+fn snap_all(xs: List[Int], step: Int) -> List[Int] =
+  xs |> list.map((x) => {
+    let a = x + step / 2
+    let q = if a >= 0 then a / step else 0 - ((0 - a + step - 1) / step)
+    q * step
+  })
+
+fn moved(xs: List[Int], step: Int) -> Int =
+  list.zip(xs, snap_all(xs, step)) |> list.count(((a, b)) => a != b)

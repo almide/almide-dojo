@@ -1,0 +1,8 @@
+test "hidden: the query's case is ignored too" {
+  assert_eq(contains_ci("learning rust", "RUST"), true)
+  assert_eq(search(["Go Tour", "Rust Book"], "BOOK"), ["Rust Book"])
+  assert_eq(count_matches(["aB", "Ab", "c"], "AB"), 2)
+}
+test "hidden: empty needle" {
+  assert_eq(count_matches(["x", ""], ""), 2)
+}

@@ -1,0 +1,12 @@
+// Text statistics. Words are separated by ANY whitespace: spaces, tabs and
+// newlines, in runs.
+fn is_space(c: String) -> Bool = c == " " or c == "\t" or c == "\n"
+
+fn words(text: String) -> List[String] =
+  string.chars(text)
+    |> list.map((c) => if is_space(c) then " " else c)
+    |> list.join("")
+    |> string.split(" ")
+    |> list.filter((w) => w != "")
+
+fn word_count(text: String) -> Int = list.len(words(text))

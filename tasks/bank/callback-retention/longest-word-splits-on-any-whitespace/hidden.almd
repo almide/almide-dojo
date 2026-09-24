@@ -1,0 +1,8 @@
+test "hidden: tabs and newlines separate words" {
+  assert_eq(longest_badge("ab\tcdefgh ij")("T"), "T: cdefgh (6)")
+  assert_eq(longest_badge("one\ntwothree")("N"), "N: twothree (8)")
+}
+test "hidden: ties go first" {
+  assert_eq(longest_badge("abc xyz")("t"), "t: abc (3)")
+  assert_eq(word_count("a\t\tb"), 2)
+}

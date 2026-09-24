@@ -1,0 +1,5 @@
+test "since last" {
+  let f = since_last([100, 200, 300])
+  assert_eq(f(350), "50s ago")
+  assert_eq(since_last([])(5), "never")
+}

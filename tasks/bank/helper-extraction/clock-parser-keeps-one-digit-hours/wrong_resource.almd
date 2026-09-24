@@ -1,0 +1,23 @@
+// Plausible wrong patch: the helper splits on ":" and reads the parts. Same
+// answers — but a parts list is allocated on every call.
+fn clock(t: String) -> Int? = {
+  let parts = string.split(t, ":")
+  guard list.len(parts) == 2 else none
+  let h = int.parse(list.first(parts) ?? "")?!
+  let m_text = list.last(parts) ?? ""
+  guard string.len(m_text) == 2 else none
+  let m = int.parse(m_text)?!
+  guard h >= 0 and h < 24 and m >= 0 and m < 60 else none
+  some(h * 60 + m)
+}
+
+fn duration(a: String, b: String) -> Int? = {
+  let ma = clock(a)!
+  let mb = clock(b)!
+  some(mb - ma)
+}
+
+fn total(spans: List[(String, String)]) -> Int = spans |> list.fold(0, (acc, s) => {
+  let (a, b) = s
+  acc + (duration(a, b) ?? 0)
+})

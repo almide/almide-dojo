@@ -1,0 +1,5 @@
+test "hops" {
+  assert_eq(hops(["a>b", "b>c", "a>c"], "a", "c"), "hops=1")
+  assert_eq(hops(["a>b", "b>c"], "a", "c"), "hops=2")
+  assert_eq(hops(["a-b"], "a", "b"), "bad road: a-b")
+}

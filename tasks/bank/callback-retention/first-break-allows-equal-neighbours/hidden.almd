@@ -1,0 +1,9 @@
+test "hidden: equal readings are fine" {
+  assert_eq(audit([4, 4, 4])("a"), "a: ok")
+  assert_eq(audit([1, 1, 2, 2, 0])("b"), "b: drop at 4")
+}
+test "hidden: short inputs" {
+  assert_eq(audit([])("c"), "c: ok")
+  assert_eq(audit([9, 1])("d"), "d: drop at 1")
+  assert_eq(drops([3, 3, 2, 1]), 2)
+}

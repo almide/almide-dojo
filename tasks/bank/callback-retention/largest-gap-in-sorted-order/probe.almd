@@ -1,0 +1,7 @@
+// Resource probe: __K__ alarms over fresh 20,000-bus logs, all held live.
+// Capturing the gap grows by a few bytes each; capturing a sorted copy grows
+// by the whole log.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) => gap_alarm(list.range(0, 20000 + i) |> list.map((j) => (j * 7919) % 30011)))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f(3)))))
+}

@@ -1,0 +1,7 @@
+// Resource probe: the same 300 titles searched __K__ times. The helper must
+// allocate no more per title than the inline test did.
+effect fn main() -> Unit = {
+  let titles = list.range(0, 300) |> list.map((i) => "The Book Of Item Number " + int.to_string(i))
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + count_matches(titles, "BOOK OF"))
+  println(int.to_string(t))
+}

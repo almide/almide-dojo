@@ -1,0 +1,28 @@
+// A tiny search engine. Documents are numbered from 0; words are lowercase,
+// separated by spaces. The index maps each word to the documents containing
+// it, in document order, each document once.
+fn doc_words(doc: String) -> List[String] = string.split(string.to_lower(doc), " ") |> list.filter((w) => w != "")
+
+fn build_index(docs: List[String]) -> Map[String, List[Int]] =
+  docs |> list.enumerate |> list.fold(map.new(), (m, p) => {
+    let (i, d) = p
+    doc_words(d) |> list.unique |> list.fold(m, (acc, w) => map.set(acc, w, (map.get(acc, w) ?? []) + [i]))
+  })
+
+fn docs_with(index: Map[String, List[Int]], word: String) -> List[Int] = map.get(index, string.to_lower(word)) ?? []
+
+// One index for the batch; each query intersects its words' lists.
+fn search_all(docs: List[String], queries: List[String]) -> List[String] = {
+  let index = build_index(docs)
+  queries |> list.map((q) => {
+    let ws = doc_words(q)
+    let hits = match list.first(ws) {
+      none => [],
+      some(w0) => ws |> list.fold(docs_with(index, w0), (acc, w) => {
+        let other = docs_with(index, w)
+        acc |> list.filter((d) => list.contains(other, d))
+      }),
+    }
+    hits |> list.map((d) => int.to_string(d)) |> list.join(",")
+  })
+}

@@ -1,0 +1,28 @@
+// A counting-out game: people stand in a circle in list order. Counting
+// starts at the first person; every k-th person counted leaves, and counting
+// CONTINUES from the person after the one who left, wrapping around.
+fn validate(names: List[String], k: Int) -> Result[Unit, String] = {
+  guard k >= 1 else err("step must be at least 1")
+  guard not list.is_empty(names) else err("nobody in the circle")
+  ok(())
+}
+
+// The first person to leave.
+fn first_out(names: List[String], k: Int) -> Result[String, String] = {
+  validate(names, k)!
+  ok(list.get(names, (k - 1) % list.len(names)) ?? "")
+}
+
+// `start` is the position where the next count begins.
+fn eliminate(circle: List[String], k: Int, start: Int) -> String =
+  if list.len(circle) == 1 then list.first(circle) ?? ""
+  else {
+    let i = (start + k - 1) % list.len(circle)
+    eliminate(list.remove_at(circle, i), k, i)
+  }
+
+fn survivor(names: List[String], k: Int) -> String =
+  match validate(names, k) {
+    err(e) => "error=" + e,
+    ok(_) => "survivor=" + eliminate(names, k, 0),
+  }

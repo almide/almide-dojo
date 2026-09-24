@@ -1,0 +1,17 @@
+// Word lists. Two words are anagrams when they use the same letters the same
+// number of times, IGNORING CASE ("Listen" and "silent").
+fn letters_key(w: String) -> String = string.chars(string.to_lower(w)) |> list.sort |> list.join("")
+
+fn is_anagram(a: String, b: String) -> Bool = letters_key(a) == letters_key(b)
+
+fn distinct_words(ws: List[String]) -> Int = list.len(list.unique(ws))
+
+fn longest(ws: List[String]) -> String =
+  ws |> list.fold("", (best, w) => if string.len(w) > string.len(best) then w else best)
+
+// Groups keyed by letters_key (case-insensitive), in order of first word.
+fn anagram_summary(ws: List[String]) -> String = {
+  let groups = list.group_by(ws, (w) => letters_key(w)) |> map.values |> list.filter((g) => list.len(g) >= 2)
+  let best = groups |> list.fold([], (b, g) => if list.len(g) > list.len(b) then g else b)
+  "groups=" + int.to_string(list.len(groups)) + ",largest=" + (list.first(best) ?? "-")
+}

@@ -1,0 +1,5 @@
+test "runs" {
+  assert_eq(runs([5, 5, 7]), [(5, 2), (7, 1)])
+  assert_eq(encode([1, 1, 2]), "1x2 2x1")
+  assert_eq(longest_run([]), 0)
+}

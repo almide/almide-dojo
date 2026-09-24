@@ -1,0 +1,17 @@
+// Word statistics. Words are separated by spaces; leading and trailing
+// punctuation (. , ; : ! ? ") is not part of a word, but a hyphen or an
+// apostrophe INSIDE a word is ("well-known", "don't").
+fn strip_punct(w: String) -> String = {
+  let p = [".", ",", ";", ":", "!", "?", "\""]
+  let cs = string.chars(w)
+  let front = cs |> list.drop_while((c) => list.contains(p, c))
+  front |> list.reverse |> list.drop_while((c) => list.contains(p, c)) |> list.reverse |> list.join("")
+}
+
+fn tokens(text: String) -> List[String] =
+  string.split(text, " ") |> list.map((w) => strip_punct(w)) |> list.filter((w) => w != "")
+
+fn word_count(text: String) -> Int = list.len(tokens(text))
+
+fn longest_word(text: String) -> String =
+  tokens(text) |> list.fold("", (b, w) => if string.len(w) > string.len(b) then w else b)

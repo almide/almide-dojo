@@ -1,0 +1,10 @@
+test "hidden: one-digit hours are valid" {
+  assert_eq(clock("9:05"), some(545))
+  assert_eq(duration("8:30", "10:00"), some(90))
+  assert_eq(total([("0:00", "1:00"), ("x", "2:00")]), 60)
+}
+test "hidden: invalid shapes" {
+  assert_eq(clock("9:5"), none)
+  assert_eq(clock("12:60"), none)
+  assert_eq(clock("1230"), none)
+}

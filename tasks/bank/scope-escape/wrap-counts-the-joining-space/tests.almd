@@ -1,0 +1,4 @@
+test "wrap" {
+  assert_eq(wrap_stats("aaa bb c dddd", 6), "lines=2,longest=6")
+  assert_eq(wrap_stats("", 3), "lines=0,longest=0")
+}

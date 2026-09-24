@@ -1,0 +1,4 @@
+test "survivor" {
+  assert_eq(survivor(["a", "b", "c"], 1), "survivor=c")
+  assert_eq(survivor(["a"], 0), "error=step must be at least 1")
+}

@@ -1,0 +1,25 @@
+// CSV rows. A field may be quoted with "..." and then contain commas; a
+// doubled quote inside a quoted field is a literal quote. A file's text ends
+// with a newline after its last row (the usual convention).
+fn fields(row: String) -> List[String] = {
+  let (done, cur, _) = string.chars(row) |> list.fold(([], "", false), (st, c) => {
+    let (out, f, quoted) = st
+    if c == "\"" then (out, f + c, not quoted)
+    else if c == "," and not quoted then (out + [f], "", false)
+    else (out, f + c, quoted)
+  })
+  done + [cur]
+}
+
+fn width(row: String) -> Int = list.len(fields(row))
+
+// Plausible wrong patch: splits the text on newlines as is, so the empty piece
+// after the final newline is checked as a one-field row.
+fn check_files(header: String, files: List[String]) -> List[String] = {
+  let want = width(header)
+  files |> list.map((text) =>
+    match string.split(text, "\n") |> list.enumerate |> list.find(((_, r)) => width(r) != want) {
+      some((i, r)) => "row " + int.to_string(i + 1) + ": " + int.to_string(width(r)) + " fields",
+      none => "ok",
+    })
+}

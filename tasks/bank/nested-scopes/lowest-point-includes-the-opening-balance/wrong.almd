@@ -1,0 +1,13 @@
+// Account statements: one text per account, signed movements separated by
+// commas, e.g. "+50,-20,+5". Every account OPENS at balance 0.
+fn movements(stmt: String) -> List[Int] =
+  string.split(stmt, ",") |> list.filter((m) => m != "") |> list.map((m) => int.parse(m) ?? 0)
+
+fn closing(stmt: String) -> Int = list.sum(movements(stmt))
+
+fn running(stmt: String) -> List[Int] = movements(stmt) |> list.scan(0, (b, m) => b + m)
+
+// Plausible wrong patch: takes the minimum of the running balances after each
+// movement, forgetting the opening 0 (and an empty statement defaults to 0).
+fn lowest_points(stmts: List[String]) -> List[Int] =
+  stmts |> list.map((s) => list.min(running(s)) ?? 0)

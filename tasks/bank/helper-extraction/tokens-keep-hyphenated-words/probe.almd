@@ -1,0 +1,7 @@
+// Resource probe: the words of the same 200-word text counted __K__ times.
+// Tokenizing must allocate no more per word than the inline code did.
+effect fn main() -> Unit = {
+  let text = string.repeat("well-known, facts; don't lie! ", 50)
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + word_count(text))
+  println(int.to_string(t))
+}

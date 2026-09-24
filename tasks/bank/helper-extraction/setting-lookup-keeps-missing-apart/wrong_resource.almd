@@ -1,0 +1,21 @@
+// Plausible wrong patch: the helper looks the key up among the entries
+// (map.entries + find). Same answers — but every lookup copies the whole map
+// into an entry list.
+fn setting(cfg: Map[String, String], key: String) -> String? =
+  map.entries(cfg) |> list.find(((k, _)) => k == key) |> option.map(((_, v)) => v)
+
+fn get_int(cfg: Map[String, String], key: String, default: Int) -> Result[Int, String] =
+  match setting(cfg, key) {
+    none => ok(default),
+    some(v) => int.parse(v) |> result.map_err((_) => "bad int for " + key + ": " + v),
+  }
+
+fn get_bool(cfg: Map[String, String], key: String, default: Bool) -> Result[Bool, String] =
+  match setting(cfg, key) {
+    none => ok(default),
+    some(v) => match v {
+      "true" => ok(true),
+      "false" => ok(false),
+      _ => err("bad bool for " + key + ": " + v),
+    },
+  }

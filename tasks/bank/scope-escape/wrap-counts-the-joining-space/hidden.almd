@@ -1,0 +1,12 @@
+test "hidden: the joining space counts" {
+  assert_eq(wrap_stats("ab cd", 4), "lines=2,longest=2")
+  assert_eq(wrap_stats("ab cd", 5), "lines=1,longest=5")
+  assert_eq(wrap_stats("a b c d e f", 3), "lines=3,longest=3")
+}
+test "hidden: long words stay whole" {
+  assert_eq(wrap_stats("tiny enormousword x", 5), "lines=3,longest=12")
+  assert_eq(wrap_stats("  spaced   out  ", 20), "lines=1,longest=10")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(fits_one_line("a  b", 3), true)
+}

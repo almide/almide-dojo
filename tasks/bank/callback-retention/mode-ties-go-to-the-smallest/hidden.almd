@@ -1,0 +1,8 @@
+test "hidden: ties go to the smallest value" {
+  assert_eq(mode_reporter([6, 2, 6, 2, 4])("a"), "a: mode 2 x2")
+  assert_eq(mode_reporter([5, -1, 5, -1, -3, -3])("b"), "b: mode -3 x2")
+  assert_eq(mode_reporter([9])("c"), "c: mode 9 x1")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(distinct_values([1, 1, 2]), 2)
+}

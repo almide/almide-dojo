@@ -1,0 +1,5 @@
+test "median" {
+  assert_eq(median_text([3, 1, 2]), "median=2")
+  assert_eq(median_text([4, 1, 2, 3]), "median=2.5")
+  assert_eq(median_text([]), "median=none")
+}

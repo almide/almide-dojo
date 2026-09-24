@@ -1,0 +1,17 @@
+// Plausible wrong patch: finds the run boundaries by comparing each value
+// with its neighbour through index windows. Same runs — but every position
+// allocates a two-element window list.
+fn runs(xs: List[Int]) -> List[(Int, Int)] = {
+  let starts = list.range(0, list.len(xs)) |> list.filter((i) => i == 0 or list.slice(xs, i - 1, i + 1) |> list.unique |> list.len == 2)
+  let ends = list.drop(starts, 1) + [list.len(xs)]
+  list.zip(starts, ends) |> list.map(((s, e)) => (list.get(xs, s) ?? 0, e - s))
+}
+
+fn encode(xs: List[Int]) -> String =
+  runs(xs) |> list.map(((v, n)) => int.to_string(v) + "x" + int.to_string(n)) |> list.join(" ")
+
+fn longest_run(xs: List[Int]) -> Int =
+  runs(xs) |> list.fold(0, (m, r) => {
+    let (_, n) = r
+    int.max(m, n)
+  })

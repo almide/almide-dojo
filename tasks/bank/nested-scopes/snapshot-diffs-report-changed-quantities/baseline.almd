@@ -1,0 +1,11 @@
+// Inventory snapshots as text: "item=qty" entries separated by ";".
+fn parse_snapshot(s: String) -> Map[String, Int] =
+  string.split(s, ";") |> list.filter((e) => e != "") |> list.fold(map.new(), (m, e) =>
+    match string.split(e, "=") {
+      [k, v] => map.set(m, k, int.parse(v) ?? 0),
+      _ => m,
+    })
+
+fn items(s: String) -> List[String] = map.keys(parse_snapshot(s))
+
+fn quantity(s: String, item: String) -> Int = map.get(parse_snapshot(s), item) ?? 0

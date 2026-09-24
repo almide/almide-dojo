@@ -1,0 +1,5 @@
+test "gap alarm" {
+  let f = gap_alarm([0, 10, 25, 30])
+  assert_eq(f(12), "gap 15 over")
+  assert_eq(f(15), "gap 15 ok")
+}

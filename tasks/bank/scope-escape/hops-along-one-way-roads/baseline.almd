@@ -1,0 +1,12 @@
+// One-way roads "a>b" (you can drive from a to b, not back).
+fn parse_road(s: String) -> Result[(String, String), String] =
+  match string.split(s, ">") {
+    [a, b] => if a != "" and b != "" then ok((a, b)) else err("bad road: " + s),
+    _ => err("bad road: " + s),
+  }
+
+fn parse_roads(rs: List[String]) -> Result[List[(String, String)], String] =
+  rs |> list.map((r) => parse_road(r)!)
+
+fn exits(roads: List[(String, String)], town: String) -> List[String] =
+  roads |> list.filter(((a, _)) => a == town) |> list.map(((_, b)) => b)

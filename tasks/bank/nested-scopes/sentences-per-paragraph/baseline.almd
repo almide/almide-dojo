@@ -1,0 +1,16 @@
+// Prose. A sentence ends at ".", "!" or "?"; a RUN of terminators ("...",
+// "?!") ends one sentence. Text after the last terminator is an unfinished
+// sentence and still counts if it has any letter.
+fn is_end(c: String) -> Bool = c == "." or c == "!" or c == "?"
+
+fn sentences(par: String) -> Int = {
+  let (n, open) = string.chars(par) |> list.fold((0, false), (st, c) => {
+    let (count, has_text) = st
+    if is_end(c) then (if has_text then (count + 1, false) else st)
+    else if string.is_alpha(c) then (count, true)
+    else st
+  })
+  if open then n + 1 else n
+}
+
+fn paragraphs(text: String) -> List[String] = string.split(text, "\n\n") |> list.filter((p) => string.trim(p) != "")
