@@ -1,0 +1,4 @@
+test "recent" {
+  assert_eq(recent(["a", "b", "c"], 2), "c | b")
+  assert_eq(recent(["a"], 0), "")
+}

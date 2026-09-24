@@ -1,0 +1,10 @@
+test "hidden: a refused request takes nothing" {
+  let stock = map.from_list([("a", 5), ("b", 1)])
+  assert_eq(reserve(stock, ["a:4,b:2", "a:5"]), "filled=1,refused=1")
+  assert_eq(reserve(stock, ["a:3,a:3", "a:5,b:1"]), "filled=1,refused=1")
+}
+test "hidden: unknown skus and empty" {
+  assert_eq(reserve(map.from_list([("a", 1)]), ["z:1", "a:1"]), "filled=1,refused=1")
+  assert_eq(reserve(map.new(), []), "filled=0,refused=0")
+  assert_eq(requested_units(["a:2,b:3", "x"]), 5)
+}

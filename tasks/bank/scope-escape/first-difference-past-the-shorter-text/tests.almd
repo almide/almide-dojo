@@ -1,0 +1,4 @@
+test "first diff" {
+  assert_eq(first_diff("a\nb\nc", "a\nx\nc"), "line 2")
+  assert_eq(first_diff("same", "same"), "same")
+}

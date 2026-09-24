@@ -1,0 +1,6 @@
+// Daily sales figures. A window is k CONSECUTIVE days.
+fn validate_k(k: Int) -> Result[Int, String] = if k >= 1 then ok(k) else err("window must be at least 1 day")
+
+fn window_sums(xs: List[Int], k: Int) -> List[Int] = list.windows(xs, k) |> list.map((w) => list.sum(w))
+
+fn total(xs: List[Int]) -> Int = list.sum(xs)

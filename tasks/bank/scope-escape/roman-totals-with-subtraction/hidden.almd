@@ -1,0 +1,9 @@
+test "hidden: subtraction" {
+  assert_eq(roman_total(["IV", "IX"]), "total=13")
+  assert_eq(roman_total(["MCMXC"]), "total=1990")
+  assert_eq(roman_total(["XL", "XC", "CD"]), "total=530")
+}
+test "hidden: empty and first bad" {
+  assert_eq(roman_total([]), "total=0")
+  assert_eq(roman_total(["", "Z"]), "bad: ")
+}

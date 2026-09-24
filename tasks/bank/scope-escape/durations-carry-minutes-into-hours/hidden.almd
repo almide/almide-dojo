@@ -1,0 +1,10 @@
+test "hidden: minutes carry" {
+  assert_eq(total(["45m", "30m"]), "1h15m")
+  assert_eq(total(["90m"]), "1h30m")
+  assert_eq(total(["1h55m", "5m", "1h"]), "3h00m")
+}
+test "hidden: empty and errors" {
+  assert_eq(total([]), "0h00m")
+  assert_eq(total(["1h", "2x"]), "bad duration: 2x")
+  assert_eq(count_long(["59m", "1h"]), ok(1))
+}

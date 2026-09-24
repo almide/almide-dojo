@@ -1,0 +1,10 @@
+// Alerts "<second> <id>" in time order. A repeat of the same id within 60
+// seconds of the LAST KEPT alert of that id is a duplicate and is dropped;
+// the dropped one does not restart the 60 seconds.
+fn parse_alert(s: String) -> (Int, String)? =
+  match string.split(s, " ") {
+    [t, id] => int.parse(t)? |> option.map((v) => (v, id)),
+    _ => none,
+  }
+
+fn ids(alerts: List[String]) -> List[String] = alerts |> list.filter_map((a) => parse_alert(a)) |> list.map(((_, id)) => id) |> list.unique

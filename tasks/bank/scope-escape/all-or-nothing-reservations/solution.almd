@@ -1,0 +1,32 @@
+// Reservation requests against a stock, processed IN ORDER. A request is
+// "sku:qty,sku:qty,...". A request is filled only if EVERY line can be served
+// from what is left; otherwise nothing of it is taken.
+fn parse_request(r: String) -> List[(String, Int)] =
+  string.split(r, ",") |> list.filter_map((l) => match string.split(l, ":") {
+    [s, q] => int.parse(q)? |> option.map((n) => (s, n)),
+    _ => none,
+  })
+
+fn requested_units(rs: List[String]) -> Int =
+  rs |> list.fold(0, (a, r) => a + (parse_request(r) |> list.fold(0, (b, l) => {
+    let (_, q) = l
+    b + q
+  })))
+
+fn totals(lines: List[(String, Int)]) -> Map[String, Int] =
+  lines |> list.fold(map.new(), (m, l) => {
+    let (s, q) = l
+    map.set(m, s, (map.get(m, s) ?? 0) + q)
+  })
+
+// Each request is checked in full before anything is taken.
+fn reserve(stock: Map[String, Int], rs: List[String]) -> String = {
+  let (_, filled, refused) = rs |> list.fold((stock, 0, 0), (st, r) => {
+    let (left, f, x) = st
+    let need = totals(parse_request(r))
+    if map.all(need, (s, q) => (map.get(left, s) ?? 0) >= q)
+    then (map.fold(need, left, (m, s, q) => map.set(m, s, (map.get(m, s) ?? 0) - q)), f + 1, x)
+    else (left, f, x + 1)
+  })
+  "filled=" + int.to_string(filled) + ",refused=" + int.to_string(refused)
+}

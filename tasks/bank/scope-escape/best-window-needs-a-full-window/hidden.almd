@@ -1,0 +1,9 @@
+test "hidden: only full windows" {
+  assert_eq(best_window([4, 4], 3), "none")
+  assert_eq(best_window([], 1), "none")
+}
+test "hidden: negative sums" {
+  assert_eq(best_window([-5, -3], 1), "best=-3")
+  assert_eq(best_window([-1, -1, -9], 2), "best=-2")
+  assert_eq(window_sums([1, 2, 3], 2), [3, 5])
+}

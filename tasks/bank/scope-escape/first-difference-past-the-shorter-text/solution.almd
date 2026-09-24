@@ -1,0 +1,17 @@
+// Comparing two versions of a text line by line (lines split on "\n").
+fn lines_of(text: String) -> List[String] = string.split(text, "\n")
+
+fn line_count(text: String) -> Int = list.len(lines_of(text))
+
+fn identical(a: String, b: String) -> Bool = a == b
+
+// Compare position by position up to the longer text; the lists stay local.
+fn first_diff(a: String, b: String) -> String = {
+  let la = lines_of(a)
+  let lb = lines_of(b)
+  let n = int.max(list.len(la), list.len(lb))
+  match list.range(0, n) |> list.find((i) => list.get(la, i) != list.get(lb, i)) {
+    some(i) => "line " + int.to_string(i + 1),
+    none => "same",
+  }
+}

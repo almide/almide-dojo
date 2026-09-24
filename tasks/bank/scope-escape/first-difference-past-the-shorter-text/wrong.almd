@@ -1,0 +1,17 @@
+// Comparing two versions of a text line by line (lines split on "\n").
+fn lines_of(text: String) -> List[String] = string.split(text, "\n")
+
+fn line_count(text: String) -> Int = list.len(lines_of(text))
+
+fn identical(a: String, b: String) -> Bool = a == b
+
+// Plausible wrong patch: zips the two line lists, which stops at the shorter
+// one, so a text that only adds lines at the end reports "same".
+fn first_diff(a: String, b: String) -> String =
+  match list.zip(lines_of(a), lines_of(b)) |> list.enumerate |> list.find(((_, p)) => {
+    let (x, y) = p
+    x != y
+  }) {
+    some((i, _)) => "line " + int.to_string(i + 1),
+    none => "same",
+  }

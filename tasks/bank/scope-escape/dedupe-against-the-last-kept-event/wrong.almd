@@ -1,0 +1,24 @@
+// Alerts "<second> <id>" in time order. A repeat of the same id within 60
+// seconds of the LAST KEPT alert of that id is a duplicate and is dropped;
+// the dropped one does not restart the 60 seconds.
+fn parse_alert(s: String) -> (Int, String)? =
+  match string.split(s, " ") {
+    [t, id] => int.parse(t)? |> option.map((v) => (v, id)),
+    _ => none,
+  }
+
+fn ids(alerts: List[String]) -> List[String] = alerts |> list.filter_map((a) => parse_alert(a)) |> list.map(((_, id)) => id) |> list.unique
+
+// Plausible wrong patch: records every alert's time, dropped or not, so a
+// chain of close repeats keeps extending the window.
+fn kept(alerts: List[String]) -> String = {
+  let (_, k, d) = alerts |> list.filter_map((a) => parse_alert(a)) |> list.fold((map.new(), 0, 0), (st, al) => {
+    let (last, k0, d0) = st
+    let (t, id) = al
+    match map.get(last, id) {
+      some(prev) => if t - prev < 60 then (map.set(last, id, t), k0, d0 + 1) else (map.set(last, id, t), k0 + 1, d0),
+      none => (map.set(last, id, t), k0 + 1, d0),
+    }
+  })
+  "kept=" + int.to_string(k) + ",dropped=" + int.to_string(d)
+}

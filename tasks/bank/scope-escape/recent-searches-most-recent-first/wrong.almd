@@ -1,0 +1,14 @@
+// A search history, oldest first. Queries compare exactly (case and spaces
+// matter).
+fn history_len(h: List[String]) -> Int = list.len(h)
+
+fn searched(h: List[String], q: String) -> Bool = list.contains(h, q)
+
+fn first_search(h: List[String]) -> String = list.first(h) ?? ""
+
+// Plausible wrong patch: dedupes the history first (keeping each query's
+// FIRST search) and then takes the newest, so a repeated query keeps its old
+// position.
+fn recent(h: List[String], k: Int) -> String =
+  if k <= 0 then ""
+  else list.unique(h) |> list.reverse |> list.take(k) |> list.join(" | ")
