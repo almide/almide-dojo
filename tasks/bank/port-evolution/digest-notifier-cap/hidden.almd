@@ -1,0 +1,16 @@
+test "hidden: exactly max goes through, more is summarised" {
+  let d = Digest { inner: Direct { channel: "sms" }, max: 3 }
+  assert_eq(d.deliver("ann", ["1", "2", "3"]), ["sms:ann: 1", "sms:ann: 2", "sms:ann: 3"])
+  assert_eq(d.deliver("ann", ["1", "2", "3", "4", "5"]), ["sms:ann: 1", "sms:ann: 2", "sms:ann: (+3 more)"])
+}
+test "hidden: max one" {
+  let d = Digest { inner: Direct { channel: "p" }, max: 1 }
+  assert_eq(d.deliver("x", ["a", "b"]), ["p:x: (+2 more)"])
+  assert_eq(d.deliver("x", ["a"]), ["p:x: a"])
+  assert_eq(d.deliver("x", []), [])
+}
+test "hidden: recipients capped independently" {
+  let d = Digest { inner: Direct { channel: "c" }, max: 2 }
+  let q = [("a", "1"), ("b", "1"), ("a", "2"), ("a", "3"), ("b", "2")]
+  assert_eq(flush_with(Capped(d), q), ["c:a: 1", "c:a: (+2 more)", "c:b: 1", "c:b: 2"])
+}
