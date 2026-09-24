@@ -1,0 +1,19 @@
+test "hidden: later layers win" {
+  let ls = [layer([("port", "80"), ("host", "a")]), layer([("port", "8080")]), layer([("host", "")])]
+  assert_eq(effective(ls), ["port=8080", "host="])
+  assert_eq(lookup(ls, "host"), some(""))
+  assert_eq(decided_by(ls, "port"), some(1))
+  assert_eq(flatten(ls), ["port": "8080", "host": ""])
+}
+test "hidden: later pairs in one layer win" {
+  let ls = [layer([("mode", "a"), ("x", "1"), ("mode", "b")])]
+  assert_eq(effective(ls), ["mode=b", "x=1"])
+  assert_eq(lookup(ls, "mode"), some("b"))
+}
+test "hidden: first-seen order and misses" {
+  let ls = [layer([]), layer([("b", "1")]), layer([("a", "2"), ("b", "3")])]
+  assert_eq(effective(ls), ["b=3", "a=2"])
+  assert_eq(lookup(ls, "zz"), none)
+  assert_eq(decided_by(ls, "zz"), none)
+  assert_eq(effective([]), [])
+}

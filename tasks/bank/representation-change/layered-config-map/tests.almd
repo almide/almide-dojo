@@ -1,0 +1,7 @@
+test "layers are maps" {
+  let ls = [layer([("port", "80"), ("host", "a")]), layer([("debug", "1")])]
+  assert_eq(ls, [Layer { values: ["port": "80", "host": "a"] }, Layer { values: ["debug": "1"] }])
+  assert_eq(effective([layer([("port", "80"), ("host", "a")])]), ["port=80", "host=a"])
+  assert_eq(lookup(ls, "debug"), some("1"))
+  assert_eq(map.get(flatten(ls), "port"), some("80"))
+}

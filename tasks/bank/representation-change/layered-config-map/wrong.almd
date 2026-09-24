@@ -1,0 +1,28 @@
+// Plausible wrong patch: merges each layer UNDER the accumulator, so the earliest
+// layer wins and override order is reversed. Passes the visible tests.
+// Configuration layers, lowest precedence first (defaults, then the file, then
+// the environment). A layer maps keys to values.
+type Layer: Eq, Repr = { values: Map[String, String] }
+
+// A later pair for the same key wins.
+fn layer(pairs: List[(String, String)]) -> Layer = Layer { values: map.from_list(pairs) }
+
+// Every key with its winning value; later layers override earlier ones, keys in
+// first-seen order.
+fn flatten(layers: List[Layer]) -> Map[String, String] =
+  layers |> list.fold(map.new(), (acc, l) => map.merge(l.values, acc))
+
+// The winning value: the last layer that sets the key decides.
+fn lookup(layers: List[Layer], key: String) -> String? = map.get(flatten(layers), key)
+
+// The index of the layer that decides `key`, if any.
+fn decided_by(layers: List[Layer], key: String) -> Int? =
+  layers
+    |> list.enumerate
+    |> list.filter((p) => map.contains(p.1.values, key))
+    |> list.last
+    |> option.map((p) => p.0)
+
+// "key=value" for every key, keys in first-seen order (layer by layer).
+fn effective(layers: List[Layer]) -> List[String] =
+  map.entries(flatten(layers)) |> list.map((e) => e.0 + "=" + e.1)
