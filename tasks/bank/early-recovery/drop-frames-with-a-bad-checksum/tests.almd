@@ -1,0 +1,6 @@
+test "a frame with a bad checksum is dropped" {
+  assert_eq(decode([2, 1, 2, 3, 1, 7, 9, 1, 4, 4]) |> result.map((d) => show(d)), ok("[1 2 | 4] dropped 1"))
+}
+test "a zero length is still fatal" {
+  assert_eq(decode([1, 5, 5, 0, 1]) |> result.map((d) => show(d)), err(ZeroLength(3)))
+}
