@@ -1,0 +1,6 @@
+test "an out-of-stock item is replaced by an alternative" {
+  assert_eq(fulfil(["cola": 1, "soda": 5], ["cola": ["soda"]], ["cola 2"]), ok(Picked { picks: ["soda x2"], left: ["cola=1", "soda=3"], notes: ["line 1: cola replaced by soda"] }))
+}
+test "an unknown sku is still fatal" {
+  assert_eq(fulfil(["cola": 1], [:], ["tea 1"]), err(UnknownSku(1, "tea")))
+}

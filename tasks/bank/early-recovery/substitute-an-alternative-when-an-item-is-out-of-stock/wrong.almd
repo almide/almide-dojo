@@ -1,0 +1,52 @@
+// Order picking. Each order line is "<sku> <qty>"; lines are picked in order
+// from the warehouse stock and numbered from 1. Some skus list alternatives
+// that may stand in for them.
+type OrderErr: Eq, Repr = | UnknownSku(Int, String) | BadQty(Int) | OutOfStock(Int, String, Int)
+type Picked: Eq, Repr = { picks: List[String], left: List[String], notes: List[String] }
+
+fn parse_line(stock: Map[String, Int], line: String, no: Int) -> (String, Int)!OrderErr = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  let sku = list.get(w, 0) ?? ""
+  guard map.contains(stock, sku) else err(UnknownSku(no, sku))
+  match int.parse(list.get(w, 1) ?? "") {
+    ok(q) => if q > 0 and list.len(w) == 2 then ok((sku, q)) else err(BadQty(no)),
+    err(_) => err(BadQty(no)),
+  }
+}
+
+fn take(left: Map[String, Int], sku: String, qty: Int, no: Int) -> Map[String, Int]!OrderErr = {
+  let have = map.get(left, sku) ?? 0
+  guard have >= qty else err(OutOfStock(no, sku, have))
+  map.set(left, sku, have - qty)
+}
+
+fn fulfil(stock: Map[String, Int], alts: Map[String, List[String]], lines: List[String]) -> Picked!OrderErr = {
+  var left = stock
+  var picks: List[String] = []
+  var notes: List[String] = []
+  for p in list.enumerate(lines) {
+    let no = p.0 + 1
+    let item = parse_line(stock, p.1, no)!
+    let used = match take(left, item.0, item.1, no) {
+      ok(l) => {
+        left = l
+        ok(item.0)
+      },
+      err(OutOfStock(n, sku, have)) => {
+        let options = map.get(alts, sku) ?? []
+        match list.find(options, (a) => (map.get(stock, a) ?? 0) >= item.1) {
+          some(a) => {
+            left = take(left, a, item.1, no)!
+            notes = notes + ["line ${int.to_string(n)}: ${sku} replaced by ${a}"]
+            ok(a)
+          },
+          none => err(OutOfStock(n, sku, have)),
+        }
+      },
+      err(e) => err(e),
+    }!
+    picks = picks + ["${used} x${int.to_string(item.1)}"]
+  }
+  let rest = map.keys(left) |> list.sort |> list.map((k) => "${k}=${int.to_string(map.get(left, k) ?? 0)}")
+  Picked { picks: picks, left: rest, notes: notes }
+}
