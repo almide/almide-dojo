@@ -1,0 +1,15 @@
+test "hidden: exact message at the block that goes too deep" {
+  assert_eq(summary("{{#if a}}{{#each b}}{{#with c}}{{#if d}}x{{/if}}{{/with}}{{/each}}{{/if}}"), err("nesting deeper than 3 at 31"))
+}
+test "hidden: depth counts open blocks, not blocks seen" {
+  assert_eq(summary("{{#if a}}1{{/if}}{{#if b}}2{{/if}}{{#if c}}3{{/if}}{{#if d}}4{{/if}}"), ok("4 blocks, vars "))
+  assert_eq(summary("{{#if a}}{{#each b}}{{#with c}}{{v}}{{/with}}{{#with d}}{{w}}{{/with}}{{/each}}{{/if}}"), ok("4 blocks, vars v,w"))
+}
+test "hidden: exactly three levels are fine" {
+  assert_eq(summary("{{#each a}}{{#each b}}{{#each c}}{{x}}{{/each}}{{/each}}{{/each}}"), ok("3 blocks, vars x"))
+}
+test "hidden: problems are found left to right" {
+  assert_eq(summary("{{#if a}}{{#if b}}{{#if c}}{{#bad d}}{{/bad}}"), err("unknown block bad at 27"))
+  assert_eq(summary("{{/if}}{{#if a}}{{#if b}}{{#if c}}{{#if d}}"), err("unexpected {{/if}} at 0"))
+  assert_eq(summary("{{#if a}}{{#if b}}{{#if c}}{{#if d}}{{x"), err("unclosed tag at 36"))
+}
