@@ -1,0 +1,35 @@
+// Plausible wrong patch: computes the bucket start as `v / width * width`, which
+// truncates toward zero, so -1 lands in the 0..9 bucket. Passes the visible tests.
+// A histogram over integer readings with buckets of `width` (width >= 1):
+// [0, width), [width, 2*width), ... and likewise below zero ([-width, 0), ...).
+// `counts` maps a bucket start to its number of readings.
+type Hist: Eq, Repr = { width: Int, counts: Map[Int, Int] }
+
+fn hist(width: Int) -> Hist = Hist { width: width, counts: map.new() }
+
+// The start of the bucket holding v.
+fn start_of(h: Hist, v: Int) -> Int = v - ((v % h.width) + h.width) % h.width
+
+fn add(h: Hist, v: Int) -> Hist = {
+  let s = v / h.width * h.width
+  Hist { ...h, counts: map.set(h.counts, s, (map.get(h.counts, s) ?? 0) + 1) }
+}
+
+fn add_all(h: Hist, vs: List[Int]) -> Hist = vs |> list.fold(h, add)
+
+fn count_in(h: Hist, v: Int) -> Int = map.get(h.counts, v / h.width * h.width) ?? 0
+
+// "lo..hi: n" for every non-empty bucket, lowest bucket first (hi = lo + width - 1).
+fn render(h: Hist) -> List[String] =
+  map.keys(h.counts)
+    |> list.sort
+    |> list.map((lo) => int.to_string(lo) + ".." + int.to_string(lo + h.width - 1) + ": " + int.to_string(count_in(h, lo)))
+
+// The lowest start among the buckets with the most readings.
+fn busiest(h: Hist) -> Int? =
+  map.keys(h.counts)
+    |> list.sort
+    |> list.fold(none, (best, k) => match best {
+      none => some(k),
+      some(b) => if count_in(h, k) > count_in(h, b) then some(k) else some(b),
+    })

@@ -1,0 +1,13 @@
+test "hidden: negative readings floor" {
+  let h = add_all(hist(10), [-1, -10, -11, 0])
+  assert_eq(render(h), ["-20..-11: 1", "-10..-1: 2", "0..9: 1"])
+  assert_eq(count_in(h, -5), 2)
+  assert_eq(count_in(h, 5), 1)
+}
+test "hidden: render order and busiest ties" {
+  let h = add_all(hist(5), [22, 3, 21, 4, -3])
+  assert_eq(render(h), ["-5..-1: 1", "0..4: 2", "20..24: 2"])
+  assert_eq(busiest(h), some(0))
+  assert_eq(busiest(hist(5)), none)
+  assert_eq(count_in(h, 100), 0)
+}
