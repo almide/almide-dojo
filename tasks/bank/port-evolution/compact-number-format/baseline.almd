@@ -1,0 +1,14 @@
+// A number-format port for a metrics dashboard.
+protocol NumberFormat {
+  fn show(f: Self, n: Int) -> String
+}
+
+// Plain digits.
+type Digits: NumberFormat = {}
+fn Digits.show(f: Digits, n: Int) -> String = int.to_string(n)
+
+// "name: value" per metric, in order; metrics named in `hidden` are left out.
+fn dashboard[F: NumberFormat](f: F, metrics: List[(String, Int)], hidden: List[String]) -> List[String] =
+  metrics
+    |> list.filter((m) => not list.contains(hidden, m.0))
+    |> list.map((m) => m.0 + ": " + f.show(m.1))

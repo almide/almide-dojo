@@ -1,0 +1,44 @@
+// A number-format port for a metrics dashboard.
+protocol NumberFormat {
+  fn show(f: Self, n: Int) -> String
+}
+
+// Plain digits.
+type Digits: NumberFormat = {}
+fn Digits.show(f: Digits, n: Int) -> String = int.to_string(n)
+
+// Tenths of `a / unit`, halves rounded up (a >= 0).
+fn tenths(a: Int, unit: Int) -> Int = (a * 10 + unit / 2) / unit
+
+// The smallest suffix whose rounded value stays below 1000.0.
+fn scaled(a: Int, units: List[(Int, String)]) -> String =
+  match units {
+    [] => int.to_string(a),
+    [u, ..rest] => {
+      let t = tenths(a, u.0)
+      if t < 10000 or list.is_empty(rest) then int.to_string(t / 10) + "." + int.to_string(t % 10) + u.1
+      else scaled(a, rest)
+    },
+  }
+
+// "1.2k", "2.5M", "999"; one decimal above 999.
+type Compact: NumberFormat = {}
+fn Compact.show(f: Compact, n: Int) -> String = {
+  let a = int.abs(n)
+  let sign = if n < 0 then "-" else ""
+  if a < 1000 then int.to_string(n) else sign + scaled(a, [(1000, "k"), (1000000, "M"), (1000000000, "G")])
+}
+
+// "name: value" per metric, in order; metrics named in `hidden` are left out.
+fn dashboard[F: NumberFormat](f: F, metrics: List[(String, Int)], hidden: List[String]) -> List[String] =
+  metrics
+    |> list.filter((m) => not list.contains(hidden, m.0))
+    |> list.map((m) => m.0 + ": " + f.show(m.1))
+
+type Style = | Full(Digits) | Short(Compact)
+
+fn dashboard_as(s: Style, metrics: List[(String, Int)], hidden: List[String]) -> List[String] =
+  match s {
+    Full(d) => dashboard(d, metrics, hidden),
+    Short(c) => dashboard(c, metrics, hidden),
+  }

@@ -1,0 +1,17 @@
+test "hidden: rounding carries into the next suffix" {
+  assert_eq(Compact {}.show(999950), "1.0M")
+  assert_eq(Compact {}.show(999949), "999.9k")
+  assert_eq(Compact {}.show(999950000), "1.0G")
+  assert_eq(Compact {}.show(999), "999")
+  assert_eq(Compact {}.show(1000), "1.0k")
+}
+test "hidden: negative numbers" {
+  assert_eq(Compact {}.show(-1500), "-1.5k")
+  assert_eq(Compact {}.show(-999), "-999")
+  assert_eq(Compact {}.show(-999950), "-1.0M")
+  assert_eq(Compact {}.show(-1050), "-1.1k")
+}
+test "hidden: large values stay in G" {
+  assert_eq(Compact {}.show(1234567890123), "1234.6G")
+  assert_eq(dashboard_as(Short(Compact {}), [("z", 0)], []), ["z: 0"])
+}
