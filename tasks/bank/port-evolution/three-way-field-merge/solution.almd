@@ -1,0 +1,37 @@
+// A merge-strategy port for settings edited on two sides of a sync.
+// `merge(base, ours, theirs)` answers the merged value or refuses.
+protocol Merge {
+  fn merge(m: Self, base: String, ours: String, theirs: String) -> String!
+}
+
+// Our side always wins.
+type KeepOurs: Merge = {}
+fn KeepOurs.merge(m: KeepOurs, base: String, ours: String, theirs: String) -> String! = ours
+
+// Takes the side that changed; refuses when both changed differently.
+type ThreeWay: Merge = {}
+fn ThreeWay.merge(m: ThreeWay, base: String, ours: String, theirs: String) -> String! =
+  if ours == theirs then ok(ours)
+  else if ours == base then ok(theirs)
+  else if theirs == base then ok(ours)
+  else err("conflict: " + ours + " vs " + theirs)
+
+type Field = { name: String, base: String, ours: String, theirs: String }
+
+// "name=value" per field in order; the first refusal is reported as "<name>: <error>".
+fn merge_all[M: Merge](m: M, fields: List[Field]) -> List[String]! = {
+  var out: List[String] = []
+  for f in fields {
+    let v = m.merge(f.base, f.ours, f.theirs) |> result.map_err((e) => f.name + ": " + e)
+    out = out + [f.name + "=" + v!]
+  }
+  out
+}
+
+type Strategy = | Ours(KeepOurs) | Three(ThreeWay)
+
+fn merge_with(s: Strategy, fields: List[Field]) -> List[String]! =
+  match s {
+    Ours(k) => merge_all(k, fields),
+    Three(t) => merge_all(t, fields),
+  }

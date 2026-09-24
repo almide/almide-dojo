@@ -1,0 +1,19 @@
+test "hidden: the same change on both sides is not a conflict" {
+  let fs = [Field { name: "mode", base: "a", ours: "b", theirs: "b" }]
+  assert_eq(merge_with(Three(ThreeWay {}), fs), ok(["mode=b"]))
+  assert_eq(ThreeWay {}.merge("x", "x", "x"), ok("x"))
+}
+test "hidden: first conflict in field order" {
+  let fs = [
+    Field { name: "a", base: "1", ours: "1", theirs: "1" },
+    Field { name: "b", base: "1", ours: "2", theirs: "3" },
+    Field { name: "c", base: "1", ours: "4", theirs: "5" },
+  ]
+  assert_eq(merge_with(Three(ThreeWay {}), fs), err("b: conflict: 2 vs 3"))
+  assert_eq(merge_with(Three(ThreeWay {}), []), ok([]))
+}
+test "hidden: empty strings are values" {
+  assert_eq(ThreeWay {}.merge("a", "", "a"), ok(""))
+  assert_eq(ThreeWay {}.merge("", "", "z"), ok("z"))
+  assert_eq(ThreeWay {}.merge("a", "", "b"), err("conflict:  vs b"))
+}
