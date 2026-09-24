@@ -1,0 +1,13 @@
+test "hidden: the rest of a rolled-back transaction does not run" {
+  assert_eq(run(["BEGIN", "SET a 1", "DEL zz", "SET b 2", "INCR a", "COMMIT", "SET c 3"]), ok(Run { store: ["c=3"], notes: ["line 3: rolled back transaction from line 1"] }))
+  assert_eq(run(["SET n 1", "BEGIN", "INCR n", "DEL gone", "DEL n", "COMMIT", "INCR n"]), ok(Run { store: ["n=2"], notes: ["line 4: rolled back transaction from line 2"] }))
+}
+test "hidden: the skipped statements are still read" {
+  assert_eq(run(["BEGIN", "DEL zz", "BOGUS", "COMMIT"]), err(Syntax(3)))
+  assert_eq(run(["BEGIN", "DEL zz", "BEGIN", "COMMIT"]), err(Nesting(3)))
+  assert_eq(run(["SET a 1", "BEGIN", "DEL zz", "SET a 5"]), err(Unclosed(2)))
+}
+test "hidden: later transactions start from the rolled-back state" {
+  assert_eq(run(["SET k v", "BEGIN", "SET k 1", "INCR q", "COMMIT", "BEGIN", "INCR k", "COMMIT"]), ok(Run { store: ["k=v"], notes: ["line 4: rolled back transaction from line 2", "line 7: rolled back transaction from line 6"] }))
+  assert_eq(run(["SET k 0", "BEGIN", "INCR k", "INCR q", "COMMIT", "BEGIN", "INCR k", "COMMIT"]), ok(Run { store: ["k=1"], notes: ["line 4: rolled back transaction from line 2"] }))
+}

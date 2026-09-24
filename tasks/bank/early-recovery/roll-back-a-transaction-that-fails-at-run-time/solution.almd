@@ -1,0 +1,79 @@
+// Key-value script with transactions. Statements, one per line (numbered from
+// 1): "SET <k> <v>", "DEL <k>", "INCR <k>" (the value must be an integer),
+// "BEGIN" and "COMMIT". Transactions do not nest.
+type DbErr: Eq, Repr = | Syntax(Int) | NoKey(Int, String) | NotANumber(Int, String) | Nesting(Int) | Unclosed(Int)
+type Stmt = | Begin | Commit | Set(String, String) | Del(String) | Incr(String)
+type Run: Eq, Repr = { store: List[String], notes: List[String] }
+
+fn parse_stmt(line: String, no: Int) -> Stmt!DbErr = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  let a = list.get(w, 1) ?? ""
+  match (list.get(w, 0) ?? "", list.len(w)) {
+    ("BEGIN", 1) => ok(Begin),
+    ("COMMIT", 1) => ok(Commit),
+    ("SET", 3) => ok(Set(a, list.get(w, 2) ?? "")),
+    ("DEL", 2) => ok(Del(a)),
+    ("INCR", 2) => ok(Incr(a)),
+    _ => err(Syntax(no)),
+  }
+}
+
+fn exec(store: Map[String, String], s: Stmt, no: Int) -> Map[String, String]!DbErr = match s {
+  Set(k, v) => ok(map.set(store, k, v)),
+  Del(k) => if map.contains(store, k) then ok(map.remove(store, k)) else err(NoKey(no, k)),
+  Incr(k) => match map.get(store, k) {
+    none => err(NoKey(no, k)),
+    some(v) => match int.parse(v) {
+      ok(n) => ok(map.set(store, k, int.to_string(n + 1))),
+      err(_) => err(NotANumber(no, k)),
+    },
+  },
+  _ => ok(store),
+}
+
+fn run(lines: List[String]) -> Run!DbErr = {
+  var store: Map[String, String] = [:]
+  var snapshot: Map[String, String] = [:]
+  var open_at = 0
+  var skipping = false
+  var notes: List[String] = []
+  for p in list.enumerate(lines) {
+    let no = p.0 + 1
+    let s = parse_stmt(p.1, no)!
+    match s {
+      Begin => {
+        guard open_at == 0 else err(Nesting(no))
+        snapshot = store
+        open_at = no
+        ok(())
+      },
+      Commit => {
+        guard open_at > 0 else err(Nesting(no))
+        open_at = 0
+        skipping = false
+        ok(())
+      },
+      _ => {
+        if not skipping then {
+          store = match exec(store, s, no) {
+            ok(st) => ok(st),
+            err(e) => {
+              let recoverable = match e {
+                NoKey(_, _) => true,
+                NotANumber(_, _) => true,
+                _ => false,
+              }
+              guard recoverable and open_at > 0 else err(e)
+              notes = notes + ["line ${int.to_string(no)}: rolled back transaction from line ${int.to_string(open_at)}"]
+              skipping = true
+              ok(snapshot)
+            },
+          }!
+        }
+        ok(())
+      },
+    }!
+  }
+  guard open_at == 0 else err(Unclosed(open_at))
+  Run { store: map.keys(store) |> list.sort |> list.map((k) => "${k}=${map.get(store, k) ?? ""}"), notes: notes }
+}
