@@ -1,0 +1,34 @@
+// Plausible wrong patch: falls back to `second` only when `first` has no
+// acceptable hit, so a more confident second answer is ignored.
+// A geocoding port: the best known place for a query, with a confidence 0..100.
+type Hit: Eq, Repr = { place: String, conf: Int }
+
+protocol Geocoder {
+  fn locate(g: Self, query: String) -> Hit?
+}
+
+// A fixed table of answers.
+type Gazetteer: Geocoder = { known: Map[String, Hit] }
+fn Gazetteer.locate(g: Gazetteer, query: String) -> Hit? = map.get(g.known, query)
+
+// The first acceptable hit, else the second.
+type BestOf: Geocoder = { first: Gazetteer, second: Gazetteer, min_conf: Int }
+fn BestOf.locate(g: BestOf, query: String) -> Hit? = {
+  let good = (h: Hit) => h.conf >= g.min_conf
+  option.or_else(option.filter(g.first.locate(query), good), () => option.filter(g.second.locate(query), good))
+}
+
+// "query -> place (conf)" or "query -> ?" for each query, in order.
+fn resolve[G: Geocoder](g: G, queries: List[String]) -> List[String] =
+  queries |> list.map((q) => match g.locate(q) {
+    some(h) => q + " -> " + h.place + " (" + int.to_string(h.conf) + ")",
+    none => q + " -> ?",
+  })
+
+type Source = | One(Gazetteer) | Both(BestOf)
+
+fn resolve_with(s: Source, queries: List[String]) -> List[String] =
+  match s {
+    One(g) => resolve(g, queries),
+    Both(b) => resolve(b, queries),
+  }

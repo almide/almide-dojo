@@ -1,0 +1,17 @@
+// A geocoding port: the best known place for a query, with a confidence 0..100.
+type Hit: Eq, Repr = { place: String, conf: Int }
+
+protocol Geocoder {
+  fn locate(g: Self, query: String) -> Hit?
+}
+
+// A fixed table of answers.
+type Gazetteer: Geocoder = { known: Map[String, Hit] }
+fn Gazetteer.locate(g: Gazetteer, query: String) -> Hit? = map.get(g.known, query)
+
+// "query -> place (conf)" or "query -> ?" for each query, in order.
+fn resolve[G: Geocoder](g: G, queries: List[String]) -> List[String] =
+  queries |> list.map((q) => match g.locate(q) {
+    some(h) => q + " -> " + h.place + " (" + int.to_string(h.conf) + ")",
+    none => q + " -> ?",
+  })

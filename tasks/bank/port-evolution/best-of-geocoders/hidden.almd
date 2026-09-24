@@ -1,0 +1,17 @@
+test "hidden: the more confident answer wins" {
+  let a = Gazetteer { known: ["paris": Hit { place: "Paris, TX", conf: 60 }] }
+  let b = Gazetteer { known: ["paris": Hit { place: "Paris, FR", conf: 95 }] }
+  assert_eq(resolve_with(Both(BestOf { first: a, second: b, min_conf: 50 }), ["paris"]), ["paris -> Paris, FR (95)"])
+}
+test "hidden: ties and the inclusive minimum" {
+  let a = Gazetteer { known: ["x": Hit { place: "A", conf: 70 }, "y": Hit { place: "A2", conf: 49 }] }
+  let b = Gazetteer { known: ["x": Hit { place: "B", conf: 70 }, "y": Hit { place: "B2", conf: 50 }] }
+  assert_eq(resolve_with(Both(BestOf { first: a, second: b, min_conf: 50 }), ["x", "y"]), ["x -> A (70)", "y -> B2 (50)"])
+}
+test "hidden: low confidence is no answer" {
+  let a = Gazetteer { known: ["q": Hit { place: "A", conf: 10 }] }
+  let b = Gazetteer { known: ["q": Hit { place: "B", conf: 20 }, "r": Hit { place: "R", conf: 5 }] }
+  let g = BestOf { first: a, second: b, min_conf: 30 }
+  assert_eq(resolve_with(Both(g), ["q", "r"]), ["q -> ?", "r -> ?"])
+  assert_eq(g.locate("q"), none)
+}

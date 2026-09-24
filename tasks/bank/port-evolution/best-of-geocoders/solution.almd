@@ -1,0 +1,38 @@
+// A geocoding port: the best known place for a query, with a confidence 0..100.
+type Hit: Eq, Repr = { place: String, conf: Int }
+
+protocol Geocoder {
+  fn locate(g: Self, query: String) -> Hit?
+}
+
+// A fixed table of answers.
+type Gazetteer: Geocoder = { known: Map[String, Hit] }
+fn Gazetteer.locate(g: Gazetteer, query: String) -> Hit? = map.get(g.known, query)
+
+// Both gazetteers; hits below `min_conf` are ignored; the more confident wins,
+// `first` on a tie.
+type BestOf: Geocoder = { first: Gazetteer, second: Gazetteer, min_conf: Int }
+fn BestOf.locate(g: BestOf, query: String) -> Hit? = {
+  let good = (h: Hit) => h.conf >= g.min_conf
+  match (option.filter(g.first.locate(query), good), option.filter(g.second.locate(query), good)) {
+    (some(x), some(y)) => if y.conf > x.conf then some(y) else some(x),
+    (some(x), none) => some(x),
+    (none, some(y)) => some(y),
+    (none, none) => none,
+  }
+}
+
+// "query -> place (conf)" or "query -> ?" for each query, in order.
+fn resolve[G: Geocoder](g: G, queries: List[String]) -> List[String] =
+  queries |> list.map((q) => match g.locate(q) {
+    some(h) => q + " -> " + h.place + " (" + int.to_string(h.conf) + ")",
+    none => q + " -> ?",
+  })
+
+type Source = | One(Gazetteer) | Both(BestOf)
+
+fn resolve_with(s: Source, queries: List[String]) -> List[String] =
+  match s {
+    One(g) => resolve(g, queries),
+    Both(b) => resolve(b, queries),
+  }
