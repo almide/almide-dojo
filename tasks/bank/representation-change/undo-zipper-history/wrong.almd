@@ -1,0 +1,29 @@
+// Plausible wrong patch: an edit keeps the redoable states, so redo can jump past
+// the new edit into a discarded branch. Passes the visible tests.
+// An editor's undo history as a zipper: earlier states newest first, the
+// current state, and the redoable states in redo order.
+type Doc: Eq, Repr = { past: List[String], now: String, future: List[String] }
+
+fn doc(initial: String) -> Doc = Doc { past: [], now: initial, future: [] }
+
+fn current(d: Doc) -> String = d.now
+
+// A new edit becomes the current state.
+fn edit(d: Doc, text: String) -> Doc = Doc { ...d, past: [d.now] + d.past, now: text }
+
+fn undo(d: Doc) -> Doc =
+  match d.past {
+    [] => d,
+    [prev, ..rest] => Doc { past: rest, now: prev, future: [d.now] + d.future },
+  }
+
+fn redo(d: Doc) -> Doc =
+  match d.future {
+    [] => d,
+    [next, ..rest] => Doc { past: [d.now] + d.past, now: next, future: rest },
+  }
+
+fn can_redo(d: Doc) -> Bool = not list.is_empty(d.future)
+
+// "a | b | [c] | d": every state, the current one bracketed.
+fn timeline(d: Doc) -> String = (list.reverse(d.past) + ["[" + d.now + "]"] + d.future) |> list.join(" | ")

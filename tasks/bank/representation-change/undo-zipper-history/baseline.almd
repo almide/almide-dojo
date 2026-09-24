@@ -1,0 +1,19 @@
+// An editor's undo history: every state so far, and the index of the current one.
+type Doc: Eq, Repr = { states: List[String], at: Int }
+
+fn doc(initial: String) -> Doc = Doc { states: [initial], at: 0 }
+
+fn current(d: Doc) -> String = list.get(d.states, d.at) ?? ""
+
+// A new edit discards every state after the current one (no redo past an edit).
+fn edit(d: Doc, text: String) -> Doc = Doc { states: list.take(d.states, d.at + 1) + [text], at: d.at + 1 }
+
+fn undo(d: Doc) -> Doc = if d.at > 0 then Doc { ...d, at: d.at - 1 } else d
+
+fn redo(d: Doc) -> Doc = if d.at + 1 < list.len(d.states) then Doc { ...d, at: d.at + 1 } else d
+
+fn can_redo(d: Doc) -> Bool = d.at + 1 < list.len(d.states)
+
+// "a | b | [c] | d": every state, the current one bracketed.
+fn timeline(d: Doc) -> String =
+  d.states |> list.enumerate |> list.map((p) => if p.0 == d.at then "[" + p.1 + "]" else p.1) |> list.join(" | ")

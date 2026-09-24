@@ -1,0 +1,15 @@
+test "hidden: an edit discards the redo states" {
+  let d = edit(undo(undo(edit(edit(doc("a"), "b"), "c"))), "x")
+  assert_eq(can_redo(d), false)
+  assert_eq(timeline(d), "a | [x]")
+  assert_eq(redo(d), d)
+}
+test "hidden: bounds" {
+  let d = doc("only")
+  assert_eq(undo(d), d)
+  assert_eq(redo(d), d)
+  assert_eq(timeline(d), "[only]")
+  let e = edit(edit(doc("a"), "b"), "c")
+  assert_eq(timeline(undo(undo(undo(e)))), "[a] | b | c")
+  assert_eq(can_redo(undo(e)), true)
+}
