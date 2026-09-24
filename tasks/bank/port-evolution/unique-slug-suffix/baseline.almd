@@ -1,0 +1,23 @@
+// A URL-slug port: the slug for a title, given the slugs already in use.
+protocol Slugger {
+  fn slug(s: Self, title: String, taken: List[String]) -> String
+}
+
+// Lowercase letters and digits; every other run of characters becomes one "-",
+// with no "-" at either end. Ignores `taken`.
+type Basic: Slugger = {}
+fn Basic.slug(s: Basic, title: String, taken: List[String]) -> String = {
+  let raw = string.chars(string.to_lower(title))
+    |> list.map((c) => if string.is_alphanumeric(c) then c else "-")
+    |> list.join("")
+  string.split(raw, "-") |> list.filter((p) => p != "") |> list.join("-")
+}
+
+// Slugs for titles in order; each slug is added to the taken list for the next.
+fn slugs_for[S: Slugger](s: S, titles: List[String], taken: List[String]) -> List[String] = {
+  let (out, _) = titles |> list.fold(([], taken), (acc, t) => {
+    let sl = s.slug(t, acc.1)
+    (acc.0 + [sl], acc.1 + [sl])
+  })
+  out
+}

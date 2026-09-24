@@ -1,0 +1,41 @@
+// Plausible wrong patch: numbers the slug by how many taken slugs start with the
+// base, which counts unrelated slugs and can collide. Passes the visible tests.
+// A URL-slug port: the slug for a title, given the slugs already in use.
+protocol Slugger {
+  fn slug(s: Self, title: String, taken: List[String]) -> String
+}
+
+// Lowercase letters and digits; every other run of characters becomes one "-",
+// with no "-" at either end. Ignores `taken`.
+type Basic: Slugger = {}
+fn Basic.slug(s: Basic, title: String, taken: List[String]) -> String = {
+  let raw = string.chars(string.to_lower(title))
+    |> list.map((c) => if string.is_alphanumeric(c) then c else "-")
+    |> list.join("")
+  string.split(raw, "-") |> list.filter((p) => p != "") |> list.join("-")
+}
+
+// The inner slug, numbered by how many taken slugs share its start.
+type Unique: Slugger = { inner: Basic }
+fn Unique.slug(s: Unique, title: String, taken: List[String]) -> String = {
+  let base = s.inner.slug(title, taken)
+  let used = taken |> list.count((t) => string.starts_with(t, base))
+  if used > 0 then base + "-" + int.to_string(used + 1) else base
+}
+
+// Slugs for titles in order; each slug is added to the taken list for the next.
+fn slugs_for[S: Slugger](s: S, titles: List[String], taken: List[String]) -> List[String] = {
+  let (out, _) = titles |> list.fold(([], taken), (acc, t) => {
+    let sl = s.slug(t, acc.1)
+    (acc.0 + [sl], acc.1 + [sl])
+  })
+  out
+}
+
+type Mode = | Loose(Basic) | Strict(Unique)
+
+fn slugs_with(m: Mode, titles: List[String], taken: List[String]) -> List[String] =
+  match m {
+    Loose(b) => slugs_for(b, titles, taken),
+    Strict(u) => slugs_for(u, titles, taken),
+  }
