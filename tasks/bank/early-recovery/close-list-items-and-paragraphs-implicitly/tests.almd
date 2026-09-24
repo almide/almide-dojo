@@ -1,0 +1,6 @@
+test "an open list item is closed when its list closes" {
+  assert_eq(parse("<ul><li>a</ul>") |> result.map((d) => show(d)), ok("ul(li(a)) | implicitly closed li"))
+}
+test "an unclosed element at the end is still fatal" {
+  assert_eq(parse("<ul><li>a</li>") |> result.map((d) => show(d)), err(Unclosed("ul")))
+}

@@ -1,0 +1,15 @@
+test "hidden: only li and p close implicitly" {
+  assert_eq(parse("<div><b>x</div>") |> result.map((d) => show(d)), err(Mismatch("b", "div")))
+  assert_eq(parse("<div><p>x<b>y</div>") |> result.map((d) => show(d)), err(Mismatch("b", "div")))
+}
+test "hidden: several open items close innermost first" {
+  assert_eq(parse("<ul><li>a<li>b</ul>") |> result.map((d) => show(d)), ok("ul(li(a li(b))) | implicitly closed li; implicitly closed li"))
+  assert_eq(parse("<div><p>one</div><p>two</p>") |> result.map((d) => show(d)), ok("div(p(one)) p(two) | implicitly closed p"))
+}
+test "hidden: a close tag with no matching open element is still a mismatch" {
+  assert_eq(parse("<ul><li>a</ol>") |> result.map((d) => show(d)), err(Mismatch("li", "ol")))
+  assert_eq(parse("</p>") |> result.map((d) => show(d)), err(StrayClose("p")))
+}
+test "hidden: an item left open at the very end is still unclosed" {
+  assert_eq(parse("<p>text") |> result.map((d) => show(d)), err(Unclosed("p")))
+}
