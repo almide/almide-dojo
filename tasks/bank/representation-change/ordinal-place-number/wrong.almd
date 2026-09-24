@@ -1,0 +1,22 @@
+// Plausible wrong patch: picks the suffix from the last digit alone, so 11, 12 and
+// 13 print as "11st", "12nd", "13rd". Passes the visible tests.
+// Race results; `place` is the finishing place.
+type Result: Eq, Repr = { runner: String, place: Int }
+
+fn result(runner: String, place: Int) -> Result = Result { runner: runner, place: place }
+
+fn suffix(n: Int) -> String =
+  match n % 10 {
+    1 => "st",
+    2 => "nd",
+    3 => "rd",
+    _ => "th",
+  }
+
+fn render(r: Result) -> String = int.to_string(r.place) + suffix(r.place) + " " + r.runner
+
+// Results by place; equal places (a tie) keep list order.
+fn ranking(rs: List[Result]) -> List[String] = rs |> list.sort_by((r) => r.place) |> list.map(render)
+
+fn podium(rs: List[Result]) -> List[String] =
+  rs |> list.filter((r) => r.place <= 3) |> list.sort_by((r) => r.place) |> list.map((r) => r.runner)

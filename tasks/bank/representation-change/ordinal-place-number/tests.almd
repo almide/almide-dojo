@@ -1,0 +1,8 @@
+test "ordinal places" {
+  assert_eq(render(result("ann", 1)), "1st ann")
+  assert_eq(render(result("bo", 22)), "22nd bo")
+  assert_eq(ranking([result("b", 3), result("a", 2)]), ["2nd a", "3rd b"])
+}
+test "podium" {
+  assert_eq(podium([result("x", 4), result("y", 1)]), ["y"])
+}
