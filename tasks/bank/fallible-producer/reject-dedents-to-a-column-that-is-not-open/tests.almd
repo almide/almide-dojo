@@ -1,0 +1,6 @@
+test "a dedent between two levels is rejected" {
+  assert(result.is_err(outline(["a", "    b", "  c"])))
+}
+test "a valid outline is still numbered" {
+  assert_eq(outline(["fruit", "  apple", "  pear", "", "veg", "  leek", "    baby"]), ok(["1 fruit", "1.1 apple", "1.2 pear", "2 veg", "2.1 leek", "2.1.1 baby"]))
+}

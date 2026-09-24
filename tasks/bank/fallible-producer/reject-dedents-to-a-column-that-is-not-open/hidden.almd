@@ -1,0 +1,16 @@
+test "hidden: exact message" {
+  assert_eq(outline(["a", "    b", "  c"]), err("line 3: column 2 does not match an open level"))
+  assert_eq(outline(["a", "  b", "      c", "", "    d"]), err("line 5: column 4 does not match an open level"))
+}
+test "hidden: a column used by a closed sub-list does not count" {
+  assert_eq(outline(["a", "  b", "x", "    y", "  z"]), err("line 5: column 2 does not match an open level"))
+}
+test "hidden: several levels closed at once, and deep jumps" {
+  assert_eq(outline(["a", "  b", "     c", "        d", "  e", "f"]), ok(["1 a", "1.1 b", "1.1.1 c", "1.1.1.1 d", "1.2 e", "2 f"]))
+  assert_eq(outline(["a", "  b", "     c", "        d", "    e"]), err("line 5: column 4 does not match an open level"))
+}
+test "hidden: existing errors keep their order" {
+  assert_eq(outline(["a", "    b", "  c", "\tx"]), err("line 3: column 2 does not match an open level"))
+  assert_eq(outline(["a", "  \tb", "    c", " d"]), err("tab in indentation at line 2"))
+  assert_eq(outline(["  a", "b"]), err("first item is indented at line 1"))
+}
