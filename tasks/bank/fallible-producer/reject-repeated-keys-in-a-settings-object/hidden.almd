@@ -1,0 +1,19 @@
+test "hidden: the same key in different objects is fine" {
+  assert_eq(settings("{a:{x:1},b:{x:2},x:3}"), ok(["a.x=1", "b.x=2", "x=3"]))
+  assert_eq(settings("{tls:{tls:{tls:4}}}"), ok(["tls.tls.tls=4"]))
+}
+test "hidden: a repeated key inside a nested object" {
+  assert_eq(parse("{a:1,b:{c:2,c:3}}") |> result.map((_) => ""), err("duplicate key c at 12"))
+  assert_eq(parse("{a:{},a:{}}") |> result.map((_) => ""), err("duplicate key a at 6"))
+}
+test "hidden: a repeated key wins over later reading errors" {
+  assert_eq(settings("{a:1,a:2,b:}"), err("duplicate key a at 5"))
+  assert_eq(settings("{a:{x:1,x:2,y:}}"), err("duplicate key x at 8"))
+  assert_eq(settings("{a:1,a"), err("duplicate key a at 5"))
+  assert_eq(settings("{a:1,a:2}x"), err("duplicate key a at 5"))
+}
+test "hidden: earlier reading errors and the size check keep their order" {
+  assert_eq(settings("{a:x,a:2}"), err("bad value at 3"))
+  assert_eq(settings("{a:70000,a:1}"), err("duplicate key a at 9"))
+  assert_eq(settings("{a:70000,b:{c:99999}}"), err("value a at 1 is too large"))
+}

@@ -1,0 +1,6 @@
+test "a repeated key is rejected" {
+  assert_eq(settings("{port:80,tls:1,port:81}"), err("duplicate key port at 15"))
+}
+test "a nested document still flattens" {
+  assert_eq(settings("{port:80,tls:{on:1,min:12}}"), ok(["port=80", "tls.on=1", "tls.min=12"]))
+}
