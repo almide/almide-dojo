@@ -1,0 +1,25 @@
+// Uploader. Records (their sizes in KB) are sent in batches of up to 4; the
+// server accepts a batch whose total size is at most 100 KB and refuses
+// records of size 0 or less.
+type SendErr: Eq, Repr = | TooLarge(Int, Int) | BadRecord(Int)
+type Upload: Eq, Repr = { batches: List[List[Int]] }
+
+let LIMIT = 100
+
+fn send(batch: List[Int]) -> List[Int]!SendErr = {
+  match list.find(batch, (r) => r <= 0) {
+    some(r) => err(BadRecord(r)),
+    none => ok(()),
+  }!
+  let total = list.sum(batch)
+  guard total <= LIMIT else err(TooLarge(list.len(batch), total))
+  batch
+}
+
+fn upload(records: List[Int]) -> Upload!SendErr = {
+  let sent = list.chunk(records, 4) |> list.map((b) => send(b)!)!
+  Upload { batches: sent }
+}
+
+fn show(u: Upload) -> String =
+  u.batches |> list.map((b) => "[${b |> list.map((r) => int.to_string(r)) |> list.join(",")}]") |> list.join(" ")

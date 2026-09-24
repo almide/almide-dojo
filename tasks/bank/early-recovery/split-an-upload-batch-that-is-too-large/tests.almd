@@ -1,0 +1,6 @@
+test "a batch that is too large is split in two" {
+  assert_eq(upload([60, 30, 20, 10]) |> result.map((u) => show(u)), ok("[60,30] [20,10]"))
+}
+test "a bad record is still fatal" {
+  assert_eq(upload([10, 0, 5]) |> result.map((u) => show(u)), err(BadRecord(0)))
+}

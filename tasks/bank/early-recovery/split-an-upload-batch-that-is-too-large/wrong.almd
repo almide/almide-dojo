@@ -1,0 +1,39 @@
+// Plausible wrong patch: splits a refused batch once and sends the halves as
+// they are, so a half that is still too large fails.
+// Uploader. Records (their sizes in KB) are sent in batches of up to 4; the
+// server accepts a batch whose total size is at most 100 KB and refuses
+// records of size 0 or less.
+type SendErr: Eq, Repr = | TooLarge(Int, Int) | BadRecord(Int)
+type Upload: Eq, Repr = { batches: List[List[Int]] }
+
+let LIMIT = 100
+
+fn send(batch: List[Int]) -> List[Int]!SendErr = {
+  match list.find(batch, (r) => r <= 0) {
+    some(r) => err(BadRecord(r)),
+    none => ok(()),
+  }!
+  let total = list.sum(batch)
+  guard total <= LIMIT else err(TooLarge(list.len(batch), total))
+  batch
+}
+
+fn send_split(batch: List[Int]) -> List[List[Int]]!SendErr =
+  match send(batch) {
+    ok(b) => ok([b]),
+    err(TooLarge(n, total)) if n > 1 => {
+      let k = (n + 1) / 2
+      let first = send(list.take(batch, k))!
+      let second = send(list.drop(batch, k))!
+      ok([first, second])
+    },
+    err(e) => err(e),
+  }
+
+fn upload(records: List[Int]) -> Upload!SendErr = {
+  let sent = list.chunk(records, 4) |> list.map((b) => send_split(b)!)!
+  Upload { batches: list.flatten(sent) }
+}
+
+fn show(u: Upload) -> String =
+  u.batches |> list.map((b) => "[${b |> list.map((r) => int.to_string(r)) |> list.join(",")}]") |> list.join(" ")
