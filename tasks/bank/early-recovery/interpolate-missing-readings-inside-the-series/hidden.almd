@@ -1,0 +1,16 @@
+test "hidden: interpolation follows time, across several lost readings" {
+  assert_eq(series(["0=0", "1=?", "2=?", "3=?", "4=40"]) |> result.map((s) => show(s)),
+    ok("0:0 1:10 2:20 3:30 4:40 | interpolated 1 as 10; interpolated 2 as 20; interpolated 3 as 30"))
+  assert_eq(series(["0=0", "1=?", "10=90"]) |> result.map((s) => show(s)), ok("0:0 1:9 10:90 | interpolated 1 as 9"))
+}
+test "hidden: halves round up, also going down" {
+  assert_eq(series(["0=10", "1=?", "2=11"]) |> result.map((s) => show(s)), ok("0:10 1:11 2:11 | interpolated 1 as 11"))
+  assert_eq(series(["0=11", "1=?", "2=10"]) |> result.map((s) => show(s)), ok("0:11 1:11 2:10 | interpolated 1 as 11"))
+}
+test "hidden: a lost reading at either end stays fatal" {
+  assert_eq(series(["0=?", "1=5"]) |> result.map((s) => show(s)), err(Missing(0)))
+  assert_eq(series(["0=5", "1=6", "2=?"]) |> result.map((s) => show(s)), err(Missing(2)))
+}
+test "hidden: order problems stay fatal" {
+  assert_eq(series(["0=5", "1=?", "1=6"]) |> result.map((s) => show(s)), err(NotIncreasing(1)))
+}
