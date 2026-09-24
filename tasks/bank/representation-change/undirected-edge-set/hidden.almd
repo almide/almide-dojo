@@ -1,0 +1,14 @@
+test "hidden: links are undirected" {
+  let g = link_all(graph(), [("bo", "ann"), ("ann", "bo"), ("cy", "ann")])
+  assert_eq(link_count(g), 2)
+  assert_eq(links(g), ["ann-bo", "ann-cy"])
+  assert_eq(degree(g, "ann"), 2)
+  assert_eq(g, link_all(graph(), [("ann", "cy"), ("ann", "bo")]))
+}
+test "hidden: self links and unknown people" {
+  let g = link(link(graph(), "dee", "dee"), "zed", "amy")
+  assert_eq(link_count(g), 1)
+  assert_eq(friends(g, "zed"), ["amy"])
+  assert_eq(degree(g, "nobody"), 0)
+  assert_eq(friends(g, "dee"), [])
+}
