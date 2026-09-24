@@ -1,0 +1,25 @@
+// Jobs "name:priority:arrival". Each job takes one time unit; a higher
+// priority number is more urgent.
+type Job = { name: String, prio: Int, arrival: Int }
+
+fn parse_job(s: String) -> Result[Job, String] =
+  match string.split(s, ":") {
+    [n, p, a] => match (int.parse(p), int.parse(a)) {
+      (ok(pv), ok(av)) => ok(Job { name: n, prio: pv, arrival: av }),
+      _ => err("bad job: " + s),
+    },
+    _ => err("bad job: " + s),
+  }
+
+fn parse_jobs(ss: List[String]) -> Result[List[Job], String] = ss |> list.map((s) => parse_job(s)!)
+
+fn by_urgency(jobs: List[Job]) -> List[String] =
+  jobs |> list.sort_by((j) => 0 - j.prio) |> list.map((j) => j.name)
+
+// Plausible wrong patch: sorts all jobs by urgency then arrival and runs them
+// in that order, so an urgent job "runs" before it has arrived.
+fn run_order(ss: List[String]) -> String =
+  match parse_jobs(ss) {
+    err(e) => e,
+    ok(jobs) => "order=" + (jobs |> list.sort_by((j) => j.arrival) |> list.sort_by((j) => 0 - j.prio) |> list.map((j) => j.name) |> list.join(",")),
+  }

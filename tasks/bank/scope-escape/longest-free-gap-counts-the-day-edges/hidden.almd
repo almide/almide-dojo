@@ -1,0 +1,9 @@
+test "hidden: the day edges count" {
+  assert_eq(longest_free(["700-800"]), "free=220")
+  assert_eq(longest_free(["600-700", "540-560"]), "free=320")
+  assert_eq(longest_free([]), "free=480")
+}
+test "hidden: overlaps and outside parts" {
+  assert_eq(longest_free(["500-600", "590-1000", "1010-1100"]), "free=10")
+  assert_eq(busy_count(["1-2"]), ok(1))
+}

@@ -1,0 +1,12 @@
+test "hidden: urgent jobs wait for their arrival" {
+  assert_eq(run_order(["a:1:0", "b:9:5"]), "order=a,b")
+  assert_eq(run_order(["a:1:0", "b:2:0", "c:9:1"]), "order=b,c,a")
+}
+test "hidden: idle clock and ties" {
+  assert_eq(run_order(["late:1:10", "later:5:12"]), "order=late,later")
+  assert_eq(run_order(["p:3:2", "q:3:1", "r:3:1"]), "order=q,r,p")
+  assert_eq(run_order([]), "order=")
+}
+test "hidden: urgency list unchanged" {
+  assert_eq(by_urgency([Job { name: "a", prio: 1, arrival: 9 }, Job { name: "b", prio: 2, arrival: 0 }]), ["b", "a"])
+}

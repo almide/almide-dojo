@@ -1,0 +1,4 @@
+test "route" {
+  assert_eq(route(["JFK-LHR", "LHR-CDG"]), "JFK>LHR>CDG")
+  assert_eq(route(["JF-LHR"]), "bad ticket: JF-LHR")
+}

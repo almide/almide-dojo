@@ -1,0 +1,11 @@
+// An indented outline: two spaces per level, blank lines ignored. A line's
+// level is its leading spaces / 2.
+fn level(line: String) -> Int = (string.len(line) - string.len(string.trim_start(line))) / 2
+
+fn entries(text: String) -> List[(Int, String)] =
+  string.lines(text) |> list.filter((l) => string.trim(l) != "") |> list.map((l) => (level(l), string.trim(l)))
+
+fn deepest(text: String) -> Int = entries(text) |> list.fold(0, (m, e) => {
+  let (lv, _) = e
+  int.max(m, lv)
+})

@@ -1,0 +1,20 @@
+// An indented outline: two spaces per level, blank lines ignored. A line's
+// level is its leading spaces / 2.
+fn level(line: String) -> Int = (string.len(line) - string.len(string.trim_start(line))) / 2
+
+fn entries(text: String) -> List[(Int, String)] =
+  string.lines(text) |> list.filter((l) => string.trim(l) != "") |> list.map((l) => (level(l), string.trim(l)))
+
+fn deepest(text: String) -> Int = entries(text) |> list.fold(0, (m, e) => {
+  let (lv, _) = e
+  int.max(m, lv)
+})
+
+// Plausible wrong patch: counts an entry as a leaf only when the outline
+// steps back OUT after it, so an entry followed by a sibling is missed.
+fn outline_stats(text: String) -> String = {
+  let es = entries(text)
+  let levels = es |> list.map(((lv, _)) => lv)
+  let leaves = list.zip(levels, list.drop(levels, 1) + [-1]) |> list.count(((a, b)) => b < a)
+  "items=" + int.to_string(list.len(es)) + ",leaves=" + int.to_string(leaves)
+}

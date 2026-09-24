@@ -1,0 +1,12 @@
+kind = "modify"
+family = "dojo:scope-escape"
+contracts = []
+oracles = ["behaviour", "cross-target"]
+# The protected observation is RESOURCE-side (no storage of the temporary
+# survives the call): outstanding ownership AT the boundary return, which needs
+# the per-boundary read of almide/almide#2581. Until then only the behavioural
+# half is scored (wrong.almd).
+resource_oracle = "pending"
+expected_loc = 20
+timeout_sec = 60
+difficulty = "hard"

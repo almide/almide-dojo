@@ -1,0 +1,36 @@
+// Busy blocks in a working day from minute 540 (09:00) to 1020 (17:00), as
+// "start-end" minute pairs, half-open, possibly overlapping, in any order.
+fn parse_block(s: String) -> Result[(Int, Int), String] =
+  match string.split(s, "-") {
+    [a, b] => match (int.parse(a), int.parse(b)) {
+      (ok(x), ok(y)) => if x < y then ok((x, y)) else err("empty block: " + s),
+      _ => err("bad block: " + s),
+    },
+    _ => err("bad block: " + s),
+  }
+
+fn parse_blocks(ss: List[String]) -> Result[List[(Int, Int)], String] = ss |> list.map((s) => parse_block(s)!)
+
+fn busy_count(ss: List[String]) -> Result[Int, String] = {
+  let bs = parse_blocks(ss)!
+  ok(list.len(bs))
+}
+
+// Plausible wrong patch: measures only the gaps BETWEEN consecutive blocks,
+// so the free time at the start and end of the day is never counted.
+fn longest_free(ss: List[String]) -> String =
+  match parse_blocks(ss) {
+    err(e) => e,
+    ok(bs) => {
+      let sorted = bs |> list.sort_by(((s, _)) => s)
+      let (_, best) = sorted |> list.fold((none, 0), (st, b) => {
+        let (prev_end, m) = st
+        let (s, e) = b
+        match prev_end {
+          some(pe) => (some(int.max(pe, e)), int.max(m, s - pe)),
+          none => (some(e), m),
+        }
+      })
+      "free=" + int.to_string(if list.is_empty(sorted) then 480 else best)
+    },
+  }

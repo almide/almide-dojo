@@ -1,0 +1,37 @@
+// Flight tickets "FROM-TO", one per leg of a single trip, in random order.
+// Every airport is left at most once.
+fn parse_ticket(s: String) -> Result[(String, String), String] =
+  match string.split(s, "-") {
+    [a, b] => if string.len(a) == 3 and string.len(b) == 3 then ok((a, b)) else err("bad ticket: " + s),
+    _ => err("bad ticket: " + s),
+  }
+
+fn parse_tickets(ss: List[String]) -> Result[List[(String, String)], String] = ss |> list.map((s) => parse_ticket(s)!)
+
+fn airports(ss: List[String]) -> Result[Int, String] = {
+  let ts = parse_tickets(ss)!
+  ok(ts |> list.flat_map(((a, b)) => [a, b]) |> list.unique |> list.len)
+}
+
+fn follow(next: Map[String, String], at: String, acc: List[String], left: Int) -> List[String] =
+  if left == 0 then acc
+  else match map.get(next, at) {
+    some(to) => follow(next, to, acc + [to], left - 1),
+    none => acc,
+  }
+
+// Start = a departure that is never an arrival; the table stays local.
+fn route(ss: List[String]) -> String =
+  match parse_tickets(ss) {
+    err(e) => e,
+    ok(ts) => {
+      let arrivals = ts |> list.map(((_, b)) => b)
+      match ts |> list.find(((a, _)) => not list.contains(arrivals, a)) {
+        none => if list.is_empty(ts) then "" else "broken",
+        some((start, _)) => {
+          let path = follow(map.from_list(ts), start, [start], list.len(ts))
+          if list.len(path) == list.len(ts) + 1 then list.join(path, ">") else "broken"
+        },
+      }
+    },
+  }

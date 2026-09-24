@@ -1,0 +1,32 @@
+// Busy blocks in a working day from minute 540 (09:00) to 1020 (17:00), as
+// "start-end" minute pairs, half-open, possibly overlapping, in any order.
+fn parse_block(s: String) -> Result[(Int, Int), String] =
+  match string.split(s, "-") {
+    [a, b] => match (int.parse(a), int.parse(b)) {
+      (ok(x), ok(y)) => if x < y then ok((x, y)) else err("empty block: " + s),
+      _ => err("bad block: " + s),
+    },
+    _ => err("bad block: " + s),
+  }
+
+fn parse_blocks(ss: List[String]) -> Result[List[(Int, Int)], String] = ss |> list.map((s) => parse_block(s)!)
+
+fn busy_count(ss: List[String]) -> Result[Int, String] = {
+  let bs = parse_blocks(ss)!
+  ok(list.len(bs))
+}
+
+// Walk the sorted blocks with a cursor from 540; the list stays local.
+fn longest_free(ss: List[String]) -> String =
+  match parse_blocks(ss) {
+    err(e) => e,
+    ok(bs) => {
+      let (cursor, best) = bs |> list.sort_by(((s, _)) => s) |> list.fold((540, 0), (st, b) => {
+        let (cur, m) = st
+        let (s, e) = b
+        let start = int.clamp(s, 540, 1020)
+        (int.max(cur, int.clamp(e, 540, 1020)), int.max(m, start - cur))
+      })
+      "free=" + int.to_string(int.max(best, 1020 - cursor))
+    },
+  }

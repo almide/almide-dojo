@@ -1,0 +1,59 @@
+// A stock ledger: "buy <qty> <unit price>" and "sell <qty>" lines, in time
+// order. Stock is sold FIRST IN, FIRST OUT: a sale takes units from the
+// oldest remaining purchase first.
+type Line = | Buy(Int, Int) | Sell(Int)
+
+fn parse_line(s: String) -> Result[Line, String] =
+  match string.split(s, " ") {
+    ["buy", q, p] => match (int.parse(q), int.parse(p)) {
+      (ok(qv), ok(pv)) => ok(Buy(qv, pv)),
+      _ => err("bad line: " + s),
+    },
+    ["sell", q] => match int.parse(q) {
+      ok(qv) => ok(Sell(qv)),
+      err(_) => err("bad line: " + s),
+    },
+    _ => err("bad line: " + s),
+  }
+
+fn parse_ledger(ss: List[String]) -> Result[List[Line], String] = ss |> list.map((s) => parse_line(s)!)
+
+fn units_on_hand(ss: List[String]) -> Result[Int, String] = {
+  let ls = parse_ledger(ss)!
+  ok(ls |> list.fold(0, (a, l) => match l {
+    Buy(q, _) => a + q,
+    Sell(q) => a - q,
+  }))
+}
+
+// Takes `need` units from the front of the lots: (cost, lots left) or none.
+fn take(lots: List[(Int, Int)], need: Int, cost: Int) -> (Int, List[(Int, Int)])? =
+  if need == 0 then some((cost, lots))
+  else match list.first(lots) {
+    none => none,
+    some((q, p)) =>
+      if q > need then some((cost + need * p, [(q - need, p)] + list.drop(lots, 1)))
+      else take(list.drop(lots, 1), need - q, cost + q * p),
+  }
+
+// FIFO lots, oldest first; the queue stays local to this call.
+fn cogs(ss: List[String]) -> String =
+  match parse_ledger(ss) {
+    err(e) => e,
+    ok(ls) => {
+      let result = ls |> list.fold(some((0, [])), (st, l) => match st {
+        none => none,
+        some((c, lots)) => match l {
+          Buy(q, p) => some((c, lots + [(q, p)])),
+          Sell(q) => take(lots, q, c),
+        },
+      })
+      match result {
+        some((c, lots)) => "cogs=" + int.to_string(c) + ",left=" + int.to_string(lots |> list.fold(0, (a, lt) => {
+          let (q, _) = lt
+          a + q
+        })),
+        none => "short",
+      }
+    },
+  }

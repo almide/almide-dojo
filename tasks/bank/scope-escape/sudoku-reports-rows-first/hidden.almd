@@ -1,0 +1,10 @@
+test "hidden: rows before columns before boxes" {
+  assert_eq(first_conflict(["1...", "1...", "....", "...."]), "col 1")
+  assert_eq(first_conflict(["1...", "1...", "..22", "...."]), "row 3")
+  assert_eq(first_conflict(["1...", ".1..", "....", "...."]), "box 1")
+  assert_eq(first_conflict(["....", "....", "...3", "..3."]), "box 4")
+}
+test "hidden: empty grid" {
+  assert_eq(first_conflict(["....", "....", "....", "...."]), "ok")
+  assert_eq(filled(["12..", "....", "....", "...4"]), 3)
+}

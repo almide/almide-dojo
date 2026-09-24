@@ -1,0 +1,20 @@
+// Email addresses "local@domain". Domains compare case-insensitively. Only
+// for gmail.com are dots in the local part ignored and a "+tag" suffix
+// dropped; every other provider treats them as different mailboxes.
+fn split_email(e: String) -> (String, String)? =
+  match string.split(e, "@") {
+    [l, d] => if l != "" and d != "" then some((l, string.to_lower(d))) else none,
+    _ => none,
+  }
+
+fn valid_count(es: List[String]) -> Int = es |> list.count((e) => option.is_some(split_email(e)))
+
+fn domains(es: List[String]) -> List[String] =
+  es |> list.filter_map((e) => split_email(e) |> option.map(((_, d)) => d)) |> list.unique
+
+// Plausible wrong patch: applies the dot and +tag rules to every provider.
+fn inboxes(es: List[String]) -> String = {
+  let parts = es |> list.filter_map((e) => split_email(e))
+  let unique = parts |> list.map(((l, d)) => string.replace(string.split(l, "+") |> list.first ?? l, ".", "") + "@" + d) |> set.from_list |> set.len
+  "unique=" + int.to_string(unique) + ",invalid=" + int.to_string(list.len(es) - list.len(parts))
+}
