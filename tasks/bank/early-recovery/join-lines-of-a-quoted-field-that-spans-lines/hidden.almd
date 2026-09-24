@@ -1,0 +1,13 @@
+test "hidden: later errors name their own physical line" {
+  assert_eq(read_csv(2, ["a,\"x", "y\"", "b,c", "d"]) |> result.map((r) => show(r)), err(FieldCount(4, 1)))
+  assert_eq(read_csv(2, ["a,\"x", "", "y\"", "e,f\"g"]) |> result.map((r) => show(r)), err(BadQuote(4)))
+}
+test "hidden: an error inside a joined record names its first line" {
+  assert_eq(read_csv(2, ["ok,1", "a,\"x", "y\",z"]) |> result.map((r) => show(r)), err(FieldCount(2, 3)))
+}
+test "hidden: a quote still open at the end of the input is fatal at its first line" {
+  assert_eq(read_csv(2, ["a,b", "c,\"never", "closed"]) |> result.map((r) => show(r)), err(OpenQuote(2)))
+}
+test "hidden: a field may span several lines, and escaped quotes still work" {
+  assert_eq(read_csv(2, ["\"1", "2", "3\",\"say \"\"hi\"\"\""]) |> result.map((r) => show(r)), ok("1\n2\n3|say \"hi\""))
+}

@@ -1,0 +1,54 @@
+// Plausible wrong patch: joins continuation lines first and then numbers the
+// joined records 1, 2, 3, ..., so errors after a multi-line record name the
+// wrong line.
+// CSV reader with quoted fields: a field in double quotes may contain commas,
+// and "" inside quotes is one quote. Every record must have `width` fields.
+// Errors carry the line number (from 1).
+type CsvErr: Eq, Repr =
+  | OpenQuote(Int)
+  | BadQuote(Int)
+  | FieldCount(Int, Int)
+type Scan = { fields: List[String], cur: String, quoted: Bool }
+
+fn step(n: Int, st: Scan, c: String, next: String) -> Scan!CsvErr =
+  if st.quoted then {
+    if c == "\"" and next == "\"" then ok({ ...st, cur: st.cur + "\"" })
+    else if c == "\"" then ok({ ...st, quoted: false })
+    else ok({ ...st, cur: st.cur + c })
+  } else if c == "," then ok(Scan { fields: st.fields + [st.cur], cur: "", quoted: false })
+  else if c == "\"" then {
+    guard st.cur == "" else err(BadQuote(n))
+    ok({ ...st, quoted: true })
+  } else ok({ ...st, cur: st.cur + c })
+
+fn scan(n: Int, cs: List[String], i: Int, st: Scan) -> Scan!CsvErr =
+  if i >= list.len(cs) then ok(st)
+  else {
+    let c = list.get(cs, i) ?? ""
+    let skip = st.quoted and c == "\"" and list.get(cs, i + 1) == some("\"")
+    let st2 = step(n, st, c, list.get(cs, i + 1) ?? "")!
+    scan(n, cs, if skip then i + 2 else i + 1, st2)
+  }
+
+fn parse_record(n: Int, width: Int, line: String) -> List[String]!CsvErr = {
+  let st = scan(n, string.chars(line), 0, Scan { fields: [], cur: "", quoted: false })!
+  guard not st.quoted else err(OpenQuote(n))
+  let fields = st.fields + [st.cur]
+  guard list.len(fields) == width else err(FieldCount(n, list.len(fields)))
+  fields
+}
+
+fn open_quotes(s: String) -> Bool = string.count(s, "\"") % 2 == 1
+
+fn join_lines(lines: List[String]) -> List[String] =
+  lines |> list.fold([], (acc, l) =>
+    match list.last(acc) {
+      some(prev) if open_quotes(prev) => list.set(acc, list.len(acc) - 1, prev + "\n" + l),
+      _ => acc + [l],
+    })
+
+fn read_csv(width: Int, lines: List[String]) -> List[List[String]]!CsvErr =
+  join_lines(lines) |> list.enumerate |> list.map((p) => parse_record(p.0 + 1, width, p.1)!)!
+
+fn show(rows: List[List[String]]) -> String =
+  rows |> list.map((r) => list.join(r, "|")) |> list.join(" / ")

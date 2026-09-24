@@ -1,0 +1,6 @@
+test "a quoted field may continue on the next line" {
+  assert_eq(read_csv(2, ["a,\"line one", "line two\"", "b,c"]) |> result.map((r) => show(r)), ok("a|line one\nline two / b|c"))
+}
+test "a bad quote is still fatal" {
+  assert_eq(read_csv(2, ["a,b\"c"]) |> result.map((r) => show(r)), err(BadQuote(1)))
+}
