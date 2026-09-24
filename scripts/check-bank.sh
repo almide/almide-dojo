@@ -32,7 +32,9 @@
 #       resource bound or wrong_resource stays within it. Unarmed, the leg is
 #       reported off; BANK_REQUIRE_RESOURCE=1 makes that an error.
 #   (f) with wasmtime on PATH: solution + tests + hidden differ between native and
-#       wasm (cross-target agreement is part of the score).
+#       wasm (cross-target agreement is part of the score). A solution the compiler
+#       SKIPs at a wasm "v1 wall" (exit 0, nothing run) is counted and reported as
+#       unscored, never as agreement; BANK_REQUIRE_WASM_RENDER=1 makes it an error.
 #   (h) two baselines of one family are near-duplicates (scripts/bank_dedup.almd:
 #       identifiers/literals normalised to placeholders, token 6-gram Jaccard at or
 #       above its calibrated threshold) — a renamed task is not an independent cluster.
@@ -131,6 +133,11 @@ check_task() {
   # (f) cross-target agreement
   if [ "$HAVE_WASM" = 1 ]; then
     run_triple "$dir" solution --target wasm || err "$name: solution passes natively but not on --target wasm"
+    # A wasm "v1 wall" SKIPs the file and exits 0: that is NOT agreement, it was never run.
+    if grep -q '^SKIP .*v1 wall' "$TMP/$(echo "$name" | tr / _)-solution-all--target wasm.almd.log" 2>/dev/null; then
+      : > "$TMP/walled-$(echo "$name" | tr / _)"
+      [ "${BANK_REQUIRE_WASM_RENDER:-0}" = 1 ] && err "$name: the solution hits a wasm v1 wall — the cross-target leg is skipped, not scored"
+    fi
   fi
   [ "$fail" = 0 ] && [ -n "${BANK_VERBOSE:-}" ] && echo "ok   $name"
   return "$fail"
@@ -154,5 +161,6 @@ fi
 # copy of a seed must be refused, or the gate itself is broken)
 almide test scripts/bank_dedup.almd >"$TMP/dedup-test.log" 2>&1 || err "scripts/bank_dedup.almd self-test failed ($(tail -5 "$TMP/dedup-test.log" | tr '\n' ' '))"
 almide run scripts/bank_dedup.almd -- "$BANK" || fail=1
-echo "bank gate: $n task(s), wasm leg $([ "$HAVE_WASM" = 1 ] && echo on || echo off), resource leg $([ "$HAVE_RES" = 1 ] && echo on || echo "off ($RES_STATE)")"
+walled=$(ls "$TMP" | grep -c '^walled-' || true)
+echo "bank gate: $n task(s), wasm leg $([ "$HAVE_WASM" = 1 ] && echo "on ($((n - walled)) rendered, $walled skipped at a v1 wall — unscored)" || echo off), resource leg $([ "$HAVE_RES" = 1 ] && echo on || echo "off ($RES_STATE)")"
 [ "$fail" = 0 ] && { echo "bank gate OK"; exit 0; } || { echo "bank gate FAILED"; exit 1; }
