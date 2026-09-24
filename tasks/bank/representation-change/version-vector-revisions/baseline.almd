@@ -1,0 +1,20 @@
+// Replicated notes. `rev` counts the edits made to a note, on any node.
+type Note: Eq, Repr = { title: String, rev: Int }
+
+fn note(title: String, rev: Int) -> Note = Note { title: title, rev: rev }
+
+// One more edit, made on `node`.
+fn edit(n: Note, node: String) -> Note = Note { ...n, rev: n.rev + 1 }
+
+// "before", "after" or "same": how `a` relates to `b`.
+fn relation(a: Note, b: Note) -> String =
+  if a.rev < b.rev then "before" else if a.rev > b.rev then "after" else "same"
+
+// The newer of two copies (the first one when they are the same).
+fn reconcile(a: Note, b: Note) -> Note = if relation(a, b) == "before" then b else a
+
+fn stamp(n: Note) -> String = n.title + "@" + int.to_string(n.rev)
+
+// Titles whose copies disagree, in list order.
+fn stale(pairs: List[(Note, Note)]) -> List[String] =
+  pairs |> list.filter((p) => relation(p.0, p.1) != "same") |> list.map((p) => p.0.title)

@@ -1,0 +1,19 @@
+test "hidden: zero counts equal absent nodes" {
+  assert_eq(relation(note("x", [("a", 0)]), note("x", [])), "same")
+  assert_eq(stamp(note("x", [("a", 0)])), "x@-")
+  assert_eq(stamp(note("x", [("b", 1), ("a", 0)])), "x@b:1")
+  assert_eq(stale([(note("x", [("q", 0)]), note("x", []))]), [])
+}
+test "hidden: stamps sort nodes by name" {
+  assert_eq(stamp(note("s", [("zed", 1), ("amy", 4), ("kim", 2)])), "s@amy:4,kim:2,zed:1")
+  assert_eq(stamp(edit(note("s", []), "m")), "s@m:1")
+}
+test "hidden: relations and stale pairs" {
+  let a = note("a", [("n1", 2), ("n2", 1)])
+  let b = note("a", [("n1", 2), ("n2", 2)])
+  let c = note("c", [("n1", 3)])
+  assert_eq(relation(b, a), "after")
+  assert_eq(relation(a, c), "concurrent")
+  assert_eq(stale([(a, b), (a, a), (a, c)]), ["a", "a"])
+  assert_eq(stamp(reconcile(note("t", []), note("u", [("x", 0), ("y", 2)]))), "t@y:2")
+}
