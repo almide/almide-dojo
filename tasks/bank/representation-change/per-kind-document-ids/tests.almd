@@ -1,0 +1,9 @@
+test "per-kind ids" {
+  let docs = issue(issue([], Invoice, 100), Invoice, 50)
+  assert_eq(docs |> list.map(label), ["INV-0001", "INV-0002"])
+  assert_eq(next_id(docs, Invoice), 3)
+}
+test "find by id" {
+  let docs = issue([], Quote, 70)
+  assert_eq(find(docs, DocId { kind: Quote, n: 1 }) |> option.map((d) => d.amount), some(70))
+}

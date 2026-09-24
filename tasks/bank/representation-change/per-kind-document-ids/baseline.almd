@@ -1,0 +1,15 @@
+// Business documents numbered from one global sequence.
+type Doc: Eq, Repr = { id: Int, kind: String, amount: Int }
+
+fn label(d: Doc) -> String = d.kind + " #" + int.to_string(d.id)
+
+// The next free number: one more than the highest used, 1 for none.
+fn next_id(docs: List[Doc]) -> Int = (docs |> list.map((d) => d.id) |> list.max ?? 0) + 1
+
+fn issue(docs: List[Doc], kind: String, amount: Int) -> List[Doc] =
+  docs + [Doc { id: next_id(docs), kind: kind, amount: amount }]
+
+fn find(docs: List[Doc], id: Int) -> Doc? = docs |> list.find((d) => d.id == id)
+
+// Labels ordered by number.
+fn register(docs: List[Doc]) -> List[String] = docs |> list.sort_by((d) => d.id) |> list.map(label)

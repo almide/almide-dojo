@@ -1,0 +1,38 @@
+// Plausible wrong patch: keeps the global maximum when choosing the next number,
+// so a new kind starts after the other kinds' numbers. Passes the visible tests.
+// Business documents numbered per kind.
+type Kind: Eq, Repr = | Invoice | Quote | Receipt
+type DocId: Eq, Repr = { kind: Kind, n: Int }
+type Doc: Eq, Repr = { id: DocId, amount: Int }
+
+fn prefix(k: Kind) -> String =
+  match k {
+    Invoice => "INV",
+    Quote => "QUO",
+    Receipt => "RCP",
+  }
+
+fn kind_rank(k: Kind) -> Int =
+  match k {
+    Invoice => 0,
+    Quote => 1,
+    Receipt => 2,
+  }
+
+fn label(d: Doc) -> String = prefix(d.id.kind) + "-" + string.pad_start(int.to_string(d.id.n), 4, "0")
+
+// The next free number: one more than the highest used, 1 for none.
+fn next_id(docs: List[Doc], kind: Kind) -> Int =
+  (docs |> list.map((d) => d.id.n) |> list.max ?? 0) + 1
+
+fn issue(docs: List[Doc], kind: Kind, amount: Int) -> List[Doc] =
+  docs + [Doc { id: DocId { kind: kind, n: next_id(docs, kind) }, amount: amount }]
+
+fn find(docs: List[Doc], id: DocId) -> Doc? = docs |> list.find((d) => d.id == id)
+
+// Labels ordered by kind, then by number.
+fn register(docs: List[Doc]) -> List[String] =
+  docs
+    |> list.sort_by((d) => d.id.n)
+    |> list.sort_by((d) => kind_rank(d.id.kind))
+    |> list.map(label)
