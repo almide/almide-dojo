@@ -1,0 +1,27 @@
+// Plausible wrong patch: evicts the first key in the map, which is the oldest
+// INSERTED key, ignoring later uses. Passes the visible tests.
+// A small LRU cache. `used` stamps every key with the clock value of its last use.
+type Cache: Eq, Repr = { cap: Int, values: Map[String, String], used: Map[String, Int], clock: Int }
+
+fn cache(cap: Int) -> Cache = Cache { cap: cap, values: map.new(), used: map.new(), clock: 0 }
+
+fn stamp(c: Cache, k: String) -> Cache = Cache { ...c, used: map.set(c.used, k, c.clock), clock: c.clock + 1 }
+
+// Keys from least to most recently used.
+fn recency(c: Cache) -> List[String] = map.keys(c.used) |> list.sort_by((k) => map.get(c.used, k) ?? 0)
+
+// A hit makes the key the most recently used.
+fn get(c: Cache, k: String) -> (String?, Cache) =
+  match map.get(c.values, k) {
+    some(v) => (some(v), stamp(c, k)),
+    none => (none, c),
+  }
+
+// Stores the value as most recently used; over capacity, the least recently used goes.
+fn put(c: Cache, k: String, v: String) -> Cache = {
+  let s = stamp(Cache { ...c, values: map.set(c.values, k, v) }, k)
+  if map.len(s.values) > s.cap then {
+    let victim = list.first(map.keys(s.values)) ?? ""
+    Cache { ...s, values: map.remove(s.values, victim), used: map.remove(s.used, victim) }
+  } else s
+}

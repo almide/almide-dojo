@@ -1,0 +1,5 @@
+test "stamps" {
+  let c = put(put(cache(2), "a", "1"), "b", "2")
+  assert_eq(c.used, ["a": 0, "b": 1])
+  assert_eq(recency(put(c, "c", "3")), ["b", "c"])
+}

@@ -1,0 +1,26 @@
+// A small LRU cache. `order` lists the keys from least to most recently used.
+type Cache: Eq, Repr = { cap: Int, values: Map[String, String], order: List[String] }
+
+fn cache(cap: Int) -> Cache = Cache { cap: cap, values: map.new(), order: [] }
+
+fn touch(order: List[String], k: String) -> List[String] = (order |> list.filter((x) => x != k)) + [k]
+
+// A hit makes the key the most recently used.
+fn get(c: Cache, k: String) -> (String?, Cache) =
+  match map.get(c.values, k) {
+    some(v) => (some(v), Cache { ...c, order: touch(c.order, k) }),
+    none => (none, c),
+  }
+
+// Stores the value as most recently used; over capacity, the least recently used goes.
+fn put(c: Cache, k: String, v: String) -> Cache = {
+  let order = touch(c.order, k)
+  let values = map.set(c.values, k, v)
+  if list.len(order) > c.cap then {
+    let victim = list.first(order) ?? ""
+    Cache { ...c, values: map.remove(values, victim), order: list.drop(order, 1) }
+  } else Cache { ...c, values: values, order: order }
+}
+
+// Keys from least to most recently used.
+fn recency(c: Cache) -> List[String] = c.order
