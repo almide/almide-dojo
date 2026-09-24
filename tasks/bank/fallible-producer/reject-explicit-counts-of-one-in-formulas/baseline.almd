@@ -1,0 +1,50 @@
+// Chemical formula reader: element symbols (an uppercase letter, maybe one
+// lowercase letter) with optional counts, and parenthesised groups with an
+// optional count: "H2O", "Ca(OH)2", "C12H22O11". Positions are 0-based.
+type Parsed = { atoms: Map[String, Int], next: Int }
+
+let KNOWN = ["H", "C", "N", "O", "S", "P", "Na", "Cl", "Ca", "Mg", "Fe", "K"]
+
+fn digits_end(s: String, i: Int) -> Int =
+  if i < string.len(s) and string.is_digit(string.slice(s, i, i + 1)) then digits_end(s, i + 1) else i
+
+// The count right after position i (1 when there is none) and where it ends.
+fn count_at(s: String, i: Int) -> (Int, Int) = {
+  let j = digits_end(s, i)
+  if j == i then (1, i) else (int.parse(string.slice(s, i, j)) ?? 0, j)
+}
+
+fn add_all(a: Map[String, Int], b: Map[String, Int], times: Int) -> Map[String, Int] =
+  map.keys(b) |> list.fold(a, (acc, k) => map.set(acc, k, (map.get(acc, k) ?? 0) + (map.get(b, k) ?? 0) * times))
+
+fn group(s: String, i: Int, acc: Map[String, Int]) -> Parsed! = {
+  let c = string.slice(s, i, i + 1)
+  if i >= string.len(s) or c == ")" then ok(Parsed { atoms: acc, next: i })
+  else if c == "(" then {
+    let inner = group(s, i + 1, [:])!
+    guard string.slice(s, inner.next, inner.next + 1) == ")" else err("unclosed ( at ${int.to_string(i)}")
+    guard not map.is_empty(inner.atoms) else err("empty group at ${int.to_string(i)}")
+    let cnt = count_at(s, inner.next + 1)
+    guard cnt.0 > 0 else err("zero count at ${int.to_string(inner.next + 1)}")
+    group(s, cnt.1, add_all(acc, inner.atoms, cnt.0))
+  } else if string.is_upper(c) then {
+    let two = string.slice(s, i, i + 2)
+    let sym = if string.len(two) == 2 and string.is_lower(string.slice(two, 1, 2)) then two else c
+    guard list.contains(KNOWN, sym) else err("unknown element ${sym} at ${int.to_string(i)}")
+    let cnt = count_at(s, i + string.len(sym))
+    guard cnt.0 > 0 else err("zero count at ${int.to_string(i + string.len(sym))}")
+    group(s, cnt.1, map.set(acc, sym, (map.get(acc, sym) ?? 0) + cnt.0))
+  } else err("unexpected ${c} at ${int.to_string(i)}")
+}
+
+fn atoms(formula: String) -> Map[String, Int]! = {
+  let p = group(formula, 0, [:])!
+  guard p.next == string.len(formula) else err("unexpected ) at ${int.to_string(p.next)}")
+  p.atoms
+}
+
+// "C=12 H=22 O=11" in element order of the KNOWN table.
+fn census(formula: String) -> String! = {
+  let a = atoms(formula)!
+  KNOWN |> list.filter((k) => map.contains(a, k)) |> list.map((k) => "${k}=${int.to_string(map.get(a, k) ?? 0)}") |> list.join(" ")
+}
