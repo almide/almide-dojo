@@ -1,0 +1,57 @@
+// Plausible wrong patch: re-parses the heading with a permissive `prev` and
+// uses what comes back, so the heading keeps its written level and the next
+// heading is compared with that level instead of the one used.
+// Outline builder for Markdown-style headings ("#" to "######" then a space
+// and a title). A heading may go at most one level deeper than the previous
+// one; the first heading may be at any level up to 1. Headings are numbered
+// "1", "1.1", "1.2", "2", ...
+type Heading: Eq, Repr = { level: Int, title: String }
+type OutlineErr: Eq, Repr =
+  | NotHeading(Int)
+  | EmptyTitle(Int)
+  | TooDeep(Int, Int)
+  | Jump(Int, Int, Int)
+type Outline: Eq, Repr = { items: List[String], warnings: List[String] }
+
+fn parse_heading(n: Int, line: String, prev: Int) -> Heading!OutlineErr = {
+  let hashes = string.chars(line) |> list.take_while((c) => c == "#") |> list.len
+  guard hashes > 0 and string.slice(line, hashes, hashes + 1) == " " else err(NotHeading(n))
+  guard hashes <= 6 else err(TooDeep(n, hashes))
+  let title = string.trim(string.drop(line, hashes + 1))
+  guard title != "" else err(EmptyTitle(n))
+  guard hashes <= prev + 1 else err(Jump(n, prev, hashes))
+  Heading { level: hashes, title: title }
+}
+
+fn number(counters: List[Int], level: Int) -> List[Int] = {
+  let next = (list.get(counters, level - 1) ?? 0) + 1
+  list.take(counters, level - 1) + [next]
+}
+
+fn outline(lines: List[String]) -> Outline!OutlineErr = {
+  var items: List[String] = []
+  var counters: List[Int] = []
+  var prev = 0
+  var warnings: List[String] = []
+  for p in list.enumerate(lines) {
+    if string.trim(p.1) == "" then () else {
+      let h = match parse_heading(p.0 + 1, p.1, prev) {
+        ok(h) => ok(h),
+        err(Jump(n, from, to)) => {
+          warnings = warnings + ["line ${int.to_string(n)}: level ${int.to_string(to)} after ${int.to_string(from)}, using ${int.to_string(from + 1)}"]
+          parse_heading(n, p.1, to)
+        },
+        err(e) => err(e),
+      }!
+      counters = number(counters, int.min(h.level, prev + 1))
+      items = items + ["${counters |> list.map((c) => int.to_string(c)) |> list.join(".")} ${h.title}"]
+      prev = h.level
+    }
+  }
+  Outline { items: items, warnings: warnings }
+}
+
+fn render(o: Outline) -> String = {
+  let body = list.join(o.items, "; ")
+  if list.is_empty(o.warnings) then body else "${body} | ${list.join(o.warnings, "; ")}"
+}
