@@ -1,0 +1,28 @@
+// Integer samples. Medians are shown exactly: a whole number, or a number
+// ending in ".5" when the two middle values have an odd sum.
+fn sorted_copy(xs: List[Int]) -> List[Int] = list.sort(xs)
+
+fn middle_pair(xs: List[Int]) -> (Int, Int)? = {
+  let s = sorted_copy(xs)
+  let n = list.len(s)
+  if n == 0 then none
+  else some((list.get(s, (n - 1) / 2) ?? 0, list.get(s, n / 2) ?? 0))
+}
+
+fn range_text(xs: List[Int]) -> String =
+  match (list.min(xs), list.max(xs)) {
+    (some(lo), some(hi)) => int.to_string(lo) + ".." + int.to_string(hi),
+    _ => "empty",
+  }
+
+// Plausible wrong patch: writes sum / 2 and appends ".5" for an odd sum.
+// Integer division rounds toward zero, so -1 / 2 is 0 and the sign is lost
+// ("0.5"), and -3 / 2 is -1 giving "-1.5" only by luck.
+fn median_text(xs: List[Int]) -> String =
+  match middle_pair(xs) {
+    none => "median=none",
+    some((a, b)) => {
+      let s = a + b
+      "median=" + int.to_string(s / 2) + (if s % 2 != 0 then ".5" else "")
+    },
+  }

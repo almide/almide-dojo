@@ -1,0 +1,14 @@
+test "hidden: edges have one way in" {
+  assert_eq(cheapest([[1, 3, 1], [1, 5, 1], [4, 2, 1]]), "cost=7")
+  assert_eq(cheapest([[5, 1], [1, 5]]), "cost=11")
+  assert_eq(cheapest([[2, 2, 2]]), "cost=6")
+  assert_eq(cheapest([[3], [4], [-2]]), "cost=5")
+}
+test "hidden: negatives and single cell" {
+  assert_eq(cheapest([[1, -5], [-5, 1]]), "cost=-3")
+  assert_eq(cheapest([[9]]), "cost=9")
+  assert_eq(cheapest([]), "malformed")
+}
+test "hidden: edge path unchanged" {
+  assert_eq(edge_path_cost([[1, 2], [3, 4]]), 7)
+}

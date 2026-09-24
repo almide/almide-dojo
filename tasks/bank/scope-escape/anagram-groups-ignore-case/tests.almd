@@ -1,0 +1,4 @@
+test "anagram groups" {
+  assert_eq(anagram_summary(["eat", "tea", "tan", "ate", "nat", "bat"]), "groups=2,largest=eat")
+  assert_eq(anagram_summary(["x", "y"]), "groups=0,largest=-")
+}

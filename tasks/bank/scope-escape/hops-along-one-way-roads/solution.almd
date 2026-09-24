@@ -1,0 +1,30 @@
+// One-way roads "a>b" (you can drive from a to b, not back).
+fn parse_road(s: String) -> Result[(String, String), String] =
+  match string.split(s, ">") {
+    [a, b] => if a != "" and b != "" then ok((a, b)) else err("bad road: " + s),
+    _ => err("bad road: " + s),
+  }
+
+fn parse_roads(rs: List[String]) -> Result[List[(String, String)], String] =
+  rs |> list.map((r) => parse_road(r)!)
+
+fn exits(roads: List[(String, String)], town: String) -> List[String] =
+  roads |> list.filter(((a, _)) => a == town) |> list.map(((_, b)) => b)
+
+fn bfs(roads: List[(String, String)], frontier: List[String], seen: List[String], to: String, d: Int) -> Int? =
+  if list.contains(frontier, to) then some(d)
+  else if list.is_empty(frontier) then none
+  else {
+    let next = frontier |> list.flat_map((t) => exits(roads, t)) |> list.unique |> list.filter((t) => not list.contains(seen, t))
+    bfs(roads, next, seen + next, to, d + 1)
+  }
+
+// Breadth-first over one-way roads; the search state stays local.
+fn hops(rs: List[String], from: String, to: String) -> String =
+  match parse_roads(rs) {
+    err(e) => e,
+    ok(roads) => match bfs(roads, [from], [from], to, 0) {
+      some(n) => "hops=" + int.to_string(n),
+      none => "unreachable",
+    },
+  }

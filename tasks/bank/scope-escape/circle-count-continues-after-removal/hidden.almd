@@ -1,0 +1,12 @@
+test "hidden: counting continues after a removal" {
+  assert_eq(survivor(["a", "b", "c", "d", "e"], 2), "survivor=c")
+  assert_eq(survivor(["p", "q", "r", "s", "t", "u", "v"], 3), "survivor=s")
+}
+test "hidden: small circles and errors" {
+  assert_eq(survivor(["solo"], 5), "survivor=solo")
+  assert_eq(survivor(["x", "y"], 2), "survivor=x")
+  assert_eq(survivor([], 2), "error=nobody in the circle")
+}
+test "hidden: first_out unchanged" {
+  assert_eq(first_out(["a", "b"], 3), ok("a"))
+}

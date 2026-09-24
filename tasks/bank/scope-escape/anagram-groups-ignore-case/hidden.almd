@@ -1,0 +1,12 @@
+test "hidden: case is ignored" {
+  assert_eq(anagram_summary(["Tea", "bat", "eat", "Tab", "ATE"]), "groups=2,largest=Tea")
+  assert_eq(anagram_summary(["Listen", "silent", "enlist", "google"]), "groups=1,largest=Listen")
+}
+test "hidden: ties and repeats" {
+  assert_eq(anagram_summary(["ab", "cd", "dc", "ba"]), "groups=2,largest=ab")
+  assert_eq(anagram_summary(["aa", "aa"]), "groups=1,largest=aa")
+  assert_eq(anagram_summary([]), "groups=0,largest=-")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(is_anagram("Dusty", "study"), true)
+}

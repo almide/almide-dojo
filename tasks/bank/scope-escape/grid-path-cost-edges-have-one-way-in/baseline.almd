@@ -1,0 +1,17 @@
+// A cost grid, rows of equal length. A path goes from the top-left to the
+// bottom-right cell moving only right or down; its cost is the sum of every
+// cell it visits, both ends included. Costs may be negative.
+fn well_formed(grid: List[List[Int]]) -> Bool =
+  match list.first(grid) {
+    some(r0) => not list.is_empty(r0) and (grid |> list.all((r) => list.len(r) == list.len(r0))),
+    none => false,
+  }
+
+fn at(grid: List[List[Int]], r: Int, c: Int) -> Int = list.get(grid, r) |> option.flat_map((row) => list.get(row, c)) ?? 0
+
+// The path that goes along the top row, then down the last column.
+fn edge_path_cost(grid: List[List[Int]]) -> Int = {
+  let w = list.len(list.first(grid) ?? [])
+  let top = list.range(0, w) |> list.fold(0, (a, c) => a + at(grid, 0, c))
+  top + (list.range(1, list.len(grid)) |> list.fold(0, (a, r) => a + at(grid, r, w - 1)))
+}

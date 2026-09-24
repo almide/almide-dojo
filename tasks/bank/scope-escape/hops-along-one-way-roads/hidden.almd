@@ -1,0 +1,12 @@
+test "hidden: roads are one-way" {
+  assert_eq(hops(["a>b", "b>c"], "c", "a"), "unreachable")
+  assert_eq(hops(["x>y", "z>y"], "x", "z"), "unreachable")
+}
+test "hidden: self, cycles, unknown towns" {
+  assert_eq(hops([], "q", "q"), "hops=0")
+  assert_eq(hops(["a>b", "b>a", "b>c", "c>d"], "a", "d"), "hops=3")
+  assert_eq(hops(["a>b"], "a", "zz"), "unreachable")
+}
+test "hidden: exits unchanged" {
+  assert_eq(exits([("a", "b"), ("b", "a"), ("a", "c")], "a"), ["b", "c"])
+}
