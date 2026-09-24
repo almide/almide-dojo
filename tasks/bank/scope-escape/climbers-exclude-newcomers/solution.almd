@@ -1,0 +1,17 @@
+// Two leaderboard snapshots, each a list of names from first place down.
+fn rank_in(board: List[String], name: String) -> Int? = list.index_of(board, name) |> option.map((i) => i + 1)
+
+fn newcomers(before: List[String], after: List[String]) -> List[String] =
+  after |> list.filter((n) => not list.contains(before, n))
+
+fn dropped(before: List[String], after: List[String]) -> List[String] =
+  before |> list.filter((n) => not list.contains(after, n))
+
+// Ranks are compared only for players in both snapshots.
+fn climbers(before: List[String], after: List[String]) -> String = {
+  let up = after |> list.filter((n) => match (rank_in(before, n), rank_in(after, n)) {
+    (some(old), some(new_rank)) => new_rank < old,
+    _ => false,
+  })
+  if list.is_empty(up) then "none" else list.join(up, ",")
+}

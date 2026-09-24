@@ -1,0 +1,4 @@
+test "words" {
+  assert_eq(words("  a  b "), ["a", "b"])
+  assert_eq(clean_title("Hello   World"), "Hello World")
+}

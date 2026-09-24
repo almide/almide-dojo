@@ -1,0 +1,4 @@
+test "urgent" {
+  let ms = [Mail { from: "boss", read: false, flagged: false }, Mail { from: "x", read: false, flagged: false }]
+  assert_eq(urgent_badge(ms, ["boss"])("inbox"), "inbox: 1 urgent")
+}

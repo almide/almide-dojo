@@ -1,0 +1,7 @@
+test "hidden: every boundary" {
+  assert_eq(label(13), "teen")
+  assert_eq(label(18), "adult")
+  assert_eq(price(65), 700)
+  assert_eq(price(12), 500)
+  assert_eq(bracket(64), 2)
+}

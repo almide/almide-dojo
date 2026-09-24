@@ -1,0 +1,8 @@
+test "hidden: duplicates in one meeting count once" {
+  let f = time_in_meetings(["30:ann,ann,bob", "15:bob,bob,bob", "x:ann"])
+  assert_eq(f("ann"), "ann: 30 min")
+  assert_eq(f("bob"), "bob: 45 min")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(meeting_count(["1:a", "b"]), 1)
+}

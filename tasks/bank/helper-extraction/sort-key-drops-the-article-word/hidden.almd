@@ -1,0 +1,5 @@
+test "hidden: only whole article words" {
+  assert_eq(sort_key("Theatre Now"), "theatre now")
+  assert_eq(sort_key("Avalon"), "avalon")
+  assert_eq(shelve(["Theory", "The Cat", "A Bee"]), ["A Bee", "The Cat", "Theory"])
+}

@@ -1,0 +1,17 @@
+// Business days. Day numbers count from a Monday (day 0), so day % 7 is 5 or 6
+// on weekends. Holidays are extra closed days given by number.
+fn is_weekend(day: Int) -> Bool = day % 7 >= 5
+
+fn is_open(day: Int, holidays: List[Int]) -> Bool = not is_weekend(day) and not list.contains(holidays, day)
+
+fn open_days(from: Int, to: Int, holidays: List[Int]) -> Int = list.range(from, to) |> list.count((d) => is_open(d, holidays))
+
+// Plausible wrong patch: skips the weekend, then a holiday, once each — so a
+// holiday right after the weekend, or a second holiday, is not skipped again.
+fn due_dates(days: List[Int], holidays: List[Int]) -> String =
+  days |> list.map((d) => {
+    let a = d + 1
+    let b = if is_weekend(a) then a + (7 - a % 7) else a
+    let c = if list.contains(holidays, b) then b + 1 else b
+    int.to_string(if is_weekend(c) then c + (7 - c % 7) else c)
+  }) |> list.join(",")

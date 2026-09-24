@@ -1,0 +1,3 @@
+test "due dates" {
+  assert_eq(due_dates([0, 4], []), "1,7")
+}

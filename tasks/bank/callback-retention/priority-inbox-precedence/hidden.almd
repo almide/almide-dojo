@@ -1,0 +1,8 @@
+test "hidden: read messages are never urgent" {
+  let ms = [Mail { from: "x", read: true, flagged: true }, Mail { from: "boss", read: true, flagged: false }, Mail { from: "y", read: false, flagged: true }]
+  assert_eq(urgent_badge(ms, ["boss"])("a"), "a: 1 urgent")
+  assert_eq(urgent_badge([], [])("b"), "b: 0 urgent")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(unread([Mail { from: "z", read: true, flagged: false }]), 0)
+}

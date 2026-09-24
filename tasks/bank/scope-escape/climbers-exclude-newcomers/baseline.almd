@@ -1,0 +1,8 @@
+// Two leaderboard snapshots, each a list of names from first place down.
+fn rank_in(board: List[String], name: String) -> Int? = list.index_of(board, name) |> option.map((i) => i + 1)
+
+fn newcomers(before: List[String], after: List[String]) -> List[String] =
+  after |> list.filter((n) => not list.contains(before, n))
+
+fn dropped(before: List[String], after: List[String]) -> List[String] =
+  before |> list.filter((n) => not list.contains(after, n))

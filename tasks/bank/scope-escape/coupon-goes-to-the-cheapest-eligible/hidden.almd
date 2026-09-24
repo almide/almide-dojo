@@ -1,0 +1,7 @@
+test "hidden: the cheapest eligible item" {
+  assert_eq(with_coupon(["shoe:3000", "shoe:1000"], "shoe"), "total=3500")
+  assert_eq(with_coupon(["shoe:1001", "hat:50", "shoe:1001"], "shoe"), "total=1551")
+}
+test "hidden: helpers unchanged" {
+  assert_eq(subtotal(["a:1", "bad", "b:2"]), 3)
+}

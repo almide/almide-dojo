@@ -1,0 +1,7 @@
+test "hidden: excused days do not count" {
+  assert_eq(attendance(["PPE", "EEAP", "EE"]), ["100%", "50%", "n/a"])
+}
+test "hidden: empty and noise" {
+  assert_eq(attendance(["", "P-P"]), ["n/a", "100%"])
+  assert_eq(absences("PAEA"), 2)
+}

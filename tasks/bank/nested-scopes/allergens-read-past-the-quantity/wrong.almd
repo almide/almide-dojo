@@ -1,0 +1,18 @@
+// Recipes, one text each: ingredient lines separated by ";", each "<quantity>
+// <ingredient>" ("2 eggs", "200g flour") or just "<ingredient>" ("salt").
+// The ingredient is everything after the FIRST space when the first word
+// starts with a digit.
+fn ingredient(line: String) -> String = {
+  let t = string.trim(line)
+  match string.index_of(t, " ") {
+    some(i) => if string.is_digit(string.take(t, 1)) then string.drop(t, i + 1) else t,
+    none => t,
+  }
+}
+
+fn ingredients(recipe: String) -> List[String] = string.split(recipe, ";") |> list.map((l) => ingredient(l)) |> list.filter((x) => x != "")
+
+// Plausible wrong patch: looks each line up as written (trimmed), so "2 eggs"
+// is not found in the table.
+fn allergens(table: Map[String, String], recipes: List[String]) -> List[String] =
+  recipes |> list.map((r) => string.split(r, ";") |> list.filter_map((l) => map.get(table, string.trim(l))) |> list.unique |> list.join(","))

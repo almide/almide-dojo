@@ -1,0 +1,5 @@
+test "hidden: tabs separate too" {
+  assert_eq(words("a\tb"), ["a", "b"])
+  assert_eq(clean_tag("Rust\t\tTips "), "rust-tips")
+  assert_eq(clean_title("\tx \t y"), "x y")
+}

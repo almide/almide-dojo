@@ -1,0 +1,5 @@
+test "bracket" {
+  assert_eq(bracket(8), 0)
+  assert_eq(bracket(30), 2)
+  assert_eq(label(70), "senior")
+}

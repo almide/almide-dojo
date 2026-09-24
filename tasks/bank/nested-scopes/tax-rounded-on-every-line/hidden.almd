@@ -1,0 +1,8 @@
+test "hidden: rounded on every line" {
+  assert_eq(vat_totals(["4;4;4;4;4"]), [0])
+  assert_eq(vat_totals(["99;99"]), [38])
+}
+test "hidden: empty" {
+  assert_eq(vat_totals(["", "x"]), [0, 0])
+  assert_eq(net("1; 2"), 3)
+}

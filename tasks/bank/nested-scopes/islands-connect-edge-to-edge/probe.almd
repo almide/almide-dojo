@@ -1,0 +1,7 @@
+// Resource probe: __K__ water maps of 40 x 40 cells, one text each. Each
+// map's cell list belongs to its own step, so the batch grows by the input
+// texts only; listing every map's cells first keeps them all live.
+effect fn main() -> Unit = {
+  let maps = list.range(0, __K__) |> list.map((i) => list.range(0, 40) |> list.map((r) => if r == i % 40 then "#" + string.repeat(".", 39) else string.repeat(".", 40)) |> list.join("\n"))
+  println(int.to_string(islands(maps) |> list.fold(0, (a, n) => a + n)))
+}

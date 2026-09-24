@@ -1,0 +1,7 @@
+// Resource probe: __K__ registers of 6,000 days, one text each. Each mark
+// list belongs to its own step, so the batch grows by the input texts only;
+// reading every register first keeps all the mark lists live.
+effect fn main() -> Unit = {
+  let regs = list.range(0, __K__) |> list.map((i) => string.repeat("PPAE", 1500) + (if i % 2 == 0 then "P" else "A"))
+  println(int.to_string(attendance(regs) |> list.fold(0, (a, s) => a + string.len(s))))
+}

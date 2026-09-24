@@ -1,0 +1,7 @@
+// Resource probe: the same 1,000 years checked __K__ times. The inline test
+// allocated nothing per year, so the count must not grow.
+effect fn main() -> Unit = {
+  let ys = list.range(1600, 2600)
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (ys |> list.fold(0, (a, y) => a + february(y))))
+  println(int.to_string(t))
+}

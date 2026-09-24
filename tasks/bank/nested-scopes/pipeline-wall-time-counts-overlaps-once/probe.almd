@@ -1,0 +1,7 @@
+// Resource probe: __K__ pipelines of 2,000 short stages, one text each. Each
+// stage list belongs to its own step, so the batch grows by the input texts
+// only; parsing every pipeline first keeps all the stage lists live.
+effect fn main() -> Unit = {
+  let ps = list.range(0, __K__) |> list.map((i) => string.repeat("s:1:2;", 2000) + "t:0:" + int.to_string(i + 3))
+  println(int.to_string(wall_times(ps) |> list.fold(0, (a, n) => a + n)))
+}

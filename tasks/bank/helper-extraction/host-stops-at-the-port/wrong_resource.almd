@@ -1,0 +1,12 @@
+// Plausible wrong patch: the helper walks the characters after the scheme
+// until a separator. Same host — but a string per character.
+fn cut(s: String, sep: String) -> String = string.split(s, sep) |> list.first ?? ""
+
+fn host(url: String) -> String = {
+  let rest = string.drop(url, (string.index_of(url, "://") ?? -3) + 3)
+  string.to_lower(string.chars(rest) |> list.take_while((c) => c != "/" and c != ":" and c != "?") |> list.join(""))
+}
+
+fn same_site(a: String, b: String) -> Bool = host(a) == host(b)
+
+fn is_secure(u: String) -> Bool = string.starts_with(string.to_lower(u), "https://")

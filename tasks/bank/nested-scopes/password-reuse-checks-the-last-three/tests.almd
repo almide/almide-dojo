@@ -1,0 +1,3 @@
+test "refused" {
+  assert_eq(refused(["a,b,a", "x,y"]), [1, 0])
+}

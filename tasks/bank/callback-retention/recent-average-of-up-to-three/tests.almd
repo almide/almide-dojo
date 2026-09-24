@@ -1,0 +1,4 @@
+test "recent" {
+  assert_eq(recent_badge([100, 10, 20, 30])("/a"), "/a: recent 20ms")
+  assert_eq(recent_badge([])("/a"), "/a: no data")
+}

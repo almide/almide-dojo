@@ -1,0 +1,4 @@
+test "next deadline" {
+  assert_eq(next_deadline(["5/11/2026", "7/12/2026"])("app"), "app: due 5/11/2026")
+  assert_eq(next_deadline(["x"])("app"), "app: no deadline")
+}

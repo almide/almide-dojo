@@ -1,0 +1,7 @@
+// Resource probe: __K__ x 400 boards, one short text each. Each board's cell
+// list belongs to its own step, so the batch grows by the input texts only;
+// splitting every board first keeps all the cell lists live.
+effect fn main() -> Unit = {
+  let boards = list.range(0, __K__ * 400) |> list.map((i) => if i % 2 == 0 then "XOXOOXXXO" else "X.O.X.O.X")
+  println(int.to_string(outcomes(boards) |> list.fold(0, (a, s) => a + string.len(s))))
+}

@@ -1,0 +1,11 @@
+// Calendar arithmetic. A year is a leap year when divisible by 4, EXCEPT
+// century years, which are leap only when divisible by 400 (1900 is not,
+// 2000 is).
+fn days_in_year(y: Int) -> Int =
+  if y % 4 == 0 and (y % 100 != 0 or y % 400 == 0) then 366 else 365
+
+fn february(y: Int) -> Int =
+  if y % 4 == 0 and (y % 100 != 0 or y % 400 == 0) then 29 else 28
+
+fn days_between_years(from: Int, to: Int) -> Int =
+  list.range(from, to) |> list.fold(0, (acc, y) => acc + days_in_year(y))

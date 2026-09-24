@@ -1,0 +1,7 @@
+// Resource probe: the same 1,000 Fahrenheit readings checked __K__ times. The
+// inline arithmetic allocated nothing beyond the parse.
+effect fn main() -> Unit = {
+  let rs = list.range(0, 1000) |> list.map((i) => int.to_string(i % 80) + "F")
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (rs |> list.count((r) => freezing(r))))
+  println(int.to_string(t))
+}

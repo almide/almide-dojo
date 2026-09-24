@@ -1,0 +1,7 @@
+test "hidden: the century rule" {
+  assert_eq(is_leap(1900), false)
+  assert_eq(is_leap(2000), true)
+  assert_eq(days_in_year(2100), 365)
+  assert_eq(february(2400), 29)
+  assert_eq(days_between_years(1899, 1905), 2191)
+}

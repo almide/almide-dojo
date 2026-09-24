@@ -1,0 +1,5 @@
+// Lines of text. For palindrome checks only letters and digits matter, in
+// any case: "A man, a plan, a canal: Panama" is a palindrome.
+fn clean(line: String) -> String = string.chars(string.to_lower(line)) |> list.filter((c) => string.is_alphanumeric(c)) |> list.join("")
+
+fn longest_line(lines: List[String]) -> Int = lines |> list.fold(0, (m, l) => int.max(m, string.len(l)))

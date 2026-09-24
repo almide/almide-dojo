@@ -1,0 +1,4 @@
+test "args" {
+  assert_eq(args("ls -l  /tmp"), ["ls", "-l", "/tmp"])
+  assert_eq(arg_count("a b"), 2)
+}

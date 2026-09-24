@@ -1,0 +1,8 @@
+// Maps, one text each: rows separated by "\n", "#" land and "." water. Land
+// cells belong to the same island when they touch EDGE TO EDGE (up, down,
+// left, right); touching only at a corner does not connect them.
+fn grid(m: String) -> List[String] = string.split(m, "\n")
+
+fn land(m: String) -> Int = grid(m) |> list.fold(0, (a, r) => a + string.count(r, "#"))
+
+fn is_land(g: List[String], r: Int, c: Int) -> Bool = (list.get(g, r) |> option.flat_map((row) => string.get(row, c))) == some("#")

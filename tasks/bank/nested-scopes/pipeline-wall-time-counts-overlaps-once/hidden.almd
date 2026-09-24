@@ -1,0 +1,8 @@
+test "hidden: parallel stages overlap" {
+  assert_eq(wall_times(["a:0:10;b:0:10;c:5:12"]), [12])
+  assert_eq(wall_times(["lint:3:4;build:5:9"]), [6])
+}
+test "hidden: helpers unchanged" {
+  assert_eq(cpu_time("a:0:10;b:0:10"), 20)
+  assert_eq(slowest_stage("a:0:2;b:1:9"), "b")
+}

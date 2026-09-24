@@ -1,0 +1,4 @@
+test "decode" {
+  assert_eq(decode("... --- ..."), "SOS")
+  assert_eq(decode(".-.-.-"), "?")
+}

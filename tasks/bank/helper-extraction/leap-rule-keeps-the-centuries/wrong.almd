@@ -1,0 +1,10 @@
+// Plausible wrong patch: the helper keeps the familiar "every fourth year"
+// rule and loses the century exception.
+fn is_leap(y: Int) -> Bool = y % 4 == 0
+
+fn days_in_year(y: Int) -> Int = if is_leap(y) then 366 else 365
+
+fn february(y: Int) -> Int = if is_leap(y) then 29 else 28
+
+fn days_between_years(from: Int, to: Int) -> Int =
+  list.range(from, to) |> list.fold(0, (acc, y) => acc + days_in_year(y))

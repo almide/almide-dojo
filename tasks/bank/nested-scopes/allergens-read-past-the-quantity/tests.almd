@@ -1,0 +1,4 @@
+test "allergens" {
+  let t = map.from_list([("eggs", "egg"), ("flour", "gluten"), ("milk", "dairy")])
+  assert_eq(allergens(t, ["eggs;salt", "milk"]), ["egg", "dairy"])
+}

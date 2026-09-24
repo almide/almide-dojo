@@ -1,0 +1,8 @@
+// Plausible wrong patch: the helper splits on spaces and strips the quote
+// characters, so a quoted phrase falls apart into several arguments.
+fn args(line: String) -> List[String] =
+  string.split(line, " ") |> list.map((a) => string.replace(a, "\"", "")) |> list.filter((a) => a != "")
+
+fn arg_count(line: String) -> Int = list.len(args(line))
+
+fn command(line: String) -> String = string.split(string.trim(line), " ") |> list.first ?? ""

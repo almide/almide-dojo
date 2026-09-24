@@ -1,0 +1,8 @@
+test "hidden: only the last three count" {
+  assert_eq(refused(["a,b,c,d,a", "a,b,c,a"]), [0, 1])
+  assert_eq(refused(["p,p,q,r,s,p"]), [1])
+}
+test "hidden: empty" {
+  assert_eq(refused(["", "z"]), [0, 0])
+  assert_eq(changes("a,b,c"), 2)
+}

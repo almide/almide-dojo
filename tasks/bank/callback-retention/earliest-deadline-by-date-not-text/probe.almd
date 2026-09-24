@@ -1,0 +1,8 @@
+// Resource probe: __K__ closures over fresh 4,000-date lists, all held live.
+// Capturing one date grows by a few bytes each; capturing the parsed dates
+// grows by the whole list.
+effect fn main() -> Unit = {
+  let fs = list.range(0, __K__) |> list.map((i) =>
+    next_deadline(list.range(0, 4000) |> list.map((j) => int.to_string(j % 28 + 1) + "/" + int.to_string(j % 12 + 1) + "/" + int.to_string(2026 + (j + i) % 5))))
+  println(int.to_string(fs |> list.fold(0, (acc, f) => acc + string.len(f("p")))))
+}

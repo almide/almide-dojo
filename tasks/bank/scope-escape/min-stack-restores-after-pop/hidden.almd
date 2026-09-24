@@ -1,0 +1,8 @@
+test "hidden: pops restore the previous minimum" {
+  assert_eq(run(["push 5", "push 1", "pop", "min"]), "5")
+  assert_eq(run(["push 2", "push 9", "push 1", "pop", "pop", "min", "pop", "min"]), "2,empty")
+}
+test "hidden: empty stack" {
+  assert_eq(run(["pop", "min"]), "empty")
+  assert_eq(run([]), "")
+}

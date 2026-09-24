@@ -1,0 +1,4 @@
+test "run" {
+  assert_eq(run(["push 3", "push 1", "min", "push 2", "min"]), "1,1")
+  assert_eq(run(["jump"]), "bad op: jump")
+}

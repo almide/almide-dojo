@@ -1,0 +1,4 @@
+test "coupon" {
+  assert_eq(with_coupon(["shoe:1000", "sock:200"], "shoe"), "total=700")
+  assert_eq(with_coupon(["sock:200"], "shoe"), "total=200")
+}

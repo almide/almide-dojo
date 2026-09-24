@@ -1,0 +1,18 @@
+// Readings from a set of identical sensors: all agree except, possibly, ONE
+// faulty sensor. The faulty reading may be anywhere, including first.
+fn agree(xs: List[Int]) -> Bool = list.len(list.unique(xs)) <= 1
+
+fn spread(xs: List[Int]) -> Int = (list.max(xs) ?? 0) - (list.min(xs) ?? 0)
+
+// The odd index is found now against the majority value; the closure keeps it.
+fn faulty(xs: List[Int]) -> (String) -> String = {
+  let majority = xs |> list.sort_by((x) => 0 - (xs |> list.count((y) => y == x))) |> list.first
+  let odd = match majority {
+    some(m) => xs |> list.find_index((x) => x != m),
+    none => none,
+  }
+  match odd {
+    some(i) => (rack) => rack + ": sensor " + int.to_string(i),
+    none => (rack) => rack + ": all agree",
+  }
+}

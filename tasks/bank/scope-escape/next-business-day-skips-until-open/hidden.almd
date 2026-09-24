@@ -1,0 +1,10 @@
+test "hidden: holidays next to weekends" {
+  assert_eq(due_dates([3], [4]), "7")
+  assert_eq(due_dates([4], [7]), "8")
+  assert_eq(due_dates([4], [7, 8, 9]), "10")
+  assert_eq(due_dates([2], [3, 4]), "7")
+}
+test "hidden: empty" {
+  assert_eq(due_dates([], [1]), "")
+  assert_eq(open_days(0, 7, [2]), 4)
+}

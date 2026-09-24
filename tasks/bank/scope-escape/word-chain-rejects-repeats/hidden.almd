@@ -1,0 +1,9 @@
+test "hidden: repeats are illegal" {
+  assert_eq(referee(["eye", "eye"]), "move 2: repeat")
+  assert_eq(referee(["noon", "night", "toon", "Noon"]), "move 4: repeat")
+  assert_eq(referee(["ab", "ba", "ab", "xy"]), "move 3: repeat")
+}
+test "hidden: empty" {
+  assert_eq(referee([]), "valid")
+  assert_eq(links("Tea", "apple"), true)
+}

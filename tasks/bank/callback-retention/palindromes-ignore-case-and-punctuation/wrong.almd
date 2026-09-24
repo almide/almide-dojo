@@ -1,0 +1,12 @@
+// Lines of text. For palindrome checks only letters and digits matter, in
+// any case: "A man, a plan, a canal: Panama" is a palindrome.
+fn clean(line: String) -> String = string.chars(string.to_lower(line)) |> list.filter((c) => string.is_alphanumeric(c)) |> list.join("")
+
+fn longest_line(lines: List[String]) -> Int = lines |> list.fold(0, (m, l) => int.max(m, string.len(l)))
+
+// Plausible wrong patch: compares each raw line with its reverse, so case and
+// punctuation break real palindromes and punctuation-only lines count.
+fn palindrome_count(lines: List[String]) -> (String) -> String = {
+  let n = lines |> list.count((l) => l != "" and string.reverse(l) == l)
+  (label) => label + ": " + int.to_string(n) + " palindromes"
+}

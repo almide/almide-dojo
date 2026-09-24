@@ -1,0 +1,28 @@
+// A word-chain game: each word must start with the last letter of the
+// previous word, and a word may not be played twice (any case: "Apple" and
+// "apple" are the same word). Words are compared lowercase.
+fn first_letter(w: String) -> String = string.to_lower(string.take(w, 1))
+
+fn last_letter(w: String) -> String = string.to_lower(string.take_end(w, 1))
+
+fn links(a: String, b: String) -> Bool = last_letter(a) == first_letter(b)
+
+// The played set is local; each move is checked for link, then repeat.
+fn referee(words: List[String]) -> String = {
+  let (verdict, _, _) = words |> list.enumerate |> list.fold(("valid", none, set.new()), (st, p) => {
+    let (v, prev, played) = st
+    let (i, w) = p
+    if v != "valid" then st
+    else {
+      let key = string.to_lower(w)
+      let linked = match prev {
+        some(pw) => links(pw, w),
+        none => true,
+      }
+      if not linked then ("move " + int.to_string(i + 1) + ": no link", prev, played)
+      else if set.contains(played, key) then ("move " + int.to_string(i + 1) + ": repeat", prev, played)
+      else ("valid", some(w), set.insert(played, key))
+    }
+  })
+  verdict
+}

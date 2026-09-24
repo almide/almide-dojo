@@ -1,0 +1,11 @@
+// URLs like "https://example.com:8443/path?q=1". The HOST is what follows
+// "://" up to the first "/", ":" or "?", lowercased.
+fn cut(s: String, sep: String) -> String = string.split(s, sep) |> list.first ?? ""
+
+fn same_site(a: String, b: String) -> Bool = {
+  let ha = cut(cut(cut(string.drop(a, (string.index_of(a, "://") ?? -3) + 3), "/"), ":"), "?")
+  let hb = cut(cut(cut(string.drop(b, (string.index_of(b, "://") ?? -3) + 3), "/"), ":"), "?")
+  string.to_lower(ha) == string.to_lower(hb)
+}
+
+fn is_secure(u: String) -> Bool = string.starts_with(string.to_lower(u), "https://")

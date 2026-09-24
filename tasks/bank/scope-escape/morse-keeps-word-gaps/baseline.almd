@@ -1,0 +1,6 @@
+// Morse code: letters separated by one space, words separated by " / ".
+let CODE = [(".-", "A"), ("-...", "B"), ("-.-.", "C"), ("-..", "D"), (".", "E"), ("..-.", "F"), ("--.", "G"), ("....", "H"), ("..", "I"), (".---", "J"), ("-.-", "K"), (".-..", "L"), ("--", "M"), ("-.", "N"), ("---", "O"), (".--.", "P"), ("--.-", "Q"), (".-.", "R"), ("...", "S"), ("-", "T"), ("..-", "U"), ("...-", "V"), (".--", "W"), ("-..-", "X"), ("-.--", "Y"), ("--..", "Z")]
+
+fn letter(code: String) -> String? = CODE |> list.find(((c, _)) => c == code) |> option.map(((_, l)) => l)
+
+fn symbols(msg: String) -> Int = string.chars(msg) |> list.count((c) => c == "." or c == "-")

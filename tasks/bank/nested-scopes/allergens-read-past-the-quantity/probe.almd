@@ -1,0 +1,8 @@
+// Resource probe: __K__ recipes of 2,000 ingredient lines, one text each.
+// Each ingredient list belongs to its own step, so the batch grows by the
+// input texts only; parsing every recipe first keeps all the lists live.
+effect fn main() -> Unit = {
+  let t = map.from_list([("eggs", "egg")])
+  let rs = list.range(0, __K__) |> list.map((i) => string.repeat("2 eggs;", 2000) + int.to_string(i) + " salt")
+  println(int.to_string(allergens(t, rs) |> list.fold(0, (a, s) => a + string.len(s))))
+}

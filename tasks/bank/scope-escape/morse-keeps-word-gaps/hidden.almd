@@ -1,0 +1,9 @@
+test "hidden: word gaps" {
+  assert_eq(decode("... --- ... / ..."), "SOS S")
+  assert_eq(decode(".... ..  /  - .... . .-. ."), "HI THERE")
+}
+test "hidden: empty and unknown" {
+  assert_eq(decode(""), "")
+  assert_eq(decode(".- ........ -"), "A?T")
+  assert_eq(symbols(".- /"), 2)
+}

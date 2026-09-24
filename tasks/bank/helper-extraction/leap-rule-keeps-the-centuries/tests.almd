@@ -1,0 +1,5 @@
+test "is leap" {
+  assert_eq(is_leap(2024), true)
+  assert_eq(is_leap(2023), false)
+  assert_eq(february(2020), 29)
+}

@@ -1,0 +1,25 @@
+// A cart of "category:price" items (cents). A coupon takes 50% off ONE item
+// of its category: the CHEAPEST such item (rounded down), once per cart.
+fn parse_item(s: String) -> (String, Int)? =
+  match string.split(s, ":") {
+    [c, p] => int.parse(p)? |> option.map((v) => (c, v)),
+    _ => none,
+  }
+
+fn items(cart: List[String]) -> List[(String, Int)] = cart |> list.filter_map((s) => parse_item(s))
+
+fn subtotal(cart: List[String]) -> Int = items(cart) |> list.fold(0, (a, it) => {
+  let (_, p) = it
+  a + p
+})
+
+// The cheapest item of the category gets the discount; the list stays local.
+fn with_coupon(cart: List[String], category: String) -> String = {
+  let its = items(cart)
+  let cheapest = its |> list.filter(((c, _)) => c == category) |> list.map(((_, p)) => p) |> list.min
+  let discount = match cheapest {
+    some(p) => p - p / 2,
+    none => 0,
+  }
+  "total=" + int.to_string(subtotal(cart) - discount)
+}

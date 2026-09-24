@@ -1,0 +1,16 @@
+// Attendance registers, one text per student: a letter per school day, "P"
+// present, "A" absent, "E" excused. Excused days are not held against the
+// student: they count neither as present nor as a school day.
+fn marks(reg: String) -> List[String] = string.chars(reg) |> list.filter((c) => c == "P" or c == "A" or c == "E")
+
+fn absences(reg: String) -> Int = marks(reg) |> list.count((c) => c == "A")
+
+fn perfect(reg: String) -> Bool = absences(reg) == 0
+
+// Plausible wrong patch: reads every register first and computes afterwards,
+// so every mark list is live at once.
+fn attendance(regs: List[String]) -> List[String] = {
+  let all = regs |> list.map((r) => marks(r) |> list.filter((c) => c != "E"))
+  all |> list.map((counted) =>
+    if list.is_empty(counted) then "n/a" else int.to_string((counted |> list.count((c) => c == "P")) * 100 / list.len(counted)) + "%")
+}

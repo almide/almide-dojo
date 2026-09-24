@@ -1,0 +1,7 @@
+test "hidden: diagonals win too" {
+  assert_eq(outcomes(["XO.OX...X", "..O.O.O.X"]), ["X", "O"])
+}
+test "hidden: columns and helpers" {
+  assert_eq(outcomes(["O..O..O.."]), ["O"])
+  assert_eq(moves("X.O......"), 2)
+}

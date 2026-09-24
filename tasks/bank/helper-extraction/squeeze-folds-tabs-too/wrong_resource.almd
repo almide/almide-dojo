@@ -1,0 +1,13 @@
+// Plausible wrong patch: the helper builds words character by character.
+// Same words — but a string per character.
+fn words(s: String) -> List[String] = {
+  let (done, cur) = string.chars(s) |> list.fold(([], ""), (st, c) => {
+    let (out, w) = st
+    if c == " " or c == "\t" then (if w == "" then st else (out + [w], "")) else (out, w + c)
+  })
+  if cur == "" then done else done + [cur]
+}
+
+fn clean_title(s: String) -> String = words(s) |> list.join(" ")
+
+fn clean_tag(s: String) -> String = string.to_lower(words(s) |> list.join("-"))

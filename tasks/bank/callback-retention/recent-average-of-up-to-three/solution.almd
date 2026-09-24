@@ -1,0 +1,12 @@
+// Response times (ms), oldest first.
+fn slowest(ts: List[Int]) -> Int = list.max(ts) ?? 0
+
+fn samples(ts: List[Int]) -> Int = list.len(ts)
+
+// The average of the last (up to) three is computed now.
+fn recent_badge(ts: List[Int]) -> (String) -> String = {
+  let last = list.take_end(ts, 3)
+  let n = list.len(last)
+  let avg = if n == 0 then 0 else list.sum(last) / n
+  (endpoint) => if n == 0 then endpoint + ": no data" else endpoint + ": recent " + int.to_string(avg) + "ms"
+}

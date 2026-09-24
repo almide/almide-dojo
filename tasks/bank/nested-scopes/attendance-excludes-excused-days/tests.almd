@@ -1,0 +1,3 @@
+test "attendance" {
+  assert_eq(attendance(["PPPPA", "PA"]), ["80%", "50%"])
+}
