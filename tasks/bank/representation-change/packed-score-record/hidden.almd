@@ -1,0 +1,15 @@
+test "hidden: fewer seconds break ties on correct answers" {
+  let ts = [team("slow", 3, 80), team("fast", 3, 20), team("few", 2, 1)]
+  assert_eq(standings(ts), ["1. fast 3/20s", "2. slow 3/80s", "3. few 2/1s"])
+}
+test "hidden: equal scores share a rank and keep list order" {
+  let ts = [team("a", 2, 30), team("b", 5, 10), team("c", 2, 30), team("d", 1, 0), team("e", 2, 30)]
+  assert_eq(standings(ts), ["1. b 5/10s", "2. a 2/30s", "2. c 2/30s", "2. e 2/30s", "5. d 1/0s"])
+  assert_eq(winners([team("x", 2, 9), team("y", 2, 9), team("z", 2, 10)]), ["x", "y"])
+  assert_eq(winners([]), [])
+}
+test "hidden: long times never beat more correct answers" {
+  let ts = [team("tortoise", 2, 1500), team("hare", 1, 10)]
+  assert_eq(standings(ts), ["1. tortoise 2/1500s", "2. hare 1/10s"])
+  assert(better(team("p", 0, 5), team("q", 0, 1005)))
+}

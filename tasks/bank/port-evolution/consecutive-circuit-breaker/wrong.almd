@@ -1,0 +1,47 @@
+// Plausible wrong patch: counts every failure, never resetting on success, so
+// scattered failures open the breaker. Passes the visible tests.
+// A service-call port that threads its state: `call` answers the reply (or the
+// failure) together with the adapter's next state.
+protocol Service {
+  fn call(s: Self, req: String) -> (Result[String, String], Self)
+}
+
+// The real backend; requests listed in `down` fail. `calls` counts requests
+// that reached it.
+type Backend: Service = { down: List[String], calls: Int }
+fn Backend.call(b: Backend, req: String) -> (Result[String, String], Backend) = {
+  let next = Backend { ...b, calls: b.calls + 1 }
+  if list.contains(b.down, req) then (err("down: " + req), next) else (ok("re:" + req), next)
+}
+
+// Opens after `threshold` failures; an open breaker answers alone.
+type Breaker: Service = { inner: Backend, threshold: Int, failures: Int }
+
+fn breaker(b: Backend, threshold: Int) -> Breaker = Breaker { inner: b, threshold: threshold, failures: 0 }
+
+fn Breaker.call(s: Breaker, req: String) -> (Result[String, String], Breaker) =
+  if s.failures >= s.threshold then (err("circuit open"), s)
+  else {
+    let (res, inner) = s.inner.call(req)
+    let failures = match res {
+      ok(_) => s.failures,
+      err(_) => s.failures + 1,
+    }
+    (res, Breaker { ...s, inner: inner, failures: failures })
+  }
+
+// Every request in order; "ok <reply>" or "err <message>" per request.
+fn run_all[S: Service](s: S, reqs: List[String]) -> (List[String], S) =
+  reqs |> list.fold(([], s), ((out, cur), r) => {
+    let (res, next) = cur.call(r)
+    let line = match res {
+      ok(v) => "ok " + v,
+      err(e) => "err " + e,
+    }
+    (out + [line], next)
+  })
+
+fn run_guarded(b: Backend, threshold: Int, reqs: List[String]) -> (List[String], Int) = {
+  let (lines, after) = run_all(breaker(b, threshold), reqs)
+  (lines, after.inner.calls)
+}

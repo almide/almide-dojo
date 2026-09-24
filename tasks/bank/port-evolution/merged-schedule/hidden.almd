@@ -1,0 +1,17 @@
+test "hidden: repeat keeps firing after the extra" {
+  let m = Merged { repeat: Every { period: 10, offset: 0 }, extra: Once { at: 25 } }
+  assert_eq(upcoming_for(Both(m), 0, 5), [10, 20, 25, 30, 40])
+  assert_eq(m.next_after(25), some(30))
+  assert_eq(upcoming_for(Both(Merged { repeat: Every { period: 3, offset: 0 }, extra: Once { at: -5 } }), 0, 2), [3, 6])
+}
+test "hidden: a shared firing time appears once" {
+  let m = Merged { repeat: Every { period: 10, offset: 0 }, extra: Once { at: 20 } }
+  assert_eq(upcoming_for(Both(m), 0, 3), [10, 20, 30])
+}
+test "hidden: negative times and exact boundaries" {
+  let m = Merged { repeat: Every { period: 4, offset: -10 }, extra: Once { at: -7 } }
+  assert_eq(upcoming_for(Both(m), -12, 4), [-10, -7, -6, -2])
+  assert_eq(m.next_after(-10), some(-7))
+  assert_eq(upcoming_for(Repeat(Every { period: 4, offset: -10 }), -6, 2), [-2, 2])
+  assert_eq(upcoming_for(Single(Once { at: 5 }), 5, 1), [])
+}

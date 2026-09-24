@@ -1,0 +1,20 @@
+test "hidden: bijective column letters" {
+  assert_eq(render(cell("Z1", 1)), "Z1=1")
+  assert_eq(render(cell("AZ7", 2)), "AZ7=2")
+  assert_eq(render(cell("ZZ2", 3)), "ZZ2=3")
+  assert_eq(render(cell("AAA2", 4)), "AAA2=4")
+  assert_eq(move(cell("Y1", 0), 1, 0) |> option.map(render), some("Z1=0"))
+  assert_eq(move(cell("Z1", 0), 1, 0) |> option.map(render), some("AA1=0"))
+  assert_eq(move(cell("BA4", 0), -1, 0) |> option.map(render), some("AZ4=0"))
+}
+test "hidden: moving off the sheet" {
+  assert_eq(move(cell("A5", 0), -1, 0), none)
+  assert_eq(move(cell("C1", 0), 0, -1), none)
+  assert_eq(move(cell("C2", 9), -2, -1), some(cell("A1", 9)))
+}
+test "hidden: order by number, not by letters" {
+  let cs = [cell("AA2", 1), cell("B2", 2), cell("A10", 3), cell("B2", 4), cell("C1", 5)]
+  assert_eq(ordered(cs), ["C1=5", "B2=2", "B2=4", "AA2=1", "A10=3"])
+  assert_eq(rect_sum(cs, "B1", "AA2"), 12)
+  assert_eq(rect_sum(cs, "A10", "A10"), 3)
+}

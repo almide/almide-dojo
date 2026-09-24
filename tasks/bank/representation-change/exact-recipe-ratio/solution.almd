@@ -1,0 +1,48 @@
+// Recipe quantities in cups, as exact fractions.
+type Ratio: Eq, Repr = { num: Int, den: Int }
+type Ingredient: Eq, Repr = { name: String, cups: Ratio }
+
+fn gcd(a: Int, b: Int) -> Int = if b == 0 then a else gcd(b, a % b)
+
+// Normal form: den > 0, no common factor, zero is 0/1.
+fn ratio(num: Int, den: Int) -> Ratio = {
+  let g = gcd(int.abs(num), int.abs(den))
+  let s = if den < 0 then -1 else 1
+  if num == 0 then Ratio { num: 0, den: 1 } else Ratio { num: s * num / g, den: s * den / g }
+}
+
+fn add(a: Ratio, b: Ratio) -> Ratio = ratio(a.num * b.den + b.num * a.den, a.den * b.den)
+
+fn mul(a: Ratio, b: Ratio) -> Ratio = ratio(a.num * b.num, a.den * b.den)
+
+fn ingredient(name: String, cups: Ratio) -> Ingredient = Ingredient { name: name, cups: cups }
+
+fn render_qty(q: Ratio) -> String = {
+  let sign = if q.num < 0 then "-" else ""
+  let n = int.abs(q.num)
+  let whole = n / q.den
+  let rest = n % q.den
+  let frac = int.to_string(rest) + "/" + int.to_string(q.den)
+  if rest == 0 then sign + int.to_string(whole)
+  else if whole == 0 then sign + frac
+  else sign + int.to_string(whole) + " " + frac
+}
+
+fn line(i: Ingredient) -> String = i.name + ": " + render_qty(i.cups)
+
+// Every quantity multiplied by `factor`.
+fn scale(recipe: List[Ingredient], factor: Ratio) -> List[Ingredient] =
+  recipe |> list.map((i) => Ingredient { ...i, cups: mul(i.cups, factor) })
+
+fn total(recipe: List[Ingredient]) -> Ratio = recipe |> list.fold(ratio(0, 1), (acc, i) => add(acc, i.cups))
+
+// For every ingredient of `after` whose quantity differs from the same-named
+// ingredient in `before` (missing counts as 0): "name +q" or "name -q".
+fn changes(before: List[Ingredient], after: List[Ingredient]) -> List[String] =
+  after |> list.filter_map((a) => {
+    let old = before |> list.find((b) => b.name == a.name) |> option.map((b) => b.cups) ?? ratio(0, 1)
+    let d = add(a.cups, mul(old, ratio(-1, 1)))
+    if d.num == 0 then none
+    else if d.num > 0 then some(a.name + " +" + render_qty(d))
+    else some(a.name + " -" + render_qty(mul(d, ratio(-1, 1))))
+  })

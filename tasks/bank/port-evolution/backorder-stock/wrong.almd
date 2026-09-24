@@ -1,0 +1,65 @@
+// Plausible wrong patch: Backorder reads the level with `?? 0` and never checks
+// for an unknown sku, so reserving one creates it at a negative level.
+// A stock port: `reserve` takes `n` units of `sku` and returns the next state,
+// or fails without changing anything.
+protocol Stock {
+  fn reserve(s: Self, sku: String, n: Int) -> Self!
+  fn level(s: Self, sku: String) -> Int?
+}
+
+// A warehouse never goes below zero.
+type Warehouse: Stock = { levels: Map[String, Int] }
+
+fn Warehouse.level(w: Warehouse, sku: String) -> Int? = map.get(w.levels, sku)
+
+fn Warehouse.reserve(w: Warehouse, sku: String, n: Int) -> Warehouse! = {
+  guard n > 0 else err("bad quantity: " + int.to_string(n))
+  let have = w.level(sku)
+  guard option.is_some(have) else err("unknown sku: " + sku)
+  let left = (have ?? 0) - n
+  guard left >= 0 else err("insufficient " + sku + ": have " + int.to_string(have ?? 0) + ", want " + int.to_string(n))
+  Warehouse { levels: map.set(w.levels, sku, left) }
+}
+
+// Like the warehouse, but a known sku may go down to -allowance.
+type Backorder: Stock = { inner: Warehouse, allowance: Int }
+
+fn Backorder.level(b: Backorder, sku: String) -> Int? = b.inner.level(sku)
+
+fn Backorder.reserve(b: Backorder, sku: String, n: Int) -> Backorder! = {
+  guard n > 0 else err("bad quantity: " + int.to_string(n))
+  let have = b.inner.level(sku)
+  let left = (have ?? 0) - n
+  guard left >= 0 - b.allowance else err("insufficient " + sku + ": have " + int.to_string(have ?? 0) + ", want " + int.to_string(n))
+  Backorder { ...b, inner: Warehouse { levels: map.set(b.inner.levels, sku, left) } }
+}
+
+// All lines or nothing: the first failing line (in order) is the error.
+fn reserve_all[S: Stock](s: S, lines: List[(String, Int)]) -> S! = {
+  var cur = s
+  for line in lines {
+    let (sku, n) = line
+    cur = cur.reserve(sku, n)!
+  }
+  cur
+}
+
+fn level_line[S: Stock](s: S, sku: String) -> String =
+  match s.level(sku) {
+    some(v) => sku + "=" + int.to_string(v),
+    none => sku + "=?",
+  }
+
+type Store = | Strict(Warehouse) | Lenient(Backorder)
+
+fn summary[S: Stock](s: S, lines: List[(String, Int)]) -> String! = {
+  let done = reserve_all(s, lines)!
+  let skus = lines |> list.map((line) => line.0) |> list.unique
+  skus |> list.map((sku) => level_line(done, sku)) |> list.join(", ")
+}
+
+fn reserve_with(s: Store, lines: List[(String, Int)]) -> String! =
+  match s {
+    Strict(w) => summary(w, lines),
+    Lenient(b) => summary(b, lines),
+  }

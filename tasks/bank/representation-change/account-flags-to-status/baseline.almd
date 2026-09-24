@@ -1,0 +1,24 @@
+// Accounts with two independent flags. A deleted account is hidden; deleting
+// keeps the `active` flag, so a restored account comes back as it was.
+type Account: Eq, Repr = { name: String, active: Bool, deleted: Bool }
+
+fn account(name: String, active: Bool, deleted: Bool) -> Account =
+  Account { name: name, active: active, deleted: deleted }
+
+fn suspend(a: Account) -> Account = Account { ...a, active: false }
+fn activate(a: Account) -> Account = Account { ...a, active: true }
+fn delete(a: Account) -> Account = Account { ...a, deleted: true }
+fn restore(a: Account) -> Account = Account { ...a, deleted: false }
+
+// Names of the visible accounts in list order, suspended ones marked.
+fn listing(accs: List[Account]) -> List[String] =
+  accs
+    |> list.filter((a) => not a.deleted)
+    |> list.map((a) => if a.active then a.name else a.name + " (suspended)")
+
+fn counts(accs: List[Account]) -> String = {
+  let live = accs |> list.filter((a) => not a.deleted)
+  "active=" + int.to_string(live |> list.count((a) => a.active))
+    + " suspended=" + int.to_string(live |> list.count((a) => not a.active))
+    + " deleted=" + int.to_string(accs |> list.count((a) => a.deleted))
+}

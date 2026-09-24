@@ -1,0 +1,17 @@
+test "hidden: unknown stays unset through overrides" {
+  let o = Overrides { base: Defaults { on: ["a"], off: ["b"] }, forced: ["c": false] }
+  assert_eq(report_with(Forced(o), ["a", "b", "c", "zz"]), "a=on b=off c=off zz=unset")
+  assert_eq(o.flag("zz"), none)
+  assert_eq(enabled_with(Forced(o), "zz"), false)
+}
+test "hidden: forced false beats default on" {
+  let o = Overrides { base: Defaults { on: ["a", "b"], off: ["b"] }, forced: ["a": false] }
+  assert_eq(report_with(Forced(o), ["a", "b"]), "a=off b=on")
+  assert_eq(enabled_with(Forced(o), "a"), false)
+}
+test "hidden: defaults unchanged" {
+  let d = Defaults { on: ["x"], off: ["x", "y"] }
+  assert_eq(report_with(Plain(d), ["x", "y", "q"]), "x=on y=off q=unset")
+  assert_eq(report(d, []), "")
+  assert_eq(enabled(Overrides { base: d, forced: [:] }, "y"), false)
+}

@@ -1,0 +1,38 @@
+// Plausible wrong patch: flattens the memo lookup, so a remembered MISS looks
+// like "not cached" and goes back to the directory. Passes the visible tests.
+// A lookup port that threads its own state: `get` answers the value for a key
+// (none when there is none) and returns the adapter's next state.
+protocol Lookup {
+  fn get(l: Self, key: String) -> (String?, Self)
+}
+
+// The slow directory; `calls` counts how many lookups reached it.
+type Directory: Lookup = { rows: Map[String, String], calls: Int }
+fn Directory.get(d: Directory, key: String) -> (String?, Directory) =
+  (map.get(d.rows, key), Directory { ...d, calls: d.calls + 1 })
+
+// Remembers every answer.
+type Cached: Lookup = { inner: Directory, memo: Map[String, String?], hits: Int }
+
+fn cached(d: Directory) -> Cached = Cached { inner: d, memo: map.new(), hits: 0 }
+
+fn Cached.get(c: Cached, key: String) -> (String?, Cached) =
+  match option.flatten(map.get(c.memo, key)) {
+    some(v) => (some(v), Cached { ...c, hits: c.hits + 1 }),
+    none => {
+      let (v, inner) = c.inner.get(key)
+      (v, Cached { ...c, inner: inner, memo: map.set(c.memo, key, v) })
+    },
+  }
+
+// Resolves every key in order, threading the state; a missing key reads "-".
+fn resolve_all[L: Lookup](l: L, keys: List[String]) -> (List[String], L) =
+  keys |> list.fold(([], l), ((out, cur), k) => {
+    let (v, next) = cur.get(k)
+    (out + [v ?? "-"], next)
+  })
+
+fn resolve_cached(d: Directory, keys: List[String]) -> (List[String], Int, Int) = {
+  let (vals, c) = resolve_all(cached(d), keys)
+  (vals, c.inner.calls, c.hits)
+}

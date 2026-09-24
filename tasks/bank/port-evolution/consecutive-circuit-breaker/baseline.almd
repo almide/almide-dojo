@@ -1,0 +1,24 @@
+// A service-call port that threads its state: `call` answers the reply (or the
+// failure) together with the adapter's next state.
+protocol Service {
+  fn call(s: Self, req: String) -> (Result[String, String], Self)
+}
+
+// The real backend; requests listed in `down` fail. `calls` counts requests
+// that reached it.
+type Backend: Service = { down: List[String], calls: Int }
+fn Backend.call(b: Backend, req: String) -> (Result[String, String], Backend) = {
+  let next = Backend { ...b, calls: b.calls + 1 }
+  if list.contains(b.down, req) then (err("down: " + req), next) else (ok("re:" + req), next)
+}
+
+// Every request in order; "ok <reply>" or "err <message>" per request.
+fn run_all[S: Service](s: S, reqs: List[String]) -> (List[String], S) =
+  reqs |> list.fold(([], s), ((out, cur), r) => {
+    let (res, next) = cur.call(r)
+    let line = match res {
+      ok(v) => "ok " + v,
+      err(e) => "err " + e,
+    }
+    (out + [line], next)
+  })

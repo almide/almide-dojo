@@ -1,0 +1,21 @@
+// Quiz standings. A team's result is packed into one number:
+// points = correct * 1000 - seconds (seconds < 1000), higher is better.
+type Team: Eq, Repr = { name: String, points: Int }
+
+fn team(name: String, correct: Int, seconds: Int) -> Team =
+  Team { name: name, points: correct * 1000 - seconds }
+
+fn better(a: Team, b: Team) -> Bool = a.points > b.points
+
+// Competition ranking: 1 + the number of teams strictly better.
+fn rank(t: Team, all: List[Team]) -> Int = 1 + (all |> list.count((o) => better(o, t)))
+
+// Best first; equal results keep list order. "1. red 3050", "2. blue 2990", "2. ..."
+fn standings(teams: List[Team]) -> List[String] =
+  teams
+    |> list.sort_by((t) => 0 - t.points)
+    |> list.map((t) => int.to_string(rank(t, teams)) + ". " + t.name + " " + int.to_string(t.points))
+
+// The teams that share first place, in list order.
+fn winners(teams: List[Team]) -> List[String] =
+  teams |> list.filter((t) => rank(t, teams) == 1) |> list.map((t) => t.name)

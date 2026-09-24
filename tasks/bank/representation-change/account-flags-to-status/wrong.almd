@@ -1,0 +1,42 @@
+// Plausible wrong patch: suspend and activate simply set the new status, which
+// silently un-deletes a deleted account. Passes the visible tests.
+// Accounts with one status. A deleted account is hidden; `Deleted` remembers
+// whether the account was active, so a restored account comes back as it was.
+type Status: Eq, Repr = | Active | Suspended | Deleted(Bool)
+type Account: Eq, Repr = { name: String, status: Status }
+
+fn account(name: String, active: Bool, deleted: Bool) -> Account = {
+  let status = if deleted then Deleted(active) else if active then Active else Suspended
+  Account { name: name, status: status }
+}
+
+fn is_active(a: Account) -> Bool =
+  match a.status {
+    Active => true,
+    Suspended => false,
+    Deleted(was) => was,
+  }
+
+fn is_deleted(a: Account) -> Bool =
+  match a.status {
+    Deleted(_) => true,
+    _ => false,
+  }
+
+fn suspend(a: Account) -> Account = Account { ...a, status: Suspended }
+fn activate(a: Account) -> Account = Account { ...a, status: Active }
+fn delete(a: Account) -> Account = account(a.name, is_active(a), true)
+fn restore(a: Account) -> Account = account(a.name, is_active(a), false)
+
+// Names of the visible accounts in list order, suspended ones marked.
+fn listing(accs: List[Account]) -> List[String] =
+  accs
+    |> list.filter((a) => not is_deleted(a))
+    |> list.map((a) => if is_active(a) then a.name else a.name + " (suspended)")
+
+fn counts(accs: List[Account]) -> String = {
+  let live = accs |> list.filter((a) => not is_deleted(a))
+  "active=" + int.to_string(live |> list.count(is_active))
+    + " suspended=" + int.to_string(live |> list.count((a) => not is_active(a)))
+    + " deleted=" + int.to_string(accs |> list.count(is_deleted))
+}

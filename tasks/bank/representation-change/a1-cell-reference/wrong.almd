@@ -1,0 +1,50 @@
+// Plausible wrong patch: writes the column in plain base 26, so multiples of 26
+// break (26 renders as "A@"). Passes the visible tests.
+// Spreadsheet cells at numeric positions; A1 notation is only the text form
+// ("B3" is column 2, row 3; "AA10" is column 27, row 10).
+type Ref: Eq, Repr = { col: Int, row: Int }
+type Cell: Eq, Repr = { at: Ref, value: Int }
+
+fn letters_of(at: String) -> String = string.chars(at) |> list.take_while(string.is_alpha) |> list.join("")
+
+// A = 1, Z = 26, AA = 27, ...
+fn col_of(at: String) -> Int =
+  string.chars(letters_of(at)) |> list.fold(0, (acc, ch) => acc * 26 + (string.codepoint(ch) ?? 64) - 64)
+
+fn row_of(at: String) -> Int = int.parse(string.drop(at, string.len(letters_of(at)))) ?? 0
+
+fn parse_ref(at: String) -> Ref = Ref { col: col_of(at), row: row_of(at) }
+
+// Base 26 digits, A = 1.
+fn col_letters(n: Int) -> String =
+  if n <= 0 then ""
+  else col_letters(n / 26) + string.from_codepoint(64 + n % 26)
+
+fn ref_text(r: Ref) -> String = col_letters(r.col) + int.to_string(r.row)
+
+fn cell(at: String, value: Int) -> Cell = Cell { at: parse_ref(at), value: value }
+
+fn render(c: Cell) -> String = ref_text(c.at) + "=" + int.to_string(c.value)
+
+fn move(c: Cell, dcol: Int, drow: Int) -> Cell? = {
+  let col = c.at.col + dcol
+  let row = c.at.row + drow
+  if col < 1 or row < 1 then none else some(Cell { ...c, at: Ref { col: col, row: row } })
+}
+
+// Cells inside the rectangle spanned by two corners (inclusive).
+fn in_rect(c: Cell, tl: String, br: String) -> Bool = {
+  let a = parse_ref(tl)
+  let b = parse_ref(br)
+  c.at.col >= a.col and c.at.col <= b.col and c.at.row >= a.row and c.at.row <= b.row
+}
+
+fn rect_sum(cells: List[Cell], tl: String, br: String) -> Int =
+  cells |> list.filter((c) => in_rect(c, tl, br)) |> list.fold(0, (acc, c) => acc + c.value)
+
+// Row by row, left to right within a row; equal positions keep list order.
+fn ordered(cells: List[Cell]) -> List[String] =
+  cells
+    |> list.sort_by((c) => c.at.col)
+    |> list.sort_by((c) => c.at.row)
+    |> list.map(render)

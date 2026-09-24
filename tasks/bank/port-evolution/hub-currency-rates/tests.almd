@@ -1,0 +1,10 @@
+test "via the hub" {
+  let t = Table { quotes: ["EUR/USD": 1100000, "USD/JPY": 150000000] }
+  let h = ViaHub { table: t, hub: "USD" }
+  assert_eq(quote_with(Hub(h), 1000, "EUR", "JPY"), "1000 EUR = 165000 JPY")
+  assert_eq(quote_with(Quoted(t), 1000, "EUR", "JPY"), "1000 EUR: no rate to JPY")
+}
+test "direct quotes through the hub adapter" {
+  let t = Table { quotes: ["EUR/USD": 1100000] }
+  assert_eq(quote_with(Hub(ViaHub { table: t, hub: "GBP" }), 200, "EUR", "USD"), "200 EUR = 220 USD")
+}

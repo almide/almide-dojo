@@ -1,0 +1,21 @@
+test "hidden: revoking a missing permission changes nothing" {
+  let u = user("ann", ["read"])
+  assert_eq(revoke(u, "write"), u)
+  assert_eq(revoke(revoke(u, "read"), "read"), user("ann", []))
+  assert_eq(render(revoke(user("b", ["admin", "exec"]), "admin")), "--x-")
+}
+test "hidden: grant is idempotent and ignores unknown names" {
+  let u = user("cy", ["exec"])
+  assert_eq(grant(grant(u, "exec"), "exec"), u)
+  assert_eq(grant(u, "fly"), u)
+  assert_eq(revoke(u, "fly"), u)
+  assert_eq(user("d", ["fly", "admin", "admin"]).perms, 8)
+}
+test "hidden: admin implies but is not rendered as others" {
+  let a = user("root", ["admin"])
+  assert(can(a, "write"))
+  assert(not can(user("x", ["read"]), "write"))
+  assert_eq(render(a), "---a")
+  assert_eq(common(a, user("y", ["read"])), [])
+  assert_eq(render(user("z", [])), "----")
+}

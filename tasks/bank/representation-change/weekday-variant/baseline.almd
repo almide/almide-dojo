@@ -1,0 +1,27 @@
+// A weekly meeting planner. `day` is 0 = Monday .. 6 = Sunday; `at` is the
+// minute of the day.
+type Meeting: Eq, Repr = { title: String, day: Int, at: Int }
+
+let NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+fn meeting(title: String, day: Int, at: Int) -> Meeting = Meeting { title: title, day: day, at: at }
+
+fn day_name(d: Int) -> String = list.get(NAMES, d) ?? "?"
+
+fn is_weekend(d: Int) -> Bool = d >= 5
+
+// The next working day strictly after `d` (Friday, Saturday and Sunday lead to Monday).
+fn next_workday(d: Int) -> Int = if d >= 4 then 0 else d + 1
+
+// Days from `from` forward to the next `to` (0 when they are the same day).
+fn days_until(from: Int, to: Int) -> Int = (to - from + 7) % 7
+
+// The week from Monday to Sunday, by time within a day; equal slots keep list order.
+fn agenda(ms: List[Meeting]) -> List[String] =
+  ms
+    |> list.sort_by((m) => m.at)
+    |> list.sort_by((m) => m.day)
+    |> list.map((m) => day_name(m.day) + " " + m.title)
+
+fn weekend_titles(ms: List[Meeting]) -> List[String] =
+  ms |> list.filter((m) => is_weekend(m.day)) |> list.map((m) => m.title)

@@ -1,0 +1,36 @@
+// User permissions as a bitmask: read = 1, write = 2, exec = 4, admin = 8.
+// "admin" implies every other permission.
+type User: Eq, Repr = { name: String, perms: Int }
+
+let PERMS = ["read", "write", "exec", "admin"]
+
+fn bit(p: String) -> Int =
+  match p {
+    "read" => 1,
+    "write" => 2,
+    "exec" => 4,
+    "admin" => 8,
+    _ => 0,
+  }
+
+fn holds(u: User, p: String) -> Bool = bit(p) != 0 and int.band(u.perms, bit(p)) != 0
+
+fn user(name: String, perms: List[String]) -> User =
+  User { name: name, perms: perms |> list.fold(0, (acc, p) => int.bor(acc, bit(p))) }
+
+fn grant(u: User, p: String) -> User = User { ...u, perms: int.bor(u.perms, bit(p)) }
+
+fn revoke(u: User, p: String) -> User = User { ...u, perms: int.band(u.perms, int.bnot(bit(p))) }
+
+fn can(u: User, p: String) -> Bool = holds(u, p) or holds(u, "admin")
+
+// Four characters r, w, x, a, with "-" for a missing permission: "rw--".
+fn render(u: User) -> String = {
+  let letters = ["r", "w", "x", "a"]
+  list.zip(PERMS, letters)
+    |> list.map(((p, l)) => if holds(u, p) then l else "-")
+    |> list.join("")
+}
+
+// The permissions both users hold explicitly, in PERMS order.
+fn common(a: User, b: User) -> List[String] = PERMS |> list.filter((p) => holds(a, p) and holds(b, p))

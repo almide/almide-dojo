@@ -1,0 +1,19 @@
+test "hidden: records keep verifying after a salt rotation" {
+  let old = Salted { salt: "k1" }
+  let current = Salted { salt: "k2" }
+  let users = [User { name: "ann", stored: old.hash("secret") }]
+  assert_eq(login_with(New(current), users, "ann", "secret"), "ok")
+  assert_eq(login_with(New(current), users, "ann", "secreT"), "bad password")
+  assert_eq(current.verify("secret", "s1$k1$" + digest("k1secret")), true)
+}
+test "hidden: plain hashes log in through the salted scheme" {
+  let users = [User { name: "bo", stored: digest("x") }, User { name: "cy", stored: Salted { salt: "" }.hash("y") }]
+  assert_eq(login_with(New(Salted { salt: "k9" }), users, "bo", "x"), "ok")
+  assert_eq(login_with(New(Salted { salt: "k9" }), users, "bo", "y"), "bad password")
+  assert_eq(login_with(New(Salted { salt: "k9" }), users, "cy", "y"), "ok")
+  assert_eq(login_with(New(Salted { salt: "k9" }), users, "dee", "y"), "no such user")
+}
+test "hidden: the old scheme does not learn salted records" {
+  let users = [User { name: "ann", stored: Salted { salt: "k1" }.hash("secret") }]
+  assert_eq(login_with(Old(Plain {}), users, "ann", "secret"), "bad password")
+}

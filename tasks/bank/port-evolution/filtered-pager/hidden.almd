@@ -1,0 +1,21 @@
+test "hidden: a gap without matches does not end the walk" {
+  let items = ["a1", "a2", "b1", "b2", "b3", "b4", "a3"]
+  let f = Filtered { inner: ListPager { items: items, size: 2 }, prefix: "a" }
+  assert_eq(outline_of(Only(f)), "p1: a1,a2 | p2: a3")
+  assert_eq(count_of(Only(f)), 3)
+  assert_eq(f.page(2), ["a3"])
+}
+test "hidden: pages are full pages of matches" {
+  let f = Filtered { inner: ListPager { items: ["x", "a1", "y", "a2", "a3", "z", "a4"], size: 3 }, prefix: "a" }
+  assert_eq(f.page(1), ["a1", "a2", "a3"])
+  assert_eq(f.page(2), ["a4"])
+  assert_eq(f.page(3), [])
+  assert_eq(f.page(0), [])
+}
+test "hidden: no matches and the plain pager" {
+  let f = Filtered { inner: ListPager { items: ["b", "c"], size: 1 }, prefix: "a" }
+  assert_eq(outline_of(Only(f)), "")
+  assert_eq(count_of(Only(f)), 0)
+  assert_eq(count_of(All(ListPager { items: ["q", "r", "s"], size: 5 })), 3)
+  assert_eq(ListPager { items: ["q"], size: 1 }.page(-1), [])
+}

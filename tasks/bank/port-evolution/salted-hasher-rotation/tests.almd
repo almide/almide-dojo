@@ -1,0 +1,11 @@
+test "salted hashes" {
+  let s = Salted { salt: "k1" }
+  assert_eq(s.hash("pw"), "s1$k1$" + digest("k1pw"))
+  let users = [User { name: "ann", stored: s.hash("secret") }]
+  assert_eq(login_with(New(s), users, "ann", "secret"), "ok")
+  assert_eq(login_with(New(s), users, "ann", "nope"), "bad password")
+}
+test "old scheme" {
+  let users = [User { name: "bo", stored: digest("x") }]
+  assert_eq(login_with(Old(Plain {}), users, "bo", "x"), "ok")
+}

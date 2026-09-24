@@ -1,0 +1,25 @@
+// Disk usage over a file tree. A path is canonical text: segments joined by "/",
+// no leading, trailing or doubled "/", and "" is the root.
+type Entry: Eq, Repr = { path: String, bytes: Int }
+
+fn entry(path: String, bytes: Int) -> Entry = Entry { path: path, bytes: bytes }
+
+fn depth(e: Entry) -> Int = if e.path == "" then 0 else list.len(string.split(e.path, "/"))
+
+// The parent directory's path; none for the root.
+fn parent(e: Entry) -> String? =
+  if e.path == "" then none
+  else match string.last_index_of(e.path, "/") {
+    some(i) => some(string.slice(e.path, 0, i)),
+    none => some(""),
+  }
+
+// True when `e` is `dir` itself or lies anywhere below it.
+fn within(e: Entry, dir: String) -> Bool =
+  dir == "" or e.path == dir or string.starts_with(e.path, dir + "/")
+
+// Total bytes of every entry within `dir`.
+fn usage(es: List[Entry], dir: String) -> Int =
+  es |> list.filter((e) => within(e, dir)) |> list.fold(0, (acc, e) => acc + e.bytes)
+
+fn render(e: Entry) -> String = (if e.path == "" then "." else e.path) + " " + int.to_string(e.bytes)

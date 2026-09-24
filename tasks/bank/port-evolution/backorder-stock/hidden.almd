@@ -1,0 +1,18 @@
+test "hidden: unknown skus are never created" {
+  let b = Backorder { inner: Warehouse { levels: ["pen": 2] }, allowance: 5 }
+  assert_eq(reserve_with(Lenient(b), [("ink", 1)]), err("unknown sku: ink"))
+  assert_eq(b.reserve("ink", 0), err("bad quantity: 0"))
+  assert_eq(reserve_with(Lenient(b), [("pen", 1), ("ink", 1)]), err("unknown sku: ink"))
+}
+test "hidden: the allowance bound" {
+  let b = Backorder { inner: Warehouse { levels: ["pen": 2] }, allowance: 5 }
+  assert_eq(reserve_with(Lenient(b), [("pen", 7)]), ok("pen=-5"))
+  assert_eq(reserve_with(Lenient(b), [("pen", 4), ("pen", 3), ("pen", 1)]), err("insufficient pen: have -5, want 1"))
+  assert_eq(reserve_with(Lenient(Backorder { inner: Warehouse { levels: ["x": 0] }, allowance: 0 }), [("x", 1)]), err("insufficient x: have 0, want 1"))
+}
+test "hidden: repeated skus and strict mode" {
+  let w = Warehouse { levels: ["a": 5, "b": 1] }
+  assert_eq(reserve_with(Strict(w), [("a", 1), ("b", 1), ("a", 2)]), ok("a=2, b=0"))
+  assert_eq(reserve_with(Strict(w), [("a", -1)]), err("bad quantity: -1"))
+  assert_eq(level_line(w, "zz"), "zz=?")
+}

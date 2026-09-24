@@ -1,0 +1,13 @@
+test "hidden: misses are cached" {
+  let d = Directory { rows: ["a": "1"], calls: 0 }
+  assert_eq(resolve_cached(d, ["zz", "zz", "zz"]), (["-", "-", "-"], 1, 2))
+  assert_eq(resolve_cached(d, ["zz", "a", "zz", "a"]), (["-", "1", "-", "1"], 2, 2))
+}
+test "hidden: empty values and first lookups" {
+  let d = Directory { rows: ["e": ""], calls: 5 }
+  assert_eq(resolve_cached(d, ["e", "e"]), (["", ""], 6, 1))
+  assert_eq(resolve_cached(d, []), ([], 5, 0))
+  let (v, c) = cached(d).get("e")
+  assert_eq(v, some(""))
+  assert_eq(c.hits, 0)
+}

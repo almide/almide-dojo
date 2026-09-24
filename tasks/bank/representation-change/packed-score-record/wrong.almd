@@ -1,0 +1,29 @@
+// Plausible wrong patch: sorts ascending and reverses for "best first", which
+// also reverses the seconds tie-break and the list order of equal scores.
+// Quiz standings. More correct answers is better; on equal answers, fewer seconds.
+type Score: Eq, Repr = { correct: Int, seconds: Int }
+type Team: Eq, Repr = { name: String, score: Score }
+
+fn team(name: String, correct: Int, seconds: Int) -> Team =
+  Team { name: name, score: Score { correct: correct, seconds: seconds } }
+
+fn better(a: Team, b: Team) -> Bool =
+  a.score.correct > b.score.correct
+    or (a.score.correct == b.score.correct and a.score.seconds < b.score.seconds)
+
+// Competition ranking: 1 + the number of teams strictly better.
+fn rank(t: Team, all: List[Team]) -> Int = 1 + (all |> list.count((o) => better(o, t)))
+
+fn score_text(s: Score) -> String = int.to_string(s.correct) + "/" + int.to_string(s.seconds) + "s"
+
+// Best first; equal results keep list order.
+fn standings(teams: List[Team]) -> List[String] =
+  teams
+    |> list.sort_by((t) => t.score.seconds)
+    |> list.sort_by((t) => t.score.correct)
+    |> list.reverse
+    |> list.map((t) => int.to_string(rank(t, teams)) + ". " + t.name + " " + score_text(t.score))
+
+// The teams that share first place, in list order.
+fn winners(teams: List[Team]) -> List[String] =
+  teams |> list.filter((t) => rank(t, teams) == 1) |> list.map((t) => t.name)

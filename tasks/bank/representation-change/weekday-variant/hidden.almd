@@ -1,0 +1,18 @@
+test "hidden: the week is not alphabetical" {
+  let ms = [meeting("f", Fri, 60), meeting("s", Sun, 0), meeting("m", Mon, 30), meeting("t", Thu, 5), meeting("w", Wed, 5), meeting("sa", Sat, 1)]
+  assert_eq(agenda(ms), ["Mon m", "Wed w", "Thu t", "Fri f", "Sat sa", "Sun s"])
+}
+test "hidden: time within a day and ties" {
+  let ms = [meeting("late", Tue, 900), meeting("early", Tue, 60), meeting("same1", Mon, 5), meeting("same2", Mon, 5)]
+  assert_eq(agenda(ms), ["Mon same1", "Mon same2", "Tue early", "Tue late"])
+}
+test "hidden: wrapping arithmetic" {
+  assert_eq(next_workday(Fri), Mon)
+  assert_eq(next_workday(Sat), Mon)
+  assert_eq(next_workday(Sun), Mon)
+  assert_eq(next_workday(Mon), Tue)
+  assert_eq(days_until(Sat, Mon), 2)
+  assert_eq(days_until(Mon, Sun), 6)
+  assert_eq(days_until(Thu, Thu), 0)
+  assert_eq(is_weekend(Fri), false)
+}

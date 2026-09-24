@@ -1,0 +1,25 @@
+// Disk usage over a file tree. A path is its list of segments; [] is the root.
+type Entry: Eq, Repr = { path: List[String], bytes: Int }
+
+fn segments(text: String) -> List[String] = string.split(text, "/") |> list.filter((s) => s != "")
+
+fn entry(path: String, bytes: Int) -> Entry = Entry { path: segments(path), bytes: bytes }
+
+fn depth(e: Entry) -> Int = list.len(e.path)
+
+// The parent directory's segments; none for the root.
+fn parent(e: Entry) -> List[String]? =
+  if list.is_empty(e.path) then none else some(list.drop_end(e.path, 1))
+
+// True when `e` is `dir` itself or lies anywhere below it.
+fn within(e: Entry, dir: String) -> Bool = {
+  let d = segments(dir)
+  list.take(e.path, list.len(d)) == d
+}
+
+// Total bytes of every entry within `dir`.
+fn usage(es: List[Entry], dir: String) -> Int =
+  es |> list.filter((e) => within(e, dir)) |> list.fold(0, (acc, e) => acc + e.bytes)
+
+fn render(e: Entry) -> String =
+  (if list.is_empty(e.path) then "." else list.join(e.path, "/")) + " " + int.to_string(e.bytes)

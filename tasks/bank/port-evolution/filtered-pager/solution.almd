@@ -1,0 +1,49 @@
+// A paging port: page `n` (1-based) of a result set. A page past the end, or
+// n < 1, is empty.
+protocol Pager {
+  fn page(p: Self, n: Int) -> List[String]
+}
+
+// Pages of `size` items over a list (size >= 1).
+type ListPager: Pager = { items: List[String], size: Int }
+fn ListPager.page(p: ListPager, n: Int) -> List[String] =
+  if n < 1 then [] else list.slice(p.items, (n - 1) * p.size, n * p.size)
+
+// Pages of the matching items only, `inner.size` per page.
+type Filtered: Pager = { inner: ListPager, prefix: String }
+fn Filtered.page(f: Filtered, n: Int) -> List[String] = {
+  let matching = f.inner.items |> list.filter((s) => string.starts_with(s, f.prefix))
+  ListPager { items: matching, size: f.inner.size }.page(n)
+}
+
+// Every page from 1 until the first empty page.
+fn all_pages[P: Pager](p: P) -> List[List[String]] = collect(p, 1, [])
+
+fn collect[P: Pager](p: P, n: Int, acc: List[List[String]]) -> List[List[String]] = {
+  let items = p.page(n)
+  if list.is_empty(items) then acc else collect(p, n + 1, acc + [items])
+}
+
+fn count_items[P: Pager](p: P) -> Int =
+  all_pages(p) |> list.fold(0, (acc, pg) => acc + list.len(pg))
+
+// "p1: a,b | p2: c"
+fn outline[P: Pager](p: P) -> String =
+  all_pages(p)
+    |> list.enumerate
+    |> list.map(((i, pg)) => "p" + int.to_string(i + 1) + ": " + list.join(pg, ","))
+    |> list.join(" | ")
+
+type Listing = | All(ListPager) | Only(Filtered)
+
+fn outline_of(l: Listing) -> String =
+  match l {
+    All(p) => outline(p),
+    Only(f) => outline(f),
+  }
+
+fn count_of(l: Listing) -> Int =
+  match l {
+    All(p) => count_items(p),
+    Only(f) => count_items(f),
+  }

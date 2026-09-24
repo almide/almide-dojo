@@ -1,0 +1,9 @@
+test "backorders go negative" {
+  let b = Backorder { inner: Warehouse { levels: ["pen": 2] }, allowance: 5 }
+  assert_eq(reserve_with(Lenient(b), [("pen", 4)]), ok("pen=-2"))
+  assert_eq(reserve_with(Strict(b.inner), [("pen", 4)]), err("insufficient pen: have 2, want 4"))
+}
+test "several lines" {
+  let w = Warehouse { levels: ["a": 5, "b": 1] }
+  assert_eq(reserve_with(Strict(w), [("a", 2), ("b", 1)]), ok("a=3, b=0"))
+}
