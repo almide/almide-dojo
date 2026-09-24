@@ -1,0 +1,16 @@
+test "hidden: exact message at the first misplaced =" {
+  assert_eq(decode("QQ==QUI="), err("bad padding at 2"))
+  assert_eq(decode("QQ=A"), err("bad padding at 2"))
+  assert_eq(decode("Q==="), err("bad padding at 1"))
+}
+test "hidden: one or two trailing = are fine, and no padding at all" {
+  assert_eq(decode("QUJD"), ok([65, 66, 67]))
+  assert_eq(decode("QUI="), ok([65, 66]))
+  assert_eq(decode("QQ=="), ok([65]))
+  assert_eq(decode(""), ok([]))
+}
+test "hidden: the length check comes first, then characters and padding left to right" {
+  assert_eq(decode("QQ=A="), err("length 5 is not a multiple of 4"))
+  assert_eq(decode("Q!=A"), err("bad character ! at 1"))
+  assert_eq(decode("Q=!A"), err("bad padding at 1"))
+}

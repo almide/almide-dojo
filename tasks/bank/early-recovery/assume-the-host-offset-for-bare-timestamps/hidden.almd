@@ -1,0 +1,13 @@
+test "hidden: a host without a configured default is still fatal" {
+  assert_eq(merge(["web": "+02:00"], ["web 12:00:00 a", "db 09:00:00 b"]), err(NoOffset("db", "09:00:00")))
+}
+test "hidden: each host uses its own default, explicit offsets win" {
+  assert_eq(merge(["web": "+02:00", "db": "-05:00"], ["db 04:00:00 x", "web 11:00:00+01:00 y", "web 11:30:00 z"]),
+    ok(["09:00:00Z db x", "09:30:00Z web z", "10:00:00Z web y"]))
+}
+test "hidden: equal UTC times keep input order" {
+  assert_eq(merge(["a": "+01:00"], ["a 10:00:00 one", "b 09:00:00+00:00 two"]), ok(["09:00:00Z a one", "09:00:00Z b two"]))
+}
+test "hidden: a bad configured default is reported like a bad stamp" {
+  assert_eq(merge(["a": "+1"], ["a 10:00:00 one"]), err(BadStamp("10:00:00+1")))
+}

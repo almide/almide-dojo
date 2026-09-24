@@ -1,0 +1,28 @@
+// Chess position reader (the board part of FEN). Ranks are separated by "/",
+// from rank 8 (first) down to rank 1. In a rank, a letter is a piece
+// (KQRBNP white, kqrbnp black) and a digit 1-8 is that many empty squares.
+fn is_piece(c: String) -> Bool = string.contains("KQRBNPkqrbnp", c)
+
+fn check_rank(k: Int, rank: String) -> List[String]! = {
+  let cs = string.chars(rank)
+  match list.find(cs, (c) => not is_piece(c) and not (string.is_digit(c) and c != "0" and c != "9")) {
+    some(c) => err("bad square ${c} in rank ${int.to_string(k)}"),
+    none => ok(()),
+  }!
+  let n = cs |> list.fold(0, (acc, c) => acc + (if is_piece(c) then 1 else int.parse(c) ?? 0))
+  guard n == 8 else err("rank ${int.to_string(k)} has ${int.to_string(n)} squares")
+  cs
+}
+
+fn board(fen: String) -> List[List[String]]! = {
+  let ranks = string.split(fen, "/")
+  guard list.len(ranks) == 8 else err("expected 8 ranks, got ${int.to_string(list.len(ranks))}")
+  ranks |> list.enumerate |> list.map((p) => check_rank(8 - p.0, p.1)!)!
+}
+
+fn pieces(fen: String) -> String! = {
+  let b = board(fen)!
+  let all = b |> list.flat_map((r) => r) |> list.filter((c) => is_piece(c))
+  let white = all |> list.count((c) => string.is_upper(c))
+  "${int.to_string(white)} white, ${int.to_string(list.len(all) - white)} black"
+}

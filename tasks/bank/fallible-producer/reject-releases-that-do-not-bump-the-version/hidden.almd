@@ -1,0 +1,15 @@
+test "hidden: versions compare numerically, part by part" {
+  assert_eq(latest(["1.9.0 2026-01-01 a", "1.10.0 2026-01-02 b", "1.10.10 2026-01-03 c", "10.0.0 2026-01-04 d"]), ok("10.0.0 (2026-01-04)"))
+  assert_eq(latest(["2.0.0 2026-01-01 a", "10.0.0 2026-01-02 b", "9.9.9 2026-01-03 c"]), err("version 9.9.9 is not newer than 10.0.0"))
+}
+test "hidden: the same version twice is not newer" {
+  assert_eq(latest(["1.0.0 2026-01-01 a", "1.0.0 2026-01-01 again"]), err("version 1.0.0 is not newer than 1.0.0"))
+}
+test "hidden: the version check comes after the date check of the same line" {
+  assert_eq(latest(["1.2.0 2026-02-01 a", "1.1.0 2026-01-01 b"]), err("date went backwards at 1.1.0: 2026-01-01 < 2026-02-01"))
+  assert_eq(latest(["1.2.0 2026-02-01 a", "1.1.0 2026-02-01 b"]), err("version 1.1.0 is not newer than 1.2.0"))
+}
+test "hidden: parse errors keep their text and the first bad line wins" {
+  assert_eq(latest(["1.0.0 2026-01-01 a", "0.9.0 2026-01-02 b", "1.02.0 2026-01-03 c"]), err("version 0.9.0 is not newer than 1.0.0"))
+  assert_eq(latest(["1.0.0 2026-01-01 a", "1.02.0 2026-01-03 c", "0.9.0 2026-01-02 b"]), err("bad version 1.02.0"))
+}

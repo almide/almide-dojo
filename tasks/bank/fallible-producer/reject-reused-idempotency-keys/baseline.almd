@@ -1,0 +1,25 @@
+// Payment batch. Each request is "<key> <account> <cents>"; the key is the
+// client's idempotency key. Requests are charged in order.
+type Req: Eq, Repr = { key: String, account: String, cents: Int }
+type Batch: Eq, Repr = { charged: List[Req], total: Int }
+
+fn parse_req(line: String) -> Req! = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) == 3 else err("bad request: ${line}")
+  let cents = int.parse(list.get(w, 2) ?? "") |> result.map_err((_) => "bad amount in: ${line}")!
+  guard cents > 0 else err("bad amount in: ${line}")
+  let account = list.get(w, 1) ?? ""
+  guard string.starts_with(account, "acct-") else err("bad account ${account}")
+  Req { key: list.get(w, 0) ?? "", account: account, cents: cents }
+}
+
+fn charge(b: Batch, r: Req) -> Batch! =
+  ok(Batch { charged: b.charged + [r], total: b.total + r.cents })
+
+fn run(lines: List[String]) -> Batch! =
+  lines |> list.fold(Batch { charged: [], total: 0 }, (b, l) => charge(b, parse_req(l)!)!)!
+
+fn receipt(lines: List[String]) -> String! = {
+  let b = run(lines)!
+  "${int.to_string(list.len(b.charged))} charges, ${int.to_string(b.total)} cents"
+}

@@ -1,0 +1,13 @@
+test "hidden: warnings of both kinds stay in line order" {
+  assert_eq(import_book(["Ann: 123 45", "ANN: 11111", "Bo: +44 20-7000"]) |> result.map((b) => show(b)),
+    ok("Ann=12345 Bo=+44207000 | line 1: normalized 123 45; line 2: duplicate ANN ignored; line 3: normalized +44 20-7000"))
+}
+test "hidden: a repeated name with a bad phone is still a bad phone" {
+  assert_eq(import_book(["Ann: 12345", "Ann: 12"]) |> result.map((b) => show(b)), err("line 2: bad phone 12"))
+}
+test "hidden: a repeated name with a phone that needs normalizing warns only about the repeat" {
+  assert_eq(import_book(["Ann: 12345", "ann: 555 55"]) |> result.map((b) => show(b)), ok("Ann=12345 | line 2: duplicate ann ignored"))
+}
+test "hidden: missing colon stays fatal" {
+  assert_eq(import_book(["Ann: 12345", "Ann 12345"]) |> result.map((b) => show(b)), err("line 2: missing colon"))
+}

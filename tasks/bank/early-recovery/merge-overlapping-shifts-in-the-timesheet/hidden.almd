@@ -1,0 +1,14 @@
+test "hidden: a shift bridging two shifts merges all three" {
+  assert_eq(load(["ann 09:00-10:00", "ann 11:00-12:00", "ann 09:30-11:30"]) |> result.map((s) => report(s)), ok("ann 09:00-12:00 | merged ann into 09:00-12:00"))
+}
+test "hidden: merging only touches shifts that really overlap, and only that worker" {
+  assert_eq(load(["ann 08:00-09:00", "bob 09:00-10:00", "ann 10:00-11:00", "ann 09:00-10:30", "ann 13:00-14:00"]) |> result.map((s) => report(s)),
+    ok("ann 08:00-09:00 09:00-11:00 13:00-14:00; bob 09:00-10:00 | merged ann into 09:00-11:00"))
+}
+test "hidden: a shift inside an existing one merges to the existing span, and merging repeats" {
+  assert_eq(load(["cy 09:00-17:00", "cy 10:00-11:00", "cy 16:00-18:00"]) |> result.map((s) => report(s)),
+    ok("cy 09:00-18:00 | merged cy into 09:00-17:00; merged cy into 09:00-18:00"))
+}
+test "hidden: line errors stay fatal after a merge" {
+  assert_eq(load(["ann 09:00-11:00", "ann 10:00-12:00", "ann 12:00-11:00"]) |> result.map((s) => report(s)), err(BadLine("ann 12:00-11:00")))
+}

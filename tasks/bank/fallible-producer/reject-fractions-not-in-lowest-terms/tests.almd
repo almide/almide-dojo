@@ -1,0 +1,6 @@
+test "a fraction that can be reduced is rejected" {
+  assert(result.is_err(parse_qty("2/4")))
+}
+test "scaling still works" {
+  assert_eq(scale(["3/4 cup flour", "2 pcs egg"], 2), ok(["3/2 cup flour", "4 pcs egg"]))
+}

@@ -1,0 +1,66 @@
+// Plausible wrong patch: requires every node to have at least one link, so two
+// separately linked islands pass as one network.
+// Network description: "node <name>" lines declare nodes, "link <a> <b> <ms>"
+// lines add an undirected link with a latency. `latency` answers the lowest
+// total latency between two nodes.
+type Link: Eq, Repr = { a: String, b: String, ms: Int }
+type Net: Eq, Repr = { nodes: List[String], links: List[Link] }
+
+fn add_line(net: Net, line: String) -> Net! = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  match list.first(w) ?? "" {
+    "node" => {
+      guard list.len(w) == 2 else err("bad line: ${line}")
+      let n = list.get(w, 1) ?? ""
+      guard not list.contains(net.nodes, n) else err("duplicate node ${n}")
+      ok({ ...net, nodes: net.nodes + [n] })
+    },
+    "link" => {
+      guard list.len(w) == 4 else err("bad line: ${line}")
+      let a = list.get(w, 1) ?? ""
+      let b = list.get(w, 2) ?? ""
+      guard list.contains(net.nodes, a) else err("unknown node ${a}")
+      guard list.contains(net.nodes, b) else err("unknown node ${b}")
+      guard a != b else err("self link ${a}")
+      let ms = int.parse(list.get(w, 3) ?? "") |> result.map_err((_) => "bad latency in: ${line}")!
+      guard ms > 0 else err("bad latency in: ${line}")
+      ok({ ...net, links: net.links + [Link { a: a, b: b, ms: ms }] })
+    },
+    _ => err("bad line: ${line}"),
+  }
+}
+
+fn build(lines: List[String]) -> Net! = {
+  let net = lines |> list.fold(Net { nodes: [], links: [] }, (net, l) => add_line(net, l)!)!
+  let first = list.first(net.nodes) ?? ""
+  let lonely = net.nodes |> list.find((n) => list.len(net.nodes) > 1 and not list.any(net.links, (l) => l.a == n or l.b == n))
+  match lonely {
+    some(n) => err("node ${n} is not connected to ${first}"),
+    none => ok(net),
+  }
+}
+
+fn relax(dist: Map[String, Int], links: List[Link]) -> Map[String, Int] =
+  links |> list.fold(dist, (d, l) => {
+    let via_a = map.get(d, l.a) |> option.map((x) => x + l.ms)
+    let via_b = map.get(d, l.b) |> option.map((x) => x + l.ms)
+    let d1 = match via_a {
+      some(x) if x < (map.get(d, l.b) ?? x + 1) => map.set(d, l.b, x),
+      _ => d,
+    }
+    match via_b {
+      some(x) if x < (map.get(d1, l.a) ?? x + 1) => map.set(d1, l.a, x),
+      _ => d1,
+    }
+  })
+
+fn distances(net: Net, from: String) -> Map[String, Int] =
+  list.range(0, list.len(net.nodes)) |> list.fold([from: 0], (d, _) => relax(d, net.links))
+
+fn latency(lines: List[String], from: String, to: String) -> String! = {
+  let net = build(lines)!
+  match map.get(distances(net, from), to) {
+    some(ms) => ok("${int.to_string(ms)} ms"),
+    none => ok("unreachable"),
+  }
+}

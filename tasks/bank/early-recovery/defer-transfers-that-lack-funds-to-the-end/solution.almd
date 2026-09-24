@@ -1,0 +1,53 @@
+// Settlement run. Accounts start with the given balances; transfers
+// "<from> <to> <cents>" are applied in order.
+type TxErr: Eq, Repr =
+  | Unknown(String)
+  | BadAmount(String)
+  | Insufficient(String, Int, Int)
+type Tx = { from: String, to: String, cents: Int }
+type Settled: Eq, Repr = { balances: Map[String, Int], deferred: Int }
+
+fn parse_tx(line: String) -> Tx!TxErr = {
+  let w = string.split(line, " ") |> list.filter((x) => x != "")
+  guard list.len(w) == 3 else err(BadAmount(line))
+  match int.parse(list.get(w, 2) ?? "") {
+    ok(c) if c > 0 => ok(Tx { from: list.get(w, 0) ?? "", to: list.get(w, 1) ?? "", cents: c }),
+    _ => err(BadAmount(line)),
+  }
+}
+
+fn transfer(bal: Map[String, Int], t: Tx) -> Map[String, Int]!TxErr = {
+  let have = match map.get(bal, t.from) {
+    some(h) => ok(h),
+    none => err(Unknown(t.from)),
+  }!
+  guard map.contains(bal, t.to) else err(Unknown(t.to))
+  guard have >= t.cents else err(Insufficient(t.from, have, t.cents))
+  let after = map.set(bal, t.from, have - t.cents)
+  map.set(after, t.to, (map.get(after, t.to) ?? 0) + t.cents)
+}
+
+fn settle(start: Map[String, Int], lines: List[String]) -> Settled!TxErr = {
+  var bal = start
+  var later: List[Tx] = []
+  for line in lines {
+    let t = parse_tx(line)!
+    bal = match transfer(bal, t) {
+      ok(b) => ok(b),
+      err(Insufficient(_, _, _)) => {
+        later = later + [t]
+        ok(bal)
+      },
+      err(e) => err(e),
+    }!
+  }
+  for t in later {
+    bal = transfer(bal, t)!
+  }
+  Settled { balances: bal, deferred: list.len(later) }
+}
+
+fn show(s: Settled) -> String = {
+  let b = map.keys(s.balances) |> list.sort |> list.map((k) => "${k}=${int.to_string(map.get(s.balances, k) ?? 0)}") |> list.join(" ")
+  "${b} (deferred ${int.to_string(s.deferred)})"
+}

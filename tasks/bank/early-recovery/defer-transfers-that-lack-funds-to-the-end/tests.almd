@@ -1,0 +1,6 @@
+test "a transfer that lacks funds waits for later income" {
+  assert_eq(settle(["a": 0, "b": 50], ["a b 30", "b a 40"]) |> result.map((s) => show(s)), ok("a=10 b=40 (deferred 1)"))
+}
+test "an unknown account is still fatal" {
+  assert_eq(settle(["a": 10], ["a z 5"]) |> result.map((s) => show(s)), err(Unknown("z")))
+}

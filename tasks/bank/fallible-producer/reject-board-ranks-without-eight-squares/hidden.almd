@@ -1,0 +1,13 @@
+test "hidden: digits count as that many squares, exact message with the rank number" {
+  assert_eq(pieces("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR"), ok("16 white, 16 black"))
+  assert_eq(pieces("8/8/8/8/8/8/8/K6k1"), err("rank 1 has 9 squares"))
+  assert_eq(pieces("8/7/8/8/8/8/8/8"), err("rank 7 has 7 squares"))
+}
+test "hidden: adjacent digits simply add up" {
+  assert_eq(pieces("44/8/8/8/8/8/8/k6K"), ok("1 white, 1 black"))
+}
+test "hidden: bad squares and rank count come first" {
+  assert_eq(pieces("8/8/8/8/8/8/8"), err("expected 8 ranks, got 7"))
+  assert_eq(pieces("8/9/8/8/8/8/8/8"), err("bad square 9 in rank 7"))
+  assert_eq(pieces("8/1/8/x/8/8/8/8"), err("rank 7 has 1 squares"))
+}

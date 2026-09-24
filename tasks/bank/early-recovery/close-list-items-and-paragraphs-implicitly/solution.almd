@@ -1,0 +1,88 @@
+// Markup tree builder. Input is text with tags "<name>" and "</name>"; every
+// element must be closed in order. The tree is rendered as
+// "name(child child ...)", text as itself (trimmed, empty text dropped).
+type Frame = { tag: String, kids: List[String] }
+type MarkErr: Eq, Repr =
+  | Mismatch(String, String)
+  | StrayClose(String)
+  | Unclosed(String)
+  | BadTag(Int)
+type Doc: Eq, Repr = { tree: String, warnings: List[String] }
+type Tok = { kind: String, text: String, next: Int }
+
+fn next_tok(src: String, i: Int) -> Tok!MarkErr = {
+  if string.slice(src, i, i + 1) == "<" then {
+    let rest = string.drop(src, i)
+    let j = string.index_of(rest, ">") ?? -1
+    guard j > 1 else err(BadTag(i))
+    let inner = string.slice(rest, 1, j)
+    let closing = string.starts_with(inner, "/")
+    let name = if closing then string.drop(inner, 1) else inner
+    guard name != "" and string.is_alpha(name) else err(BadTag(i))
+    ok(Tok { kind: if closing then "close" else "open", text: name, next: i + j + 1 })
+  } else {
+    let rest = string.drop(src, i)
+    let j = string.index_of(rest, "<") ?? string.len(rest)
+    ok(Tok { kind: "text", text: string.trim(string.slice(rest, 0, j)), next: i + j })
+  }
+}
+
+fn render(f: Frame) -> String = "${f.tag}(${list.join(f.kids, " ")})"
+
+fn push_kid(stack: List[Frame], kid: String) -> List[Frame] =
+  match list.last(stack) {
+    some(top) => list.set(stack, list.len(stack) - 1, { ...top, kids: top.kids + [kid] }),
+    none => stack,
+  }
+
+fn close(stack: List[Frame], name: String) -> List[Frame]!MarkErr =
+  match list.last(stack) {
+    none => err(StrayClose(name)),
+    some(top) => {
+      guard list.len(stack) > 1 else err(StrayClose(name))
+      guard top.tag == name else err(Mismatch(top.tag, name))
+      ok(push_kid(list.drop_end(stack, 1), render(top)))
+    },
+  }
+
+fn build(src: String, i: Int, stack: List[Frame], warnings: List[String]) -> Doc!MarkErr =
+  if i >= string.len(src) then {
+    guard list.len(stack) == 1 else err(Unclosed((list.last(stack) ?? Frame { tag: "", kids: [] }).tag))
+    ok(Doc { tree: list.join((list.first(stack) ?? Frame { tag: "", kids: [] }).kids, " "), warnings: warnings })
+  } else {
+    let t = next_tok(src, i)!
+    match t.kind {
+      "open" => build(src, t.next, stack + [Frame { tag: t.text, kids: [] }], warnings),
+      "close" => {
+        let idx = list.range(1, list.len(stack)) |> list.filter((k) => (list.get(stack, k) ?? Frame { tag: "", kids: [] }).tag == t.text) |> list.last
+        let inner = match idx {
+          some(k) => list.drop(stack, k + 1),
+          none => [],
+        }
+        let implicit = not list.is_empty(inner) and list.all(inner, (f) => f.tag == "li" or f.tag == "p")
+        if implicit then {
+          let st = auto_close(stack, list.len(inner))
+          let ws = warnings + (list.reverse(inner) |> list.map((f) => "implicitly closed ${f.tag}"))
+          let st2 = close(st, t.text)!
+          build(src, t.next, st2, ws)
+        } else {
+          let st = close(stack, t.text)!
+          build(src, t.next, st, warnings)
+        }
+      },
+      _ => build(src, t.next, if t.text == "" then stack else push_kid(stack, t.text), warnings),
+    }
+  }
+
+fn auto_close(stack: List[Frame], n: Int) -> List[Frame] =
+  if n == 0 then stack
+  else match list.last(stack) {
+    some(top) => auto_close(push_kid(list.drop_end(stack, 1), render(top)), n - 1),
+    none => stack,
+  }
+
+fn parse(src: String) -> Doc!MarkErr =
+  build(src, 0, [Frame { tag: "#doc", kids: [] }], [])
+
+fn show(d: Doc) -> String =
+  if list.is_empty(d.warnings) then d.tree else "${d.tree} | ${list.join(d.warnings, "; ")}"

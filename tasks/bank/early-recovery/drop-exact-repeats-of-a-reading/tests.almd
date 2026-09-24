@@ -1,0 +1,6 @@
+test "an exact repeat of the previous reading is dropped" {
+  assert_eq(ingest(["1=10", "1=10", "2=11"]) |> result.map((s) => summary(s)), ok("1:10 2:11 (dropped 1)"))
+}
+test "going back in time is still fatal" {
+  assert_eq(ingest(["5=1", "3=1"]) |> result.map((s) => summary(s)), err(Backwards(5, 3)))
+}

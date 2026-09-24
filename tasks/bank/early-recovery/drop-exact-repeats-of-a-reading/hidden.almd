@@ -1,0 +1,13 @@
+test "hidden: the same time with a different value is still fatal" {
+  assert_eq(ingest(["1=10", "1=11"]) |> result.map((s) => summary(s)), err(Repeat(1)))
+  assert_eq(ingest(["1=10", "1=10", "1=12"]) |> result.map((s) => summary(s)), err(Repeat(1)))
+}
+test "hidden: several repeats are all dropped and counted" {
+  assert_eq(ingest(["1=5", "1=5", "1=5", "4=6", "4=6"]) |> result.map((s) => summary(s)), ok("1:5 4:6 (dropped 3)"))
+}
+test "hidden: a repeat of an older reading is going back in time" {
+  assert_eq(ingest(["1=5", "2=6", "1=5"]) |> result.map((s) => summary(s)), err(Backwards(2, 1)))
+}
+test "hidden: bad readings stay fatal" {
+  assert_eq(ingest(["1=5", "1=5", "x=1"]) |> result.map((s) => summary(s)), err(BadReading("x=1")))
+}

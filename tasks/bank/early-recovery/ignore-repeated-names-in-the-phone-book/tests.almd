@@ -1,0 +1,6 @@
+test "a repeated name keeps the first entry and warns" {
+  assert_eq(import_book(["Ann: 12345", "Bo: 23456", "ann: 99999"]) |> result.map((b) => show(b)), ok("Ann=12345 Bo=23456 | line 3: duplicate ann ignored"))
+}
+test "a bad phone is still fatal" {
+  assert_eq(import_book(["Ann: 12x45"]) |> result.map((b) => show(b)), err("line 1: bad phone 12x45"))
+}

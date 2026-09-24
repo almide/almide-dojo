@@ -1,0 +1,7 @@
+test "a board with too many O moves is impossible" {
+  assert_eq(status("OO......."), err("impossible position"))
+}
+test "real positions still report" {
+  assert_eq(status("XXXOO...."), ok("X wins"))
+  assert_eq(status("XO......."), ok("ongoing"))
+}

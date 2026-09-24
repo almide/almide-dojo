@@ -1,0 +1,6 @@
+test "a release that does not raise the version is rejected" {
+  assert(result.is_err(history(["1.2.0 2026-01-01 a", "1.1.9 2026-02-01 b"])))
+}
+test "a growing history still works" {
+  assert_eq(latest(["1.0.0 2026-01-01 first", "1.0.1 2026-01-05 fix", "2.0.0 2026-03-01 big"]), ok("2.0.0 (2026-03-01)"))
+}

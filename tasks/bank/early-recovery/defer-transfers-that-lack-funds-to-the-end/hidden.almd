@@ -1,0 +1,13 @@
+test "hidden: a deferred transfer that still lacks funds is fatal with the balance at retry time" {
+  assert_eq(settle(["a": 5, "b": 10], ["a b 30", "b a 10"]) |> result.map((s) => show(s)), err(Insufficient("a", 15, 30)))
+}
+test "hidden: deferred transfers are retried once, in their original order" {
+  assert_eq(settle(["a": 0, "b": 0, "c": 20], ["a b 10", "b c 10", "c a 10"]) |> result.map((s) => show(s)), ok("a=0 b=0 c=20 (deferred 2)"))
+  assert_eq(settle(["a": 0, "b": 0, "c": 20], ["b c 10", "a b 10", "c a 10"]) |> result.map((s) => show(s)), err(Insufficient("b", 0, 10)))
+}
+test "hidden: a fatal error in the main pass wins over pending retries" {
+  assert_eq(settle(["a": 0, "b": 5], ["a b 10", "b a 0"]) |> result.map((s) => show(s)), err(BadAmount("b a 0")))
+}
+test "hidden: nothing deferred, nothing changes" {
+  assert_eq(settle(["a": 10, "b": 0], ["a b 10"]) |> result.map((s) => show(s)), ok("a=0 b=10 (deferred 0)"))
+}
