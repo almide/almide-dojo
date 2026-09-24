@@ -1,0 +1,8 @@
+test "the breaker opens" {
+  let b = Backend { down: ["x"], calls: 0 }
+  assert_eq(run_guarded(b, 2, ["x", "x", "a"]), (["err down: x", "err down: x", "err circuit open"], 2))
+}
+test "closed breaker passes through" {
+  let b = Backend { down: [], calls: 0 }
+  assert_eq(run_guarded(b, 1, ["a", "b"]), (["ok re:a", "ok re:b"], 2))
+}
