@@ -1,0 +1,7 @@
+// Resource probe: the same 300 titles shelved __K__ times. The helper must
+// allocate no more per title than the inline key did.
+effect fn main() -> Unit = {
+  let ts = list.range(0, 300) |> list.map((i) => "The Book Of Days Volume " + int.to_string(i))
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + string.len(first_on_shelf(ts)))
+  println(int.to_string(t))
+}

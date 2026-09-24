@@ -1,0 +1,7 @@
+test "hidden: divide last" {
+  assert_eq(f_to_c(100), 37)
+  assert_eq(celsius_of("41F"), some(5))
+  assert_eq(f_to_c(50), 10)
+  assert_eq(freezing("33F"), true)
+  assert_eq(freezing("34F"), false)
+}

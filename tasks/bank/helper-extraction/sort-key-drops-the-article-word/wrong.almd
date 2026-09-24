@@ -1,0 +1,10 @@
+// Plausible wrong patch: the helper strips the article LETTERS and trims, so
+// "Theatre" loses its "the" and "Avalon" its "a".
+fn sort_key(title: String) -> String = {
+  let low = string.to_lower(title)
+  string.trim(if string.starts_with(low, "the") then string.drop(low, 3) else if string.starts_with(low, "a") then string.drop(low, 1) else low)
+}
+
+fn shelve(titles: List[String]) -> List[String] = titles |> list.sort_by((t) => sort_key(t))
+
+fn first_on_shelf(titles: List[String]) -> String = list.first(shelve(titles)) ?? ""

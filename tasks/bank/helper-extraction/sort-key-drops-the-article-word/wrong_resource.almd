@@ -1,0 +1,13 @@
+// Plausible wrong patch: the helper splits the title into words and drops a
+// leading article word. Same keys — but a word list per title.
+fn sort_key(title: String) -> String = {
+  let ws = string.split(string.to_lower(title), " ")
+  match list.first(ws) {
+    some(w) => if (w == "the" or w == "a") and list.len(ws) > 1 then list.join(list.drop(ws, 1), " ") else list.join(ws, " "),
+    none => "",
+  }
+}
+
+fn shelve(titles: List[String]) -> List[String] = titles |> list.sort_by((t) => sort_key(t))
+
+fn first_on_shelf(titles: List[String]) -> String = list.first(shelve(titles)) ?? ""

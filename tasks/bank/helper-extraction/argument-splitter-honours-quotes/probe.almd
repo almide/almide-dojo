@@ -1,0 +1,7 @@
+// Resource probe: the same 200 command lines counted __K__ times. The helper
+// must allocate no more per line than the inline scan did.
+effect fn main() -> Unit = {
+  let ls = list.range(0, 200) |> list.map((i) => "run --name \"job " + int.to_string(i) + "\" --fast")
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (ls |> list.fold(0, (a, l) => a + arg_count(l))))
+  println(int.to_string(t))
+}

@@ -1,0 +1,16 @@
+// Command lines: arguments are separated by spaces, but text inside double
+// quotes is ONE argument ('say "hello world"' has two arguments); the quotes
+// themselves are not part of it.
+fn args(line: String) -> List[String] = {
+  let (out, cur, _) = string.chars(line) |> list.fold(([], "", false), (st, c) => {
+    let (acc, w, quoted) = st
+    if c == "\"" then (acc, w, not quoted)
+    else if c == " " and not quoted then (if w == "" then st else (acc + [w], "", false))
+    else (acc, w + c, quoted)
+  })
+  if cur == "" then out else out + [cur]
+}
+
+fn arg_count(line: String) -> Int = list.len(args(line))
+
+fn command(line: String) -> String = string.split(string.trim(line), " ") |> list.first ?? ""

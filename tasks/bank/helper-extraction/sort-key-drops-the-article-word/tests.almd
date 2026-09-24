@@ -1,0 +1,4 @@
+test "sort key" {
+  assert_eq(sort_key("The Hobbit"), "hobbit")
+  assert_eq(shelve(["Zen", "The Art"]), ["The Art", "Zen"])
+}

@@ -1,0 +1,9 @@
+// Library shelving: titles are sorted ignoring a leading article WORD "The "
+// or "A " (any case). "Theatre Now" keeps its "The": it is not the article.
+fn shelve(titles: List[String]) -> List[String] =
+  titles |> list.sort_by((t) => {
+    let low = string.to_lower(t)
+    if string.starts_with(low, "the ") then string.drop(low, 4) else if string.starts_with(low, "a ") then string.drop(low, 2) else low
+  })
+
+fn first_on_shelf(titles: List[String]) -> String = list.first(shelve(titles)) ?? ""

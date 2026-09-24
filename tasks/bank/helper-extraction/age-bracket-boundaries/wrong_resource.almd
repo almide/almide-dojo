@@ -1,0 +1,17 @@
+// Plausible wrong patch: the helper counts the thresholds already passed in a
+// list of limits. Same brackets — but the list is built on every call.
+fn bracket(age: Int) -> Int = [13, 18, 65] |> list.count((limit) => age >= limit)
+
+fn price(age: Int) -> Int = match bracket(age) {
+  0 => 500,
+  1 => 800,
+  2 => 1200,
+  _ => 700,
+}
+
+fn label(age: Int) -> String = match bracket(age) {
+  0 => "child",
+  1 => "teen",
+  2 => "adult",
+  _ => "senior",
+}

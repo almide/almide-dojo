@@ -1,0 +1,7 @@
+// Resource probe: the same 200 URL pairs compared __K__ times. The helper
+// must allocate no more per URL than the inline code did.
+effect fn main() -> Unit = {
+  let us = list.range(0, 200) |> list.map((i) => "https://Service" + int.to_string(i % 20) + ".example.com:8443/api/v1/items?page=" + int.to_string(i))
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (us |> list.count((u) => same_site(u, "https://service3.example.com/"))))
+  println(int.to_string(t))
+}

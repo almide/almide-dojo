@@ -1,0 +1,6 @@
+test "hidden: the port and query end the host" {
+  assert_eq(host("https://a.com:8443/p"), "a.com")
+  assert_eq(same_site("http://a.com:8080", "http://A.com"), true)
+  assert_eq(host("http://b.org?x=1"), "b.org")
+  assert_eq(host("c.net/y"), "c.net")
+}

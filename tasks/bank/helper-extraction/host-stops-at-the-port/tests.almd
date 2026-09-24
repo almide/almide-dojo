@@ -1,0 +1,4 @@
+test "host" {
+  assert_eq(host("https://Example.com/x"), "example.com")
+  assert_eq(same_site("http://a.com/1", "https://a.com/2"), true)
+}

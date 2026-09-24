@@ -1,0 +1,5 @@
+test "hidden: quotes keep spaces" {
+  assert_eq(args("say \"hello world\" now"), ["say", "hello world", "now"])
+  assert_eq(arg_count("echo \"a b c\""), 2)
+  assert_eq(args("\"\""), [])
+}

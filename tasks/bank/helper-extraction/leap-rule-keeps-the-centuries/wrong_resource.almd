@@ -1,0 +1,11 @@
+// Plausible wrong patch: the helper spots century years by their text ending
+// in "00". Same answers — but a string per year.
+fn is_leap(y: Int) -> Bool =
+  if string.ends_with(int.to_string(y), "00") then y % 400 == 0 else y % 4 == 0
+
+fn days_in_year(y: Int) -> Int = if is_leap(y) then 366 else 365
+
+fn february(y: Int) -> Int = if is_leap(y) then 29 else 28
+
+fn days_between_years(from: Int, to: Int) -> Int =
+  list.range(from, to) |> list.fold(0, (acc, y) => acc + days_in_year(y))

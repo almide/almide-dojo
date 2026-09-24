@@ -1,0 +1,10 @@
+// Plausible wrong patch: the helper divides first, (F - 32) / 9 * 5, which
+// loses the remainder before multiplying.
+fn f_to_c(f: Int) -> Int = (f - 32) / 9 * 5
+
+fn celsius_of(r: String) -> Int? =
+  if string.ends_with(r, "C") then int.parse(string.drop_end(r, 1))?
+  else if string.ends_with(r, "F") then int.parse(string.drop_end(r, 1))? |> option.map((f) => f_to_c(f))
+  else none
+
+fn freezing(r: String) -> Bool = (celsius_of(r) ?? 1) <= 0

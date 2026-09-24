@@ -1,0 +1,7 @@
+// Ticket prices by age: under 13 child (500), 13 to 17 teen (800), 18 to 64
+// adult (1200), 65 and over senior (700).
+fn price(age: Int) -> Int =
+  if age < 13 then 500 else if age < 18 then 800 else if age < 65 then 1200 else 700
+
+fn label(age: Int) -> String =
+  if age < 13 then "child" else if age < 18 then "teen" else if age < 65 then "adult" else "senior"

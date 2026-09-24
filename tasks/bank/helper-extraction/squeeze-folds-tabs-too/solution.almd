@@ -1,0 +1,7 @@
+// Cleaning user text: every run of spaces AND tabs becomes one space, and
+// the ends are trimmed.
+fn words(s: String) -> List[String] = string.split(string.replace(s, "\t", " "), " ") |> list.filter((w) => w != "")
+
+fn clean_title(s: String) -> String = words(s) |> list.join(" ")
+
+fn clean_tag(s: String) -> String = string.to_lower(words(s) |> list.join("-"))

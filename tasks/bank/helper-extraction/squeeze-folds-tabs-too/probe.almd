@@ -1,0 +1,7 @@
+// Resource probe: the same 300 titles cleaned __K__ times. The helper must
+// allocate no more per title than the inline code did.
+effect fn main() -> Unit = {
+  let ts = list.range(0, 300) |> list.map((i) => "  the\tquick  brown fox " + int.to_string(i))
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (ts |> list.fold(0, (a, s) => a + string.len(clean_title(s)))))
+  println(int.to_string(t))
+}

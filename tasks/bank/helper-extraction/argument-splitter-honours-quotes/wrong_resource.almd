@@ -1,0 +1,19 @@
+// Plausible wrong patch: the helper first records, for every character, the
+// quote state as a list of pairs, then groups. Same arguments — but a pair
+// list and extra strings per character.
+fn args(line: String) -> List[String] = {
+  let (tagged, _) = string.chars(line) |> list.fold(([], false), (st, c) => {
+    let (acc, q) = st
+    if c == "\"" then (acc, not q) else (acc + [(c, q)], q)
+  })
+  let (out, cur) = tagged |> list.fold(([], ""), (st, p) => {
+    let (acc, w) = st
+    let (c, q) = p
+    if c == " " and not q then (if w == "" then st else (acc + [w], "")) else (acc, w + c)
+  })
+  if cur == "" then out else out + [cur]
+}
+
+fn arg_count(line: String) -> Int = list.len(args(line))
+
+fn command(line: String) -> String = string.split(string.trim(line), " ") |> list.first ?? ""

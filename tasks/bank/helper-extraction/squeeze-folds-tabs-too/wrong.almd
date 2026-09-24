@@ -1,0 +1,7 @@
+// Plausible wrong patch: the helper splits on spaces only, so a tab stays
+// inside a "word".
+fn words(s: String) -> List[String] = string.split(s, " ") |> list.filter((w) => w != "")
+
+fn clean_title(s: String) -> String = words(s) |> list.join(" ")
+
+fn clean_tag(s: String) -> String = string.to_lower(words(s) |> list.join("-"))

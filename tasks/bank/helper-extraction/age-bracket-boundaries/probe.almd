@@ -1,0 +1,7 @@
+// Resource probe: the same 1,000 ages priced __K__ times. The inline test
+// allocated nothing per age, so the count must not grow.
+effect fn main() -> Unit = {
+  let ages = list.range(0, 1000) |> list.map((i) => i % 90)
+  let t = list.range(0, __K__) |> list.fold(0, (acc, _) => acc + (ages |> list.fold(0, (a, x) => a + price(x))))
+  println(int.to_string(t))
+}
