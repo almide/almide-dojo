@@ -6,18 +6,18 @@ name: Cross-language MSR Run
 # requirement of this measurement: an `anthropic:` / `openai:` spec is
 # refused here with a message, not attempted.
 #
-# Weekly, not daily. One cross-language run is 21 tasks x up to 7 languages x
+# Dispatched by hand, not scheduled. One cross-language run is 21 tasks x up to 7 languages x
 # up to 4 attempts (~500 model calls) plus seven toolchain installs, against
 # the daily lane's 21 calls; and the number it feeds — the almide README
 # scorecard — is gated at 90 days of freshness by
-# almide/almide scripts/check-readme-numbers.sh. Weekly re-measures it twelve
-# times inside that window, so the cadence is headroom, not a constraint.
-# Monday 05:00 UTC keeps it clear of the 03:00 UTC daily lane, which commits
-# to the same branch.
+# almide/almide scripts/check-readme-numbers.sh — so it must be dispatched at
+# least once inside every 90 days, or that gate goes red. Avoid 03:00 UTC: the
+# daily lane commits to the same branch then.
 
 on:
-  schedule:
-    - cron: '0 5 * * 1'  # Mondays 05:00 UTC (14:00 JST)
+  # Manual only (2026-09-25): the Cloudflare Workers AI budget is limited, so the
+  # heavy lanes (this one and bank-pilot) run when someone dispatches them, and
+  # only the light daily lane runs on a schedule.
   workflow_dispatch:
     inputs:
       models:
