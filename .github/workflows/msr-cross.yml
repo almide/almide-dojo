@@ -36,6 +36,10 @@ on:
         description: 'Free-text label stamped into the manifest. "smoke" marks a run as a pipeline proof, not a number.'
         required: false
         default: ''
+      conditions:
+        description: 'Effect-declaration A/B arms (almide-dojo#2). "shipped,unmentioned" re-runs the Almide leg once more with the effect text removed from its notes (~1/7 more calls); "shipped" leaves the A/B out.'
+        required: false
+        default: 'shipped,unmentioned'
 
 permissions:
   contents: write
@@ -178,6 +182,7 @@ jobs:
           INPUT_LANGUAGES: ${{ github.event.inputs.languages }}
           INPUT_TASKS: ${{ github.event.inputs.tasks }}
           INPUT_LABEL: ${{ github.event.inputs.label }}
+          INPUT_CONDITIONS: ${{ github.event.inputs.conditions }}
         run: |
           MODEL="${{ matrix.model }}"
           # Clear runs/ so this job's artifact carries ONLY this job's fresh
@@ -199,7 +204,7 @@ jobs:
           # reads the manifest and the table — the artifacts are the
           # measurement, the exit code is not.
           set +e
-          make msr MODEL="$MODEL" LANGUAGES="$INPUT_LANGUAGES" TASKS="$INPUT_TASKS" LABEL="$INPUT_LABEL"
+          make msr MODEL="$MODEL" LANGUAGES="$INPUT_LANGUAGES" TASKS="$INPUT_TASKS" LABEL="$INPUT_LABEL" CONDITIONS="$INPUT_CONDITIONS"
           RC=$?
           set -e
           echo "make exit code: $RC (2 = any recipe failure, including the lane's 1 = some tasks failed; the table decides)"
@@ -238,6 +243,7 @@ jobs:
             echo "- manifest: \`$MANIFEST\`"
             echo "- compiler pin: \`${{ needs.plan.outputs.pin }}\`"
             echo "- HTTP read timeout: \`${ALMIDE_HTTP_TIMEOUT_SECS:-compiler default}\` s"
+            echo "- conditions: \`$(jq -r '[.conditions[]?.name] | join(",")' "$MANIFEST")\` (effect A/B verdict: \`$(jq -r '.effect_ab.verdict.id // "not planned"' "$MANIFEST")\`)"
             echo
             cat "$DIR/table.md" 2>/dev/null || echo "_(the lane wrote no table.md)_"
           } >> "$GITHUB_STEP_SUMMARY"

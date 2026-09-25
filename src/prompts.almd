@@ -239,3 +239,47 @@ let SYSTEM_PROMPT = """
   - fn math.sqrt(x: Float) -> Float
   - fn math.pi() -> Float
   """
+
+// ── The effect-declaration A/B, condition B (almide-dojo#2) ──
+//
+// `unmentioned` is the arm the pinned compiler can run: the SAME notes with
+// every sentence that teaches the effect discipline removed, and nothing else
+// touched. What goes:
+//
+//   - "Calling an `effect fn` ... from a pure `fn` is an error — mark the
+//     caller `effect fn`"                           (the rule itself)
+//   - "In `effect fn` only: `while cond { ... }`"   (the effect-only loop form)
+//   - " / `list.for_each` (effect fn)"              (a clause; its line stays)
+//
+// Enforcement is NOT relaxed: v0.63.1 has no switch that turns E041/E042 or
+// the pure-calls-effect error into warnings, so the compiler that judges both
+// arms is the same binary. The cross-language task signatures carry no effect
+// annotation to strip (every task in msr/task-set.json is pure), so this text
+// is the only effect-declaration surface the model sees.
+let EFFECT_CLAUSE = " / `list.for_each` (effect fn)"
+
+fn mentions_effects(line: String) -> Bool = string.contains(string.to_lower(line), "effect")
+
+fn without_effect_notes(notes: String) -> String =
+  string.replace(notes, EFFECT_CLAUSE, "")
+    |> string.split("\n")
+    |> list.filter((l) => not mentions_effects(l))
+    |> string.join("\n")
+
+test "the unmentioned notes drop the effect sentences and nothing else" {
+  let a = SYSTEM_PROMPT
+  let b = without_effect_notes(a)
+  let la = string.split(a, "\n")
+  let lb = string.split(b, "\n")
+  // The shipped notes do teach the discipline — otherwise B is a no-op.
+  assert(string.contains(a, EFFECT_CLAUSE), "the clause the B arm strips must exist in the shipped notes")
+  assert_eq(list.count(la, mentions_effects), 3)
+  // B mentions effects nowhere...
+  assert(not mentions_effects(b), "condition B must not mention effects anywhere")
+  // ...has lost exactly the two effect-only lines...
+  assert_eq(list.len(la) - list.len(lb), 2)
+  // ...kept the for-loop line whose clause it cut...
+  assert(string.contains(b, "No for-loop. Use `list.map` / `list.fold`."), "the for-loop line stays, minus its effect clause")
+  // ...and every other line is byte-identical.
+  assert(list.all(lb, (l) => list.contains(la, l) or string.contains(l, "No for-loop.")), "no other line may change")
+}

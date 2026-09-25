@@ -225,11 +225,13 @@ runs/msr/<date>/<model-slug>[-<label>]/
                   run's own options, not described from this end,
                   the HTTP read timeout the run ran under, retries, task-set revision
                   + sha256, per-language toolchain versions and prompt hashes, compiler
-                  pin + version, harness commit, the condition (see below)
-  results.json    EVERY planned (task, language) cell, with its typed state, pass/fail,
+                  pin + version, harness commit, every planned condition and the
+                  effect A/B's verdict and arms (`conditions`, `effect_ab`; see below)
+  results.json    EVERY planned (task, language, condition) cell, with its typed state, pass/fail,
                   retries, the reason an absent cell is absent, and the kind of each
                   failed attempt
-  table.md        the verdict, then the multi-language table (summary + per-task grid)
+  table.md        the verdict, then the multi-language table (summary + per-task grid),
+                  then the effect A/B (its verdict, both Almide arms side by side, per task)
   raw/            every attempt's sources and logs (gitignored)
 ```
 
@@ -329,14 +331,36 @@ lane's convenience; here every language is judged on the model's file as
 written) and no diagnostic hints are appended to the retry prompt. The retry
 prompt is the same text for every language.
 
-**The effect-declaration condition (almide-dojo#2).** The manifest carries
-`condition.effects`, the slot for the with/without-effects A/B. Only
-`shipped` exists: the B condition — effect enforcement relaxed to warnings,
-or the effect tasks rewritten without annotations — has neither a compiler
-switch in the pinned release nor a design ruling, and the cross-language
-subset contains no effect-bearing task (they are Almide-only by nature), so
-the A/B is an Almide-lane run over the effect tasks, not a column here.
-`--condition <other>` is refused with that explanation.
+**The effect-declaration A/B (almide-dojo#2).** Every run carries it as a
+second condition unless `--conditions shipped` (`make msr CONDITIONS=shipped`,
+the workflow's `conditions` input) leaves it out:
+
+| condition | languages | what changes |
+|---|---|---|
+| `shipped` (A) | every language | nothing — the cross-language grid itself |
+| `unmentioned` (B) | Almide only | the Almide notes lose every sentence that teaches the effect discipline (`prompts.without_effect_notes`: the pure-calls-`effect fn` rule, the `effect fn`-only `while` form, and the `list.for_each` (effect fn) clause) |
+
+Model, sampling (temperature, seed), user prompt, signatures, retry template
+and budget, task set, oracle and the compiler are the same in both arms. B
+runs task by task right after A's cell for the same task, so provider drift
+lands on both arms; the other languages have no effect system to remove, so
+the A/B costs one more Almide pass over the task set (~1/7 more calls on a
+seven-language run). The manifest names every planned condition
+(`conditions[]`, with the Almide prompt hashes each arm sent and the changed
+lines verbatim) and the A/B's own verdict and arms (`effect_ab`); every cell in
+`results.json` carries its `condition`; `table.md` puts the two arms side by
+side, per task, under their own verdict. The B arm never enters the
+cross-language verdict or rows.
+
+What B is **not**: dojo#2's other arm, a compiler with effect enforcement
+relaxed to warnings. The pinned release has no such switch, so both arms are
+judged by the same enforcing compiler. And the cross-language task set is
+pure (no task signature carries an effect annotation to strip), so this A/B
+measures whether teaching the effect discipline changes how often a model's
+code survives when the code needs no effects — the cost side of the effect
+system. Whether effect declarations make *effectful* edits survive needs the
+effect-bearing tasks (Almide-only) and that relaxed build, and stays open in
+dojo#2.
 
 ## Task bank (31 tasks)
 

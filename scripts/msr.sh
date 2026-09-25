@@ -6,7 +6,7 @@
 # installs a language toolchain, so a third party's table is a function of
 # what their machine has, stated in the manifest.
 #
-# Usage: scripts/msr.sh <run|verify|probe|compiler> <model> <languages> <tasks> <label> <out>
+# Usage: scripts/msr.sh <run|verify|probe|compiler> <model> <languages> <tasks> <label> <out> [conditions]
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -17,6 +17,7 @@ languages="${3:-}"
 tasks="${4:-}"
 label="${5:-}"
 out="${6:-}"
+conditions="${7:-}"
 
 # ── The pinned compiler is the run's identity ──
 pin=$(sed -nE 's/^ref *= *"([^"]+)".*/\1/p' almide-pin.toml)
@@ -97,5 +98,6 @@ esac
 [ -n "$tasks" ] && args+=(--tasks "$tasks")
 [ -n "$label" ] && args+=(--label "$label")
 [ -n "$out" ] && args+=(--out "$out")
+[ "$cmd" = "run" ] && [ -n "$conditions" ] && args+=(--conditions "$conditions")
 
 exec almide run src/msr/run.almd -- "${args[@]}"
