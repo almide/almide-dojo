@@ -10,4 +10,4 @@
 
 [compiler]
 repo = "github.com/almide/almide"
-ref = "v0.63.0"  # 2026-09-24: latest final release; carries the allocation counters (ALMIDE_ALLOC_COUNT / ALMIDE_WASM_ALLOC_COUNT) the bank's resource oracle reads
+ref = "v0.63.1"  # 2026-09-25: latest final release; the first where every bank program renders on wasm and the resource oracle is armed (0.63.0 failed 3 bank tasks on wasm, fixed in 0.63.1)
