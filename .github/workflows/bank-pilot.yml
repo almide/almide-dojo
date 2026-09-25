@@ -36,9 +36,9 @@ on:
         required: false
         default: '3'
       shards:
-        description: 'Jobs per model x repetition (the bank is split by task index)'
+        description: 'Jobs per model x repetition (the bank is split by task index; 16 keeps a GLM shard near 45 min)'
         required: false
-        default: '8'
+        default: '16'
       limit:
         description: 'BANK_LIMIT: run only the first N bank tasks (0 = the whole bank; >0 is a smoke and stamps under-scale)'
         required: false
@@ -98,7 +98,7 @@ jobs:
             MODELS="$SMOKE_MODELS"; REPS=1; SHARDS=1; LIMIT="$SMOKE_LIMIT"
             CLUSTERS=400; FAMILIES=3; REPETITIONS=3
           else
-            MODELS="${IN_MODELS:-$PILOT_MODELS}"; REPS="${IN_REPS:-3}"; SHARDS="${IN_SHARDS:-8}"; LIMIT="${IN_LIMIT:-0}"
+            MODELS="${IN_MODELS:-$PILOT_MODELS}"; REPS="${IN_REPS:-3}"; SHARDS="${IN_SHARDS:-16}"; LIMIT="${IN_LIMIT:-0}"
             CLUSTERS="${IN_CLUSTERS:-400}"; FAMILIES="${IN_FAMILIES:-3}"; REPETITIONS="${IN_REPS:-3}"
           fi
           BAD=$(printf '%s' "$MODELS" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | grep -v '^cf:' || true)
@@ -123,7 +123,11 @@ jobs:
     timeout-minutes: 350
     strategy:
       fail-fast: false
-      max-parallel: 12
+      # 20 = GitHub's concurrent-job ceiling on the Free plan. The first 400x3x3 pilot
+      # (run 36083949429) ran 12 at a time: Llama shards took ~22 min, GLM
+      # (a reasoning model, 16k-token cap) ~95 min, so 72 jobs queued in waves
+      # for ~6 h.
+      max-parallel: 20
       matrix:
         model: ${{ fromJSON(needs.plan.outputs.models) }}
         rep: ${{ fromJSON(needs.plan.outputs.reps) }}
