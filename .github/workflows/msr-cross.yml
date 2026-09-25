@@ -161,10 +161,10 @@ jobs:
           PIN="${{ needs.plan.outputs.pin }}"
           curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "$PIN"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          GOT=$("$HOME/.local/bin/almide" --version)
+          GOT=$("$HOME/.local/bin/almide" --version | head -n1)
           echo "installed: $GOT (pin $PIN)"
           # The pin is the measurement's identity: refuse to measure with anything else.
-          test "$GOT" = "almide ${PIN#v}" || { echo "::error::almide-pin.toml says $PIN but the installed binary is '$GOT'"; exit 1; }
+          [[ "$GOT" == "almide ${PIN#v}" || "$GOT" == "almide ${PIN#v} (release, "* ]] || { echo "::error::almide-pin.toml says $PIN but the installed binary is '$GOT'"; exit 1; }
 
       - name: Probe the runner
         run: |

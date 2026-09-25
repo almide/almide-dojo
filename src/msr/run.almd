@@ -243,7 +243,7 @@ effect fn run_steps(dir: String, steps: List[Step]) -> StepOut = match steps {
   [] => StepOut { kind: "", code: 0, output: "" },
   [st, ..rest] => {
     let out = run_step(dir, st)!
-    if out.code != 0 then out else if list.is_empty(rest) then out else run_steps(dir, rest)
+    if out.code != 0 then out else if list.is_empty(rest) then out else run_steps(dir, rest)!
   },
 }
 
@@ -499,7 +499,7 @@ effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask
     ])),
     ("compiler", value.object([
       ("pin", value.str(compiler_pin()!)),
-      ("version", value.str(match process.exec("almide", ["--version"]) { ok(v) => string.trim(v), err(_) => "" })),
+      ("version", value.str(match process.exec("almide", ["--version"]) { ok(v) => string.trim(list.get(string.split(string.trim(v), "\n"), 0) ?? ""), err(_) => "" })),
     ])),
     // What was ASKED FOR, then what the provider actually wrote into the
     // request body. The second half is `sampling`, measured by a preflight

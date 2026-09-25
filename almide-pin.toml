@@ -10,4 +10,4 @@
 
 [compiler]
 repo = "github.com/almide/almide"
-ref = "v0.62.0"  # 2026-09-22: latest final release; the harness (almide 0.55+ explicit `!` propagation) does not compile on the v0.14.x line the workflow used to install
+ref = "v0.63.1"  # 2026-09-25: latest final release; the first where every bank program renders on wasm and the resource oracle is armed (0.63.0 failed 3 bank tasks on wasm, fixed in 0.63.1)
