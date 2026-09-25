@@ -13,17 +13,22 @@
 #   CF_ACCOUNT_ID=... CLOUDFLARE_API_KEY=... CLOUDFLARE_EMAIL=... make msr
 #   ANTHROPIC_API_KEY=... make msr MODEL=anthropic:claude-sonnet-5
 #   make msr MODEL=cli:claude TASKS=gcd,fizzbuzz LABEL=smoke
+#
+# CONDITIONS picks the effect-declaration A/B arms (almide-dojo#2). The default
+# "shipped,unmentioned" re-runs the Almide leg once more with the effect text
+# removed from its notes; CONDITIONS=shipped leaves the A/B out.
 
 MODEL ?=
 LANGUAGES ?=
 TASKS ?=
 LABEL ?=
+CONDITIONS ?=
 OUT ?= runs/msr
 
 .PHONY: msr msr-verify msr-probe test
 
 msr:
-	@bash scripts/msr.sh run "$(MODEL)" "$(LANGUAGES)" "$(TASKS)" "$(LABEL)" "$(OUT)"
+	@bash scripts/msr.sh run "$(MODEL)" "$(LANGUAGES)" "$(TASKS)" "$(LABEL)" "$(OUT)" "$(CONDITIONS)"
 
 msr-verify:
 	@bash scripts/msr.sh verify "" "$(LANGUAGES)" "$(TASKS)" "" "$(OUT)"
