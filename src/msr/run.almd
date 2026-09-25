@@ -20,7 +20,10 @@
 //                     can never replace the unlabelled measurement for the same
 //                     model on the same day.
 //   --retries N       fix-loop retries per task (default 3)
-//   --condition NAME  the effect-declaration condition (almide-dojo#2); only "shipped" exists
+//   --conditions a,b  the effect-declaration conditions (almide-dojo#2); default
+//                     "shipped,unmentioned". `shipped` is the cross-language grid and
+//                     is always run; every other condition re-runs ONLY the Almide leg
+//                     (see "The effect-declaration A/B" below). `--condition` is an alias.
 //
 // Output of `run`: <out>/<date>/<model-slug>[-<label>]/{manifest.json, results.json, table.md}
 // plus raw/ (per-attempt sources and logs; gitignored).
@@ -35,6 +38,7 @@ import path
 import process
 import datetime
 import self.llm
+import self.prompts
 import self.cellstate.{Verdict}
 import self.cellstate
 import self.msr.spec.{PTask, Case, Val, VInt, VBool, VStr, VList, VCall, Ty, TInt, TBool, TStr, TList, Step}
@@ -48,7 +52,26 @@ let DEFAULT_RETRIES = 3
 let TEMPERATURE = 0.0
 let TRANSPORT_ATTEMPTS = 3
 let DIAG_LIMIT = 6000
-let CONDITIONS = ["shipped"]
+
+// The effect-declaration A/B (almide-dojo#2, almide/almide#2146 item 3).
+//
+//   shipped      A: the Almide notes as every run sends them, which teach the
+//                effect discipline (effect fn, the effect-only loop forms).
+//   unmentioned  B: the same notes with those sentences removed
+//                (prompts.without_effect_notes) — the model is shown no
+//                effect declaration at all.
+//
+// Everything else is held identical: model, sampling (temperature, seed),
+// user prompt, retry template and budget, task set, oracle, and the compiler
+// that judges (the pinned release still enforces effects in both arms — it
+// has no relaxation switch). B re-runs the Almide leg only, task by task
+// right after A's cell for the same task, so provider drift over a long run
+// lands on both arms alike. The other languages have no effect system to
+// remove, so a B column for them would be A measured twice.
+let COND_SHIPPED = "shipped"
+let COND_UNMENTIONED = "unmentioned"
+let CONDITIONS = [COND_SHIPPED, COND_UNMENTIONED]
+let DEFAULT_CONDITIONS = CONDITIONS
 
 // ── Options ──
 
@@ -60,13 +83,13 @@ type Opts = {
   out: String,
   label: String,
   retries: Int,
-  condition: String,
+  conditions: List[String],
   rest: List[String],
 }
 
 fn default_opts() -> Opts = Opts {
   command: "", model: "", languages: [], tasks: [], out: DEFAULT_OUT,
-  label: "", retries: DEFAULT_RETRIES, condition: "shipped", rest: [],
+  label: "", retries: DEFAULT_RETRIES, conditions: DEFAULT_CONDITIONS, rest: [],
 }
 
 fn split_list(s: String) -> List[String] =
@@ -82,13 +105,43 @@ fn parse_opts(args: List[String], acc: Opts) -> Opts! = match args {
     ok(n) => parse_opts(rest, { ...acc, retries: n }),
     err(_) => err("--retries needs a number, got `" + v + "`"),
   },
-  ["--condition", v, ..rest] =>
-    if list.contains(CONDITIONS, v) then parse_opts(rest, { ...acc, condition: v })
-    else err("unknown condition `" + v + "` (known: " + string.join(CONDITIONS, ", ") + "); the effect-declaration A/B (almide-dojo#2) has no measurable B condition yet"),
+  ["--conditions", v, ..rest] => match parse_conditions(split_list(v)) {
+    ok(cs) => parse_opts(rest, { ...acc, conditions: cs }),
+    err(e) => err(e),
+  },
+  ["--condition", v, ..rest] => parse_opts(["--conditions", v] + rest, acc),
   [a, ..rest] =>
     if string.starts_with(a, "--") then err("unknown option " + a)
     else parse_opts(rest, { ...acc, rest: acc.rest + [a] }),
 }
+
+// The conditions, in CONDITIONS order and without repeats. `shipped` is the
+// cross-language grid every other number is compared against, so a run
+// without it has no A arm and no table.
+fn parse_conditions(names: List[String]) -> List[String]! = {
+  let unknown = names |> list.filter((n) => not list.contains(CONDITIONS, n))
+  if not list.is_empty(unknown) then
+    err("unknown condition(s) " + string.join(unknown, ", ") + " (known: " + string.join(CONDITIONS, ", ") + ")")
+  else if not list.contains(names, COND_SHIPPED) then
+    err("--conditions must include `" + COND_SHIPPED + "`: it is the cross-language grid and the A arm of the effect A/B")
+  else ok(CONDITIONS |> list.filter((c) => list.contains(names, c)))
+}
+
+// The plugin a condition runs: B changes only the Almide notes.
+fn plugin_for(p: Plugin, cond: String) -> Plugin =
+  if cond == COND_UNMENTIONED and p.name == "almide" then { ...p, notes: prompts.without_effect_notes(p.notes) }
+  else p
+
+// The (condition, plugin) legs one language runs, per task, in this order.
+fn legs_for(p: Plugin, conditions: List[String]) -> List[(String, Plugin)] =
+  if p.name == "almide" then conditions |> list.map((c) => (c, plugin_for(p, c)))
+  else [(COND_SHIPPED, p)]
+
+// The extra (non-shipped) conditions this run plans. They are Almide legs, so
+// a run whose --languages leaves Almide out plans none of them.
+fn extra_conditions(conditions: List[String], probes: List[Probe]) -> List[String] =
+  if list.any(probes, (pr) => pr.plugin.name == "almide") then conditions |> list.filter((c) => c != COND_SHIPPED)
+  else []
 
 // ── Tasks ──
 
@@ -218,7 +271,7 @@ type LAttempt = { code: String, kind: String, diagnostic: String, passed: Bool }
 // model was never answered for this cell, and `reason` then says why — a
 // cell with no attempts is NEVER a zero, it is a typed absence (see the cell
 // vocabulary below).
-type LResult = { language: String, task: String, success: Bool, retries: Int, attempts: List[LAttempt], reason: String }
+type LResult = { language: String, condition: String, task: String, success: Bool, retries: Int, attempts: List[LAttempt], reason: String }
 
 effect fn write_files(dir: String, files: List[(String, String)]) -> Unit! = {
   let _written = (files |> list.map(((rel, content)) => {
@@ -268,9 +321,9 @@ effect fn write_log(dir: String, a: LAttempt) -> Unit =
 
 // ── Fix loop ──
 
-effect fn fix_loop(p: Plugin, t: PTask, model: String, raw_dir: String, retries: Int, attempt: Int, last: LAttempt, acc: List[LAttempt]) -> LResult! = {
+effect fn fix_loop(p: Plugin, cond: String, t: PTask, model: String, raw_dir: String, retries: Int, attempt: Int, last: LAttempt, acc: List[LAttempt]) -> LResult! = {
   if attempt > retries then
-    ok(LResult { language: p.name, task: t.name, success: false, retries: retries, attempts: acc, reason: "" })
+    ok(LResult { language: p.name, condition: cond, task: t.name, success: false, retries: retries, attempts: acc, reason: "" })
   else {
     let original = user_prompt(p, t)
     let prompt = if attempt == 0 then original else retry_prompt(p.display, original, last.code, clip(last.diagnostic))
@@ -280,26 +333,30 @@ effect fn fix_loop(p: Plugin, t: PTask, model: String, raw_dir: String, retries:
     let a = judge(p, t, dir, code)!
     write_log(dir, a)!
     let acc2 = acc + [a]
-    println("    " + p.name + " / " + t.name + " attempt " + int.to_string(attempt) + ": " + (if a.passed then "pass" else "FAIL (" + a.kind + ")"))
-    if a.passed then ok(LResult { language: p.name, task: t.name, success: true, retries: attempt, attempts: acc2, reason: "" })
-    else fix_loop(p, t, model, raw_dir, retries, attempt + 1, a, acc2)
+    println("    " + p.name + (if cond == COND_SHIPPED then "" else " [" + cond + "]") + " / " + t.name + " attempt " + int.to_string(attempt) + ": " + (if a.passed then "pass" else "FAIL (" + a.kind + ")"))
+    if a.passed then ok(LResult { language: p.name, condition: cond, task: t.name, success: true, retries: attempt, attempts: acc2, reason: "" })
+    else fix_loop(p, cond, t, model, raw_dir, retries, attempt + 1, a, acc2)
   }
 }
 
-effect fn run_language(pr: Probe, tasks: List[PTask], model: String, raw_dir: String, retries: Int) -> List[LResult] =
-  tasks |> list.map((t) => {
+// Task-major: for Almide, each task's A cell and then its B cell, so the two
+// arms of the effect A/B are measured minutes apart rather than hours.
+// A non-shipped leg writes its raw attempts under raw/<condition>/.
+effect fn run_language(pr: Probe, conditions: List[String], tasks: List[PTask], model: String, raw_dir: String, retries: Int) -> List[LResult] =
+  tasks |> list.flat_map((t) => legs_for(pr.plugin, conditions) |> list.map(((cond, p)) => {
     let empty = LAttempt { code: "", kind: "", diagnostic: "", passed: false }
-    match fix_loop(pr.plugin, t, model, raw_dir, retries, 0, empty, []) {
+    let dir = if cond == COND_SHIPPED then raw_dir else raw_dir + "/" + cond
+    match fix_loop(p, cond, t, model, dir, retries, 0, empty, []) {
       ok(r) => r,
       err(e) => {
         // A harness failure (no key, network) is a result with no attempts:
         // the cell is `not-run`, never a model failure and never a zero. The
         // reason travels with the cell so the grid says WHY it is absent.
         println("    " + pr.plugin.name + " / " + t.name + ": harness error: " + e)
-        LResult { language: pr.plugin.name, task: t.name, success: false, retries: 0, attempts: [], reason: e }
+        LResult { language: pr.plugin.name, condition: cond, task: t.name, success: false, retries: 0, attempts: [], reason: e }
       },
     }
-  })
+  }))
 
 // ── Cell states and the run verdict ──
 //
@@ -353,14 +410,191 @@ fn probe_available(probes: List[Probe], name: String) -> Bool =
 // printing a 0.
 fn full_grid(probes: List[Probe], tasks: List[PTask], results: List[LResult]) -> List[LResult] =
   probes |> list.flat_map((pr) => tasks |> list.map((t) =>
-    match list.find(results, (r) => r.language == pr.plugin.name and r.task == t.name) {
+    match list.find(results, (r) => r.language == pr.plugin.name and r.condition == COND_SHIPPED and r.task == t.name) {
       some(r) => r,
       none => LResult {
-        language: pr.plugin.name, task: t.name, success: false, retries: 0, attempts: [],
+        language: pr.plugin.name, condition: COND_SHIPPED, task: t.name, success: false, retries: 0, attempts: [],
         reason: if pr.available then "the lane recorded no result for this cell"
           else pr.missing + " is not on this machine",
       },
     }))
+
+// ── The effect-declaration A/B: its own grid and its own verdict ──
+//
+// The A arm is the shipped Almide row of the cross-language grid (the same
+// cells, not a second copy); the B arm is one Almide cell per planned task per
+// extra condition, synthesised like full_grid when the run never produced it.
+fn shipped_cells(cells: List[LResult]) -> List[LResult] =
+  cells |> list.filter((r) => r.condition == COND_SHIPPED)
+
+fn condition_grid(probes: List[Probe], tasks: List[PTask], results: List[LResult], cond: String) -> List[LResult] = {
+  let alm = list.find(probes, (pr) => pr.plugin.name == "almide")
+  tasks |> list.map((t) =>
+    match list.find(results, (r) => r.language == "almide" and r.condition == cond and r.task == t.name) {
+      some(r) => r,
+      none => LResult {
+        language: "almide", condition: cond, task: t.name, success: false, retries: 0, attempts: [],
+        reason: match alm {
+          some(pr) => if pr.available then "the lane recorded no result for this cell" else pr.missing + " is not on this machine",
+          none => "almide is not among this run's languages",
+        },
+      },
+    })
+}
+
+fn almide_arm(cells: List[LResult], cond: String) -> List[LResult] =
+  cells |> list.filter((r) => r.language == "almide" and r.condition == cond)
+
+// The same decision table as the run verdict, over two series (A and B):
+// both arms must have reached every planned task, and both arms at the
+// bank's ceiling is a comparison that separates nothing.
+fn ab_verdict(planned: Int, a: List[LResult], b: List[LResult], b_name: String) -> Verdict = {
+  let ra = reached(a)
+  let rb = reached(b)
+  let any_reached = not list.is_empty(ra) and not list.is_empty(rb)
+  let complete = list.len(ra) == planned and list.len(rb) == planned
+  let saturated = cellstate.saturated_series(list.count(ra, (r) => r.success), list.len(ra)) and
+    cellstate.saturated_series(list.count(rb, (r) => r.success), list.len(rb))
+  let reasons =
+    if not any_reached then ["an arm reached no task: " + COND_SHIPPED + " " + int.to_string(list.len(ra)) + ", " + b_name + " " + int.to_string(list.len(rb)) + " of " + int.to_string(planned)]
+    else if not complete then
+      ["the two arms saw different task counts, so their rates share no denominator: " + COND_SHIPPED + " " +
+        int.to_string(list.len(ra)) + "/" + int.to_string(planned) + ", " + b_name + " " + int.to_string(list.len(rb)) + "/" + int.to_string(planned)]
+    else if saturated then ["both arms are at the bank's ceiling, so no task separates them (almide-dojo#3)"]
+    else []
+  cellstate.verdict(any_reached, complete, saturated, reasons)
+}
+
+fn arm_saturated(a: List[LResult], b: List[LResult]) -> Bool = {
+  let ra = reached(a)
+  let rb = reached(b)
+  cellstate.saturated_series(list.count(ra, (r) => r.success), list.len(ra)) and
+    cellstate.saturated_series(list.count(rb, (r) => r.success), list.len(rb))
+}
+
+let AB_WHAT = [
+  (COND_SHIPPED, "the Almide notes as every run sends them, which teach the effect discipline"),
+  (COND_UNMENTIONED, "the same notes with every effect sentence removed (prompts.without_effect_notes); signatures, user prompt, retry prompt, model, sampling and the compiler unchanged"),
+]
+
+fn what_of(cond: String) -> String =
+  match list.find(AB_WHAT, ((c, _)) => c == cond) {
+    some((_, w)) => w,
+    none => "",
+  }
+
+// The shipped lines this condition removed or cut, verbatim, so a reader of the manifest does not have to
+// trust the condition's name.
+fn removed_lines(a: String, b: String) -> List[String] = {
+  let lb = string.split(b, "\n")
+  string.split(a, "\n") |> list.filter((l) => not list.contains(lb, l)) |> list.map(string.trim)
+}
+
+fn arm_json(cells: List[LResult], planned: Int) -> Value = {
+  let got = reached(cells)
+  value.object([
+    ("reached", value.int(list.len(got))),
+    ("passed", value.int(list.count(got, (r) => r.success))),
+    ("one_shot", value.int(list.count(got, (r) => r.success and r.retries == 0))),
+    ("retries", value.int(got |> list.map((r) => r.retries) |> list.sum)),
+    ("final_pass", value.str(rate(list.count(got, (r) => r.success), planned - list.len(got), planned))),
+  ])
+}
+
+// Every condition the run PLANNED, with what it changes and on which
+// languages, and the prompt hashes of the Almide notes it sent.
+fn conditions_json(conditions: List[String], probes: List[Probe], tasks: List[PTask]) -> Value = {
+  let extra = extra_conditions(conditions, probes)
+  let planned = [COND_SHIPPED] + extra
+  let alm = list.find(probes, (pr) => pr.plugin.name == "almide")
+  value.array(planned |> list.map((c) => {
+    let langs = if c == COND_SHIPPED then probes |> list.map((pr) => pr.plugin.name) else ["almide"]
+    let base = [
+      ("name", value.str(c)),
+      ("issue", value.str("almide-dojo#2")),
+      ("languages", value.array(langs |> list.map(value.str))),
+      ("almide_notes", value.str(what_of(c))),
+      ("effect_enforcement", value.str("unchanged: the pinned compiler judges every arm (it has no switch that relaxes effect errors to warnings)")),
+    ]
+    let hashes = match alm {
+      some(pr) => {
+        let p = plugin_for(pr.plugin, c)
+        [("almide_prompts", prompt_hashes({ ...pr, plugin: p }, tasks))] +
+          (if c == COND_SHIPPED then [] else [("notes_lines_changed", value.array(removed_lines(pr.plugin.notes, p.notes) |> list.map(value.str)))])
+      },
+      none => [],
+    }
+    value.object(base + hashes)
+  }))
+}
+
+// The A/B's own record: null when the run planned no B arm.
+fn ab_json(conditions: List[String], probes: List[Probe], tasks: List[PTask], a_cells: List[LResult], b_cells: List[LResult]) -> Value =
+  match list.first(extra_conditions(conditions, probes)) {
+    none => value.null(),
+    some(b) => {
+      let planned = list.len(tasks)
+      let a = almide_arm(a_cells, COND_SHIPPED)
+      let bb = almide_arm(b_cells, b)
+      let v = ab_verdict(planned, a, bb, b)
+      value.object([
+        ("issue", value.str("almide-dojo#2")),
+        ("language", value.str("almide")),
+        ("a", value.str(COND_SHIPPED)),
+        ("b", value.str(b)),
+        ("planned_tasks", value.int(planned)),
+        ("verdict", value.object([
+          ("id", value.str(v.id)),
+          ("comparable", value.bool(v.comparable)),
+          ("conclusive", value.bool(v.conclusive)),
+          ("reasons", value.array(v.reasons |> list.map(value.str))),
+        ])),
+        (COND_SHIPPED, arm_json(a, planned)),
+        (b, arm_json(bb, planned)),
+      ])
+    },
+  }
+
+fn ab_cell(r: LResult) -> String =
+  if list.is_empty(r.attempts) then ST_NOT_RUN
+  else if r.success then (if r.retries == 0 then "pass" else "pass@" + int.to_string(r.retries))
+  else "FAIL"
+
+fn ab_row(cond: String, cells: List[LResult], planned: Int) -> String = {
+  let got = reached(cells)
+  let absent = planned - list.len(got)
+  "| Almide · `" + cond + "` | " + what_of(cond) + " | " + int.to_string(list.len(got)) + "/" + int.to_string(planned) + " | " +
+    rate(list.count(got, (r) => r.success), absent, planned) + " | " +
+    rate(list.count(got, (r) => r.success and r.retries == 0), absent, planned) + " | " +
+    int.to_string(got |> list.map((r) => r.retries) |> list.sum) + " |"
+}
+
+// The A/B section of table.md: its own verdict first, then the two arms side
+// by side, then per task. "" when the run planned no B arm.
+fn render_ab(conditions: List[String], probes: List[Probe], tasks: List[PTask], a_cells: List[LResult], b_cells: List[LResult]) -> String =
+  match list.first(extra_conditions(conditions, probes)) {
+    none => "",
+    some(b) => {
+      let planned = list.len(tasks)
+      let a = almide_arm(a_cells, COND_SHIPPED)
+      let bb = almide_arm(b_cells, b)
+      let v = ab_verdict(planned, a, bb, b)
+      let find_in = (xs: List[LResult], t: String) => match list.find(xs, (r) => r.task == t) {
+        some(r) => ab_cell(r),
+        none => ST_NOT_RUN,
+      }
+      "\n## Effect-declaration A/B (almide-dojo#2) — Almide only\n\n" +
+        "> **A/B verdict: `" + v.id + "`** — certified as a comparison: **" + (if v.comparable then "yes" else "no") +
+        "**; the bank discriminated: **" + (if v.conclusive then "yes" else "no") + "**\n" +
+        (v.reasons |> list.map((r) => "> - " + r + "\n") |> string.join("")) + "\n" +
+        "Arm A is the Almide row above (the same cells). Arm B re-asks the same " + int.to_string(planned) +
+        " tasks with the only change being the Almide notes; the pinned compiler still enforces effects in both arms, and the other languages have no effect system to remove.\n\n" +
+        "| arm | what the model is told | reached | final pass (of " + int.to_string(planned) + ") | 1-shot (of " + int.to_string(planned) + ") | retries |\n|---|---|---|---|---|---|\n" +
+        ab_row(COND_SHIPPED, a, planned) + "\n" + ab_row(b, bb, planned) + "\n\n" +
+        "| task | `" + COND_SHIPPED + "` | `" + b + "` |\n|---|---|---|\n" +
+        (tasks |> list.map((t) => "| `" + t.name + "` | " + find_in(a, t.name) + " | " + find_in(bb, t.name) + " |") |> string.join("\n")) + "\n"
+    },
+  }
 
 fn reached_by(name: String, results: List[LResult]) -> Int =
   list.count(results, (r) => r.language == name and not list.is_empty(r.attempts))
@@ -485,7 +719,7 @@ fn language_entry(pr: Probe, tasks: List[PTask]) -> Value = {
 // part of the run's identity. "" = the compiler's own default.
 effect fn http_timeout_secs() -> String = env.get("ALMIDE_HTTP_TIMEOUT_SECS") ?? ""
 
-effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask], task_set_sha: String, v: Verdict, cells: List[LResult], sampling: List[(String, Value)]) -> Value = {
+effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask], task_set_sha: String, v: Verdict, cells: List[LResult], ab_cells: List[LResult], sampling: List[(String, Value)]) -> Value = {
   let provider = llm.provider_of(o.model)
   value.object([
     ("verdict", verdict_json(v, list.len(tasks), cells, probes)),
@@ -517,7 +751,11 @@ effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask
       ("http_timeout_secs", value.str(http_timeout_secs()!)),
     ] + sampling)),
     ("retries", value.int(o.retries)),
-    ("condition", value.object([("effects", value.str(o.condition))])),
+    // The cross-language grid's condition, then every condition the run
+    // planned (almide-dojo#2) and the A/B's own verdict and arms.
+    ("condition", value.object([("effects", value.str(COND_SHIPPED))])),
+    ("conditions", conditions_json(o.conditions, probes, tasks)),
+    ("effect_ab", ab_json(o.conditions, probes, tasks, cells, ab_cells)),
     ("task_set", value.object([
       ("path", value.str(TASK_SET)),
       ("revision", value.str(task_set_revision()!)),
@@ -535,6 +773,7 @@ effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask
 fn result_json(r: LResult, state: String) -> Value =
   value.object([
     ("language", value.str(r.language)),
+    ("condition", value.str(r.condition)),
     ("task", value.str(r.task)),
     ("state", value.str(state)),
     ("success", value.bool(r.success)),
@@ -554,7 +793,7 @@ fn rate(passed: Int, absent: Int, planned: Int) -> String =
 
 fn language_row(pr: Probe, tasks: List[PTask], results: List[LResult]) -> String = {
   let planned = list.len(tasks)
-  let mine = results |> list.filter((r) => r.language == pr.plugin.name)
+  let mine = results |> list.filter((r) => r.language == pr.plugin.name and r.condition == COND_SHIPPED)
   let dash = int.to_string(planned)
   if not pr.available then
     "| " + pr.plugin.display + " | — | 0/" + dash + " | " + dash + " harness-limitation | " +
@@ -576,7 +815,7 @@ fn language_row(pr: Probe, tasks: List[PTask], results: List[LResult]) -> String
 
 fn task_row(t: PTask, probes: List[Probe], results: List[LResult], saturated: Bool) -> String = {
   let cells = probes |> list.map((pr) =>
-    match list.find(results, (r) => r.language == pr.plugin.name and r.task == t.name) {
+    match list.find(results, (r) => r.language == pr.plugin.name and r.condition == COND_SHIPPED and r.task == t.name) {
       none => ST_NOT_RUN,
       some(r) => match state_of(pr.available, r, saturated) {
         "harness-limitation" => "n/t",
@@ -587,7 +826,7 @@ fn task_row(t: PTask, probes: List[Probe], results: List[LResult], saturated: Bo
   "| `" + t.name + "` | " + string.join(cells, " | ") + " |"
 }
 
-fn render_table(o: Opts, date: String, revision: String, probes: List[Probe], tasks: List[PTask], results: List[LResult], v: Verdict) -> String = {
+fn render_table(o: Opts, date: String, revision: String, probes: List[Probe], tasks: List[PTask], results: List[LResult], ab_cells: List[LResult], v: Verdict) -> String = {
   let label = if o.label == "" then "" else " [" + o.label + "]"
   let planned = int.to_string(list.len(tasks))
   let saturated = is_saturated(results)
@@ -598,7 +837,8 @@ fn render_table(o: Opts, date: String, revision: String, probes: List[Probe], ta
     "- **model**: `" + o.model + "`\n" +
     "- **planned tasks**: " + planned + " (msr/task-set.json rev " + revision + ") — every rate below has this as its denominator\n" +
     "- **retries**: " + int.to_string(o.retries) + "\n" +
-    "- **condition**: effects=" + o.condition + "\n" +
+    "- **conditions**: `" + COND_SHIPPED + "` (every language)" +
+      (extra_conditions(o.conditions, probes) |> list.map((c) => ", `" + c + "` (Almide only — the effect-declaration A/B below)") |> string.join("")) + "\n" +
     "- **manifest**: manifest.json next to this file (`verdict`, and the per-cell states in results.json)\n\n"
   let summary = "| language | toolchain | reached | absent | final pass (of " + planned + ") | 1-shot (of " + planned + ") | retries |\n|---|---|---|---|---|---|---|\n" +
     (probes |> list.map((pr) => language_row(pr, tasks, results)) |> string.join("\n")) + "\n"
@@ -610,7 +850,7 @@ fn render_table(o: Opts, date: String, revision: String, probes: List[Probe], ta
     "; `not-run` = planned, but the model was never answered (see `reason` in results.json); " +
     "`n/t` = `harness-limitation`, the toolchain is not on this machine. " +
     "A rate printed as `a–b%` has `not-run` cells: the true rate is somewhere in that interval, and the row is not comparable with a complete one.\n"
-  head + summary + per_task
+  head + summary + per_task + render_ab(o.conditions, probes, tasks, results, ab_cells)
 }
 
 // ── Commands ──
@@ -625,12 +865,15 @@ effect fn cmd_probe(o: Opts) -> Unit! = {
 effect fn cmd_prompt(o: Opts) -> Unit! = {
   let lang = list.get(o.rest, 1) ?? ""
   let task = list.get(o.rest, 2) ?? ""
+  let cond = list.get(o.rest, 3) ?? COND_SHIPPED
+  guard list.contains(CONDITIONS, cond) else err("unknown condition `" + cond + "` (known: " + string.join(CONDITIONS, ", ") + ")")
   match plugins.find(lang) {
     none => {
       println("unknown language: " + lang)
       process.exit(1)
     },
-    some(p) => {
+    some(p0) => {
+      let p = plugin_for(p0, cond)
       let t = load_task(task)!
       println("=== system ===\n" + system_prompt(p) + "\n\n=== user ===\n" + user_prompt(p, t))
       ok(())
@@ -665,7 +908,7 @@ effect fn cmd_run(o: Opts) -> Unit! = {
   println("Running " + int.to_string(list.len(tasks)) + " task(s) x " + int.to_string(list.len(available)) + " language(s) against " + o.model)
   let results = (available |> list.flat_map((pr) => {
     println("== " + pr.plugin.display + " ==")
-    run_language(pr, tasks, o.model, raw_dir, o.retries)!
+    run_language(pr, o.conditions, tasks, o.model, raw_dir, o.retries)!
   }))!
   let measured = results |> list.filter((r) => not list.is_empty(r.attempts))
   guard not list.is_empty(measured) else {
@@ -679,12 +922,19 @@ effect fn cmd_run(o: Opts) -> Unit! = {
   let cells = full_grid(probes, tasks, results)
   let saturated = is_saturated(cells)
   let v = verdict_of(probes, tasks, cells)
-  let m = manifest(o, date, probes, tasks, task_set_sha, v, cells, sampling)!
+  // The effect A/B's B arm(s): Almide cells under every extra condition. They
+  // never enter `cells`, so the cross-language verdict is the same with or
+  // without the A/B.
+  let ab_cells = extra_conditions(o.conditions, probes) |> list.flat_map((c) => condition_grid(probes, tasks, results, c))
+  let ab_sat = arm_saturated(almide_arm(cells, COND_SHIPPED), ab_cells)
+  let m = manifest(o, date, probes, tasks, task_set_sha, v, cells, ab_cells, sampling)!
   fs.write(dir + "/manifest.json", json.stringify_pretty(m) + "\n")!
   fs.write(dir + "/results.json", json.stringify_pretty(value.object([
-    ("results", value.array(cells |> list.map((r) => result_json(r, state_of(probe_available(probes, r.language), r, saturated))))),
+    ("results", value.array(
+      (cells |> list.map((r) => result_json(r, state_of(probe_available(probes, r.language), r, saturated)))) +
+      (ab_cells |> list.map((r) => result_json(r, state_of(probe_available(probes, r.language), r, ab_sat)))))),
   ])) + "\n")!
-  let table = render_table(o, date, task_set_revision()!, probes, tasks, cells, v)
+  let table = render_table(o, date, task_set_revision()!, probes, tasks, cells, ab_cells, v)
   fs.write(dir + "/table.md", table)!
   println("")
   println(table)
@@ -713,6 +963,8 @@ effect fn read_cells(dir: String) -> List[LResult]! = {
   let items = json.get_array(v, "results") ?? []
   ok(items |> list.map((it) => LResult {
     language: json.get_string(it, "language") ?? "",
+    // A run written before the A/B existed has no field: its cells are all shipped.
+    condition: json.get_string(it, "condition") ?? COND_SHIPPED,
     task: json.get_string(it, "task") ?? "",
     success: json.get_bool(it, "success") ?? false,
     retries: json.get_int(it, "retries") ?? 0,
@@ -739,7 +991,10 @@ effect fn cmd_verdict(o: Opts) -> Unit! = {
     some(vd) => json.get_string(vd, "id") ?? "",
     none => "",
   }
-  let cells = read_cells(dir)!
+  // The cross-language verdict is over the shipped grid only: the A/B's B arm
+  // is Almide cells under another condition and is judged on its own below.
+  let all_cells = read_cells(dir)!
+  let cells = shipped_cells(all_cells)
   let v = verdict_core(attempted, planned, cells)
   println("## " + dir)
   println("")
@@ -753,6 +1008,14 @@ effect fn cmd_verdict(o: Opts) -> Unit! = {
   if stamped == "" then
     println("(no stamped verdict: this run predates the field, and the id above is re-derived from its results)")
   else ()
+  // The A/B is reported, not certified here: it is a second question on the
+  // same run, and its own verdict does not decide whether the table stands.
+  let b_arms = all_cells |> list.filter((r) => r.condition != COND_SHIPPED) |> list.map((r) => r.condition) |> list.unique
+  b_arms |> list.map((b) => {
+    let abv = ab_verdict(planned, almide_arm(cells, COND_SHIPPED), almide_arm(all_cells, b), b)
+    println("effect A/B (almide-dojo#2) " + COND_SHIPPED + " vs " + b + ": `" + abv.id + "`" +
+      (if list.is_empty(abv.reasons) then "" else " — " + string.join(abv.reasons, "; ")))
+  })
   if v.comparable then ok(()) else process.exit(1)
 }
 
@@ -941,6 +1204,7 @@ test "parse_opts reads every option and keeps positionals in order" {
   assert_eq(o |> result.map((o) => o.retries), ok(2))
   assert_eq(o |> result.map((o) => o.label), ok("smoke"))
   assert(result.is_err(parse_opts(["--condition", "relaxed"], default_opts())))
+  assert_eq(o |> result.map((o) => o.conditions), ok(["shipped", "unmentioned"]))
   assert(result.is_err(parse_opts(["--bogus"], default_opts())))
 }
 
@@ -983,7 +1247,7 @@ fn t_task(name: String) -> PTask =
   PTask { name: name, dir: "", sigs: [], behavior: "", cases: [] }
 
 fn t_cell(lang: String, task: String, ok_: Bool, reached_: Bool) -> LResult = LResult {
-  language: lang, task: task, success: ok_, retries: 0,
+  language: lang, condition: COND_SHIPPED, task: task, success: ok_, retries: 0,
   attempts: if reached_ then [LAttempt { code: "", kind: "", diagnostic: "", passed: ok_ }] else [],
   reason: if reached_ then "" else "read timed out waiting for the server",
 }
@@ -1117,7 +1381,7 @@ test "the rendered table states the verdict above the numbers, not under them" {
                t_cell("rust", "a", true, true), t_cell("rust", "b", true, true)]
   let v = verdict_of(probes, tasks, cells)
   let o = { ...default_opts(), model: "cf:m", label: "" }
-  let tbl = render_table(o, "2026-09-22", "rev", probes, tasks, cells, v)
+  let tbl = render_table(o, "2026-09-22", "rev", probes, tasks, cells, [], v)
   let banner = string.index_of(tbl, "Verdict: `not-comparable`")
   let header = string.index_of(tbl, "| language | toolchain |")
   assert(option.is_some(banner))
@@ -1147,4 +1411,106 @@ test "the full grid names every planned cell, including a language with no toolc
   assert_eq(count_state(grid, probes, sat, ST_MEASURED), 0)
   // The four states partition the grid exactly.
   assert_eq(CELL_STATES |> list.map((s) => count_state(grid, probes, sat, s)) |> list.sum, list.len(grid))
+}
+
+// ── The effect-declaration A/B (almide-dojo#2) ──
+
+fn t_bcell(task: String, ok_: Bool, reached_: Bool) -> LResult =
+  { ...t_cell("almide", task, ok_, reached_), condition: COND_UNMENTIONED }
+
+fn t_probe(p: Plugin) -> Probe = Probe { plugin: p, available: true, missing: "", versions: [(p.name, p.name + " 1.0")] }
+
+test "the A/B is planned by default, on the Almide leg only, and --conditions shipped leaves it out" {
+  let d = default_opts()
+  assert_eq(d.conditions, ["shipped", "unmentioned"])
+  let alm = plugins.find("almide")!
+  let rs = plugins.find("rust")!
+  // Almide runs both arms, task by task; every other language runs A only —
+  // the A/B adds exactly one Almide pass over the task set and nothing else.
+  assert_eq(legs_for(alm, d.conditions) |> list.map(((c, _)) => c), ["shipped", "unmentioned"])
+  assert_eq(legs_for(rs, d.conditions) |> list.map(((c, _)) => c), ["shipped"])
+  // B changes the Almide notes and nothing else about the plugin.
+  let b = plugin_for(alm, COND_UNMENTIONED)
+  assert(b.notes != alm.notes)
+  assert_eq(b.notes, prompts.without_effect_notes(alm.notes))
+  assert_eq(plugin_for(rs, COND_UNMENTIONED).notes, rs.notes)
+  let t = PTask { name: "gcd", dir: "", sigs: [spec.parse_sig("fn gcd(a: Int, b: Int) -> Int")!], behavior: "- gcd", cases: [] }
+  assert_eq(user_prompt(b, t), user_prompt(alm, t))
+  assert(not string.contains(string.to_lower(system_prompt(b)), "effect"))
+  assert(string.contains(system_prompt(alm), "effect fn"))
+  // Selection.
+  assert_eq(parse_opts(["--conditions", "shipped"], d) |> result.map((o) => o.conditions), ok(["shipped"]))
+  assert_eq(parse_opts(["--conditions", "unmentioned,shipped"], d) |> result.map((o) => o.conditions), ok(["shipped", "unmentioned"]))
+  assert_eq(parse_opts(["--condition", "shipped"], d) |> result.map((o) => o.conditions), ok(["shipped"]))
+  assert(result.is_err(parse_opts(["--conditions", "unmentioned"], d)), "a run without the A arm has no table")
+  assert(result.is_err(parse_opts(["--conditions", "shipped,relaxed"], d)))
+  // A run whose languages leave Almide out plans no B arm.
+  let rust_only = [Probe { plugin: rs, available: true, missing: "", versions: [] }]
+  assert_eq(extra_conditions(d.conditions, rust_only), [])
+  assert_eq(extra_conditions(d.conditions, [t_probe(alm), t_probe(rs)]), ["unmentioned"])
+  assert_eq(extra_conditions(["shipped"], [t_probe(alm), t_probe(rs)]), [])
+}
+
+test "the manifest records every planned condition and the A/B's own verdict and arms" {
+  let probes = [t_probe(plugins.find("almide")!), t_probe(plugins.find("rust")!)]
+  let tasks = ["a", "b"] |> list.map(t_task)
+  let a = [t_cell("almide", "a", true, true), t_cell("almide", "b", false, true),
+           t_cell("rust", "a", true, true), t_cell("rust", "b", true, true)]
+  let b = [t_bcell("a", true, true), t_bcell("b", true, true)]
+  let cs = conditions_json(default_opts().conditions, probes, tasks)
+  let names = json.stringify(cs)
+  assert(string.contains(names, "\"name\":\"shipped\""))
+  assert(string.contains(names, "\"name\":\"unmentioned\""))
+  assert(string.contains(names, "\"languages\":[\"almide\",\"rust\"]"), "shipped runs every language")
+  assert(string.contains(names, "\"languages\":[\"almide\"]"), "unmentioned runs Almide only")
+  assert(string.contains(names, "notes_lines_changed"), "B names the lines it removed or cut")
+  assert(string.contains(names, "Calling an `effect fn`"), "the removed rule is quoted verbatim")
+  let ab = json.stringify(ab_json(default_opts().conditions, probes, tasks, a, b))
+  assert(string.contains(ab, "\"b\":\"unmentioned\""))
+  assert(string.contains(ab, "\"id\":\"comparable\""))
+  assert(string.contains(ab, "\"final_pass\":\"1/2 (50%)\""), "arm A is the shipped Almide row")
+  assert(string.contains(ab, "\"final_pass\":\"2/2 (100%)\""), "arm B is its own cells")
+  // No B arm planned: the record says so with null, not with an empty arm.
+  assert_eq(ab_json(["shipped"], probes, tasks, a, []), value.null())
+}
+
+test "the A/B is refused as a comparison when its arms saw different task counts, and saturation is named" {
+  let a = [t_cell("almide", "a", true, true), t_cell("almide", "b", false, true)]
+  let v = ab_verdict(2, a, [t_bcell("a", true, true), t_bcell("b", false, false)], COND_UNMENTIONED)
+  assert_eq(v.id, "not-comparable")
+  assert(string.contains(string.join(v.reasons, " "), "unmentioned 1/2"))
+  let sat = ab_verdict(2, [t_cell("almide", "a", true, true), t_cell("almide", "b", true, true)],
+                       [t_bcell("a", true, true), t_bcell("b", true, true)], COND_UNMENTIONED)
+  assert_eq(sat.id, ST_SATURATED)
+  assert_eq(ab_verdict(2, a, [], COND_UNMENTIONED).id, "nothing-measured")
+}
+
+test "the table renders the two arms side by side, and the B arm never enters the cross-language verdict" {
+  let probes = [t_probe(plugins.find("almide")!), t_probe(plugins.find("rust")!)]
+  let tasks = ["a", "b"] |> list.map(t_task)
+  let cells = [t_cell("almide", "a", true, true), t_cell("almide", "b", false, true),
+               t_cell("rust", "a", true, true), t_cell("rust", "b", true, true)]
+  let b = [t_bcell("a", true, true), { ...t_bcell("b", true, true), retries: 1 }]
+  let v = verdict_of(probes, tasks, cells)
+  let o = { ...default_opts(), model: "cf:m" }
+  let tbl = render_table(o, "2026-09-25", "rev", probes, tasks, cells, b, v)
+  assert(string.contains(tbl, "`unmentioned` (Almide only"))
+  assert(string.contains(tbl, "## Effect-declaration A/B (almide-dojo#2)"))
+  assert(string.contains(tbl, "A/B verdict: `comparable`"))
+  assert(string.contains(tbl, "| Almide · `shipped` |"))
+  assert(string.contains(tbl, "| Almide · `unmentioned` |"))
+  assert(string.contains(tbl, "| `b` | FAIL | pass@1 |"), "per task, A beside B")
+  // The A/B section comes after the cross-language table, never inside it.
+  assert((string.index_of(tbl, "## Per task") ?? 0) < (string.index_of(tbl, "## Effect-declaration A/B") ?? 0))
+  // B cells do not move the cross-language verdict or its rows.
+  let with_b = cells + b
+  assert_eq(verdict_core([("almide", "Almide"), ("rust", "Rust")], 2, shipped_cells(with_b)).id, v.id)
+  assert(string.contains(language_row(t_probe(plugins.find("almide")!), tasks, with_b), "1/2 (50%)"))
+  // A run without the B arm renders no A/B section.
+  let plain = render_table({ ...o, conditions: ["shipped"] }, "2026-09-25", "rev", probes, tasks, cells, [], v)
+  assert(not string.contains(plain, "Effect-declaration A/B"))
+  // The missing B cell is synthesised with its reason, like full_grid.
+  let grid = condition_grid(probes, tasks, [t_bcell("a", true, true)], COND_UNMENTIONED)
+  assert_eq(list.len(grid), 2)
+  assert(list.any(grid, (r) => r.task == "b" and list.is_empty(r.attempts) and r.condition == COND_UNMENTIONED))
 }
