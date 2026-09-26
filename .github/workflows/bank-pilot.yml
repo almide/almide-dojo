@@ -43,6 +43,10 @@ on:
         description: 'BANK_LIMIT: run only the first N bank tasks (0 = the whole bank; >0 is a smoke and stamps under-scale)'
         required: false
         default: '0'
+      conditions:
+        description: 'control (the bank) or control,survive (+ the almide survive A/B of almide/almide#2147: every task re-asked with survive gating each edit). survive needs a pinned release that has `almide survive`; the plan job refuses otherwise'
+        required: false
+        default: 'control'
   push:
     branches: ['bank-pilot-smoke/**']
 
@@ -73,6 +77,7 @@ jobs:
       clusters: ${{ steps.p.outputs.clusters }}
       families: ${{ steps.p.outputs.families }}
       repetitions: ${{ steps.p.outputs.repetitions }}
+      conditions: ${{ steps.p.outputs.conditions }}
     steps:
       - uses: actions/checkout@v4
 
@@ -93,14 +98,20 @@ jobs:
           IN_REPS: ${{ github.event.inputs.repetitions }}
           IN_SHARDS: ${{ github.event.inputs.shards }}
           IN_LIMIT: ${{ github.event.inputs.limit }}
+          IN_CONDITIONS: ${{ github.event.inputs.conditions }}
         run: |
           if [ "$EVENT" = push ]; then
             MODELS="$SMOKE_MODELS"; REPS=1; SHARDS=1; LIMIT="$SMOKE_LIMIT"
-            CLUSTERS=400; FAMILIES=3; REPETITIONS=3
+            CLUSTERS=400; FAMILIES=3; REPETITIONS=3; CONDITIONS=control
           else
             MODELS="${IN_MODELS:-$PILOT_MODELS}"; REPS="${IN_REPS:-3}"; SHARDS="${IN_SHARDS:-16}"; LIMIT="${IN_LIMIT:-0}"
-            CLUSTERS="${IN_CLUSTERS:-400}"; FAMILIES="${IN_FAMILIES:-3}"; REPETITIONS="${IN_REPS:-3}"
+            CLUSTERS="${IN_CLUSTERS:-400}"; FAMILIES="${IN_FAMILIES:-3}"; REPETITIONS="${IN_REPS:-3}"; CONDITIONS="${IN_CONDITIONS:-control}"
           fi
+          CONDITIONS=$(printf '%s' "$CONDITIONS" | tr -d ' ')
+          case "$CONDITIONS" in
+            control|control,survive|survive,control) ;;
+            *) echo "::error::conditions='$CONDITIONS': use control or control,survive"; exit 1 ;;
+          esac
           BAD=$(printf '%s' "$MODELS" | tr ',' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | grep -v '^cf:' || true)
           if [ -n "$BAD" ]; then
             echo "::error::this lane runs Cloudflare Workers AI models only (no Anthropic/OpenAI key in CI). Refused: $(printf '%s' "$BAD" | tr '\n' ' ')"
@@ -115,7 +126,22 @@ jobs:
             echo "reps=$(seq 1 "$REPS" | jq -cs .)"
             echo "shards=$(seq 0 $((SHARDS - 1)) | jq -cs .)"
             echo "limit=$LIMIT"; echo "clusters=$CLUSTERS"; echo "families=$FAMILIES"; echo "repetitions=$REPETITIONS"
+            echo "conditions=$CONDITIONS"
           } | tee -a "$GITHUB_OUTPUT"
+
+      # The survive arm needs `almide survive` (almide/almide#2147) in the PINNED
+      # release. Refuse here, before a single job or model call, rather than let
+      # every shard refuse on its own (the harness refuses too).
+      - name: The pinned compiler has almide survive
+        if: ${{ contains(steps.p.outputs.conditions, 'survive') }}
+        run: |
+          PIN="${{ steps.pin.outputs.ref }}"
+          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "$PIN"
+          D=$(mktemp -d); printf 'fn f() -> Int = 1\n' > "$D/a.almd"; printf 'fn f() -> Int = 2\n' > "$D/b.txt"
+          if ! (cd "$D" && "$HOME/.local/bin/almide" survive a.almd --with b.txt --as text --json) | grep -q '"schema_version":1'; then
+            echo "::error::conditions=survive needs \`almide survive\` (almide/almide#2147), and the pinned $PIN does not have it. Advance almide-pin.toml to a release that carries it."
+            exit 1
+          fi
 
   run:
     needs: plan
@@ -159,6 +185,7 @@ jobs:
           CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
           BANK_LIMIT: ${{ needs.plan.outputs.limit }}
           BANK_RUN_LABEL: rep${{ matrix.rep }}-shard${{ matrix.shard }}
+          BANK_CONDITIONS: ${{ needs.plan.outputs.conditions }}
           SHARDS_JSON: ${{ needs.plan.outputs.shards }}
         run: |
           rm -rf runs/
@@ -178,6 +205,8 @@ jobs:
             echo "## Bank — \`${{ matrix.model }}\` rep ${{ matrix.rep }} shard $BANK_SHARD"
             echo
             sed -n '1,/^## /p' "$SUMMARY" | grep -E '^(> |- )' || true
+            AB=$(find runs -path '*survive-ab*/table.md' | head -n1 || true)
+            if [ -n "$AB" ]; then echo; grep -E '^> \*\*Criterion|^\| `(control|survive)` \| [0-9]' "$AB" || true; fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       # Each job's runs/ goes under its own directory, so the per-task reports
@@ -212,6 +241,21 @@ jobs:
       - name: Decide scale and saturation
         run: |
           bash scripts/bank-pilot-verdict.sh runs "${{ needs.plan.outputs.clusters }}" "${{ needs.plan.outputs.families }}" "${{ needs.plan.outputs.repetitions }}" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # The survive A/B (almide/almide#2147): every shard wrote its own
+      # survive-ab manifest; merge them into runs/survive-ab/ and re-decide the
+      # verdict and the >= 20 % criterion over the union. No model call.
+      - name: Install the pinned Almide for the survive A/B merge
+        if: ${{ contains(needs.plan.outputs.conditions, 'survive') }}
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "${{ needs.plan.outputs.pin }}"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Merge the survive A/B
+        if: ${{ contains(needs.plan.outputs.conditions, 'survive') }}
+        run: |
+          almide run src/main.almd -- survive-ab runs
+          cat runs/survive-ab/table.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload the verdict with the evidence
         if: ${{ !cancelled() }}
