@@ -383,6 +383,15 @@ repair survives within the retry budget. Eight edit families, one seed each;
 `scripts/check-bank.sh` refuses any task whose plausible wrong patch is not caught.
 Spec: [docs/bank.md](./docs/bank.md). Run: `almide run src/main.almd -- bank <model>`.
 
+**The `almide survive` A/B** ([almide/almide#2147](https://github.com/almide/almide/issues/2147)):
+`bank <model> --conditions control,survive` (or `BANK_CONDITIONS`, or the Bank
+Pilot's `conditions` input) re-asks every bank task with each proposed edit gated
+by `almide survive` before it is applied, and writes
+`runs/<date>/<model>/survive-ab[-<label>]/{manifest.json, table.md}` with both
+arms' mean attempts per task and #2147's ≥ 20 % criterion. It needs a pinned
+release that has `almide survive` and refuses otherwise; it never gates the
+bank's own verdict. Definitions: [docs/bank.md](./docs/bank.md#the-almide-survive-ab).
+
 ## Current phase
 
 **Phase 3** — 31-task bank with three difficulty tiers, harness searches across `basic/`, `intermediate/`, `advanced/` directories. Next: add GitHub Actions daily workflow, build the dashboards.

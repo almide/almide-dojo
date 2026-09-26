@@ -159,10 +159,53 @@ later horizon).
 | Almide with the declarations erased, requirements in prose | the value of the declaration |
 | the same with terse diagnostics | the repair contribution of diagnostic quality |
 | other languages, reviewed idiomatic implementations | whether the advantage survives beyond an Almide ablation |
+| Almide with `almide survive` gating each edit (`--conditions control,survive`) | the attempts `survive` saves (almide/almide#2147, below) |
 
 Compiler mutants (drop a release, exempt module functions, skip cleanup on `!`)
 live in a companion lane in the compiler repo. They validate the compiler and are
 not samples of this bank.
+
+## The `almide survive` A/B
+
+[almide/almide#2147](https://github.com/almide/almide/issues/2147)'s victory
+condition is *"Dojo A/B, same model: mean attempts per task with `survive`
+available is ≥ 20 % lower than without"*. `bank <model> --conditions
+control,survive` measures it on this bank (`src/survive_ab.almd`):
+
+| arm | what happens to a proposed edit | what the model hears after a failed attempt |
+|---|---|---|
+| `control` | written and judged as always: visible suite, hidden oracle, wasm, resource | the post-hoc output (compile / test diagnostic or the bank markers) |
+| `survive` | first `almide survive prog.almd --with <edit> --as text --json`, where `prog.almd` = baseline + visible suite alone in a scratch directory and `<edit>` = the proposal + the same suite after the same `almide fix`. **Refused** (exit 1: an error diagnostic, a visible test or a contract newly broken) → not applied, no oracle; **survives** (exit 0) → judged exactly as in control | refused: the survival delta — its `newly_broken` entries verbatim (each diagnostic with hint and repair) and the visible tests still failing; survived: exactly the control feedback |
+
+- **Attempt** = one model completion proposing a whole-file edit, i.e. one model
+  call. Same budget (1 + `DEFAULT_MAX_RETRIES` = 4), retry template, model,
+  sampling, tasks and oracle in both arms. A refused edit **is** an attempt — it
+  cost a call; it is only not applied — so survive can win only by making the
+  next proposal better, never by hiding calls. A task that never passes counts
+  every attempt it used.
+- A refusal can never turn a pass into a fail: what survive refuses (a newly
+  broken error or visible test) fails control's `almide test` too. The first
+  attempt is therefore scored identically; the arms differ only in feedback.
+- **Why this bank**: survive judges an edit against a baseline, and every task
+  here is one. The classic bank and the cross-language set write from nothing.
+  The hidden oracle never reaches survive.
+- **Task-major**: each task's survive cell runs right after its control cell,
+  so provider drift lands on both arms alike. Per-task reports of the survive
+  arm go to `runs/<date>/<model>/survive/`.
+- **Verdict**: the shared decision table over the two arms — both must reach
+  every planned task (paired), and both arms at ≥ 98 % first-attempt passes is
+  `inconclusive-saturated` (survive acts only after a failure). The criterion
+  (`mean_survive ≤ 0.8 × mean_control`, decided in integers) is `met` /
+  `not-met` only on a comparable, conclusive A/B, else `undecided`; a run where
+  survive refused nothing says its difference is sampling.
+- **Gates nothing**: `bank-summary.md`, the bank verdict and the exit code are
+  the control arm's alone.
+- **Compiler**: the arm needs `almide survive`. A compiler without it (every
+  release up to v0.63.1) is refused before any model call, by the harness and
+  by the Bank Pilot's plan job — never the control arm run twice.
+- **Shards**: each shard writes its own `survive-ab-<label>/`; the Bank Pilot's
+  verdict job merges them with `almide run src/main.almd -- survive-ab runs`
+  (no model call), which refuses a union of different models or compilers.
 
 ## Saturation and scale
 
