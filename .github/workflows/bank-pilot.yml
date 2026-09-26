@@ -163,6 +163,15 @@ jobs:
         run: |
           rm -rf runs/
           export BANK_SHARD="${{ matrix.shard }}/$(printf '%s' "$SHARDS_JSON" | jq length)"
+          # A reasoning model (GLM, Qwen3) sends nothing until it has thought the
+          # whole answer through, so the first byte routinely arrives after the
+          # 140 s the Llama lanes use. In the first 400x3x3 pilot (run
+          # 36083949429) 60-90 % of GLM and Qwen tasks ended `timeout` at 140 s
+          # and never reached the model, so every such shard was not-comparable.
+          case "${{ matrix.model }}" in
+            *'/glm-'*|*'/qwen3'*) export ALMIDE_HTTP_TIMEOUT_SECS=600 ;;
+          esac
+          echo "http timeout: ${ALMIDE_HTTP_TIMEOUT_SECS}s"
           echo "bank: model=${{ matrix.model }} rep=${{ matrix.rep }} shard=$BANK_SHARD limit=$BANK_LIMIT"
           set +e
           almide run src/main.almd -- bank "${{ matrix.model }}"

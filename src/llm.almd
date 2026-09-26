@@ -66,8 +66,10 @@ let SEED: Int = 20260922
 // rejection on the nightly lane.
 let REASONING_TOKEN_CAP: Int = 16384
 
+// Qwen3 thinks before it answers too: in the first 400x3x3 pilot (run
+// 36083949429) its tasks timed out the same way GLM's did.
 fn is_reasoning_model(model: String) -> Bool =
-  string.contains(model, "/glm-")
+  string.contains(model, "/glm-") or string.contains(model, "/qwen3")
 
 fn token_cap_for(model: String) -> Int =
   if is_reasoning_model(model) then REASONING_TOKEN_CAP else almai.defaults().max_tokens
@@ -302,6 +304,7 @@ test "every measured call and the probe share one options construction" {
 
 test "only a reasoning model gets the raised token cap" {
   assert(opts_for("cf:@cf/zai-org/glm-5.3-flash", "sys", 0.0).max_tokens == REASONING_TOKEN_CAP, "GLM spends its scratchpad out of the cap")
+  assert(opts_for("cf:@cf/qwen/qwen3.8-27b", "sys", 0.0).max_tokens == REASONING_TOKEN_CAP, "Qwen3 reasons before it answers, like GLM")
   assert(opts_for("cf:@cf/meta/llama-3.1-8b-instruct", "sys", 0.0).max_tokens == almai.defaults().max_tokens, "a Llama keeps almai's default, which its context window accepts")
   assert(opts_for("cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast", "sys", 0.0).max_tokens == 4096, "the nightly lane's request is unchanged")
 }
