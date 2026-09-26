@@ -25,6 +25,7 @@
 
 import env
 import fs
+import json
 import process
 import datetime
 import self.types.{Task, Attempt, RunResult, AttemptResult}
@@ -35,6 +36,7 @@ import self.render
 import self.backfill
 import self.llm
 import self.prompts
+import self.survive_ab
 
 // ── Constants ──
 
@@ -207,6 +209,63 @@ effect fn resource_oracle(task: Task, program: String, solution: String) -> Resu
       else err("resource oracle could not judge " + task.name + ": " + string.trim(e))
   }
 
+// ── The survive arm (almide/almide#2147, src/survive_ab.almd) ──
+//
+// `almide survive` judges the proposed edit against the baseline BEFORE it is
+// applied. Both sides carry the visible suite (never the hidden oracle), in a
+// directory of their own so the reach set is exactly that one file. The edit
+// gets the same `almide fix` the control arm applies before its test.
+//   exit 0 survives   → the control oracle judges it, unchanged
+//   exit 1 refused    → a failed attempt whose feedback is the survival delta
+//   anything else     → the harness could not judge: an error, so the cell is
+//                       `not-run` and the A/B refuses to pair it
+let SURVIVE_TIMEOUT_SECS = "300"
+
+effect fn in_dir(dir: String, cmd: String, args: List[String]) -> Result[process.ProcessStatus, String] =
+  process.exec_status("sh", ["-c", "cd \"$0\" && exec \"$@\"", dir, cmd] + args)
+
+effect fn survive_gate(task: Task, solution: String, attempt: Int) -> Result[AttemptResult, String] = {
+  let dir = env.temp_dir() + "/dojo-survive-" + task.name + "-" + int.to_string(attempt)
+  let edit = dir + ".edit.almd"
+  fs.mkdir_p(dir)!
+  fs.write(dir + "/prog.almd", task.baseline + "\n\n" + task.tests)!
+  fs.write(edit, solution + "\n\n" + task.tests)!
+  match process.exec("almide", ["fix", edit]) {
+    ok(_) => {}
+    err(_) => {}
+  }
+  match in_dir(dir, "almide", ["survive", "prog.almd", "--with", edit, "--as", "text", "--json", "--timeout", SURVIVE_TIMEOUT_SECS]) {
+    err(e) => err("almide survive could not start: " + e)
+    ok(st) =>
+      if st.code == 0 then compile_and_test(task, solution, attempt)
+      else if st.code == 1 then ok(AttemptResult { success: false, code: solution, diagnostic: survive_ab.refused_diagnostic(st.stdout) })
+      else err("almide survive could not judge the edit (exit " + int.to_string(st.code) + "): " + string.trim(st.stdout + st.stderr))
+  }
+}
+
+effect fn judge_attempt(cond: String, task: Task, solution: String, attempt: Int) -> Result[AttemptResult, String] =
+  if cond == survive_ab.COND_SURVIVE then survive_gate(task, solution, attempt)
+  else compile_and_test(task, solution, attempt)
+
+// Does the compiler on PATH have `almide survive`? Asked of a two-line edit in
+// a scratch directory, and answered only by a real schema_version-1 verdict:
+// a compiler that does not know the subcommand, or answers something else, is
+// refused by name.
+effect fn survive_probe() -> Result[String, String] = survive_probe_with("almide")
+
+effect fn survive_probe_with(almide: String) -> Result[String, String] = {
+  let dir = env.temp_dir() + "/dojo-survive-probe"
+  fs.mkdir_p(dir)!
+  fs.write(dir + "/a.almd", "fn f() -> Int = 1\n")!
+  fs.write(dir + "/b.txt", "fn f() -> Int = 2\n")!
+  match in_dir(dir, almide, ["survive", "a.almd", "--with", "b.txt", "--as", "text", "--json"]) {
+    err(e) => err(e)
+    ok(st) =>
+      if st.code == 0 and string.contains(st.stdout, "\"schema_version\":1") then ok("`almide survive` answered a schema_version 1 verdict")
+      else err("`almide survive` exited " + int.to_string(st.code) + ": " + string.trim(list.get(string.split(string.trim(st.stderr + st.stdout), "\n"), 0) ?? ""))
+  }
+}
+
 // ── Fix loop ──
 //
 // fix_loop_step distinguishes:
@@ -222,6 +281,7 @@ fn build_retry_prompt(original: String, prev_code: String, diag: String) -> Stri
   "Fix the code and return ONLY the corrected Almide source. No markdown fences, no explanation."
 
 effect fn attempt_once(
+  cond: String,
   task: Task,
   model: String,
   user_prompt: String,
@@ -229,11 +289,12 @@ effect fn attempt_once(
 ) -> Result[AttemptResult, String] = {
   match call_model(model, user_prompt) {
     err(e) => err("call_model: " + e)
-    ok(code) => compile_and_test(task, code, attempt)
+    ok(code) => judge_attempt(cond, task, code, attempt)
   }
 }
 
 effect fn fix_loop_step(
+  cond: String,
   task: Task,
   model: String,
   max_retries: Int,
@@ -253,7 +314,7 @@ effect fn fix_loop_step(
     let user_prompt =
       if attempt == 0 then task.prompt
       else build_retry_prompt(task.prompt, last_code, last_diag)
-    match attempt_once(task, model, user_prompt, attempt) {
+    match attempt_once(cond, task, model, user_prompt, attempt) {
       err(e) => err("attempt " + int.to_string(attempt) + ": " + e)
       ok(result) => {
         let this_attempt = Attempt { code: result.code, diagnostic: result.diagnostic, passed: result.success }
@@ -275,14 +336,16 @@ effect fn fix_loop_step(
             reached: true, measurable: true, reason: "",
           })
         else
-          fix_loop_step(task, model, max_retries, attempt + 1, result.code, result.diagnostic, new_acc)
+          fix_loop_step(cond, task, model, max_retries, attempt + 1, result.code, result.diagnostic, new_acc)
       }
     }
   }
 }
 
-effect fn fix_loop(task: Task, model: String, max_retries: Int) -> Result[RunResult, String] =
-  fix_loop_step(task, model, max_retries, 0, "", "", [])
+// `cond` is the survive A/B arm (src/survive_ab.almd); every lane but the
+// A/B's survive arm runs `control`, which is the loop as it always was.
+effect fn fix_loop(cond: String, task: Task, model: String, max_retries: Int) -> Result[RunResult, String] =
+  fix_loop_step(cond, task, model, max_retries, 0, "", "", [])
 
 // ── Metrics recording ──
 //
@@ -297,10 +360,12 @@ fn model_slug(model: String) -> String =
     |> string.replace("@", "")
     |> string.replace(".", "-")
 
-effect fn write_metrics(result: RunResult) -> Result[String, String] = {
+// `sub` keeps an A/B arm's per-task reports apart from the control arm's:
+// "" for the lane itself, the arm name otherwise.
+effect fn write_metrics(result: RunResult, sub: String) -> Result[String, String] = {
   let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
   let slug = model_slug(result.model)
-  let dir = "runs/" + date + "/" + slug
+  let dir = "runs/" + date + "/" + slug + (if sub == "" then "" else "/" + sub)
   match fs.mkdir_p(dir) {
     err(_) => err("failed to create " + dir)
     ok(_) => {
@@ -325,6 +390,8 @@ effect fn print_usage() -> Unit = {
   println("  almide run src/main.almd -- <task-name> [provider:model]")
   println("  almide run src/main.almd -- all [provider:model]")
   println("  almide run src/main.almd -- bank [provider:model]   # the contract-preserving bank (tasks/bank/)")
+  println("  almide run src/main.almd -- bank <provider:model> --conditions control,survive   # + the almide survive A/B (almide/almide#2147)")
+  println("  almide run src/main.almd -- survive-ab <runs-dir>    # merge the survive A/B's shards (no model call)")
   println("")
   println("Providers:")
   println("  cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast")
@@ -374,7 +441,7 @@ fn absent_cell(task_name: String, model: String, measurable: Bool, reason: Strin
 
 // One planned cell of the `tasks x one model` grid. It always yields a cell:
 // there is no outcome this lane can meet that is not one of the four states.
-effect fn run_cell(task_name: String, model: String) -> RunResult = {
+effect fn run_cell(task_name: String, model: String, cond: String) -> RunResult = {
   println("Loading task: " + task_name)
   match load_task(task_name) {
     // Not measurable in this configuration at all: `harness-limitation`.
@@ -383,10 +450,10 @@ effect fn run_cell(task_name: String, model: String) -> RunResult = {
       absent_cell(task_name, model, false, "load task: " + e)
     }
     ok(task) => {
-      println("Model:    " + model)
+      println("Model:    " + model + (if cond == survive_ab.COND_CONTROL then "" else " [" + cond + "]"))
       println("Retries:  " + int.to_string(DEFAULT_MAX_RETRIES))
       println("")
-      match fix_loop(task, model, DEFAULT_MAX_RETRIES) {
+      match fix_loop(cond, task, model, DEFAULT_MAX_RETRIES) {
         // The model was never answered — an HTTP read timeout, the empty
         // completion `src/llm.almd` refuses, a missing credential. The fix
         // loop discards the attempts it did get, so a run that answered twice
@@ -405,16 +472,18 @@ effect fn run_cell(task_name: String, model: String) -> RunResult = {
 // Write the per-task report for any cell, absent or measured, and print it.
 // An absent cell gets a report too, so the run directory holds every planned
 // task and `backfill` can see the absences it used to have no file for.
-effect fn record_cell(result: RunResult) -> Unit = {
+effect fn record_cell(result: RunResult) -> Unit = record_cell_in(result, "")!
+
+effect fn record_cell_in(result: RunResult, sub: String) -> Unit = {
   print_result(result)!
-  match write_metrics(result) {
+  match write_metrics(result, sub) {
     ok(path) => println("\nReport: " + path)
     err(e) => println("\nWarning: failed to write report: " + e)
   }
 }
 
 effect fn run_task(task_name: String, model: String) -> RunResult = {
-  let result = run_cell(task_name, model)!
+  let result = run_cell(task_name, model, survive_ab.COND_CONTROL)!
   record_cell(result)!
   result
 }
@@ -565,7 +634,26 @@ effect fn resource_tasks(tasks: List[String], acc: List[String]) -> List[String]
     },
   }
 
-effect fn run_bank(model: String) -> Unit = {
+// `conditions` is the survive A/B's arm list (src/survive_ab.almd). The
+// default is `control` alone: the lane exactly as it ran before the A/B.
+// With `survive` it re-asks every task under the survive arm right after the
+// control cell for the same task, so provider drift over a long run lands on
+// both arms alike; the survive arm never enters bank-summary.md, the verdict
+// or the exit code.
+effect fn run_bank(model: String, conditions: List[String]) -> Unit = {
+  let with_survive = survive_ab.plans_survive(conditions)
+  // The survive arm needs the compiler to have `almide survive`. A compiler
+  // without it is refused before any model call: running the arm anyway would
+  // publish the control arm measured twice as an A/B.
+  let probe = if not with_survive then "" else match survive_probe() {
+    ok(p) => p,
+    err(e) => {
+      println(survive_ab.unavailable_reason(compiler_version() ?? "", e))
+      process.exit(2)
+      ""
+    },
+  }
+  if with_survive then println("survive A/B: conditions " + string.join(conditions, ",") + " — " + probe) else {}
   match list_bank_tasks() {
     err(e) => {
       println("Failed to list bank tasks: " + e)
@@ -593,14 +681,16 @@ effect fn run_bank(model: String) -> Unit = {
       let unarmed_reason = "resource oracle unarmed: " + (compiler_version() ?? "") + " prints no allocation-counter line (ALMIDE_ALLOC_COUNT / ALMIDE_WASM_ALLOC_COUNT); advance almide-pin.toml to a release that carries both"
       let absent = blocked |> list.map((t) => absent_cell(t, model, false, unarmed_reason))
       absent |> list.map((r) => record_cell(r)!)!
+      let absent_s = if with_survive then absent else []
+      absent_s |> list.map((r) => record_cell_in(r, survive_ab.COND_SURVIVE)!)!
       if not list.is_empty(blocked) then println(unarmed_reason + " — " + int.to_string(list.len(blocked)) + " task(s) not run") else {}
       println("")
-      match run_all_loop(tasks |> list.filter((t) => not list.contains(blocked, t)), model, absent) {
+      match run_bank_loop(tasks |> list.filter((t) => not list.contains(blocked, t)), model, with_survive, absent, absent_s) {
         err(e) => {
           println("Harness error: " + e)
           process.exit(1)
         }
-        ok(results) => {
+        ok((results, survive_results)) => {
           if list.all(results, (r) => not r.reached) then {
             println("Harness error: no bank task reached the model (" + int.to_string(list.len(results)) + " tasks, 0 answered); no summary written")
             process.exit(2)
@@ -618,6 +708,15 @@ effect fn run_bank(model: String) -> Unit = {
             let timeout = http_timeout_secs() ?? ""
             fs.write(path, bank_counts(date, results) + scope + "\n" + render.render_summary(date, model, compiler, timeout, results))!
             println("Bank summary: " + path)
+            if with_survive then {
+              let planned = tasks
+              let notes = (if shard == "" then [] else ["**shard**: `" + shard + "` (" + int.to_string(list.len(tasks)) + " tasks of this run; merge the shards with `almide run src/main.almd -- survive-ab <runs-dir>`)"]) +
+                (if limit > 0 then ["**scope**: first " + int.to_string(list.len(tasks)) + " of " + int.to_string(list.len(all_tasks)) + " bank tasks (BANK_LIMIT) — a smoke, not the bank"] else [])
+              match write_survive_ab(date, model, label, limit, shard, planned, results, survive_results, probe, notes) {
+                ok(abdir) => println("Survive A/B: " + abdir + "/{manifest.json, table.md}")
+                err(e) => println("Warning: failed to write the survive A/B: " + e)
+              }
+            } else {}
             let v = render.daily_verdict(results)
             println("verdict: " + v.id)
             let passed = list.count(results, (r) => r.reached and r.success)
@@ -630,6 +729,152 @@ effect fn run_bank(model: String) -> Unit = {
     }
   }
 }
+
+// Task-major: each task's control cell, then (when planned) its survive cell.
+effect fn run_bank_loop(tasks: List[String], model: String, with_survive: Bool, ctl: List[RunResult], srv: List[RunResult]) -> Result[(List[RunResult], List[RunResult]), String] =
+  match list.first(tasks) {
+    none => ok((ctl, srv)),
+    some(t) => {
+      println("=== " + t + " ===")
+      let r = run_task(t, model)!
+      let s = if with_survive then {
+        println("=== " + t + " [" + survive_ab.COND_SURVIVE + "] ===")
+        let x = run_cell(t, model, survive_ab.COND_SURVIVE)!
+        record_cell_in(x, survive_ab.COND_SURVIVE)!
+        [x]
+      } else []
+      println("")
+      run_bank_loop(list.drop(tasks, 1), model, with_survive, ctl + [r], srv + s)
+    },
+  }
+
+// ── The survive A/B's own artifacts ──
+
+effect fn git_line(args: List[String]) -> String =
+  match process.exec("git", args) {
+    ok(s) => string.trim(s)
+    err(_) => ""
+  }
+
+effect fn compiler_pin() -> String =
+  match fs.read_text("almide-pin.toml") {
+    err(_) => ""
+    ok(raw) => string.split(raw, "\n")
+      |> list.map(string.trim)
+      |> list.filter((l) => string.starts_with(l, "ref"))
+      |> list.filter_map((l) => list.get(string.split(l, "\""), 1))
+      |> list.first
+      |> option.unwrap_or("")
+  }
+
+fn ab_title(date: String, label: String) -> String =
+  "Survive A/B (bank, almide/almide#2147) " + date + (if label == "" then "" else " [" + label + "]")
+
+fn ab_facts(model: String, compiler: String, pin: String, probe: String, notes: List[String]) -> List[String] =
+  ["**model**: `" + model + "` (both arms; temperature 0.0, one transport attempt per call)",
+   "**compiler**: `" + compiler + "` (pin `" + pin + "`) — " + probe] + notes
+
+effect fn write_survive_ab(date: String, model: String, label: String, limit: Int, shard: String, planned: List[String], ctl: List[RunResult], srv: List[RunResult], probe: String, notes: List[String]) -> Result[String, String] = {
+  let dir = "runs/" + date + "/" + model_slug(model) + "/survive-ab" + (if label == "" then "" else "-" + label)
+  fs.mkdir_p(dir)!
+  let cells = (ctl |> list.map((r) => survive_ab.cell_of(survive_ab.COND_CONTROL, r))) +
+    (srv |> list.map((r) => survive_ab.cell_of(survive_ab.COND_SURVIVE, r)))
+  let compiler = compiler_version()!
+  let pin = compiler_pin()!
+  let run = [
+    ("date", value.str(date)),
+    ("label", value.str(label)),
+    ("model", value.object([
+      ("spec", value.str(model)),
+      ("provider", value.str(llm.provider_of(model))),
+      ("temperature_requested", value.float(0.0)),
+      ("transport_attempts", value.int(1)),
+      ("http_timeout_secs", value.str(http_timeout_secs()!)),
+    ])),
+    ("compiler", value.object([
+      ("pin", value.str(pin)),
+      ("version", value.str(compiler)),
+      ("survive", value.str(probe)),
+    ])),
+    ("harness", value.object([
+      ("repo", value.str("almide/almide-dojo")),
+      ("commit", value.str(git_line(["rev-parse", "HEAD"])!)),
+      ("dirty", value.bool(git_line(["status", "--porcelain", "--", "src", "tasks"])! != "")),
+    ])),
+    ("selection", value.object([
+      ("limit", value.int(limit)),
+      ("shard", value.str(shard)),
+    ])),
+  ]
+  fs.write(dir + "/manifest.json", json.stringify_pretty(survive_ab.manifest(run, DEFAULT_MAX_RETRIES, planned, cells)) + "\n")!
+  fs.write(dir + "/table.md", survive_ab.render_table(ab_title(date, label), ab_facts(model, compiler, pin, probe, notes), DEFAULT_MAX_RETRIES, planned, cells))!
+  ok(dir)
+}
+
+// `survive-ab <root>`: merge every survive-ab manifest under <root> (the
+// pilot lane writes one per shard) into <root>/survive-ab/{manifest.json,
+// table.md}, re-deciding the verdict and the criterion over the union. It
+// refuses shards that measured different models or compilers: that union is
+// not one A/B. No model call.
+fn jfield(v: Value, key: String) -> Value = json.get_path(v, json.field(json.root(), key)) ?? value.null()
+
+effect fn merge_survive_ab(root: String) -> Unit = {
+  let out = root + "/survive-ab"
+  let found = match process.exec("find", [root, "-path", "*survive-ab*/manifest.json"]) {
+    ok(s) => s
+    err(_) => ""
+  }
+  let paths = string.split(found, "\n") |> list.map(string.trim)
+    |> list.filter((p) => p != "" and p != out + "/manifest.json") |> list.sort
+  if list.is_empty(paths) then {
+    println("no survive-ab/manifest.json under " + root + ": nothing to merge")
+    process.exit(2)
+  } else {}
+  let ms = (paths |> list.map((p) => json.parse(fs.read_text(p)!)!))!
+  let models = ms |> list.map((m) => json.get_string(jfield(m, "model"), "spec") ?? "") |> list.unique
+  let compilers = ms |> list.map((m) => json.get_string(jfield(m, "compiler"), "version") ?? "") |> list.unique
+  if list.len(models) != 1 or list.len(compilers) != 1 then {
+    println("refused: the manifests under " + root + " measured " + string.join(models, ", ") + " with " + string.join(compilers, ", ") + " — one A/B is one model and one compiler")
+    process.exit(2)
+  } else {}
+  let first = list.first(ms) ?? value.null()
+  let tasks = ms |> list.flat_map((m) => (json.get_array(jfield(m, "task_set"), "tasks") ?? []) |> list.filter_map((t) => value.as_string(t) |> result.to_option))
+  let cells = ms |> list.flat_map(survive_ab.cells_from_manifest)
+  let retries = json.get_int(jfield(first, "budget"), "retries") ?? DEFAULT_MAX_RETRIES
+  let model = list.first(models) ?? ""
+  let compiler = list.first(compilers) ?? ""
+  let comp = jfield(first, "compiler")
+  let run = [
+    ("date", value.str(json.get_string(first, "date") ?? "")),
+    ("label", value.str("merged")),
+    ("merged_from", value.array(paths |> list.map(value.str))),
+    ("model", jfield(first, "model")),
+    ("compiler", comp),
+  ]
+  fs.mkdir_p(out)!
+  fs.write(out + "/manifest.json", json.stringify_pretty(survive_ab.manifest(run, retries, tasks, cells)) + "\n")!
+  let facts = ab_facts(model, compiler, json.get_string(comp, "pin") ?? "", json.get_string(comp, "survive") ?? "",
+    ["**merged**: " + int.to_string(list.len(paths)) + " manifest(s) under `" + root + "`"])
+  let table = survive_ab.render_table(ab_title(json.get_string(first, "date") ?? "", "merged"), facts, retries, tasks, cells)
+  fs.write(out + "/table.md", table)!
+  println(table)
+  println("Written: " + out + "/{manifest.json, table.md}")
+}
+
+// `bank <model> [--conditions a,b]`, else BANK_CONDITIONS, else control alone.
+fn bank_condition_spec(rest: List[String], env_spec: String) -> Result[String, String] =
+  match rest {
+    [] => ok(env_spec),
+    ["--conditions", v] => ok(v),
+    _ => err("usage: bank <provider:model> [--conditions control[,survive]] (got " + string.join(rest, " ") + ")"),
+  }
+
+fn bank_conditions(rest: List[String], env_spec: String) -> Result[List[String], String] =
+  match bank_condition_spec(rest, env_spec) {
+    err(e) => err(e),
+    ok(spec) => if string.trim(spec) == "" then ok(survive_ab.DEFAULT_CONDITIONS)
+      else survive_ab.parse_conditions(survive_ab.split_list(spec)),
+  }
 
 effect fn run_all_finish(date: String, model: String, results: List[RunResult]) -> Unit = {
   match write_summary(date, model, results) {
@@ -680,7 +925,15 @@ effect fn main() -> Unit = {
     if first == "all" then
       run_all(model)!
     else if first == "bank" then
-      run_bank(model)!
+      match bank_conditions(list.drop(args, 2), env.get("BANK_CONDITIONS") ?? "") {
+        ok(cs) => run_bank(model, cs)!
+        err(e) => {
+          println(e)
+          process.exit(1)
+        }
+      }
+    else if first == "survive-ab" then
+      merge_survive_ab(list.get(args, 1) ?? "runs")!
     else if first == "backfill" then
       backfill.backfill_all()!
     else {
@@ -905,4 +1158,25 @@ test "a bank shard keeps every i-th task, and a malformed spec keeps them all" {
   assert_eq(bank_shard(ts, "1/2"), ["b", "d"])
   assert_eq(bank_shard(ts, ""), ts)
   assert_eq(bank_shard(ts, "2/2"), ts)
+}
+
+test "the survive A/B is planned only when it is asked for, by flag or by BANK_CONDITIONS" {
+  assert_eq(bank_conditions([], ""), ok([survive_ab.COND_CONTROL]))
+  assert_eq(bank_conditions(["--conditions", "control,survive"], ""), ok([survive_ab.COND_CONTROL, survive_ab.COND_SURVIVE]))
+  assert_eq(bank_conditions([], "control,survive"), ok([survive_ab.COND_CONTROL, survive_ab.COND_SURVIVE]))
+  // The flag outranks the environment.
+  assert_eq(bank_conditions(["--conditions", "control"], "control,survive"), ok([survive_ab.COND_CONTROL]))
+  // No control arm, an unknown arm, or a stray argument: refused, never guessed.
+  assert(match bank_conditions(["--conditions", "survive"], "") { ok(_) => false, err(_) => true })
+  assert(match bank_conditions([], "control,effects") { ok(_) => false, err(_) => true })
+  assert(match bank_conditions(["--retries", "2"], "") { ok(_) => false, err(_) => true })
+}
+
+test "a compiler that cannot answer almide survive is refused by name, not run" {
+  // `false` stands in for a compiler without the subcommand: it exits
+  // non-zero and prints no verdict, exactly the shape v0.63.1 answers with.
+  let r = survive_probe_with("false")
+  assert(match r { ok(_) => false, err(e) => string.contains(e, "exited 1") })
+  // `true` exits 0 but prints no schema_version-1 verdict: still refused.
+  assert(match survive_probe_with("true") { ok(_) => false, err(_) => true })
 }
