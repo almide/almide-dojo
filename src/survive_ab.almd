@@ -1,0 +1,466 @@
+// The `almide survive` A/B on the contract-preserving bank (almide/almide#2147).
+//
+// #2147's victory condition: "Dojo A/B, same model: mean attempts per task
+// with `survive` available is >= 20 % lower than without". This module holds
+// that A/B's definitions, its verdict, its manifest and its table; the runner
+// (src/main.almd, `bank`) plans the arms and runs them.
+//
+//   control  the bank lane as it always runs: every proposed edit is written,
+//            `almide test` judges it with the visible suite, then the hidden
+//            oracle, the wasm leg and (where declared) the resource oracle. A
+//            failed attempt's feedback is that post-hoc output.
+//   survive  the same loop, except that every proposed edit first goes through
+//            `almide survive` against the baseline (both sides carry the
+//            visible suite). An edit that newly breaks something the baseline
+//            had working — an error diagnostic, a visible test, a contract — is
+//            REFUSED: not applied, not scored by any oracle, and the model's
+//            next prompt carries the survival delta (the `newly_broken` entries
+//            verbatim, each diagnostic with its hint and repair, and the tests
+//            that were already failing) in place of the post-hoc output. An edit
+//            that survives is judged by exactly the control oracle and gets
+//            exactly the control feedback.
+//
+// ATTEMPT = one model completion proposing a whole-file edit, i.e. one model
+// call. Both arms: the same budget (1 + retries), the same retry template,
+// model, sampling, task list and oracle. A refused edit is an attempt: it cost
+// a model call; it is only not applied. So "attempts per task" counts the same
+// thing in both arms, and survive can only win by making the NEXT proposal
+// better — it cannot win by hiding calls.
+//
+// Why a refusal never changes a pass into a fail: survive refuses only an edit
+// that newly breaks an error diagnostic or a visible test, and such an edit
+// fails the control arm's `almide test` too. The first attempt is therefore
+// scored identically in both arms; the arms differ only in what the model is
+// told after a failed attempt.
+
+import json
+import self.types.{RunResult, Attempt}
+import self.cellstate.{Verdict}
+import self.cellstate
+
+let COND_CONTROL = "control"
+let COND_SURVIVE = "survive"
+let CONDITIONS = [COND_CONTROL, COND_SURVIVE]
+// The A/B is planned only when it is asked for: a plain `bank` run is the
+// control arm alone, exactly as before.
+let DEFAULT_CONDITIONS = [COND_CONTROL]
+
+// #2147's threshold, as a percentage of the control arm's mean.
+let CRITERION_PCT = 20
+
+// The first line of a refused attempt's diagnostic. It is a marker in the
+// diagnostic, like the bank's own verdict markers, so the attempt record needs
+// no new field and a refusal can be counted from the record alone.
+let SURVIVE_REFUSED = "[survive] refused before it was applied: this edit newly breaks something the baseline had working, so it was not written and no oracle judged it. The survival delta (`almide survive --json`) follows."
+
+let ATTEMPT_DEFINITION = "one model completion proposing a whole-file edit (one model call). Both arms have the same budget of 1 + retries attempts. In the survive arm an edit that `almide survive` refuses is still an attempt: it cost a model call and is only not applied. A task that never passes counts every attempt it used."
+
+let TASK_SET_REASON = "tasks/bank, the contract-preserving modification bank: every task is an edit of an already-correct baseline, which is the shape `almide survive` judges (an edit against a baseline). The classic bank and the cross-language set ask for a program from nothing, where there is no baseline to survive against."
+
+fn what_of(cond: String) -> String =
+  match cond {
+    "control" => "the bank lane as it always runs: the edit is written and judged by almide test, then the hidden oracle, the wasm leg and the resource oracle; a failed attempt is followed by that post-hoc output",
+    "survive" => "every proposed edit first goes through `almide survive` against the baseline (both sides carry the visible suite); an edit that newly breaks an error diagnostic, a visible test or a contract is refused unapplied and the next prompt carries the survival delta instead of the post-hoc output; a surviving edit is judged and answered exactly as in control",
+    _ => "",
+  }
+
+fn split_list(s: String) -> List[String] =
+  string.split(s, ",") |> list.map(string.trim) |> list.filter((x) => x != "")
+
+// The conditions, in CONDITIONS order and without repeats. `control` is the
+// bank run whose summary and exit code the lane publishes, so a run without
+// it has no A arm.
+fn parse_conditions(names: List[String]) -> List[String]! = {
+  let unknown = names |> list.filter((n) => not list.contains(CONDITIONS, n))
+  if not list.is_empty(unknown) then
+    err("unknown condition(s) " + string.join(unknown, ", ") + " (known: " + string.join(CONDITIONS, ", ") + ")")
+  else if not list.contains(names, COND_CONTROL) then
+    err("--conditions must include `" + COND_CONTROL + "`: it is the bank run itself and the A arm of the survive A/B")
+  else ok(CONDITIONS |> list.filter((c) => list.contains(names, c)))
+}
+
+fn plans_survive(conditions: List[String]) -> Bool = list.contains(conditions, COND_SURVIVE)
+
+// The refusal a compiler without `almide survive` gets. The survive arm is
+// never run on such a compiler: running it would be the control arm measured
+// twice under another name.
+fn unavailable_reason(version: String, probe: String) -> String =
+  "--conditions survive needs `almide survive` (almide/almide#2147), and the compiler on PATH (" +
+    (if version == "" then "unknown version" else version) + ") does not have it: " + probe +
+    ". Advance almide-pin.toml to a release that carries `almide survive`. Refused before any model call, rather than running the control arm twice."
+
+// ── The survival delta a refused attempt feeds back ──
+
+fn bad_test_state(s: String) -> Bool = s != "pass" and s != "ignored"
+
+fn sub_array(v: Value, a: String, b: String) -> List[Value] =
+  match json.get_path(v, json.field(json.root(), a)) {
+    some(x) => json.get_array(x, b) ?? [],
+    none => [],
+  }
+
+fn sub_value(v: Value, a: String) -> Value =
+  json.get_path(v, json.field(json.root(), a)) ?? value.null()
+
+// What the model is shown: the delta's `newly_broken` entries exactly as the
+// compiler wrote them (each diagnostic object carries its hint and, from the
+// #2149 schema on, its repair), the summary counts, and the visible tests the
+// baseline was already failing that still fail — the requested change the
+// edit has not made yet, which the control arm's test output shows too.
+// Unchanged good entries and fixed entries are dropped: they say nothing the
+// model has to act on. An unreadable delta is passed through as it came.
+fn render_delta(raw: String) -> String =
+  match json.parse(raw) {
+    err(_) => string.trim(raw),
+    ok(v) => {
+      let still = sub_array(v, "tests", "unchanged")
+        |> list.filter((t) => bad_test_state(json.get_string(t, "after") ?? ""))
+      json.stringify_pretty(value.object([
+        ("schema_version", value.int(json.get_int(v, "schema_version") ?? 0)),
+        ("survives", value.bool(json.get_bool(v, "survives") ?? false)),
+        ("summary", sub_value(v, "summary")),
+        ("newly_broken", value.object([
+          ("check", value.array(sub_array(v, "check", "newly_broken"))),
+          ("tests", value.array(sub_array(v, "tests", "newly_broken"))),
+          ("contracts", value.array(sub_array(v, "contracts", "newly_broken"))),
+        ])),
+        ("still_failing_tests", value.array(still)),
+      ]))
+    },
+  }
+
+fn refused_diagnostic(raw: String) -> String = SURVIVE_REFUSED + "\n\n" + render_delta(raw)
+
+fn is_refused(a: Attempt) -> Bool = string.starts_with(a.diagnostic, SURVIVE_REFUSED)
+
+// ── One arm's cells ──
+//
+// A cell of the A/B, reduced to what the verdict needs. It is read back from
+// a written manifest by `survive-ab <dir>` (the merge over shards), so it
+// carries no source text.
+type SCell = { task: String, arm: String, reached: Bool, success: Bool, attempts: Int, refused: Int, reason: String }
+
+fn cell_of(arm: String, r: RunResult) -> SCell =
+  SCell {
+    task: r.task, arm: arm, reached: r.reached, success: r.success,
+    attempts: list.len(r.attempts),
+    refused: list.count(r.attempts, is_refused),
+    reason: r.reason,
+  }
+
+fn reached(cells: List[SCell]) -> List[SCell] = cells |> list.filter((c) => c.reached)
+
+fn one_shot(c: SCell) -> Bool = c.success and c.attempts == 1
+
+fn total_attempts(cells: List[SCell]) -> Int = reached(cells) |> list.map((c) => c.attempts) |> list.sum
+
+// A mean as text with two decimals, from integers (no float rounding in a
+// published number).
+fn mean_text(total: Int, n: Int) -> String =
+  if n == 0 then "—"
+  else {
+    let x100 = (total * 100 + n / 2) / n
+    let frac = x100 % 100
+    int.to_string(x100 / 100) + "." + (if frac < 10 then "0" else "") + int.to_string(frac)
+  }
+
+// ── The A/B verdict: the shared decision table over two series ──
+//
+// Both arms must have reached every planned task (paired, one denominator),
+// and both arms at the ceiling of FIRST-attempt passes is a comparison that
+// separates nothing: survive can only act after a failed attempt.
+fn ab_verdict(planned: Int, a: List[SCell], b: List[SCell]) -> Verdict = {
+  let ra = reached(a)
+  let rb = reached(b)
+  let any_reached = not list.is_empty(ra) and not list.is_empty(rb)
+  let complete = list.len(ra) == planned and list.len(rb) == planned
+  let saturated = cellstate.saturated_series(list.count(ra, one_shot), list.len(ra)) and
+    cellstate.saturated_series(list.count(rb, one_shot), list.len(rb))
+  let reasons =
+    if not any_reached then ["an arm reached no task: " + COND_CONTROL + " " + int.to_string(list.len(ra)) + ", " + COND_SURVIVE + " " + int.to_string(list.len(rb)) + " of " + int.to_string(planned)]
+    else if not complete then
+      ["the two arms reached different task sets, so their means share no denominator: " + COND_CONTROL + " " +
+        int.to_string(list.len(ra)) + "/" + int.to_string(planned) + ", " + COND_SURVIVE + " " + int.to_string(list.len(rb)) + "/" + int.to_string(planned)]
+    else if saturated then ["both arms pass nearly every task on the first attempt, so survive (which acts only after a failed attempt) had nothing to change (almide-dojo#3)"]
+    else []
+  cellstate.verdict(any_reached, complete, saturated, reasons)
+}
+
+// #2147's criterion: mean_survive <= (1 - 20%) * mean_control, decided in
+// integers — survive_total * control_n * 100 <= control_total * survive_n * 80.
+// `undecided` whenever the A/B is not a certified, conclusive comparison: a
+// criterion over unequal task sets or a saturated bank is not evidence.
+type Criterion = { id: String, reduction_pct_x10: Int, reasons: List[String] }
+
+fn criterion(planned: Int, a: List[SCell], b: List[SCell]) -> Criterion = {
+  let v = ab_verdict(planned, a, b)
+  let an = list.len(reached(a))
+  let bn = list.len(reached(b))
+  let at = total_attempts(a)
+  let bt = total_attempts(b)
+  let red = if at == 0 or bn == 0 then 0 else ((at * bn - bt * an) * 1000) / (at * bn)
+  let refusals = reached(b) |> list.map((c) => c.refused) |> list.sum
+  let note = if refusals == 0 and an > 0 then ["survive refused no edit in this run, so both arms received the same feedback on every attempt; any difference is sampling, not survive"] else []
+  if not v.comparable or not v.conclusive then
+    Criterion { id: "undecided", reduction_pct_x10: red, reasons: ["the A/B verdict is `" + v.id + "`, so the criterion is not decided"] + v.reasons }
+  else if bt * an * 100 <= at * bn * (100 - CRITERION_PCT) then
+    Criterion { id: "met", reduction_pct_x10: red, reasons: note }
+  else
+    Criterion { id: "not-met", reduction_pct_x10: red, reasons: note }
+}
+
+fn pct_x10_text(x: Int) -> String = {
+  let s = if x < 0 then "-" else ""
+  let m = if x < 0 then 0 - x else x
+  s + int.to_string(m / 10) + "." + int.to_string(m % 10) + "%"
+}
+
+// ── Manifest ──
+
+fn arm_json(cells: List[SCell], planned: Int) -> Value = {
+  let got = reached(cells)
+  let absent = planned - list.len(got)
+  value.object([
+    ("reached", value.int(list.len(got))),
+    ("passed", value.int(list.count(got, (c) => c.success))),
+    ("one_shot", value.int(list.count(got, one_shot))),
+    ("attempts_total", value.int(total_attempts(cells))),
+    ("mean_attempts_per_task", value.str(mean_text(total_attempts(cells), list.len(got)))),
+    ("final_pass", value.str(cellstate.rate(list.count(got, (c) => c.success), absent, planned))),
+    ("refused_edits", value.int(got |> list.map((c) => c.refused) |> list.sum)),
+    ("tasks_with_a_refusal", value.int(list.count(got, (c) => c.refused > 0))),
+  ])
+}
+
+fn cell_json(c: SCell) -> Value =
+  value.object([
+    ("task", value.str(c.task)),
+    ("arm", value.str(c.arm)),
+    ("reached", value.bool(c.reached)),
+    ("success", value.bool(c.success)),
+    ("attempts", value.int(c.attempts)),
+    ("refused", value.int(c.refused)),
+    ("reason", value.str(c.reason)),
+  ])
+
+fn cell_from_json(v: Value) -> SCell =
+  SCell {
+    task: json.get_string(v, "task") ?? "",
+    arm: json.get_string(v, "arm") ?? "",
+    reached: json.get_bool(v, "reached") ?? false,
+    success: json.get_bool(v, "success") ?? false,
+    attempts: json.get_int(v, "attempts") ?? 0,
+    refused: json.get_int(v, "refused") ?? 0,
+    reason: json.get_string(v, "reason") ?? "",
+  }
+
+fn cells_from_manifest(m: Value) -> List[SCell] =
+  (json.get_array(m, "cells") ?? []) |> list.map(cell_from_json)
+
+fn arm(cells: List[SCell], name: String) -> List[SCell] = cells |> list.filter((c) => c.arm == name)
+
+// The run's identity for the A/B. `run` = the facts the runner stamps
+// (date, model, compiler, harness commit, label, selection); they are passed
+// as a ready object so this module stays free of process and fs.
+fn manifest(run: List[(String, Value)], retries: Int, tasks: List[String], cells: List[SCell]) -> Value = {
+  let planned = list.len(tasks)
+  let a = arm(cells, COND_CONTROL)
+  let b = arm(cells, COND_SURVIVE)
+  let v = ab_verdict(planned, a, b)
+  let c = criterion(planned, a, b)
+  value.object(run + [
+    ("lane", value.str("bank")),
+    ("issue", value.str("almide/almide#2147")),
+    ("gates", value.str("nothing: the control arm's bank-summary and exit code are the run's verdict; this A/B is reported beside them")),
+    ("attempt", value.str(ATTEMPT_DEFINITION)),
+    ("budget", value.object([("retries", value.int(retries)), ("max_attempts_per_task", value.int(retries + 1))])),
+    ("task_set", value.object([
+      ("path", value.str("tasks/bank")),
+      ("why", value.str(TASK_SET_REASON)),
+      ("planned_tasks", value.int(planned)),
+      ("tasks", value.array(tasks |> list.map(value.str))),
+    ])),
+    ("conditions", value.array(CONDITIONS |> list.map((cond) => value.object([
+      ("name", value.str(cond)),
+      ("what", value.str(what_of(cond))),
+    ] + (if cond == COND_SURVIVE then [
+      ("command", value.str("almide survive prog.almd --with <edit> --as text --json, in a directory holding only prog.almd = baseline + visible tests; <edit> = the proposed program + the same visible tests, after the same `almide fix` the control arm applies")),
+      ("hidden_oracle_reaches_survive", value.bool(false)),
+    ] else []))))),
+    ("survive_ab", value.object([
+      ("verdict", value.object([
+        ("id", value.str(v.id)),
+        ("comparable", value.bool(v.comparable)),
+        ("conclusive", value.bool(v.conclusive)),
+        ("reasons", value.array(v.reasons |> list.map(value.str))),
+      ])),
+      ("criterion", value.object([
+        ("statement", value.str("mean attempts per task in the survive arm is at least " + int.to_string(CRITERION_PCT) + "% lower than in the control arm (almide/almide#2147 victory condition)")),
+        ("id", value.str(c.id)),
+        ("reduction", value.str(pct_x10_text(c.reduction_pct_x10))),
+        ("reasons", value.array(c.reasons |> list.map(value.str))),
+      ])),
+      (COND_CONTROL, arm_json(a, planned)),
+      (COND_SURVIVE, arm_json(b, planned)),
+    ])),
+    ("cells", value.array(cells |> list.map(cell_json))),
+  ])
+}
+
+// ── Table ──
+
+fn cell_text(c: SCell) -> String =
+  if not c.reached then cellstate.ST_NOT_RUN
+  else (if c.success then "pass" else "FAIL") + " in " + int.to_string(c.attempts) +
+    (if c.refused > 0 then " (" + int.to_string(c.refused) + " refused)" else "")
+
+fn arm_row(name: String, cells: List[SCell], planned: Int) -> String = {
+  let got = reached(cells)
+  let absent = planned - list.len(got)
+  "| `" + name + "` | " + int.to_string(list.len(got)) + "/" + int.to_string(planned) + " | " +
+    mean_text(total_attempts(cells), list.len(got)) + " | " +
+    cellstate.rate(list.count(got, (c) => c.success), absent, planned) + " | " +
+    cellstate.rate(list.count(got, one_shot), absent, planned) + " | " +
+    int.to_string(got |> list.map((c) => c.refused) |> list.sum) + " |"
+}
+
+fn find_cell(cells: List[SCell], t: String) -> String =
+  match list.find(cells, (c) => c.task == t) {
+    some(c) => cell_text(c),
+    none => cellstate.ST_NOT_RUN,
+  }
+
+fn render_table(title: String, facts: List[String], retries: Int, tasks: List[String], cells: List[SCell]) -> String = {
+  let planned = list.len(tasks)
+  let a = arm(cells, COND_CONTROL)
+  let b = arm(cells, COND_SURVIVE)
+  let v = ab_verdict(planned, a, b)
+  let c = criterion(planned, a, b)
+  let n = int.to_string(planned)
+  "# " + title + "\n\n" +
+    "> **Criterion (almide/almide#2147): `" + c.id + "`** — mean attempts per task " +
+    mean_text(total_attempts(a), list.len(reached(a))) + " (control) → " +
+    mean_text(total_attempts(b), list.len(reached(b))) + " (survive), a " + pct_x10_text(c.reduction_pct_x10) +
+    " reduction against a " + int.to_string(CRITERION_PCT) + "% threshold\n" +
+    (c.reasons |> list.map((r) => "> - " + r + "\n") |> string.join("")) + "\n" +
+    cellstate.verdict_block(v, "the survive A/B over the contract-preserving bank") +
+    (facts |> list.map((f) => "- " + f + "\n") |> string.join("")) +
+    "- **attempt**: " + ATTEMPT_DEFINITION + "\n" +
+    "- **budget**: " + int.to_string(retries + 1) + " attempts per task (1 + " + int.to_string(retries) + " retries), both arms\n" +
+    "- **task set**: " + n + " bank tasks. " + TASK_SET_REASON + "\n" +
+    "- **gates**: nothing. The control arm's bank-summary and exit code are the run's verdict; this A/B never changes them.\n\n" +
+    "| arm | what the model gets | \n|---|---|\n" +
+    "| `" + COND_CONTROL + "` | " + what_of(COND_CONTROL) + " |\n" +
+    "| `" + COND_SURVIVE + "` | " + what_of(COND_SURVIVE) + " |\n\n" +
+    "| arm | reached | mean attempts per task | final pass (of " + n + ") | 1-shot (of " + n + ") | refused edits |\n|---|---|---|---|---|---|\n" +
+    arm_row(COND_CONTROL, a, planned) + "\n" + arm_row(COND_SURVIVE, b, planned) + "\n\n" +
+    "## Per task\n\n| task | `" + COND_CONTROL + "` | `" + COND_SURVIVE + "` |\n|---|---|---|\n" +
+    (tasks |> list.map((t) => "| `" + t + "` | " + find_cell(a, t) + " | " + find_cell(b, t) + " |") |> string.join("\n")) + "\n"
+}
+
+// ── Tests ──
+
+fn t_att(diag: String, passed: Bool) -> Attempt = Attempt { code: "", diagnostic: diag, passed: passed }
+
+fn t_run(task: String, atts: List[Attempt], success: Bool) -> RunResult = RunResult {
+  task: task, model: "cf:m", success: success, retries: list.len(atts) - 1,
+  final_diagnostic: "", final_code: "", attempts: atts,
+  reached: true, measurable: true, reason: "",
+}
+
+fn t_cell(arm: String, task: String, attempts: Int, success: Bool) -> SCell =
+  SCell { task: task, arm: arm, reached: true, success: success, attempts: attempts, refused: 0, reason: "" }
+
+test "the survive arm is planned only when asked for, and never without the control arm" {
+  assert_eq(DEFAULT_CONDITIONS, [COND_CONTROL])
+  assert(not plans_survive(DEFAULT_CONDITIONS))
+  assert_eq(parse_conditions(split_list("survive, control")), ok([COND_CONTROL, COND_SURVIVE]))
+  assert(plans_survive(parse_conditions(["control", "survive"]) ?? []))
+  assert(match parse_conditions(["survive"]) { ok(_) => false, err(_) => true })
+  assert(match parse_conditions(["control", "unmentioned"]) { ok(_) => false, err(_) => true })
+  let e = match parse_conditions(["control", "bogus"]) { ok(_) => "", err(m) => m }
+  assert(string.contains(e, "bogus"))
+  let u = unavailable_reason("almide 0.63.1 (release, bc0294b4e)", "unrecognized subcommand 'survive'")
+  assert(string.contains(u, "almide 0.63.1"))
+  assert(string.contains(u, "almide-pin.toml"))
+  assert(string.contains(u, "rather than running the control arm twice"))
+}
+
+test "a refused edit is an attempt, counted from its marker, and its feedback is the delta's newly broken entries" {
+  let raw = "{\"schema_version\":1,\"survives\":false,\"summary\":{\"check\":{\"newly_broken\":1}},\"check\":{\"unchanged\":[],\"newly_broken\":[{\"checked\":\"prog.almd\",\"before\":null,\"after\":{\"code\":\"E031\",\"message\":\"m\",\"hint\":\"h\",\"repair\":{\"kind\":\"replace\"}}}],\"newly_fixed\":[],\"removed\":[]},\"tests\":{\"unchanged\":[{\"name\":\"old\",\"before\":\"pass\",\"after\":\"pass\"},{\"name\":\"new req\",\"before\":\"fail\",\"after\":\"fail\"}],\"newly_broken\":[{\"name\":\"kept\",\"before\":\"pass\",\"after\":\"compile_error\"}]},\"contracts\":{}}"
+  let d = refused_diagnostic(raw)
+  assert(string.starts_with(d, SURVIVE_REFUSED))
+  // The repair travels verbatim; the good unchanged test does not.
+  assert(string.contains(d, "\"repair\""))
+  assert(string.contains(d, "\"E031\""))
+  assert(string.contains(d, "\"kept\""))
+  assert(string.contains(d, "\"new req\""))
+  assert(not string.contains(d, "\"old\""))
+  // A delta that is not JSON is passed through, not dropped.
+  assert(string.contains(refused_diagnostic("not json"), "not json"))
+  // Two refusals and a pass: three attempts, two refused.
+  let r = t_run("t", [t_att(d, false), t_att(d, false), t_att("", true)], true)
+  let c = cell_of(COND_SURVIVE, r)
+  assert_eq(c.attempts, 3)
+  assert_eq(c.refused, 2)
+  assert(not one_shot(c))
+}
+
+test "the criterion is decided in integers on a paired, complete, conclusive A/B only" {
+  let a = [t_cell("control", "x", 4, false), t_cell("control", "y", 1, true), t_cell("control", "z", 3, true)]
+  // 8 -> 6 attempts over 3 tasks: exactly 25% lower, met.
+  let b = [t_cell("survive", "x", 2, true), t_cell("survive", "y", 1, true), t_cell("survive", "z", 3, true)]
+  let c = criterion(3, a, b)
+  assert_eq(c.id, "met")
+  assert_eq(pct_x10_text(c.reduction_pct_x10), "25.0%")
+  assert_eq(mean_text(8, 3), "2.67")
+  // 9 -> 6 is a third, printed truncated, never rounded up past the truth.
+  assert_eq(pct_x10_text(criterion(3, [t_cell("control", "x", 3, true), t_cell("control", "y", 3, true), t_cell("control", "z", 3, true)], [t_cell("survive", "x", 2, true), t_cell("survive", "y", 2, true), t_cell("survive", "z", 2, true)]).reduction_pct_x10), "33.3%")
+  // Exactly 20% (10 -> 8) meets it; 10 -> 9 does not.
+  let a10 = [t_cell("control", "x", 4, false), t_cell("control", "y", 4, false), t_cell("control", "z", 2, true)]
+  let b8 = [t_cell("survive", "x", 4, false), t_cell("survive", "y", 2, true), t_cell("survive", "z", 2, true)]
+  assert_eq(criterion(3, a10, b8).id, "met")
+  let b9 = [t_cell("survive", "x", 4, false), t_cell("survive", "y", 3, true), t_cell("survive", "z", 2, true)]
+  assert_eq(criterion(3, a10, b9).id, "not-met")
+  // A missing survive cell: the means share no denominator, so undecided.
+  let short = criterion(3, a10, list.take(b8, 2))
+  assert_eq(short.id, "undecided")
+  assert_eq(ab_verdict(3, a10, list.take(b8, 2)).id, "not-comparable")
+  // Every task 1-shot in both arms: survive had nothing to act on.
+  let ones = (arm_name: String) => ["x", "y"] |> list.map((t) => t_cell(arm_name, t, 1, true))
+  assert_eq(ab_verdict(2, ones("control"), ones("survive")).id, cellstate.ST_SATURATED)
+  assert_eq(criterion(2, ones("control"), ones("survive")).id, "undecided")
+  // No refusal at all: decided, but said to be sampling.
+  assert(list.any(criterion(3, a, b).reasons, (r) => string.contains(r, "survive refused no edit")))
+}
+
+test "the manifest records the arms, the attempt definition and the criterion, and reads its cells back" {
+  let cells = [t_cell("control", "x", 4, false), t_cell("survive", "x", 2, true),
+    t_cell("control", "y", 1, true), t_cell("survive", "y", 1, true)]
+  let m = manifest([("date", value.str("2026-09-26"))], 3, ["x", "y"], cells)
+  assert_eq(json.get_string(m, "attempt") ?? "", ATTEMPT_DEFINITION)
+  assert_eq(json.get_string(m, "issue") ?? "", "almide/almide#2147")
+  let conds = json.get_array(m, "conditions") ?? []
+  assert_eq(conds |> list.filter_map((c) => json.get_string(c, "name")), [COND_CONTROL, COND_SURVIVE])
+  let ab = json.get_path(m, json.field(json.root(), "survive_ab")) ?? value.null()
+  let crit = json.get_path(ab, json.field(json.root(), "criterion")) ?? value.null()
+  assert_eq(json.get_string(crit, "id") ?? "", "met")
+  let ctl = json.get_path(ab, json.field(json.root(), "control")) ?? value.null()
+  assert_eq(json.get_string(ctl, "mean_attempts_per_task") ?? "", "2.50")
+  let back = cells_from_manifest(json.parse(json.stringify(m)) ?? value.null())
+  assert_eq(list.len(back), 4)
+  assert_eq(arm(back, COND_SURVIVE) |> list.map((c) => c.attempts), [2, 1])
+}
+
+test "the table renders both arms side by side, criterion first" {
+  let cells = [t_cell("control", "x", 4, false), { ...t_cell("survive", "x", 2, true), refused: 1 },
+    t_cell("control", "y", 1, true), t_cell("survive", "y", 1, true)]
+  let tbl = render_table("Survive A/B", ["**model**: `cf:m`"], 3, ["x", "y"], cells)
+  assert(string.contains(tbl, "Criterion (almide/almide#2147): `met`"))
+  assert(string.contains(tbl, "| `control` | 2/2 | 2.50 | 1/2 (50%) | 1/2 (50%) | 0 |"))
+  assert(string.contains(tbl, "| `survive` | 2/2 | 1.50 | 2/2 (100%) | 1/2 (50%) | 1 |"))
+  assert(string.contains(tbl, "| `x` | FAIL in 4 | pass in 2 (1 refused) |"))
+  assert(string.contains(tbl, "- **model**: `cf:m`\n"))
+  // The criterion is above the numbers.
+  assert((string.index_of(tbl, "Criterion") ?? 99) < (string.index_of(tbl, "| arm | reached") ?? 0))
+}
