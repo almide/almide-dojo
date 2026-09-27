@@ -29,6 +29,12 @@ jobs:
       - name: Every bank task is decided by the cross-language task set
         run: bash scripts/check-task-set.sh
 
+      # almide-dojo#61: the cross-language lane judges the manifest the lane
+      # recorded, never one inferred from the working tree. Replayed on the
+      # committed 2026-09-22 and 2026-09-27 runs; no model call.
+      - name: A stale manifest is never the one judged
+        run: bash scripts/test-msr-manifest.sh
+
       # The contract-preserving bank (tasks/bank/, almide-dojo#3): every task's
       # edit is required, a correct patch exists, its wrong patch fools the
       # visible suite and fails the hidden oracle, and the solution agrees on

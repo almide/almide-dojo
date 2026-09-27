@@ -125,7 +125,16 @@ jobs:
           RC=$?
           set -e
           echo "harness exit code: $RC"
-          SUMMARY=$(find runs -name summary.md 2>/dev/null | head -n1 || true)
+          # runs/ was cleared above, so only this job's output is on disk and
+          # a committed past run cannot be found here (the class msr-cross hit
+          # in almide-dojo#61 needs a locator that sees deletions or history).
+          # One job writes one summary; more than one is refused, not guessed.
+          FOUND=$(find runs -name summary.md 2>/dev/null || true)
+          if [ "$(printf '%s' "$FOUND" | grep -c .)" -gt 1 ]; then
+            echo "::error::this job wrote more than one summary.md, refusing to pick one: $(printf '%s' "$FOUND" | tr '\n' ' ')"
+            exit 1
+          fi
+          SUMMARY="$FOUND"
           if [ -z "$SUMMARY" ]; then
             echo "::error::the harness wrote no runs/*/*/summary.md (exit $RC) — nothing was measured"
             exit 1
