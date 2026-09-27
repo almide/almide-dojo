@@ -10,4 +10,4 @@
 
 [compiler]
 repo = "github.com/almide/almide"
-ref = "v0.63.1"  # 2026-09-25: latest final release; the first where every bank program renders on wasm and the resource oracle is armed (0.63.0 failed 3 bank tasks on wasm, fixed in 0.63.1)
+ref = "v0.64.0"  # 2026-09-27: latest final release; adds almide survive / apply --if-survives (the survive A/B arm of #2147) and structured repairs (#2149)
