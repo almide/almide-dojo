@@ -10,4 +10,4 @@
 
 [compiler]
 repo = "github.com/almide/almide"
-ref = "v0.63.1"  # 2026-09-25: latest final release; the first where every bank program renders on wasm and the resource oracle is armed (0.63.0 failed 3 bank tasks on wasm, fixed in 0.63.1)
+ref = "v0.65.0"  # 2026-09-28: latest final release; carries the Linux forward-ref type fix (#2721) that blocked the v0.64.0 pin, ADR-0021 (a lambda's failure channel from context) and ADR-0022 (output and abort builtins in a pure fn)
