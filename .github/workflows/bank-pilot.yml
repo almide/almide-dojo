@@ -205,7 +205,15 @@ jobs:
           RC=$?
           set -e
           echo "harness exit code: $RC (1 = some tasks failed, 2 = nothing reached the model, 3 = not-comparable)"
-          SUMMARY=$(find runs -name 'bank-summary*.md' | head -n1 || true)
+          # runs/ was cleared above, so only this job's output is on disk (see
+          # almide-dojo#61 for the locator class this avoids). One job writes
+          # one bank summary; more than one is refused, not guessed.
+          FOUND=$(find runs -name 'bank-summary*.md' 2>/dev/null || true)
+          if [ "$(printf '%s' "$FOUND" | grep -c .)" -gt 1 ]; then
+            echo "::error::this job wrote more than one bank summary, refusing to pick one: $(printf '%s' "$FOUND" | tr '\n' ' ')"
+            exit 1
+          fi
+          SUMMARY="$FOUND"
           if [ -z "$SUMMARY" ]; then
             echo "::error::the harness wrote no bank-summary (exit $RC) — nothing was measured"
             exit 1

@@ -939,8 +939,28 @@ effect fn cmd_run(o: Opts) -> Unit! = {
   println("")
   println(table)
   println("Written: " + dir + "/{manifest.json, results.json, table.md}")
+  record_manifest_path(env.get(MANIFEST_RECORD_ENV) ?? "", dir + "/manifest.json")!
   let failed = list.count(measured, (r) => not r.success)
   if failed > 0 then process.exit(1) else ok(())
+}
+
+// ── The manifest's path, stated by the lane that wrote it (almide-dojo#61) ──
+//
+// The workflow used to INFER which manifest this run wrote, by asking git
+// what the job had changed under runs/msr. The job clears runs/ first (so its
+// artifact carries only its own output), which makes every committed past
+// manifest a deletion in `git status` — and `head -n1` took the first of
+// those. Run 36357844362 judged 2026-09-22's Llama 8B manifest, a file that
+// no longer existed on disk, in place of the 2026-09-27 run it had just
+// written. Only the writer knows the path, so the writer says it: when
+// MSR_MANIFEST_RECORD names a file, one line per manifest written is
+// appended to it, and the judging steps read nothing else.
+let MANIFEST_RECORD_ENV = "MSR_MANIFEST_RECORD"
+
+effect fn record_manifest_path(record: String, manifest: String) -> Unit! = {
+  guard record != "" else ok(())
+  fs.append(record, manifest + "\n")!
+  ok(())
 }
 
 // ── verdict: re-derive a written run's verdict from its own artifacts ──
@@ -1195,6 +1215,21 @@ test "two labels are two directories, and a label is path-safe" {
 // alone rather than create a directory ending in a dash.
 test "a blank label is no label" {
   assert(run_dir("o", "d", "cf:m", "   ") == run_dir("o", "d", "cf:m", ""), "a blank label is no label")
+}
+
+// almide-dojo#61: the path the judging steps read is the one the lane wrote,
+// line for line, and a second run appends rather than replaces — so a record
+// that names two manifests is visible as two, not silently the last one.
+test "the lane records each manifest it wrote, one line each, and nothing without a record file" {
+  let tmp = fs.create_temp_dir("msr-record")!
+  let record = tmp + "/manifest-path"
+  record_manifest_path("", "runs/msr/2026-09-27/x/manifest.json")!
+  assert(not fs.exists(record), "no record file named: nothing is written")
+  record_manifest_path(record, "runs/msr/2026-09-27/a/manifest.json")!
+  assert(fs.read_text(record)! == "runs/msr/2026-09-27/a/manifest.json\n", "the record holds exactly the written path")
+  record_manifest_path(record, "runs/msr/2026-09-27/b/manifest.json")!
+  assert(fs.read_text(record)! == "runs/msr/2026-09-27/a/manifest.json\nruns/msr/2026-09-27/b/manifest.json\n", "a second manifest is a second line")
+  fs.remove_all(tmp)!
 }
 
 test "parse_opts reads every option and keeps positionals in order" {
