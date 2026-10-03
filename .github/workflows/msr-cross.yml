@@ -47,7 +47,18 @@ permissions:
 env:
   # The Cloudflare Workers AI models only — same set and same reasoning as
   # daily.yml. `cf:` = Cloudflare; src/msr/run.almd parses the spec.
-  CROSS_MODELS: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast,cf:@cf/meta/llama-3.1-8b-instruct'
+  #
+  # GLM 5.3 Flash leads because it is the strongest model this account can
+  # reach WITHOUT a second credential: Workers AI hosts Zhipu's family
+  # (@cf/zai-org/glm-5.3-flash, -5.3, -5.2, glm-4.7-flash), so the "no
+  # Anthropic or OpenAI key in CI" ruling stops meaning "no capable model in
+  # CI". It also accepts `temperature` and `seed` (Cloudflare's model page:
+  # seed = "the system will make a best effort to sample deterministically"),
+  # which is what third-party reproducibility needs — almide/almide#2146 —
+  # and what the llama models leave to their defaults. $0.15/M in, $0.50/M
+  # out, ~500 calls a run. One llama row stays as the contrast: a number is
+  # easier to read when a weaker model sits beside it.
+  CROSS_MODELS: 'cf:@cf/zai-org/glm-5.3-flash,cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast'
 
   # The HTTP read timeout the lane runs under (almide's runtime reads this;
   # `crates/almide-rt-core/src/http_client_core.rs`, `0` = no timeout). The
