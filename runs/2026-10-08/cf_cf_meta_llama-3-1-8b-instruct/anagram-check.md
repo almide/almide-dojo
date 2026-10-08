@@ -1,0 +1,218 @@
+# anagram-check
+
+- **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
+- **state**: `measured`
+- **success**: no
+- **retries**: 3
+- **category**: parse-error
+
+## Attempts
+
+### Attempt 1 (FAIL)
+
+```almide
+fn is_anagram(a: String, b: String) -> Bool = 
+  string.to_lower(a) == string.to_lower(b) &&
+  list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) == 
+  list.sort(list.filter(string.chars(b), fn(x) => not(string.is_whitespace(x))))
+```
+
+**Diagnostic:**
+
+```
+error: '&&' is not valid in Almide at line 2:44
+  --> /tmp/dojo-anagram-check-0.almd:2:44
+  here: string.to_lower(a) == string.to_lower(b) &&
+  hint: Use 'and' for logical AND. Example: if a and b then ...
+  |
+2 |   string.to_lower(a) == string.to_lower(b) &&
+  |                                            ^
+error: Expected function name at line 3:44 (got LParen '(')
+  --> /tmp/dojo-anagram-check-0.almd:3:44
+  here: list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) ==
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  |
+3 |   list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) ==
+  |                                            ^
+error: Expected function name at line 4:44 (got LParen '(')
+  --> /tmp/dojo-anagram-check-0.almd:4:44
+  here: list.sort(list.filter(string.chars(b), fn(x) => not(string.is_whitespace(x))))
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  |
+4 |   list.sort(list.filter(string.chars(b), fn(x) => not(string.is_whitespace(x))))
+  |                                            ^
+
+3 error(s) found
+FAILED: /tmp/dojo-anagram-check-0.almd
+Compile error for /tmp/dojo-anagram-check-0.almd:
+compile failed
+
+0 via WASM, 0 via native fallback, 1 failed (of 1 files)
+
+```
+
+### Attempt 2 (FAIL)
+
+```almide
+fn is_anagram(a: String, b: String) -> Bool = 
+  string.to_lower(a) == string.to_lower(b) and
+  list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) ==
+  list.sort(list.filter(string.chars(b), fn(x) => not(string.is_whitespace(x))))
+```
+
+**Diagnostic:**
+
+```
+error: Expected expression at line 3:42 (got Fn 'fn')
+  --> /tmp/dojo-anagram-check-1.almd:3:42
+  here: list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) ==
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  |
+3 |   list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) ==
+  |                                          ^
+error: Expected function name at line 3:44 (got LParen '(')
+  --> /tmp/dojo-anagram-check-1.almd:3:44
+  here: list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) ==
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  |
+3 |   list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) ==
+  |                                            ^
+error: Expected function name at line 4:44 (got LParen '(')
+  --> /tmp/dojo-anagram-check-1.almd:4:44
+  here: list.sort(list.filter(string.chars(b), fn(x) => not(string.is_whitespace(x))))
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  |
+4 |   list.sort(list.filter(string.chars(b), fn(x) => not(string.is_whitespace(x))))
+  |                                            ^
+
+3 error(s) found
+FAILED: /tmp/dojo-anagram-check-1.almd
+Compile error for /tmp/dojo-anagram-check-1.almd:
+compile failed
+
+0 via WASM, 0 via native fallback, 1 failed (of 1 files)
+
+```
+
+### Attempt 3 (FAIL)
+
+```almide
+fn is_anagram(a: String, b: String) -> Bool = 
+  string.to_lower(a) == string.to_lower(b) and
+  list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) ==
+  list.sort(list.filter(string.chars(b), fn(x) => not(string.is_whitespace(x))))
+
+fn is_anagram(a: String, b: String) -> Bool = 
+  string.to_lower(a) == string.to_lower(b) and
+  list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) =
+  list.sort(list.filter(string.chars(b), fn(x) => not(string.is_whitespace(x))))
+```
+
+**Diagnostic:**
+
+```
+error: Expected expression at line 3:42 (got Fn 'fn')
+  --> /tmp/dojo-anagram-check-2.almd:3:42
+  here: list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) ==
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  |
+3 |   list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) ==
+  |                                          ^
+error: Expected function name at line 3:44 (got LParen '(')
+  --> /tmp/dojo-anagram-check-2.almd:3:44
+  here: list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) ==
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  |
+3 |   list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) ==
+  |                                            ^
+error: Expected function name at line 4:44 (got LParen '(')
+  --> /tmp/dojo-anagram-check-2.almd:4:44
+  here: list.sort(list.filter(string.chars(b), fn(x) => not(string.is_whitespace(x))))
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  |
+4 |   list.sort(list.filter(string.chars(b), fn(x) => not(string.is_whitespace(x))))
+  |                                            ^
+error: Expected expression at line 8:42 (got Fn 'fn')
+  --> /tmp/dojo-anagram-check-2.almd:8:42
+  here: list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) =
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  |
+8 |   list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) =
+  |                                          ^
+error: Expected function name at line 8:44 (got LParen '(')
+  --> /tmp/dojo-anagram-check-2.almd:8:44
+  here: list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) =
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  |
+8 |   list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) =
+  |                                            ^
+error: Expected function name at line 9:44 (got LParen '(')
+  --> /tmp/dojo-anagram-check-2.almd:9:44
+  here: list.sort(list.filter(string.chars(b), fn(x) => not(string.is_whitespace(x))))
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  |
+9 |   list.sort(list.filter(string.chars(b), fn(x) => not(string.is_whitespace(x))))
+  |                                            ^
+error[E012]: duplicate function 'is_anagram'
+  at line 6
+  in fn is_anagram
+  here: fn is_anagram(a: String, b: String) -> Bool =
+  hint: Rename one of the definitions, or remove the earlier one. Almide requires each function name to be unique within a module.
+  |
+1 | fn is_anagram(a: String, b: String) -> Bool =
+  | ------------------------------------- first definition of 'is_anagram' here
+...
+6 | fn is_anagram(a: String, b: String) -> Bool =
+  | ^
+
+7 error(s) found
+FAILED: /tmp/dojo-anagram-check-2.almd
+Compile error for /tmp/dojo-anagram-check-2.almd:
+compile failed
+
+0 via WASM, 0 via native fallback, 1 failed (of 1 files)
+
+```
+
+### Attempt 4 (FAIL)
+
+```almide
+fn is_anagram(a: String, b: String) -> Bool = 
+  string.to_lower(a) == string.to_lower(b) and
+  list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) ==
+  list.sort(list.filter(string.chars(b), fn(x) => not(string.is_whitespace(x))))
+```
+
+**Diagnostic:**
+
+```
+error: Expected expression at line 3:42 (got Fn 'fn')
+  --> /tmp/dojo-anagram-check-3.almd:3:42
+  here: list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) ==
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  |
+3 |   list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) ==
+  |                                          ^
+error: Expected function name at line 3:44 (got LParen '(')
+  --> /tmp/dojo-anagram-check-3.almd:3:44
+  here: list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) ==
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  |
+3 |   list.sort(list.filter(string.chars(a), fn(x) => not(string.is_whitespace(x)))) ==
+  |                                            ^
+error: Expected function name at line 4:44 (got LParen '(')
+  --> /tmp/dojo-anagram-check-3.almd:4:44
+  here: list.sort(list.filter(string.chars(b), fn(x) => not(string.is_whitespace(x))))
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+  |
+4 |   list.sort(list.filter(string.chars(b), fn(x) => not(string.is_whitespace(x))))
+  |                                            ^
+
+3 error(s) found
+FAILED: /tmp/dojo-anagram-check-3.almd
+Compile error for /tmp/dojo-anagram-check-3.almd:
+compile failed
+
+0 via WASM, 0 via native fallback, 1 failed (of 1 files)
+
+```
