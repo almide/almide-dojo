@@ -1,0 +1,18 @@
+# anagram-check
+
+- **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **state**: `measured`
+- **success**: yes
+- **retries**: 0
+- **category**: pass-1shot
+
+## Attempts
+
+### Attempt 1 (PASS)
+
+```almide
+fn is_anagram(a: String, b: String) -> Bool = 
+  let a_chars = string.chars(string.to_lower(string.trim(a))) |> list.filter((x) => x != " ")
+  let b_chars = string.chars(string.to_lower(string.trim(b))) |> list.filter((x) => x != " ")
+  in list.sort(a_chars) == list.sort(b_chars)
+```
