@@ -26,6 +26,7 @@
 // legitimately share idioms (a parse loop, a `list.map(... !)!`), so the bar is
 // "most of the program is the same shape", not "some of it is".
 import fs
+import env
 import process
 
 let THRESHOLD_PCT = 60
@@ -82,7 +83,7 @@ fn classify(word: String, prev: List[String]) -> String = {
 }
 
 fn tokens(src: String) -> List[String] = {
-  let cs = string.chars(src)
+  let cs = string.to_list(src)
   let n = list.len(cs)
   var out: List[String] = []
   var i = 0
@@ -104,7 +105,7 @@ fn tokens(src: String) -> List[String] = {
     }
     else if is_ident_start(c) then {
       let j = scan_while(cs, i, is_ident_char)
-      let word = string.join(list.slice(cs, i, j), "")
+      let word = list.join(list.slice(cs, i, j), "")
       out = out + [classify(word, out)]
       i = j
     }
@@ -117,10 +118,10 @@ fn tokens(src: String) -> List[String] = {
 }
 
 fn shingles(toks: List[String]) -> Set[String] =
-  if list.len(toks) < SHINGLE then set.from_list([string.join(toks, " ")])
+  if list.len(toks) < SHINGLE then set.from_list([list.join(toks, " ")])
   else
     list.range(0, list.len(toks) - SHINGLE + 1)
-      |> list.map((i) => string.join(list.slice(toks, i, i + SHINGLE), " "))
+      |> list.map((i) => list.join(list.slice(toks, i, i + SHINGLE), " "))
       |> set.from_list
 
 // Jaccard similarity of the two sources' shingle sets, in whole percent.
@@ -160,7 +161,7 @@ fn pairs(bs: List[Baseline], same_family_only: Bool) -> List[Pair] =
 fn label(b: Baseline) -> String = "${b.family}/${b.task}"
 
 effect fn main() -> Unit = {
-  let args = process.args()
+  let args = ["bank_dedup"] + env.args()
   let root = list.get(args, 1) ?? "tasks/bank"
   let matrix = list.contains(args, "--matrix")
   let bs = load(root)!

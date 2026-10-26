@@ -152,19 +152,19 @@ fn run_to_json(run: DayRun) -> String = {
   let tasks_json = run.tasks
     |> list.map((t) =>
       "{\"name\":\"" + t.0 + "\",\"result\":\"" + t.1 + "\",\"category\":\"" + t.2 + "\",\"code\":\"" + t.3 + "\",\"retries\":" + int.to_string(t.4) + "}")
-    |> string.join(",")
+    |> list.join(",")
   let cats_json = run.categories
     |> list.map((c) => "{\"name\":\"" + c.0 + "\",\"count\":" + int.to_string(c.1) + "}")
-    |> string.join(",")
+    |> list.join(",")
   let codes_json = run.codes
     |> list.map((c) => "{\"code\":\"" + c.0 + "\",\"count\":" + int.to_string(c.1) + "}")
-    |> string.join(",")
+    |> list.join(",")
   let recov_json = run.recoverable_codes
     |> list.map((c) => "{\"code\":\"" + c.0 + "\",\"count\":" + int.to_string(c.1) + "}")
-    |> string.join(",")
+    |> list.join(",")
   let dist_json = run.retry_dist
     |> list.map((c) => "{\"key\":\"" + c.0 + "\",\"count\":" + int.to_string(c.1) + "}")
-    |> string.join(",")
+    |> list.join(",")
   "{" +
     "\"date\":\"" + run.date + "\"," +
     "\"model\":\"" + run.model + "\"," +
@@ -186,17 +186,17 @@ fn run_to_json(run: DayRun) -> String = {
 fn meta_to_json(m: TaskMeta) -> String = {
   let tags_json = m.tags
     |> list.map((t) => "\"" + t + "\"")
-    |> string.join(",")
+    |> list.join(",")
   "\"" + m.name + "\":[" + tags_json + "]"
 }
 
 fn generate_html(runs: List[DayRun], metas: List[TaskMeta]) -> String = {
   let data_json = runs
     |> list.map((r) => run_to_json(r))
-    |> string.join(",")
+    |> list.join(",")
   let metas_json = metas
     |> list.map(meta_to_json)
-    |> string.join(",")
+    |> list.join(",")
 
   let css = "* { margin: 0; padding: 0; box-sizing: border-box; } " +
     "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; padding: 2rem; } " +
@@ -229,7 +229,7 @@ fn generate_html(runs: List[DayRun], metas: List[TaskMeta]) -> String = {
   // JS uses no template literals to avoid Almide interpolation conflicts.
   // Built via string.join to avoid Rust format! recursion-limit blowups
   // that hit when concatenating ~80 string literals with `+`.
-  let js = string.join([
+  let js = list.join([
     "var DATA = [" + data_json + "];",
     "var TASK_TAGS = {" + metas_json + "};",
     "var PALETTE = ['#3fb950','#58a6ff','#d29922','#f85149','#a371f7','#ff7b72','#79c0ff','#ffa657'];",
@@ -442,7 +442,7 @@ effect fn main() -> Unit = {
                   })
             })
         let html = generate_html(runs, metas)
-        match fs.write("dashboards/index.html", html) {
+        match fs.write_text("dashboards/index.html", html) {
           ok(_) => println("Generated dashboards/index.html (" + int.to_string(list.len(runs)) + " runs, " + int.to_string(list.len(metas)) + " task metas)")
           err(e) => {
             println("Failed to write: " + e)

@@ -17,7 +17,7 @@ fn strip_code_fences(s: String) -> String =
   s
     |> string.split("\n")
     |> list.filter((line) => not string.starts_with(string.trim(line), "```"))
-    |> string.join("\n")
+    |> list.join("\n")
 
 fn to_almai_spec(model: String) -> String = {
   // "cf:@cf/meta/..." → "cf/@cf/meta/..."
@@ -274,10 +274,10 @@ test "the manifest fields report the echo, including a seed that went out" {
   let j = value.object(sampling_fields(almai.Sampling {
     temperature_sent: true, temperature: 0.0,
     max_tokens_sent: true, max_tokens: 4096, seed_sent: true, seed: SEED }))
-  assert((json.get_bool(j, "temperature_sent") ?? false), "temperature_sent must follow the echo")
-  assert((json.get_bool(j, "seed_sent") ?? false), "seed_sent must follow the echo")
-  assert((json.get_int(j, "seed") ?? 0) == SEED, "the recorded seed is the one asked for")
-  assert((json.get_int(j, "max_tokens") ?? 0) == 4096, "a sent value is printed")
+  assert((value.get_bool(j, "temperature_sent") ?? false), "temperature_sent must follow the echo")
+  assert((value.get_bool(j, "seed_sent") ?? false), "seed_sent must follow the echo")
+  assert((value.get_int(j, "seed") ?? 0) == SEED, "the recorded seed is the one asked for")
+  assert((value.get_int(j, "max_tokens") ?? 0) == 4096, "a sent value is printed")
 }
 
 // A provider that writes nothing must read as nothing — and each value must
@@ -287,10 +287,10 @@ test "the manifest fields report the echo, including a seed that went out" {
 // pinned greedy run and means "the provider's default applied".
 test "an echo that claims nothing records null, not zero" {
   let j = value.object(sampling_fields(almai.Sampling { }))
-  assert(not (json.get_bool(j, "temperature_sent") ?? true), "temperature_sent must be false")
-  assert(not (json.get_bool(j, "seed_sent") ?? true), "seed_sent must be false")
-  assert(json.get_int(j, "seed") == none, "an unsent seed is null, never 0")
-  assert(json.get_float(j, "temperature") == none, "an unsent temperature is null, never 0.0")
+  assert(not (value.get_bool(j, "temperature_sent") ?? true), "temperature_sent must be false")
+  assert(not (value.get_bool(j, "seed_sent") ?? true), "seed_sent must be false")
+  assert(value.get_int(j, "seed") == none, "an unsent seed is null, never 0")
+  assert(value.get_float(j, "temperature") == none, "an unsent temperature is null, never 0.0")
 }
 
 test "every measured call and the probe share one options construction" {

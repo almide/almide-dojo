@@ -14,20 +14,20 @@ fn versions() -> List[(String, List[String])] = [("almide", ["almide", "--versio
 // language-name header the runner adds to every plugin.
 fn notes() -> String = {
   let lines = string.split(prompts.SYSTEM_PROMPT, "\n")
-  list.drop(lines, 1) |> string.join("\n") |> string.trim
+  list.drop(lines, 1) |> list.join("\n") |> string.trim
 }
 
 fn sig(s: Sig) -> String = spec.sig_neutral(s)
 
 fn signatures(t: PTask) -> String =
-  t.sigs |> list.map((s) => "    " + sig(s)) |> string.join("
+  t.sigs |> list.map((s) => "    " + sig(s)) |> list.join("
 ")
 
 fn driver(t: PTask) -> String = {
   let n = list.len(t.cases)
   let checks = t.cases
     |> list.map((c) => "  failed = msr_check(failed, " + spec.c_quote(spec.case_label(c)) + ", " + spec.neutral(c.call) + ", " + spec.neutral(c.expected) + ")")
-    |> string.join("\n")
+    |> list.join("\n")
   """
     // ── msr driver (generated) ──
     fn msr_check[T](failed: Int, label: String, got: T, want: T) -> Int =

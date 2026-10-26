@@ -214,7 +214,7 @@ fn read_val(cs: List[String], i0: Int) -> (Val, Int)! = {
 
 // One `test "label" { assert_eq(<call>, <expected>) }` line.
 fn parse_case_line(line: String) -> Case! = {
-  let cs = string.chars(line)
+  let cs = string.to_list(line)
   let label = match string.index_of(line, "test \"") {
     some(i) => {
       let (s, _) = read_str(cs, i + 6, "")!
@@ -303,12 +303,12 @@ fn neutral(v: Val) -> String = match v {
   VInt(n) => int.to_string(n),
   VBool(b) => if b then "true" else "false",
   VStr(s) => c_quote(s) |> string.replace("$", "\\$"),
-  VList(xs) => "[" + (xs |> list.map(neutral) |> string.join(", ")) + "]",
-  VCall(name, args) => name + "(" + (args |> list.map(neutral) |> string.join(", ")) + ")",
+  VList(xs) => "[" + (xs |> list.map(neutral) |> list.join(", ")) + "]",
+  VCall(name, args) => name + "(" + (args |> list.map(neutral) |> list.join(", ")) + ")",
 }
 
 fn sig_neutral(s: Sig) -> String =
-  "fn " + s.name + "(" + (s.params |> list.map((p) => p.name + ": " + ty_neutral(p.ty)) |> string.join(", ")) + ") -> " + ty_neutral(s.ret)
+  "fn " + s.name + "(" + (s.params |> list.map((p) => p.name + ": " + ty_neutral(p.ty)) |> list.join(", ")) + ") -> " + ty_neutral(s.ret)
 
 fn case_label(c: Case) -> String = neutral(c.call)
 

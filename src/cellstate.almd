@@ -129,7 +129,7 @@ fn verdict_block(v: Verdict, headline: String) -> String =
   "> **Verdict: `" + v.id + "` — " + headline + "**\n>\n" +
   "> - certified as a comparison: **" + (if v.comparable then "yes" else "no") + "**\n" +
   "> - the bank discriminated: **" + (if v.conclusive then "yes" else "no") + "**\n" +
-  (v.reasons |> list.map((r) => "> - " + r + "\n") |> string.join("")) + "\n"
+  (v.reasons |> list.map((r) => "> - " + r + "\n") |> list.join("")) + "\n"
 
 // The transport class of an absent cell, for a breakdown column. The verbatim
 // reason is what a reader acts on and both lanes record it in full; this is

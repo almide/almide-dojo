@@ -18,25 +18,25 @@ fn ty(t: Ty) -> String = match t {
 }
 
 fn sig(s: Sig) -> String =
-  "pub fn " + s.name + "(" + (s.params |> list.map((p) => p.name + ": " + ty(p.ty)) |> string.join(", ")) + ") -> " + ty(s.ret)
+  "pub fn " + s.name + "(" + (s.params |> list.map((p) => p.name + ": " + ty(p.ty)) |> list.join(", ")) + ") -> " + ty(s.ret)
 
 fn signatures(t: PTask) -> String =
-  t.sigs |> list.map((s) => "    " + sig(s)) |> string.join("
+  t.sigs |> list.map((s) => "    " + sig(s)) |> list.join("
 ")
 
 fn lit(v: Val) -> String = match v {
   VInt(n) => int.to_string(n),
   VBool(b) => if b then "True" else "False",
   VStr(s) => spec.c_quote(s),
-  VList(xs) => "[" + (xs |> list.map(lit) |> string.join(", ")) + "]",
-  VCall(name, args) => "solution." + name + "(" + (args |> list.map(lit) |> string.join(", ")) + ")",
+  VList(xs) => "[" + (xs |> list.map(lit) |> list.join(", ")) + "]",
+  VCall(name, args) => "solution." + name + "(" + (args |> list.map(lit) |> list.join(", ")) + ")",
 }
 
 fn driver(t: PTask) -> String = {
   let n = list.len(t.cases)
   let checks = t.cases
     |> list.map((c) => "  let failed = msr_check(failed, " + spec.c_quote(spec.case_label(c)) + ", " + lit(c.call) + ", " + lit(c.expected) + ")")
-    |> string.join("\n")
+    |> list.join("\n")
   """
     // ── msr driver (generated) ──
     import gleam/int

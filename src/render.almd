@@ -31,7 +31,7 @@ fn render_attempts(attempts: List[Attempt]) -> String =
     let body = attempts
       |> list.enumerate
       |> list.map((entry) => render_attempt(entry.0, entry.1))
-      |> string.join("\n")
+      |> list.join("\n")
     "## Attempts\n\n" + body
   }
 
@@ -98,7 +98,7 @@ fn absent_reason(results: List[RunResult]) -> String = {
   let names = gone |> list.map((r) => "`" + r.task + "` (" + cellstate.absence_class(r.measurable, r.reason) + ")")
   int.to_string(list.len(gone)) + " of " + int.to_string(list.len(results)) +
     " planned task(s) were never answered by the model, so their outcome is unknown and the rate above is an " +
-    "interval, not a point — do not quote it as one: " + string.join(names, ", ")
+    "interval, not a point — do not quote it as one: " + list.join(names, ", ")
 }
 
 fn daily_verdict(results: List[RunResult]) -> Verdict = {
@@ -126,7 +126,7 @@ fn cells_line(results: List[RunResult], saturated: Bool) -> String =
   cellstate.CELL_STATES
     |> list.map((s) => s + " " + int.to_string(
       list.count(results, (r) => cellstate.state_of(r.measurable, r.reached, saturated) == s)))
-    |> string.join(", ")
+    |> list.join(", ")
 
 fn not_run_section(results: List[RunResult]) -> String = {
   let gone = absent(results)
@@ -140,7 +140,7 @@ fn not_run_section(results: List[RunResult]) -> String = {
         // only thing a reader can act on, and a summarised reason is how this
         // defect family starts.
         (r.reason |> string.replace("\n", " ") |> string.replace("|", "\\|")) + " |")
-      |> string.join("\n")
+      |> list.join("\n")
     "\n## Never asked (the model was never answered)\n\n" +
     "These tasks are `not-run`, not zeros. They are inside every denominator\n" +
     "above and inside no numerator, which is why the rates are intervals.\n\n" +
@@ -182,14 +182,14 @@ fn render_summary(date: String, model: String, compiler: String, http_timeout: S
       let retry_cell = if r.reached then int.to_string(r.retries) else "—"
       "| `" + r.task + "` | " + success_mark + " | " + c.0 + " | " + code_cell + " | " + retry_cell + " |"
     })
-    |> string.join("\n")
+    |> list.join("\n")
 
   let cat_lines = classifier.category_order()
     |> list.filter_map((cat) => {
       let n = list.count(results, (r) => classifier.classify(r).0 == cat)
       if n > 0 then some("- " + cat + ": " + int.to_string(n)) else none
     })
-    |> string.join("\n")
+    |> list.join("\n")
 
   // Recoverable: first-failed code for tasks that eventually passed via retry.
   // The diagnostic was good enough that the model recovered.
@@ -200,7 +200,7 @@ fn render_summary(date: String, model: String, compiler: String, http_timeout: S
   let recov_unique = list.unique(recoverable_codes) |> list.sort
   let recov_lines = recov_unique
     |> list.map((code) => "- `" + code + "`: " + int.to_string(list.count(recoverable_codes, (c) => c == code)))
-    |> string.join("\n")
+    |> list.join("\n")
   let recov_section = if list.is_empty(recov_unique) then ""
     else "\n## Recoverable diagnostic codes (passed after retry)\n\n" + recov_lines + "\n"
 
@@ -216,7 +216,7 @@ fn render_summary(date: String, model: String, compiler: String, http_timeout: S
   let unrecov_unique = list.unique(unrecov_codes) |> list.sort
   let unrecov_lines = unrecov_unique
     |> list.map((code) => "- `" + code + "`: " + int.to_string(list.count(unrecov_codes, (c) => c == code)))
-    |> string.join("\n")
+    |> list.join("\n")
   let unrecov_section = if list.is_empty(unrecov_unique) then ""
     else "\n## Unrecoverable diagnostic codes (still failing after " + int.to_string(3) + " retries)\n\n" + unrecov_lines + "\n"
 
@@ -231,7 +231,7 @@ fn render_summary(date: String, model: String, compiler: String, http_timeout: S
       "- pass-" + int.to_string(n) + ": " + int.to_string(list.count(got, (r) => r.success and r.retries == n)),
       "- fail-" + int.to_string(n) + ": " + int.to_string(list.count(got, (r) => not r.success and r.retries == n)),
     ])
-    |> string.join("\n")
+    |> list.join("\n")
   let dist_section = "\n## Retry distribution\n\n" + dist_lines + "\n"
 
   "# MSR run " + date + "\n\n" +

@@ -9,9 +9,8 @@ let SYSTEM_PROMPT = """
   ## Prefer stdlib helpers when the task shape matches (don't re-implement)
 
     - sorted-list search     → `list.binary_search(xs, target) -> Option[Int]`
-    - run-length grouping    → `string.run_length_encode(s) -> List[(String, Int)]` (format result for output)
     - integer parsing        → `int.parse(s) -> Result[Int, String]` (NOT `int.from_string`)
-    - integer sqrt (→ Int)   → `float.to_int(float.sqrt(int.to_float(n)))` (NOT `int.sqrt`)
+    - integer sqrt (→ Int)   → `int.from_saturating(math.sqrt(float.from(n)))` (NOT `int.sqrt`)
     - comparisons            → operators `a > b`, `a <= b` (NOT `int.gt(a, b)`, `int.le(a, b)`)
     - list head/tail         → `list.first(xs)` + `list.drop(xs, 1)` (NOT `[head, ..rest]` pattern)
     - folds                  → `list.fold(xs, init, (acc, x) => ...)` (NOT manual recursion with an accumulator unless necessary)
@@ -68,16 +67,16 @@ let SYSTEM_PROMPT = """
 
   ### string
   - fn string.capitalize(s: String) -> String
-  - fn string.chars(s: String) -> List[String]
-  - fn string.codepoint(s: String) -> Option[Int]
+  - fn string.to_list(s: String) -> List[String]
+  - fn string.to_codepoint(s: String) -> Option[Int]
   - fn string.contains(s: String, sub: String) -> Bool
-  - fn string.count(s: String, sub: String) -> Int
+  - fn string.count(s: String, f: fn(String) -> Bool) -> Int
+  - fn string.count_matches(s: String, needle: String) -> Int
   - fn string.drop(s: String, n: Int) -> String
   - fn string.drop_end(s: String, n: Int) -> String
   - fn string.ends_with(s: String, suffix: String) -> Bool
   - fn string.first(s: String) -> Option[String]
-  - fn string.from_bytes(bytes: List[Int]) -> String
-  - fn string.from_codepoint(n: Int) -> String
+  - fn string.from_codepoint(n: Int) -> Option[String]
   - fn string.get(s: String, i: Int) -> Option[String]
   - fn string.index_of(s: String, needle: String) -> Option[Int]
   - fn string.is_alpha(s: String) -> Bool
@@ -87,7 +86,6 @@ let SYSTEM_PROMPT = """
   - fn string.is_lower(s: String) -> Bool
   - fn string.is_upper(s: String) -> Bool
   - fn string.is_whitespace(s: String) -> Bool
-  - fn string.join(list: List[String], sep: String) -> String
   - fn string.last(s: String) -> Option[String]
   - fn string.last_index_of(s: String, needle: String) -> Option[Int]
   - fn string.len(s: String) -> Int
@@ -105,12 +103,10 @@ let SYSTEM_PROMPT = """
   - fn string.strip_suffix(s: String, suffix: String) -> Option[String]
   - fn string.take(s: String, n: Int) -> String
   - fn string.take_end(s: String, n: Int) -> String
-  - fn string.to_bytes(s: String) -> List[Int]
   - fn string.to_lower(s: String) -> String
   - fn string.to_upper(s: String) -> String
   - fn string.trim(s: String) -> String
   - fn string.trim_end(s: String) -> String
-  - fn string.run_length_encode(s: String) -> List[(String, Int)]
   - fn string.trim_start(s: String) -> String
 
   ### list
@@ -133,7 +129,6 @@ let SYSTEM_PROMPT = """
   - fn list.flatten[T](xss: List[List[T]]) -> List[T]
   - fn list.fold[A, B](xs: List[A], init: B, f: fn(B, A) -> B) -> B
   - fn list.get[A](xs: List[A], i: Int) -> Option[A]
-  - fn list.get_or[A](xs: List[A], i: Int, default: A) -> A
   - fn list.group_by[A, B](xs: List[A], f: fn(A) -> B) -> Map[B, List[A]]
   - fn list.index_of[A](xs: List[A], x: A) -> Option[Int]
   - fn list.insert[A](xs: List[A], i: Int, val: A) -> List[A]
@@ -162,7 +157,7 @@ let SYSTEM_PROMPT = """
   - fn list.unique[A](xs: List[A]) -> List[A]
   - fn list.unique_by[A, K](xs: List[A], f: fn(A) -> K) -> List[A]
   - fn list.update[A](xs: List[A], i: Int, f: fn(A) -> A) -> List[A]
-  - fn list.windows[A](xs: List[A], n: Int) -> List[List[A]]
+  - fn list.window[A](xs: List[A], n: Int) -> List[List[A]]
   - fn list.zip[A, B](xs: List[A], ys: List[B]) -> List[(A, B)]
   - fn list.binary_search(xs: List[Int], target: Int) -> Option[Int]
   - fn list.zip_with[A, B, C](xs: List[A], ys: List[B], f: fn(A, B) -> C) -> List[C]
@@ -172,11 +167,11 @@ let SYSTEM_PROMPT = """
   ### int
   - fn int.abs(n: Int) -> Int
   - fn int.clamp(n: Int, lo: Int, hi: Int) -> Int
-  - fn int.from_hex(s: String) -> Result[Int, String]
+  - fn int.parse_radix(s: String, radix: Int) -> Result[Int, String]
   - fn int.max(a: Int, b: Int) -> Int
   - fn int.min(a: Int, b: Int) -> Int
   - fn int.parse(s: String) -> Result[Int, String]
-  - fn int.to_float(n: Int) -> Float
+  - fn float.from(n: Int) -> Float
   - fn int.to_hex(n: Int) -> String
   - fn int.to_string(n: Int) -> String
 
@@ -208,10 +203,9 @@ let SYSTEM_PROMPT = """
 
   ### map
   - fn map.contains[K, V](m: Map[K, V], key: K) -> Bool
-  - fn map.entries[K, V](m: Map[K, V]) -> List[(K, V)]
+  - fn map.to_list[K, V](m: Map[K, V]) -> List[(K, V)]
   - fn map.from_list[K, V](pairs: List[(K, V)]) -> Map[K, V]
   - fn map.get[K, V](m: Map[K, V], key: K) -> Option[V]
-  - fn map.get_or[K, V](m: Map[K, V], key: K, default: V) -> V
   - fn map.is_empty[K, V](m: Map[K, V]) -> Bool
   - fn map.keys[K, V](m: Map[K, V]) -> List[K]
   - fn map.len[K, V](m: Map[K, V]) -> Int
@@ -230,11 +224,8 @@ let SYSTEM_PROMPT = """
   - fn set.union[A](a: Set[A], b: Set[A]) -> Set[A]
 
   ### math
-  - fn math.abs(n: Int) -> Int
-  - fn math.max(a: Int, b: Int) -> Int
-  - fn math.min(a: Int, b: Int) -> Int
-  - fn math.pow(base: Int, exp: Int) -> Int
-  - fn math.sign(n: Int) -> Int
+  - fn int.pow(base: Int, exp: Int) -> Int
+  - fn int.sign(n: Int) -> Int
   - fn math.factorial(n: Int) -> Int
   - fn math.sqrt(x: Float) -> Float
   - fn math.pi() -> Float
@@ -264,7 +255,7 @@ fn without_effect_notes(notes: String) -> String =
   string.replace(notes, EFFECT_CLAUSE, "")
     |> string.split("\n")
     |> list.filter((l) => not mentions_effects(l))
-    |> string.join("\n")
+    |> list.join("\n")
 
 test "the unmentioned notes drop the effect sentences and nothing else" {
   let a = SYSTEM_PROMPT

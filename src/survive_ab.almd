@@ -73,7 +73,7 @@ fn split_list(s: String) -> List[String] =
 fn parse_conditions(names: List[String]) -> List[String]! = {
   let unknown = names |> list.filter((n) => not list.contains(CONDITIONS, n))
   if not list.is_empty(unknown) then
-    err("unknown condition(s) " + string.join(unknown, ", ") + " (known: " + string.join(CONDITIONS, ", ") + ")")
+    err("unknown condition(s) " + list.join(unknown, ", ") + " (known: " + list.join(CONDITIONS, ", ") + ")")
   else if not list.contains(names, COND_CONTROL) then
     err("--conditions must include `" + COND_CONTROL + "`: it is the bank run itself and the A arm of the survive A/B")
   else ok(CONDITIONS |> list.filter((c) => list.contains(names, c)))
@@ -94,13 +94,13 @@ fn unavailable_reason(version: String, probe: String) -> String =
 fn bad_test_state(s: String) -> Bool = s != "pass" and s != "ignored"
 
 fn sub_array(v: Value, a: String, b: String) -> List[Value] =
-  match json.get_path(v, json.field(json.root(), a)) {
-    some(x) => json.get_array(x, b) ?? [],
+  match value.get_path(v, value.key(value.root(), a)) {
+    some(x) => value.get_array(x, b) ?? [],
     none => [],
   }
 
 fn sub_value(v: Value, a: String) -> Value =
-  json.get_path(v, json.field(json.root(), a)) ?? value.null()
+  value.get_path(v, value.key(value.root(), a)) ?? value.null()
 
 // What the model is shown: the delta's `newly_broken` entries exactly as the
 // compiler wrote them (each diagnostic object carries its hint and, from the
@@ -114,10 +114,10 @@ fn render_delta(raw: String) -> String =
     err(_) => string.trim(raw),
     ok(v) => {
       let still = sub_array(v, "tests", "unchanged")
-        |> list.filter((t) => bad_test_state(json.get_string(t, "after") ?? ""))
+        |> list.filter((t) => bad_test_state(value.get_string(t, "after") ?? ""))
       json.stringify_pretty(value.object([
-        ("schema_version", value.int(json.get_int(v, "schema_version") ?? 0)),
-        ("survives", value.bool(json.get_bool(v, "survives") ?? false)),
+        ("schema_version", value.int(value.get_int(v, "schema_version") ?? 0)),
+        ("survives", value.bool(value.get_bool(v, "survives") ?? false)),
         ("summary", sub_value(v, "summary")),
         ("newly_broken", value.object([
           ("check", value.array(sub_array(v, "check", "newly_broken"))),
@@ -225,8 +225,8 @@ fn arm_json(cells: List[SCell], planned: Int) -> Value = {
     ("passed", value.int(list.count(got, (c) => c.success))),
     ("one_shot", value.int(list.count(got, one_shot))),
     ("attempts_total", value.int(total_attempts(cells))),
-    ("mean_attempts_per_task", value.str(mean_text(total_attempts(cells), list.len(got)))),
-    ("final_pass", value.str(cellstate.rate(list.count(got, (c) => c.success), absent, planned))),
+    ("mean_attempts_per_task", value.string(mean_text(total_attempts(cells), list.len(got)))),
+    ("final_pass", value.string(cellstate.rate(list.count(got, (c) => c.success), absent, planned))),
     ("refused_edits", value.int(got |> list.map((c) => c.refused) |> list.sum)),
     ("tasks_with_a_refusal", value.int(list.count(got, (c) => c.refused > 0))),
   ])
@@ -234,28 +234,28 @@ fn arm_json(cells: List[SCell], planned: Int) -> Value = {
 
 fn cell_json(c: SCell) -> Value =
   value.object([
-    ("task", value.str(c.task)),
-    ("arm", value.str(c.arm)),
+    ("task", value.string(c.task)),
+    ("arm", value.string(c.arm)),
     ("reached", value.bool(c.reached)),
     ("success", value.bool(c.success)),
     ("attempts", value.int(c.attempts)),
     ("refused", value.int(c.refused)),
-    ("reason", value.str(c.reason)),
+    ("reason", value.string(c.reason)),
   ])
 
 fn cell_from_json(v: Value) -> SCell =
   SCell {
-    task: json.get_string(v, "task") ?? "",
-    arm: json.get_string(v, "arm") ?? "",
-    reached: json.get_bool(v, "reached") ?? false,
-    success: json.get_bool(v, "success") ?? false,
-    attempts: json.get_int(v, "attempts") ?? 0,
-    refused: json.get_int(v, "refused") ?? 0,
-    reason: json.get_string(v, "reason") ?? "",
+    task: value.get_string(v, "task") ?? "",
+    arm: value.get_string(v, "arm") ?? "",
+    reached: value.get_bool(v, "reached") ?? false,
+    success: value.get_bool(v, "success") ?? false,
+    attempts: value.get_int(v, "attempts") ?? 0,
+    refused: value.get_int(v, "refused") ?? 0,
+    reason: value.get_string(v, "reason") ?? "",
   }
 
 fn cells_from_manifest(m: Value) -> List[SCell] =
-  (json.get_array(m, "cells") ?? []) |> list.map(cell_from_json)
+  (value.get_array(m, "cells") ?? []) |> list.map(cell_from_json)
 
 fn arm(cells: List[SCell], name: String) -> List[SCell] = cells |> list.filter((c) => c.arm == name)
 
@@ -269,36 +269,36 @@ fn manifest(run: List[(String, Value)], retries: Int, tasks: List[String], cells
   let v = ab_verdict(planned, a, b)
   let c = criterion(planned, a, b)
   value.object(run + [
-    ("lane", value.str("bank")),
-    ("issue", value.str("almide/almide#2147")),
-    ("gates", value.str("nothing: the control arm's bank-summary and exit code are the run's verdict; this A/B is reported beside them")),
-    ("attempt", value.str(ATTEMPT_DEFINITION)),
+    ("lane", value.string("bank")),
+    ("issue", value.string("almide/almide#2147")),
+    ("gates", value.string("nothing: the control arm's bank-summary and exit code are the run's verdict; this A/B is reported beside them")),
+    ("attempt", value.string(ATTEMPT_DEFINITION)),
     ("budget", value.object([("retries", value.int(retries)), ("max_attempts_per_task", value.int(retries + 1))])),
     ("task_set", value.object([
-      ("path", value.str("tasks/bank")),
-      ("why", value.str(TASK_SET_REASON)),
+      ("path", value.string("tasks/bank")),
+      ("why", value.string(TASK_SET_REASON)),
       ("planned_tasks", value.int(planned)),
-      ("tasks", value.array(tasks |> list.map(value.str))),
+      ("tasks", value.array(tasks |> list.map(value.string))),
     ])),
     ("conditions", value.array(CONDITIONS |> list.map((cond) => value.object([
-      ("name", value.str(cond)),
-      ("what", value.str(what_of(cond))),
+      ("name", value.string(cond)),
+      ("what", value.string(what_of(cond))),
     ] + (if cond == COND_SURVIVE then [
-      ("command", value.str("almide survive prog.almd --with <edit> --as text --json, in a directory holding only prog.almd = baseline + visible tests; <edit> = the proposed program + the same visible tests, after the same `almide fix` the control arm applies")),
+      ("command", value.string("almide survive prog.almd --with <edit> --as text --json, in a directory holding only prog.almd = baseline + visible tests; <edit> = the proposed program + the same visible tests, after the same `almide fix` the control arm applies")),
       ("hidden_oracle_reaches_survive", value.bool(false)),
     ] else []))))),
     ("survive_ab", value.object([
       ("verdict", value.object([
-        ("id", value.str(v.id)),
+        ("id", value.string(v.id)),
         ("comparable", value.bool(v.comparable)),
         ("conclusive", value.bool(v.conclusive)),
-        ("reasons", value.array(v.reasons |> list.map(value.str))),
+        ("reasons", value.array(v.reasons |> list.map(value.string))),
       ])),
       ("criterion", value.object([
-        ("statement", value.str("mean attempts per task in the survive arm is at least " + int.to_string(CRITERION_PCT) + "% lower than in the control arm (almide/almide#2147 victory condition)")),
-        ("id", value.str(c.id)),
-        ("reduction", value.str(pct_x10_text(c.reduction_pct_x10))),
-        ("reasons", value.array(c.reasons |> list.map(value.str))),
+        ("statement", value.string("mean attempts per task in the survive arm is at least " + int.to_string(CRITERION_PCT) + "% lower than in the control arm (almide/almide#2147 victory condition)")),
+        ("id", value.string(c.id)),
+        ("reduction", value.string(pct_x10_text(c.reduction_pct_x10))),
+        ("reasons", value.array(c.reasons |> list.map(value.string))),
       ])),
       (COND_CONTROL, arm_json(a, planned)),
       (COND_SURVIVE, arm_json(b, planned)),
@@ -342,9 +342,9 @@ fn render_table(title: String, facts: List[String], retries: Int, tasks: List[St
     mean_text(total_attempts(a), list.len(reached(a))) + " (control) → " +
     mean_text(total_attempts(b), list.len(reached(b))) + " (survive), a " + pct_x10_text(c.reduction_pct_x10) +
     " reduction against a " + int.to_string(CRITERION_PCT) + "% threshold\n" +
-    (c.reasons |> list.map((r) => "> - " + r + "\n") |> string.join("")) + "\n" +
+    (c.reasons |> list.map((r) => "> - " + r + "\n") |> list.join("")) + "\n" +
     cellstate.verdict_block(v, "the survive A/B over the contract-preserving bank") +
-    (facts |> list.map((f) => "- " + f + "\n") |> string.join("")) +
+    (facts |> list.map((f) => "- " + f + "\n") |> list.join("")) +
     "- **attempt**: " + ATTEMPT_DEFINITION + "\n" +
     "- **budget**: " + int.to_string(retries + 1) + " attempts per task (1 + " + int.to_string(retries) + " retries), both arms\n" +
     "- **task set**: " + n + " bank tasks. " + TASK_SET_REASON + "\n" +
@@ -355,7 +355,7 @@ fn render_table(title: String, facts: List[String], retries: Int, tasks: List[St
     "| arm | reached | mean attempts per task | final pass (of " + n + ") | 1-shot (of " + n + ") | refused edits |\n|---|---|---|---|---|---|\n" +
     arm_row(COND_CONTROL, a, planned) + "\n" + arm_row(COND_SURVIVE, b, planned) + "\n\n" +
     "## Per task\n\n| task | `" + COND_CONTROL + "` | `" + COND_SURVIVE + "` |\n|---|---|---|\n" +
-    (tasks |> list.map((t) => "| `" + t + "` | " + find_cell(a, t) + " | " + find_cell(b, t) + " |") |> string.join("\n")) + "\n"
+    (tasks |> list.map((t) => "| `" + t + "` | " + find_cell(a, t) + " | " + find_cell(b, t) + " |") |> list.join("\n")) + "\n"
 }
 
 // ── Tests ──
@@ -437,16 +437,16 @@ test "the criterion is decided in integers on a paired, complete, conclusive A/B
 test "the manifest records the arms, the attempt definition and the criterion, and reads its cells back" {
   let cells = [t_cell("control", "x", 4, false), t_cell("survive", "x", 2, true),
     t_cell("control", "y", 1, true), t_cell("survive", "y", 1, true)]
-  let m = manifest([("date", value.str("2026-09-26"))], 3, ["x", "y"], cells)
-  assert_eq(json.get_string(m, "attempt") ?? "", ATTEMPT_DEFINITION)
-  assert_eq(json.get_string(m, "issue") ?? "", "almide/almide#2147")
-  let conds = json.get_array(m, "conditions") ?? []
-  assert_eq(conds |> list.filter_map((c) => json.get_string(c, "name")), [COND_CONTROL, COND_SURVIVE])
-  let ab = json.get_path(m, json.field(json.root(), "survive_ab")) ?? value.null()
-  let crit = json.get_path(ab, json.field(json.root(), "criterion")) ?? value.null()
-  assert_eq(json.get_string(crit, "id") ?? "", "met")
-  let ctl = json.get_path(ab, json.field(json.root(), "control")) ?? value.null()
-  assert_eq(json.get_string(ctl, "mean_attempts_per_task") ?? "", "2.50")
+  let m = manifest([("date", value.string("2026-09-26"))], 3, ["x", "y"], cells)
+  assert_eq(value.get_string(m, "attempt") ?? "", ATTEMPT_DEFINITION)
+  assert_eq(value.get_string(m, "issue") ?? "", "almide/almide#2147")
+  let conds = value.get_array(m, "conditions") ?? []
+  assert_eq(conds |> list.filter_map((c) => value.get_string(c, "name")), [COND_CONTROL, COND_SURVIVE])
+  let ab = value.get_path(m, value.key(value.root(), "survive_ab")) ?? value.null()
+  let crit = value.get_path(ab, value.key(value.root(), "criterion")) ?? value.null()
+  assert_eq(value.get_string(crit, "id") ?? "", "met")
+  let ctl = value.get_path(ab, value.key(value.root(), "control")) ?? value.null()
+  assert_eq(value.get_string(ctl, "mean_attempts_per_task") ?? "", "2.50")
   let back = cells_from_manifest(json.parse(json.stringify(m)) ?? value.null())
   assert_eq(list.len(back), 4)
   assert_eq(arm(back, COND_SURVIVE) |> list.map((c) => c.attempts), [2, 1])
