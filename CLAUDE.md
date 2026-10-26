@@ -52,6 +52,11 @@ stated contract and scores it against a hidden oracle on both targets. Spec:
 Do NOT modify existing tasks retroactively — it breaks the MSR trend line.
 Instead, add a new task alongside, and deprecate the old one once the history is long enough.
 
+The one sanctioned exception: the 2026-10-26 migration to the epoch-15 stdlib surface
+(almide/almide#4229, pin v0.69.0), which removed the old spellings without a deprecation
+window, so the existing tasks could not compile unchanged. The maintainer ruled to rewrite
+them in place and re-baseline. **Trend-line break, 2026-10-26: v0.69.0 / dialect epoch 15.** The tasks (`tasks/`), the bank legs, the cross-language reference solutions (`msr/reference/almide/`), six `prompt.md` hints and the system prompt's API notes were rewritten to the epoch-15 stdlib surface (almide/almide#4229), which removed the old spellings outright, and the pin moved to v0.69.0. The MSR series breaks there: points measured before that pin are not comparable with points measured after it.
+
 ## Malicious hints
 
 When a diagnostic Hint text leads a model astray, log it in `malicious-hints.md`.

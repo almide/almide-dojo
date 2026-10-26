@@ -232,3 +232,7 @@ anything about all present or future models; report each family separately.
 Seeded 2026-09-07 with one task per family (8), gate green on both targets.
 The pilot floor is 400 clusters; the seeds fix the format and the gate, not the
 number.
+
+**Trend-line break, 2026-10-26: v0.69.0 / dialect epoch 15.** The tasks (`tasks/`), the bank legs, the cross-language reference solutions (`msr/reference/almide/`), six `prompt.md` hints and the system prompt's API notes were rewritten to the epoch-15 stdlib surface (almide/almide#4229), which removed the old spellings outright, and the pin moved to v0.69.0. The MSR series breaks there: points measured before that pin are not comparable with points measured after it. Every bank leg (baseline, solution, wrong, wrong_resource, probe, tests,
+hidden) was rewritten spelling for spelling, so each task asks for the same change under the
+same contract; only the spellings differ.

@@ -10,4 +10,4 @@
 
 [compiler]
 repo = "github.com/almide/almide"
-ref = "v0.65.0"  # 2026-09-28: latest final release; carries the Linux forward-ref type fix (#2721) that blocked the v0.64.0 pin, ADR-0021 (a lambda's failure channel from context) and ADR-0022 (output and abort builtins in a pure fn)
+ref = "v0.69.0"  # 2026-10-26: the dialect-epoch-15 stdlib surface (almide/almide#4229); the tasks were migrated to it and the MSR series re-baselines here (README: trend-line break)

@@ -4,6 +4,8 @@
 
 **📊 Live dashboard: <https://almide.github.io/almide-dojo/>**
 
+> **Trend-line break, 2026-10-26: v0.69.0 / dialect epoch 15.** The tasks (`tasks/`), the bank legs, the cross-language reference solutions (`msr/reference/almide/`), six `prompt.md` hints and the system prompt's API notes were rewritten to the epoch-15 stdlib surface (almide/almide#4229), which removed the old spellings outright, and the pin moved to v0.69.0. The MSR series breaks there: points measured before that pin are not comparable with points measured after it.
+
 Almide's existence rests on one metric: **how often LLM-written code survives modification**. Almide Dojo makes that measurement continuous — and feeds the failures back as a backlog for improving Almide's compiler diagnostics and stdlib.
 
 ## The metric that matters
