@@ -15,7 +15,7 @@ fn diffs(pairs: List[(String, String)]) -> List[String] =
   pairs |> list.map(((before, after)) => {
     let b = parse_snapshot(before)
     let a = parse_snapshot(after)
-    let changed = map.entries(a) |> list.filter_map(((k, q)) => match map.get(b, k) {
+    let changed = map.to_list(a) |> list.filter_map(((k, q)) => match map.get(b, k) {
       some(old) => if old != q then some("~" + k) else none,
       none => some("+" + k),
     })

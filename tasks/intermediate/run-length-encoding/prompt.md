@@ -18,6 +18,6 @@ Behavior:
 
 Notes:
 
-- Use `string.chars(s)` to iterate characters.
+- Use `string.to_list(s)` to iterate characters.
 - Use `int.to_string(n)` and `int.parse(s)` for number conversions.
 - `int.parse` returns `Result[Int, String]`.

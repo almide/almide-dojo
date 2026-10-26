@@ -1,7 +1,7 @@
 // Plausible wrong patch: the helper keeps only letters and digits and splits
 // on everything else, so "well-known" and "don't" fall apart.
 fn tokens(text: String) -> List[String] =
-  string.chars(text)
+  string.to_list(text)
     |> list.map((c) => if string.is_alphanumeric(c) then c else " ")
     |> list.join("")
     |> string.split(" ")

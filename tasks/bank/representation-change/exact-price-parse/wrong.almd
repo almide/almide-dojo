@@ -11,7 +11,7 @@ fn cents_of(t: String) -> Int? =
     none => if digits(t) then option.map(int.parse(t)?, (d) => d * 100) else none,
     some((whole, frac)) =>
       if digits(whole) and digits(frac) and string.len(frac) <= 2 then
-        option.map(float.parse(t)?, (f) => float.to_int(f * 100.0))
+        option.map(float.parse(t)?, (f) => int.from_saturating(f * 100.0))
       else none,
   }
 

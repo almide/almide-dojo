@@ -4,7 +4,7 @@
 type Record = { code: String, qty: Int, name: String }
 
 fn field(line: String, start: Int, width: Int) -> String =
-  string.trim(string.chars(line) |> list.drop(start) |> list.take(width) |> list.join(""))
+  string.trim(string.to_list(line) |> list.drop(start) |> list.take(width) |> list.join(""))
 
 fn parse_record(line: String) -> Record =
   Record {

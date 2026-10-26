@@ -20,7 +20,7 @@ fn scan(chars: List[String], i: Int, stack: List[(Int, String)]) -> Result[List[
   }
 
 fn balanced(line: String) -> Bool =
-  match scan(string.chars(line), 0, []) {
+  match scan(string.to_list(line), 0, []) {
     ok(st) => list.is_empty(st),
     err(_) => false,
   }
@@ -29,7 +29,7 @@ fn balanced(line: String) -> Bool =
 // not the earliest one still open.
 fn check_lines(lines: List[String]) -> List[String] =
   lines |> list.map((l) =>
-    match scan(string.chars(l), 0, []) {
+    match scan(string.to_list(l), 0, []) {
       err(i) => "bad@" + int.to_string(i),
       ok(st) => match list.last(st) {
         some((i, _)) => "open@" + int.to_string(i),

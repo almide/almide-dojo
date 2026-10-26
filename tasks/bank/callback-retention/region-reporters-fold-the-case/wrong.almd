@@ -15,7 +15,7 @@ fn region_total(sales: List[Sale], region: String) -> Int =
 // Plausible wrong patch: groups with list.group_by on the raw region string,
 // so "North" and "north" become two regions.
 fn reporters(sales: List[Sale]) -> List[(String, (Int) -> String)] =
-  map.entries(list.group_by(sales, (s) => s.region)) |> list.map(((r, group)) => {
+  map.to_list(list.group_by(sales, (s) => s.region)) |> list.map(((r, group)) => {
     let total = group |> list.fold(0, (a, s) => a + s.amount)
     (r, (target) => r + ": " + int.to_string(total) + "/" + int.to_string(target) + (if total >= target then " met" else " short"))
   })

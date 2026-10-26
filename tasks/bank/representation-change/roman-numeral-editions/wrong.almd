@@ -17,7 +17,7 @@ fn value_of(ch: String) -> Int =
 
 // Standard numerals: a smaller symbol before a larger one is subtracted.
 fn number(numeral: String) -> Int = {
-  let vs = string.chars(numeral) |> list.map(value_of)
+  let vs = string.to_list(numeral) |> list.map(value_of)
   vs |> list.enumerate |> list.fold(0, (acc, p) => {
     let next = list.get(vs, p.0 + 1) ?? 0
     if p.1 < next then acc - p.1 else acc + p.1

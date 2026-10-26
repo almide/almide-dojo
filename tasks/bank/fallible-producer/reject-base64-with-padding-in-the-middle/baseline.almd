@@ -17,12 +17,12 @@ fn decode_group(g: List[String], at: Int) -> List[Int]! = {
 }
 
 fn decode(s: String) -> List[Int]! = {
-  let cs = string.chars(s)
+  let cs = string.to_list(s)
   guard list.len(cs) % 4 == 0 else err("length ${int.to_string(list.len(cs))} is not a multiple of 4")
   list.chunk(cs, 4) |> list.enumerate |> list.flat_map((p) => decode_group(p.1, p.0 * 4)!)!
 }
 
 fn decode_text(s: String) -> String! = {
   let bytes = decode(s)!
-  string.from_bytes(bytes)
+  bytes.to_string_lossy(bytes.from_list(bytes))
 }

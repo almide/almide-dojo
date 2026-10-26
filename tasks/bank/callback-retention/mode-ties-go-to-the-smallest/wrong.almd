@@ -9,7 +9,7 @@ fn seen(rolls: List[Int], v: Int) -> Bool = map.contains(counts(rolls), v)
 // Plausible wrong patch: keeps the strictly larger count, so ties go to the
 // value that was rolled first.
 fn mode_reporter(rolls: List[Int]) -> (String) -> String = {
-  let best = map.entries(counts(rolls)) |> list.fold(none, (acc, e) => {
+  let best = map.to_list(counts(rolls)) |> list.fold(none, (acc, e) => {
     let (_, n) = e
     match acc {
       some((_, bn)) => if n > bn then some(e) else acc,

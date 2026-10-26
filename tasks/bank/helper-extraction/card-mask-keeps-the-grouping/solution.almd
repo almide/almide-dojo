@@ -2,8 +2,8 @@
 // every digit except the LAST FOUR digits with "*" and keeps the spaces where
 // they are ("4111 1111 1111 1234" -> "**** **** **** 1234").
 fn mask(card: String) -> String = {
-  let digits = string.chars(card) |> list.count((c) => c != " ")
-  let (out, _) = string.chars(card) |> list.fold(("", 0), (st, c) => {
+  let digits = string.to_list(card) |> list.count((c) => c != " ")
+  let (out, _) = string.to_list(card) |> list.fold(("", 0), (st, c) => {
     let (acc, seen) = st
     if c == " " then (acc + c, seen) else (acc + (if seen >= digits - 4 then c else "*"), seen + 1)
   })
@@ -12,4 +12,4 @@ fn mask(card: String) -> String = {
 
 fn receipt_line(card: String) -> String = "card " + mask(card)
 
-fn last4(card: String) -> String = string.chars(card) |> list.filter((c) => c != " ") |> list.take_end(4) |> list.join("")
+fn last4(card: String) -> String = string.to_list(card) |> list.filter((c) => c != " ") |> list.take_end(4) |> list.join("")

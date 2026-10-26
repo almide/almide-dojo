@@ -12,5 +12,5 @@ Behavior:
 Notes:
 
 - Use `string.to_lower(s)` for case-insensitive comparison.
-- Use `string.chars(s)` and `list.filter` to remove spaces.
+- Use `string.to_list(s)` and `list.filter` to remove spaces.
 - Use `list.sort` to compare sorted character lists.

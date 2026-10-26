@@ -1,6 +1,6 @@
 // Colours "#rrggbb" or the shorthand "#rgb" (each digit doubled: "#f80" is
 // "#ff8800"), hex digits in any case.
-fn channel(hex: String) -> Int? = int.from_hex(hex)?
+fn channel(hex: String) -> Int? = int.parse_radix(hex, 16)?
 
 fn red(c: String) -> Int? =
   if string.len(c) == 4 and string.starts_with(c, "#") then channel(string.repeat(string.slice(c, 1, 2), 2))

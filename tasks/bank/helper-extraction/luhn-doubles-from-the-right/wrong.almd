@@ -1,6 +1,6 @@
 // Plausible wrong patch: the helper doubles every second digit counting from
 // the LEFT, which agrees with the rule only for even-length numbers.
-fn digits(s: String) -> List[Int] = string.chars(s) |> list.filter((c) => c != " ") |> list.map((c) => int.parse(c) ?? 0)
+fn digits(s: String) -> List[Int] = string.to_list(s) |> list.filter((c) => c != " ") |> list.map((c) => int.parse(c) ?? 0)
 
 fn luhn_sum(s: String) -> Int =
   digits(s) |> list.enumerate |> list.fold(0, (a, p) => {

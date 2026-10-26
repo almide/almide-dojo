@@ -2,7 +2,7 @@
 type User = { name: String, email: String, age: Int }
 
 fn check_email(email: String) -> Result[String, String] =
-  if string.count(email, "@") == 1 and not string.starts_with(email, "@") and not string.ends_with(email, "@") then ok(email)
+  if string.count_matches(email, "@") == 1 and not string.starts_with(email, "@") and not string.ends_with(email, "@") then ok(email)
   else err("bad email: " + email)
 
 fn validate(u: User) -> Result[User, String] = {

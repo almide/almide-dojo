@@ -13,7 +13,7 @@ fn clashes(lines: List[String]) -> List[String] = {
   let split = lines |> list.map((line) => (name_of(line), slots(line)))
   split |> list.map(((name, ss)) => {
     let counts = ss |> list.fold(map.new(), (m, s) => map.set(m, s, (map.get(m, s) ?? 0) + 1))
-    let twice = map.entries(counts) |> list.filter(((_, n)) => n > 1) |> list.map(((s, _)) => s)
+    let twice = map.to_list(counts) |> list.filter(((_, n)) => n > 1) |> list.map(((s, _)) => s)
     name + ": " + (if list.is_empty(twice) then "ok" else list.join(twice, ","))
   })
 }

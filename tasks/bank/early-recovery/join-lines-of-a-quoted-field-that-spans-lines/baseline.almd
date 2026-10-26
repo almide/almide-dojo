@@ -28,7 +28,7 @@ fn scan(n: Int, cs: List[String], i: Int, st: Scan) -> Scan!CsvErr =
   }
 
 fn parse_record(n: Int, width: Int, line: String) -> List[String]!CsvErr = {
-  let st = scan(n, string.chars(line), 0, Scan { fields: [], cur: "", quoted: false })!
+  let st = scan(n, string.to_list(line), 0, Scan { fields: [], cur: "", quoted: false })!
   guard not st.quoted else err(OpenQuote(n))
   let fields = st.fields + [st.cur]
   guard list.len(fields) == width else err(FieldCount(n, list.len(fields)))

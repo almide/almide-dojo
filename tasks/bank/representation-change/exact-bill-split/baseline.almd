@@ -6,7 +6,7 @@ fn expense(what: String, amount: Float, people: List[String]) -> Expense =
 
 // Each person's share of one expense, in the order the people are listed.
 fn shares(e: Expense) -> List[(String, Float)] =
-  e.people |> list.map((p) => (p, e.amount / int.to_float(list.len(e.people))))
+  e.people |> list.map((p) => (p, e.amount / float.from(list.len(e.people))))
 
 // What each person owes over all expenses, in first-seen order of the people.
 fn balances(es: List[Expense]) -> List[(String, Float)] = {

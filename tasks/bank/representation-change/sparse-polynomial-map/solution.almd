@@ -10,10 +10,10 @@ fn poly(cs: List[Int]) -> Poly = from_pairs(list.enumerate(cs))
 
 fn coeff(p: Poly, i: Int) -> Int = map.get(p.terms, i) ?? 0
 
-fn add(a: Poly, b: Poly) -> Poly = from_pairs(map.entries(a.terms) + map.entries(b.terms))
+fn add(a: Poly, b: Poly) -> Poly = from_pairs(map.to_list(a.terms) + map.to_list(b.terms))
 
 fn mul(a: Poly, b: Poly) -> Poly =
-  from_pairs(map.entries(a.terms) |> list.flat_map((x) => map.entries(b.terms) |> list.map((y) => (x.0 + y.0, x.1 * y.1))))
+  from_pairs(map.to_list(a.terms) |> list.flat_map((x) => map.to_list(b.terms) |> list.map((y) => (x.0 + y.0, x.1 * y.1))))
 
 fn degree(p: Poly) -> Int? = list.max(map.keys(p.terms))
 

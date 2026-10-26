@@ -11,7 +11,7 @@ fn turnout(district: String) -> Int = list.len(ballots(district))
 fn results(districts: List[String]) -> List[String] =
   districts |> list.map((d) => {
     let tally = valid(d) |> list.fold(map.new(), (m, b) => map.set(m, b, (map.get(m, b) ?? 0) + 1))
-    match map.entries(tally) |> list.sort_by(((_, n)) => 0 - n) |> list.first {
+    match map.to_list(tally) |> list.sort_by(((_, n)) => 0 - n) |> list.first {
       some((c, _)) => c,
       none => "no majority",
     }

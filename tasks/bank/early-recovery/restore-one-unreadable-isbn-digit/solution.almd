@@ -11,7 +11,7 @@ fn checksum_ok(vals: List[Int]) -> Bool =
   (vals |> list.enumerate |> list.fold(0, (acc, p) => acc + (10 - p.0) * p.1)) % 11 == 0
 
 fn read_isbn(raw: String) -> String!IsbnErr = {
-  let cs = string.chars(raw) |> list.filter((c) => c != "-")
+  let cs = string.to_list(raw) |> list.filter((c) => c != "-")
   guard list.len(cs) == 10 else err(BadLength(raw))
   let vals = cs |> list.enumerate |> list.map((p) => match value(p.1, p.0) {
     some(v) => ok(v),
@@ -22,7 +22,7 @@ fn read_isbn(raw: String) -> String!IsbnErr = {
 }
 
 fn restore(raw: String) -> (String, String)!IsbnErr = {
-  let cs = string.chars(raw) |> list.filter((c) => c != "-")
+  let cs = string.to_list(raw) |> list.filter((c) => c != "-")
   let i = list.index_of(cs, "?") ?? 0
   let tries = if i == 9 then ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "X"] else ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
   match list.find(tries, (d) => result.is_ok(read_isbn(list.join(list.set(cs, i, d), "")))) {
@@ -39,7 +39,7 @@ fn import_catalog(lines: List[String]) -> Catalog!IsbnErr = {
     let raw = string.slice(line, 0, sp)
     let code = match read_isbn(raw) {
       ok(c) => ok(c),
-      err(BadChar(r, pos)) if list.get(string.chars(r) |> list.filter((c) => c != "-"), pos) == some("?") and string.count(r, "?") == 1 => {
+      err(BadChar(r, pos)) if list.get(string.to_list(r) |> list.filter((c) => c != "-"), pos) == some("?") and string.count_matches(r, "?") == 1 => {
         let fixed = restore(r)!
         notes = notes + [fixed.1]
         ok(fixed.0)

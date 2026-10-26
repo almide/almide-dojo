@@ -24,10 +24,10 @@ fn parse_plan(lines: List[String]) -> List[Share]! =
 
 fn allocate(budget_cents: Int, lines: List[String]) -> List[String]! = {
   let plan = parse_plan(lines)!
-  let tenths = plan |> list.fold(0, (acc, s) => acc + float.to_int(float.round(s.pct * 10.0)))
+  let tenths = plan |> list.fold(0, (acc, s) => acc + int.from_saturating(float.round(s.pct * 10.0)))
   guard tenths == 1000 else err("shares add up to ${int.to_string(tenths / 10)}.${int.to_string(tenths % 10)}%, not 100%")
   plan |> list.map((s) => {
-    let cents = float.to_int(float.floor(float.from_int(budget_cents) * s.pct / 100.0))
+    let cents = int.from_saturating(float.floor(float.from(budget_cents) * s.pct / 100.0))
     "${s.team}: ${int.to_string(cents)}"
   })
 }

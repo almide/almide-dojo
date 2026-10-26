@@ -3,7 +3,7 @@ protocol Placement {
   fn node_for(p: Self, key: String) -> String?
 }
 
-fn hash(key: String) -> Int = string.to_bytes(key) |> list.fold(0, (acc, b) => (acc * 31 + b) % 1000)
+fn hash(key: String) -> Int = bytes.to_list(bytes.from_string(key)) |> list.fold(0, (acc, b) => (acc * 31 + b) % 1000)
 
 // Nodes in turn by hash; none without nodes.
 type Modulo: Placement = { nodes: List[String] }

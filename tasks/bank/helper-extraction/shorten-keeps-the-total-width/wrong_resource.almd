@@ -1,7 +1,7 @@
 // Plausible wrong patch: the helper cuts through a character list. Same text
 // — but a string per character on every call.
 fn shorten(label: String, width: Int) -> String = {
-  let cs = string.chars(label)
+  let cs = string.to_list(label)
   if list.len(cs) <= width then label else list.take(cs, width - 1) |> list.join("") |> string.pad_end(width, "~")
 }
 

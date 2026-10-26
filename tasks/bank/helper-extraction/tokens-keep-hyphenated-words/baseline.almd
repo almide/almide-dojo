@@ -3,7 +3,7 @@
 // apostrophe INSIDE a word is ("well-known", "don't").
 fn strip_punct(w: String) -> String = {
   let p = [".", ",", ";", ":", "!", "?", "\""]
-  let cs = string.chars(w)
+  let cs = string.to_list(w)
   let front = cs |> list.drop_while((c) => list.contains(p, c))
   front |> list.reverse |> list.drop_while((c) => list.contains(p, c)) |> list.reverse |> list.join("")
 }

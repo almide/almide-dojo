@@ -6,7 +6,7 @@ type Order = { id: String, lines: List[(String, Int)] }
 fn wanted(o: Order) -> Map[String, Int] =
   list.group_by(o.lines, ((sku, _)) => sku) |> map.map((ls) => ls |> list.map(((_, q)) => q) |> list.sum)
 
-fn stock_of(stock: Map[String, Int], sku: String) -> Int = map.get_or(stock, sku, 0)
+fn stock_of(stock: Map[String, Int], sku: String) -> Int = map.get(stock, sku) ?? 0
 
 fn total_units(o: Order) -> Int = o.lines |> list.map(((_, q)) => q) |> list.sum
 
@@ -20,7 +20,7 @@ fn check_orders(stock: Map[String, Int], orders: List[Order]) -> List[String] = 
     let need = wanted(o)
     match map.keys(need) |> list.find((sku) => (map.get(need, sku) ?? 0) > stock_of(left, sku)) {
       some(sku) => (left, acc + [o.id + ": short " + sku]),
-      none => (map.entries(need) |> list.fold(left, (m, e) => {
+      none => (map.to_list(need) |> list.fold(left, (m, e) => {
         let (sku, q) = e
         map.set(m, sku, stock_of(m, sku) - q)
       }), acc + [o.id + ": ok"]),

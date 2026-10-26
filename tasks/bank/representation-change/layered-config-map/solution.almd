@@ -23,4 +23,4 @@ fn decided_by(layers: List[Layer], key: String) -> Int? =
 
 // "key=value" for every key, keys in first-seen order (layer by layer).
 fn effective(layers: List[Layer]) -> List[String] =
-  map.entries(flatten(layers)) |> list.map((e) => e.0 + "=" + e.1)
+  map.to_list(flatten(layers)) |> list.map((e) => e.0 + "=" + e.1)

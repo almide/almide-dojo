@@ -40,7 +40,7 @@ fn dot(a: String, b: String) -> String =
       ok(pb) => {
         let ta = table(pa)
         let tb = table(pb)
-        "dot=" + int.to_string(map.entries(ta) |> list.fold(0, (acc, e) => {
+        "dot=" + int.to_string(map.to_list(ta) |> list.fold(0, (acc, e) => {
           let (i, v) = e
           acc + v * (map.get(tb, i) ?? 0)
         }))

@@ -3,7 +3,7 @@ let CODE = [(".-", "A"), ("-...", "B"), ("-.-.", "C"), ("-..", "D"), (".", "E"),
 
 fn letter(code: String) -> String? = CODE |> list.find(((c, _)) => c == code) |> option.map(((_, l)) => l)
 
-fn symbols(msg: String) -> Int = string.chars(msg) |> list.count((c) => c == "." or c == "-")
+fn symbols(msg: String) -> Int = string.to_list(msg) |> list.count((c) => c == "." or c == "-")
 
 // Plausible wrong patch: splits the message on spaces only, so the "/" word
 // separator is decoded as an unknown letter and the words run together.

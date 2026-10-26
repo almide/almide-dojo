@@ -4,7 +4,7 @@
 let LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]]
 
 fn read_board(s: String) -> List[String]! = {
-  let cs = string.chars(s)
+  let cs = string.to_list(s)
   guard list.len(cs) == 9 else err("board must have 9 cells")
   match list.enumerate(cs) |> list.find((p) => p.1 != "X" and p.1 != "O" and p.1 != ".") {
     some(p) => err("bad cell ${p.1} at ${int.to_string(p.0)}"),

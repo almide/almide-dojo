@@ -4,9 +4,9 @@
 let MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
 
 fn month_index(s: String) -> Int? = {
-  let cs = string.chars(string.to_lower(s))
+  let cs = string.to_list(string.to_lower(s))
   guard list.len(cs) >= 3 else none
-  MONTHS |> list.find_index((m) => list.take(string.chars(m), list.len(cs)) == cs)
+  MONTHS |> list.find_index((m) => list.take(string.to_list(m), list.len(cs)) == cs)
 }
 
 fn month_number(s: String) -> Int? = month_index(s) |> option.map((i) => i + 1)

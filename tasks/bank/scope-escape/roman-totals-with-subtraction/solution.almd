@@ -7,12 +7,12 @@ fn symbol_value(c: String) -> Int? =
     _ => none,
   }
 
-fn well_formed(r: String) -> Bool = r != "" and (string.chars(r) |> list.all((c) => option.is_some(symbol_value(c))))
+fn well_formed(r: String) -> Bool = r != "" and (string.to_list(r) |> list.all((c) => option.is_some(symbol_value(c))))
 
 fn valid_count(rs: List[String]) -> Int = rs |> list.count((r) => well_formed(r))
 
 fn value(r: String) -> Int = {
-  let vs = string.chars(r) |> list.filter_map((c) => symbol_value(c))
+  let vs = string.to_list(r) |> list.filter_map((c) => symbol_value(c))
   list.zip(vs, list.drop(vs, 1) + [0]) |> list.fold(0, (a, p) => {
     let (v, next) = p
     if v < next then a - v else a + v

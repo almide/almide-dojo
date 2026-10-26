@@ -9,7 +9,7 @@ fn check_id(id: String) -> String! = {
   let check = list.get(parts, 1) ?? ""
   guard string.len(digits) >= 6 and string.len(digits) <= 24 and string.is_digit(digits) else err("bad id format ${id}")
   guard string.len(check) == 2 and string.is_digit(check) else err("bad id format ${id}")
-  let rem = string.chars(digits) |> list.fold(0, (r, c) => (r * 10 + (int.parse(c) ?? 0)) % 97)
+  let rem = string.to_list(digits) |> list.fold(0, (r, c) => (r * 10 + (int.parse(c) ?? 0)) % 97)
   guard rem == (int.parse(check) ?? -1) else err("check number mismatch in ${id}")
   id
 }

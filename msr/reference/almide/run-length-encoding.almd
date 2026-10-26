@@ -5,11 +5,11 @@ fn enc_go(cs: List[String], cur: String, count: Int) -> String = match cs {
     else (if count == 0 then "" else int.to_string(count) + cur) + enc_go(rest, c, 1),
 }
 
-fn rle_encode(s: String) -> String = enc_go(string.chars(s), "", 0)
+fn rle_encode(s: String) -> String = enc_go(string.to_list(s), "", 0)
 
 fn dec_go(cs: List[String]) -> String = match cs {
   [d, c, ..rest] => string.repeat(c, int.parse(d) ?? 0) + dec_go(rest),
   _ => "",
 }
 
-fn rle_decode(s: String) -> String = dec_go(string.chars(s))
+fn rle_decode(s: String) -> String = dec_go(string.to_list(s))

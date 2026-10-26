@@ -9,7 +9,7 @@ protocol Slugger {
 // with no "-" at either end. Ignores `taken`.
 type Basic: Slugger = {}
 fn Basic.slug(s: Basic, title: String, taken: List[String]) -> String = {
-  let raw = string.chars(string.to_lower(title))
+  let raw = string.to_list(string.to_lower(title))
     |> list.map((c) => if string.is_alphanumeric(c) then c else "-")
     |> list.join("")
   string.split(raw, "-") |> list.filter((p) => p != "") |> list.join("-")

@@ -1,7 +1,7 @@
 // Word statistics per document. Words are lowercase letters only; every other
 // character separates words ("don't" is "don" and "t").
 fn words(text: String) -> List[String] =
-  string.chars(string.to_lower(text))
+  string.to_list(string.to_lower(text))
     |> list.map((c) => if c >= "a" and c <= "z" then c else " ")
     |> list.join("")
     |> string.split(" ")

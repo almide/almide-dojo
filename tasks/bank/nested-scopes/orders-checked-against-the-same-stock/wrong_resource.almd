@@ -6,7 +6,7 @@ type Order = { id: String, lines: List[(String, Int)] }
 fn wanted(o: Order) -> Map[String, Int] =
   list.group_by(o.lines, ((sku, _)) => sku) |> map.map((ls) => ls |> list.map(((_, q)) => q) |> list.sum)
 
-fn stock_of(stock: Map[String, Int], sku: String) -> Int = map.get_or(stock, sku, 0)
+fn stock_of(stock: Map[String, Int], sku: String) -> Int = map.get(stock, sku) ?? 0
 
 fn total_units(o: Order) -> Int = o.lines |> list.map(((_, q)) => q) |> list.sum
 

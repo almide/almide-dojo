@@ -17,7 +17,7 @@ fn decode_group(g: List[String], at: Int) -> List[Int]! = {
 }
 
 fn decode(s: String) -> List[Int]! = {
-  let cs = string.chars(s)
+  let cs = string.to_list(s)
   guard list.len(cs) % 4 == 0 else err("length ${int.to_string(list.len(cs))} is not a multiple of 4")
   let n = list.len(cs)
   let bad_pad = list.range(0, n) |> list.find((i) => {
@@ -37,5 +37,5 @@ fn decode(s: String) -> List[Int]! = {
 
 fn decode_text(s: String) -> String! = {
   let bytes = decode(s)!
-  string.from_bytes(bytes)
+  bytes.to_string_lossy(bytes.from_list(bytes))
 }

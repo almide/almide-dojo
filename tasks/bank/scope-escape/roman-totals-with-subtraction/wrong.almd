@@ -7,7 +7,7 @@ fn symbol_value(c: String) -> Int? =
     _ => none,
   }
 
-fn well_formed(r: String) -> Bool = r != "" and (string.chars(r) |> list.all((c) => option.is_some(symbol_value(c))))
+fn well_formed(r: String) -> Bool = r != "" and (string.to_list(r) |> list.all((c) => option.is_some(symbol_value(c))))
 
 fn valid_count(rs: List[String]) -> Int = rs |> list.count((r) => well_formed(r))
 
@@ -15,5 +15,5 @@ fn valid_count(rs: List[String]) -> Int = rs |> list.count((r) => well_formed(r)
 fn roman_total(rs: List[String]) -> String =
   match rs |> list.find((r) => not well_formed(r)) {
     some(bad) => "bad: " + bad,
-    none => "total=" + int.to_string(rs |> list.fold(0, (a, r) => a + (string.chars(r) |> list.filter_map((c) => symbol_value(c)) |> list.sum))),
+    none => "total=" + int.to_string(rs |> list.fold(0, (a, r) => a + (string.to_list(r) |> list.filter_map((c) => symbol_value(c)) |> list.sum))),
   }

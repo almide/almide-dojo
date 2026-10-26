@@ -17,7 +17,7 @@ fn spent(m: Month) -> Int = m.expenses |> list.fold(0, (a, e) => {
 // unlimited category is reported as over.
 fn budget_report(limits: Map[String, Int], months: List[Month]) -> List[String] =
   months |> list.map((m) => {
-    let over = map.entries(totals(m.expenses))
+    let over = map.to_list(totals(m.expenses))
       |> list.filter(((cat, t)) => t > (map.get(limits, cat) ?? 0))
       |> list.map(((cat, _)) => cat)
     m.name + ": " + (if list.is_empty(over) then "ok" else list.join(over, ","))

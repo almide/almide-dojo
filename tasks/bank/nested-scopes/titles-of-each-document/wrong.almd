@@ -1,7 +1,7 @@
 // Markdown-ish documents: a heading is 1 to 6 '#' followed by a space.
 // "#tag" (no space) and "####### x" (seven) are not headings.
 fn heading_level(line: String) -> Int? = {
-  let hashes = string.chars(line) |> list.take_while((c) => c == "#") |> list.len
+  let hashes = string.to_list(line) |> list.take_while((c) => c == "#") |> list.len
   if hashes >= 1 and hashes <= 6 and string.get(line, hashes) == some(" ") then some(hashes) else none
 }
 
@@ -19,6 +19,6 @@ fn outline(doc: List[String]) -> List[String] =
 fn titles(docs: List[List[String]]) -> List[String] =
   docs |> list.map((doc) =>
     match doc |> list.find((l) => string.starts_with(l, "#")) {
-      some(l) => string.trim(string.chars(l) |> list.drop_while((c) => c == "#") |> list.join("")),
+      some(l) => string.trim(string.to_list(l) |> list.drop_while((c) => c == "#") |> list.join("")),
       none => "(untitled)",
     })

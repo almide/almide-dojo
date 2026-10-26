@@ -16,7 +16,7 @@ fn tally(lines: List[String]) -> Map[String, Int] =
   })
 
 fn summary(lines: List[String]) -> String =
-  map.entries(tally(lines)) |> list.map(((k, n)) => k + "=" + int.to_string(n)) |> list.join(" ")
+  map.to_list(tally(lines)) |> list.map(((k, n)) => k + "=" + int.to_string(n)) |> list.join(" ")
 
 // The error count is computed now, exactly as tally counts it; the closure
 // captures the count only.

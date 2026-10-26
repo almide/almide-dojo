@@ -2,7 +2,7 @@
 // (map.entries + find). Same answers — but every lookup copies the whole map
 // into an entry list.
 fn setting(cfg: Map[String, String], key: String) -> String? =
-  map.entries(cfg) |> list.find(((k, _)) => k == key) |> option.map(((_, v)) => v)
+  map.to_list(cfg) |> list.find(((k, _)) => k == key) |> option.map(((_, v)) => v)
 
 fn get_int(cfg: Map[String, String], key: String, default: Int) -> Result[Int, String] =
   match setting(cfg, key) {

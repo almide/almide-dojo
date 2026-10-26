@@ -3,7 +3,7 @@
 fn fields(spec: String) -> List[String] =
   if string.trim(spec) == "" then []
   else {
-    let (done, cur) = string.chars(spec) |> list.fold(([], ""), (st, c) => {
+    let (done, cur) = string.to_list(spec) |> list.fold(([], ""), (st, c) => {
       let (out, part) = st
       if c == "," then (out + [string.trim(part)], "") else (out, part + c)
     })

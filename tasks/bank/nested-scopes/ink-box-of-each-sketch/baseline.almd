@@ -2,6 +2,6 @@
 // character is paper.
 fn rows(sketch: String) -> List[String] = string.split(sketch, "\n")
 
-fn ink(sketch: String) -> Int = rows(sketch) |> list.fold(0, (a, r) => a + string.count(r, "#"))
+fn ink(sketch: String) -> Int = rows(sketch) |> list.fold(0, (a, r) => a + string.count_matches(r, "#"))
 
 fn blank(sketch: String) -> Bool = ink(sketch) == 0

@@ -19,6 +19,6 @@ fn final_balances(txs: List[Tx]) -> Map[String, Int] =
   txs |> list.fold(map.new(), (m, tx) => apply(m, tx))
 
 fn render(m: Map[String, Int]) -> String =
-  map.entries(m) |> list.map(((a, n)) => a + "=" + int.to_string(n)) |> list.join(",")
+  map.to_list(m) |> list.map(((a, n)) => a + "=" + int.to_string(n)) |> list.join(",")
 
 fn statement(txs: List[Tx]) -> String = render(final_balances(txs))

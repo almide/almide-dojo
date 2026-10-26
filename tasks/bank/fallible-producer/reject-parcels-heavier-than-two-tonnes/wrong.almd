@@ -16,7 +16,7 @@ fn unit_mg(u: String) -> Int? =
   }
 
 fn split_amount(s: String) -> (Int, Int) = {
-  let digits = string.chars(s) |> list.take_while((c) => string.is_digit(c)) |> list.len
+  let digits = string.to_list(s) |> list.take_while((c) => string.is_digit(c)) |> list.len
   (digits, string.len(s))
 }
 

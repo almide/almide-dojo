@@ -21,4 +21,4 @@ fn lex(chars: List[String], i: Int, acc: List[String]) -> List[String] =
       else lex(chars, i + 1, acc + [c]),
   }
 
-fn tokens(src: String) -> List[String] = lex(string.chars(src), 0, [])
+fn tokens(src: String) -> List[String] = lex(string.to_list(src), 0, [])

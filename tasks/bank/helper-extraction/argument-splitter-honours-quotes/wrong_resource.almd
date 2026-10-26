@@ -2,7 +2,7 @@
 // quote state as a list of pairs, then groups. Same arguments — but a pair
 // list and extra strings per character.
 fn args(line: String) -> List[String] = {
-  let (tagged, _) = string.chars(line) |> list.fold(([], false), (st, c) => {
+  let (tagged, _) = string.to_list(line) |> list.fold(([], false), (st, c) => {
     let (acc, q) = st
     if c == "\"" then (acc, not q) else (acc + [(c, q)], q)
   })

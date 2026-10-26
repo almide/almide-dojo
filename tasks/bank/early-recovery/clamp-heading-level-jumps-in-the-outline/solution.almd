@@ -11,7 +11,7 @@ type OutlineErr: Eq, Repr =
 type Outline: Eq, Repr = { items: List[String], warnings: List[String] }
 
 fn parse_heading(n: Int, line: String, prev: Int) -> Heading!OutlineErr = {
-  let hashes = string.chars(line) |> list.take_while((c) => c == "#") |> list.len
+  let hashes = string.to_list(line) |> list.take_while((c) => c == "#") |> list.len
   guard hashes > 0 and string.slice(line, hashes, hashes + 1) == " " else err(NotHeading(n))
   guard hashes <= 6 else err(TooDeep(n, hashes))
   let title = string.trim(string.drop(line, hashes + 1))

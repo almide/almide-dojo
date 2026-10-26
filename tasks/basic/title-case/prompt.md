@@ -15,4 +15,4 @@ Notes:
 - Use `string.split(s, " ")` to split by spaces.
 - Use `string.capitalize(word)` to capitalize the first letter of a word.
 - Use `string.to_lower(s)` to lowercase a string.
-- Use `string.join(parts, " ")` to rejoin words.
+- Use `list.join(parts, " ")` to rejoin words.

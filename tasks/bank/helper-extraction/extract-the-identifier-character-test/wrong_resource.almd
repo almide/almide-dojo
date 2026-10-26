@@ -4,7 +4,7 @@
 fn lower_or_underscore(c: String) -> Bool = c == "_" or (c >= "a" and c <= "z")
 
 fn ident_continue(c: String) -> Bool =
-  list.contains(string.chars("abcdefghijklmnopqrstuvwxyz0123456789_"), c)
+  list.contains(string.to_list("abcdefghijklmnopqrstuvwxyz0123456789_"), c)
 
 fn lex(chars: List[String], i: Int, acc: List[String]) -> List[String] =
   match list.get(chars, i) {
@@ -22,4 +22,4 @@ fn lex(chars: List[String], i: Int, acc: List[String]) -> List[String] =
       else lex(chars, i + 1, acc + [c]),
   }
 
-fn tokens(src: String) -> List[String] = lex(string.chars(src), 0, [])
+fn tokens(src: String) -> List[String] = lex(string.to_list(src), 0, [])

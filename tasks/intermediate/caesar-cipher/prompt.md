@@ -14,7 +14,7 @@ Behavior:
 
 Notes:
 
-- Use `string.chars(s)` to get individual characters.
-- Use `string.codepoint(c)` to get the Unicode codepoint of a character.
+- Use `string.to_list(s)` to get individual characters.
+- Use `string.to_codepoint(c)` to get the Unicode codepoint of a character.
 - Use `string.from_codepoint(n)` to convert back.
 - The codepoint for `'a'` is `97`, `'z'` is `122`.

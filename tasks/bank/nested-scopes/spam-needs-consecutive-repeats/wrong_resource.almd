@@ -11,7 +11,7 @@ fn posts(channel: String) -> List[Post] = string.lines(channel) |> list.filter_m
 fn authors(channel: String) -> List[String] = posts(channel) |> list.map((p) => p.user) |> list.unique
 
 fn busiest(channel: String) -> String =
-  map.entries(list.group_by(posts(channel), (p) => p.user)) |> list.sort_by(((_, ps)) => 0 - list.len(ps)) |> list.first |> option.map(((u, _)) => u) ?? "-"
+  map.to_list(list.group_by(posts(channel), (p) => p.user)) |> list.sort_by(((_, ps)) => 0 - list.len(ps)) |> list.first |> option.map(((u, _)) => u) ?? "-"
 
 // Plausible wrong patch: parses every channel first and scans afterwards, so
 // every post list is live at once.

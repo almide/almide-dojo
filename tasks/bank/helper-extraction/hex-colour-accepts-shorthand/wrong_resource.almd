@@ -1,10 +1,10 @@
 // Plausible wrong patch: the helper always walks the digits and doubles them
 // for the shorthand by index. Same digits — but the long form now goes
 // through a character list as well.
-fn channel(hex: String) -> Int? = int.from_hex(hex)?
+fn channel(hex: String) -> Int? = int.parse_radix(hex, 16)?
 
 fn expand(c: String) -> String? = {
-  let ds = string.chars(string.drop(c, 1))
+  let ds = string.to_list(string.drop(c, 1))
   if not string.starts_with(c, "#") then none
   else if list.len(ds) == 3 then some(ds |> list.map((d) => d + d) |> list.join(""))
   else if list.len(ds) == 6 then some(list.join(ds, ""))

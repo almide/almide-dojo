@@ -39,7 +39,7 @@ fn largest_dir(lines: List[String]) -> String =
     ok(files) => {
       let sizes = files |> list.fold(map.new(), (m, f) =>
         ancestors(f.path) |> list.fold(m, (acc, d) => map.set(acc, d, (map.get(acc, d) ?? 0) + f.size)))
-      let ranked = map.entries(sizes) |> list.sort_by(((d, _)) => d) |> list.sort_by(((_, s)) => 0 - s)
+      let ranked = map.to_list(sizes) |> list.sort_by(((d, _)) => d) |> list.sort_by(((_, s)) => 0 - s)
       match list.first(ranked) {
         some((d, s)) => d + "=" + int.to_string(s),
         none => "none",

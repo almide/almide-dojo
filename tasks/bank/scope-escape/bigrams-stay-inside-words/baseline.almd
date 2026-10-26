@@ -4,6 +4,6 @@ fn words(text: String) -> List[String] = string.split(string.to_lower(text), " "
 fn letters(text: String) -> Int = words(text) |> list.fold(0, (a, w) => a + string.len(w))
 
 fn word_bigrams(w: String) -> List[String] = {
-  let cs = string.chars(w)
+  let cs = string.to_list(w)
   list.zip(cs, list.drop(cs, 1)) |> list.map(((a, b)) => a + b)
 }

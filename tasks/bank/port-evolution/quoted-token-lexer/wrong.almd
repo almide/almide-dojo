@@ -32,7 +32,7 @@ fn step(s: Lex, ch: String) -> Lex =
 // Spaces separate tokens; double quotes group, with \" and \\ escapes inside.
 type Quoted: Lexer = {}
 fn Quoted.tokens(l: Quoted, line: String) -> List[String]! = {
-  let end = string.chars(line) |> list.fold(Lex { done: [], cur: none, quoted: false, escaped: false }, step)
+  let end = string.to_list(line) |> list.fold(Lex { done: [], cur: none, quoted: false, escaped: false }, step)
   guard not end.quoted else err("unterminated quote")
   (end.done + option.to_list(end.cur)) |> list.filter((t) => t != "")
 }
