@@ -29,8 +29,8 @@ fn Base16.decode(c: Base16, s: String) -> String! = {
   let chars = string.to_list(s)
   guard list.len(chars) % 2 == 0 else err("odd length: " + s)
   guard list.all(chars, is_hex_digit) else err("bad hex: " + s)
-  let bytes = list.chunk(chars, 2) |> list.map((pair) => int.parse_radix(list.join(pair, ""), 16) ?? 0)
-  bytes.to_string_lossy(bytes.from_list(bytes))
+  let codes = list.chunk(chars, 2) |> list.map((pair) => int.parse_radix(list.join(pair, ""), 16) ?? 0)
+  bytes.to_string_lossy(bytes.from_list(codes))
 }
 
 fn pack[C: FieldCodec](c: C, fields: List[String]) -> String =

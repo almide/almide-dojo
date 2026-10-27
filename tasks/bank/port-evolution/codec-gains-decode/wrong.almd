@@ -28,12 +28,12 @@ fn Base16.encode(c: Base16, s: String) -> String =
 fn Base16.decode(c: Base16, s: String) -> String! = {
   let chars = string.to_list(s)
   guard list.len(chars) % 2 == 0 else err("odd length: " + s)
-  var bytes: List[Int] = []
+  var codes: List[Int] = []
   for pair in list.chunk(chars, 2) {
     let b = int.parse_radix(list.join(pair, ""), 16) |> result.map_err((_) => "bad hex: " + s)
-    bytes = bytes + [b!]
+    codes = codes + [b!]
   }
-  bytes.to_string_lossy(bytes.from_list(bytes))
+  bytes.to_string_lossy(bytes.from_list(codes))
 }
 
 fn pack[C: FieldCodec](c: C, fields: List[String]) -> String =

@@ -23,6 +23,6 @@ fn decode(s: String) -> List[Int]! = {
 }
 
 fn decode_text(s: String) -> String! = {
-  let bytes = decode(s)!
-  bytes.to_string_lossy(bytes.from_list(bytes))
+  let codes = decode(s)!
+  bytes.to_string_lossy(bytes.from_list(codes))
 }
