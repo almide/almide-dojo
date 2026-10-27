@@ -32,7 +32,7 @@ type RunPoint = { date: String, model: String, total: Int, with_retry: Int }
 // before a landing date.
 fn quoted(line: String) -> String =
   match regex.captures(regex.new("\"([^\"]*)\""), line) {
-    some(gs) => list.get(gs, 1) ?? "",
+    some(gs) => option.flatten(list.get(gs, 1)) ?? "",
     none => "",
   }
 
@@ -64,7 +64,7 @@ effect fn parse_ledger(path: String) -> List[Verdict] = {
 
 fn field(pattern: String, text: String) -> Option[String] =
   match regex.captures(regex.new(pattern), text) {
-    some(gs) => list.get(gs, 1),
+    some(gs) => option.flatten(list.get(gs, 1)),
     none => none,
   }
 
