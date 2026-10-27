@@ -10,12 +10,16 @@ fn region_total(r: Region) -> Int = r.stores |> list.fold(0, (a, s) => a + store
 fn overview(regions: List[Region]) -> List[String] =
   regions |> list.map((r) => r.name + "=" + int.to_string(region_total(r)))
 
-// Plausible wrong patch: lists every region's (store, total) pairs first and
-// picks the bests afterwards, so every region's pair list is live at once.
+// Plausible wrong patch: renders every store's output line for every region
+// first and picks the bests afterwards, so every region's rendered lines are
+// live at once.
 fn best_stores(regions: List[Region]) -> List[String] = {
-  let ranked = regions |> list.map((r) => (r.name, r.stores |> list.map((s) => (s.name, store_total(s)))))
-  ranked |> list.map(((rname, pairs)) => {
-    let best = pairs |> list.fold(none, (acc, p) => {
+  let ranked = regions |> list.map((r) => (r.name, r.stores |> list.map((s) => {
+    let t = store_total(s)
+    (r.name + ": " + s.name + " " + int.to_string(t), t)
+  })))
+  ranked |> list.map(((rname, lines)) => {
+    let best = lines |> list.fold(none, (acc, p) => {
       let (_, t) = p
       match acc {
         some((_, bt)) => if t > bt then some(p) else acc,
@@ -23,7 +27,7 @@ fn best_stores(regions: List[Region]) -> List[String] = {
       }
     })
     match best {
-      some((name, t)) => rname + ": " + name + " " + int.to_string(t),
+      some((line, _)) => line,
       none => rname + ": none",
     }
   })

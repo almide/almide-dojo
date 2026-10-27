@@ -20,10 +20,13 @@ fn components(nodes: List[String], edges: List[(String, String)]) -> Int = {
   count
 }
 
-// Plausible wrong patch: collects every graph's node list first and counts
-// afterwards, so every graph's node list is live at once.
+// Plausible wrong patch: labels every node of every graph with its whole
+// reachable set first and counts afterwards (a node counts when it is the
+// smallest of its set), so every graph's reachability lists are live at once.
 fn components_batch(universe: List[String], graphs: List[List[(String, String)]]) -> List[Int] = {
-  let node_sets = graphs |> list.map((edges) =>
-    universe + (edges |> list.flat_map(((a, b)) => [a, b]) |> list.filter((n) => not list.contains(universe, n)) |> list.unique))
-  list.zip(node_sets, graphs) |> list.map(((ns, edges)) => components(ns, edges))
+  let labelled = graphs |> list.map((edges) => {
+    let extra = edges |> list.flat_map(((a, b)) => [a, b]) |> list.filter((n) => not list.contains(universe, n))
+    list.unique(universe + extra) |> list.map((n) => (n, reach(edges, [n], [])))
+  })
+  labelled |> list.map((pairs) => pairs |> list.count(((n, comp)) => list.min(comp) == some(n)))
 }

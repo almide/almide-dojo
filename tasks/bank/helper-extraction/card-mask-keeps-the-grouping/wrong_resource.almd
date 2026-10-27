@@ -1,10 +1,10 @@
-// Plausible wrong patch: the helper numbers the characters and asks, for
-// each digit, how many digits come after it. Same text — but a numbered copy
-// and a count scan per character.
+// Plausible wrong patch: the helper asks, for each character, how many digits
+// come after it by slicing every later character out of the card. Same text —
+// but a fresh one-character string per (character, later character) pair.
 fn mask(card: String) -> String = {
-  let cs = string.to_list(card) |> list.enumerate
-  cs |> list.map(((i, c)) => {
-    let after = list.drop(cs, i + 1) |> list.count(((_, d)) => d != " ")
+  let n = string.len(card)
+  string.to_list(card) |> list.enumerate |> list.map(((i, c)) => {
+    let after = list.range(i + 1, n) |> list.count((j) => string.slice(card, j, j + 1) != " ")
     if c == " " or after < 4 then c else "*"
   }) |> list.join("")
 }

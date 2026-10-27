@@ -1,10 +1,11 @@
-// Plausible wrong patch: the helper splits on ":" and reads the parts. Same
-// answers — but a parts list is allocated on every call.
+// Plausible wrong patch: a `field` helper splits on ":" and reads one part.
+// Same answers — but the time is split again for every part it reads.
+fn field(t: String, k: Int) -> String = list.get(string.split(t, ":"), k) ?? ""
+
 fn clock(t: String) -> Int? = {
-  let parts = string.split(t, ":")
-  guard list.len(parts) == 2 else none
-  let h = int.parse(list.first(parts) ?? "")?!
-  let m_text = list.last(parts) ?? ""
+  guard list.len(string.split(t, ":")) == 2 else none
+  let h = int.parse(field(t, 0))?!
+  let m_text = field(t, 1)
   guard string.len(m_text) == 2 else none
   let m = int.parse(m_text)?!
   guard h >= 0 and h < 24 and m >= 0 and m < 60 else none
