@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  attestations: read
 
 jobs:
   harness:
@@ -17,6 +18,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install the pinned Almide
+        env:
+          # install.sh verifies the release attestation with `gh attestation verify`, which needs a token
+          GH_TOKEN: ${{ github.token }}
         run: |
           PIN=$(sed -nE 's/^ref *= *"([^"]+)".*/\1/p' almide-pin.toml)
           curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "$PIN"
@@ -93,6 +97,9 @@ jobs:
       # rustc, node and npm come with the runner image; scripts/msr.sh
       # installs the pinned compiler and, for TypeScript, the pinned tsc.
       - name: Probe
+        env:
+          # scripts/msr.sh runs install.sh, which verifies the release attestation with `gh attestation verify`
+          GH_TOKEN: ${{ github.token }}
         run: make msr-probe
 
       - name: Verify
