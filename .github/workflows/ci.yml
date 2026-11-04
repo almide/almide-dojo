@@ -97,6 +97,9 @@ jobs:
       # rustc, node and npm come with the runner image; scripts/msr.sh
       # installs the pinned compiler and, for TypeScript, the pinned tsc.
       - name: Probe
+        env:
+          # scripts/msr.sh runs install.sh, which verifies the release attestation with `gh attestation verify`
+          GH_TOKEN: ${{ github.token }}
         run: make msr-probe
 
       - name: Verify
