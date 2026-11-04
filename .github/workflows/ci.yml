@@ -90,8 +90,9 @@ jobs:
 
       - name: Install MoonBit
         if: matrix.language == 'moonbit'
+        # The release pinned in msr/toolchains.toml, never "latest".
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          bash scripts/install-moonbit.sh
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
 
       # rustc, node and npm come with the runner image; scripts/msr.sh

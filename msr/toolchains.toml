@@ -1,9 +1,11 @@
 # Toolchains the cross-language lane was written and verified against.
 # Every run records the versions it actually found in its manifest.json;
-# this file is the reference point, not a requirement. The one entry a
-# script reads is `typescript`: scripts/msr.sh installs that version into
-# .msr-tools/ when no `tsc` is on PATH (the other toolchains are installed
-# by their own installers; a missing one is reported as "not measured").
+# this file is the reference point, not a requirement. Two entries are read
+# by scripts: `typescript` — scripts/msr.sh installs that version into
+# .msr-tools/ when no `tsc` is on PATH — and `[install] moonbit` — the
+# release scripts/install-moonbit.sh installs on CI. The other toolchains
+# are installed by their own installers or actions, each at a pinned
+# version; a missing one is reported as "not measured".
 
 [verified]
 almide = "0.62.0"       # almide-pin.toml is authoritative
@@ -13,4 +15,12 @@ typescript = "7.0.2"
 node = "22"
 zig = "0.16.0"
 gleam = "1.18.1"        # JavaScript target: node, no Erlang
-moonbit = "0.1.20260824"
+moonbit = "0.1.20261102"    # `moon version`; installed as [install] moonbit
+
+[install]
+# The MoonBit release the CI installs (cli.moonbitlang.com/install/unix.sh
+# <version>; the version is `moonc -v` without the leading "v"). Unpinned, a
+# new `moon` dropped moon.mod.json overnight and failed every reference
+# solution. Bump it deliberately: install the new release, run
+# `make msr-verify LANGUAGES=moonbit`, update [verified] moonbit above.
+moonbit = "0.10.19+bee578715"
