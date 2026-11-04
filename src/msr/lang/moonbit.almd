@@ -59,9 +59,13 @@ fn driver(t: PTask) -> String = {
     """
 }
 
+// The module and package manifests in the `moon.mod` / `moon.pkg` format,
+// exactly what `moon fmt` migrates the old `moon.mod.json` / `moon.pkg.json`
+// to; the toolchain dropped the JSON manifests (0.10.19+bee578715, pinned in
+// msr/toolchains.toml).
 fn files(t: PTask, solution: String) -> List[(String, String)] = [
-  ("moon.mod.json", "{ \"name\": \"msr/solution\" }\n"),
-  ("main/moon.pkg.json", "{ \"is-main\": true, \"import\": [\"moonbitlang/core/debug\"] }\n"),
+  ("moon.mod", "name = \"msr/solution\"\n"),
+  ("main/moon.pkg", "import {\n  \"moonbitlang/core/debug\",\n}\n\noptions(\n  \"is-main\": true,\n)\n"),
   ("main/solution.mbt", solution),
   ("main/msr_main.mbt", driver(t)),
 ]
