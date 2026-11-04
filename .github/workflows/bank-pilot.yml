@@ -165,6 +165,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Read-only for the job: the compiler's best-effort lock write is then
+      # skipped, so no concurrent reader can see a half-written lock and
+      # resolve almai at `main` (see ci.yml, almide/almide#4472).
+      - name: The committed almide.lock is the only resolution
+        run: chmod a-w almide.lock
+
       - name: Install the pinned Almide (${{ needs.plan.outputs.pin }})
         env:
           # install.sh verifies the release attestation with `gh attestation verify`, which needs a token
@@ -269,6 +275,12 @@ jobs:
       # The survive A/B (almide/almide#2147): every shard wrote its own
       # survive-ab manifest; merge them into runs/survive-ab/ and re-decide the
       # verdict and the >= 20 % criterion over the union. No model call.
+      # Read-only for the job: the compiler's best-effort lock write is then
+      # skipped, so no concurrent reader can see a half-written lock and
+      # resolve almai at `main` (see ci.yml, almide/almide#4472).
+      - name: The committed almide.lock is the only resolution
+        run: chmod a-w almide.lock
+
       - name: Install the pinned Almide for the survive A/B merge
         if: ${{ contains(needs.plan.outputs.conditions, 'survive') }}
         env:

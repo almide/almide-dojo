@@ -27,6 +27,17 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           GOT=$("$HOME/.local/bin/almide" --version | head -n1); [[ "$GOT" == "almide ${PIN#v}" || "$GOT" == "almide ${PIN#v} (release, "* ]]
 
+      # almide.lock pins almai to the commit the harness was written against.
+      # `almide test` resolves dependencies on every parallel test thread and
+      # each one rewrites almide.lock in place; a thread that reads it mid-write
+      # sees no lock, resolves almai at `main` and records that commit for the
+      # threads after it (almide/almide#4472). The lock is read-only for the
+      # rest of the job — the compiler's lock write is best-effort, so it is
+      # skipped and every thread reads the committed pin — and the last step
+      # proves it is still the committed one.
+      - name: The committed almide.lock is the only resolution
+        run: chmod a-w almide.lock
+
       - name: Test blocks
         run: almide test src/
 
@@ -56,6 +67,10 @@ jobs:
           BANK_REQUIRE_WASM_RENDER: '1'
           BANK_REQUIRE_RESOURCE: '1'
         run: bash scripts/check-bank.sh
+
+      - name: almide.lock is unchanged
+        if: ${{ !cancelled() }}
+        run: git diff --exit-code -- almide.lock
 
   msr-verify:
     # One job per language: the reference solution of every task in the
@@ -90,9 +105,16 @@ jobs:
 
       - name: Install MoonBit
         if: matrix.language == 'moonbit'
+        # The release pinned in msr/toolchains.toml, never "latest".
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          bash scripts/install-moonbit.sh
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      # Read-only for the job: the compiler's best-effort lock write is then
+      # skipped, so no concurrent reader can see a half-written lock and
+      # resolve almai at `main` (see the harness job, almide/almide#4472).
+      - name: The committed almide.lock is the only resolution
+        run: chmod a-w almide.lock
 
       # rustc, node and npm come with the runner image; scripts/msr.sh
       # installs the pinned compiler and, for TypeScript, the pinned tsc.

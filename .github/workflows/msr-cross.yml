@@ -155,12 +155,19 @@ jobs:
 
       - name: Install MoonBit
         continue-on-error: true
+        # The release pinned in msr/toolchains.toml, never "latest".
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          bash scripts/install-moonbit.sh
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
 
       # rustc, node and npm come with the runner image; scripts/msr.sh
       # installs the pinned tsc when TypeScript has none.
+      # Read-only for the job: the compiler's best-effort lock write is then
+      # skipped, so no concurrent reader can see a half-written lock and
+      # resolve almai at `main` (see ci.yml, almide/almide#4472).
+      - name: The committed almide.lock is the only resolution
+        run: chmod a-w almide.lock
+
       - name: Install the pinned Almide (${{ needs.plan.outputs.pin }})
         env:
           # install.sh verifies the release attestation with `gh attestation verify`, which needs a token
