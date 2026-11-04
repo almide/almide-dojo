@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  attestations: read
 
 env:
   # The nightly set: the Cloudflare Workers AI models only — the repo holds
@@ -88,6 +89,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install the pinned Almide (${{ needs.plan.outputs.pin }})
+        env:
+          # install.sh verifies the release attestation with `gh attestation verify`, which needs a token
+          GH_TOKEN: ${{ github.token }}
         run: |
           PIN="${{ needs.plan.outputs.pin }}"
           curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "$PIN"
@@ -210,6 +214,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install the pinned Almide (${{ needs.plan.outputs.pin }})
+        env:
+          # install.sh verifies the release attestation with `gh attestation verify`, which needs a token
+          GH_TOKEN: ${{ github.token }}
         run: |
           curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "${{ needs.plan.outputs.pin }}"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"

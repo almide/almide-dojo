@@ -52,6 +52,7 @@ on:
 
 permissions:
   contents: read
+  attestations: read
 
 env:
   SMOKE_MODELS: 'cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast'
@@ -134,6 +135,9 @@ jobs:
       # every shard refuse on its own (the harness refuses too).
       - name: The pinned compiler has almide survive
         if: ${{ contains(steps.p.outputs.conditions, 'survive') }}
+        env:
+          # install.sh verifies the release attestation with `gh attestation verify`, which needs a token
+          GH_TOKEN: ${{ github.token }}
         run: |
           PIN="${{ steps.pin.outputs.ref }}"
           curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "$PIN"
@@ -162,6 +166,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install the pinned Almide (${{ needs.plan.outputs.pin }})
+        env:
+          # install.sh verifies the release attestation with `gh attestation verify`, which needs a token
+          GH_TOKEN: ${{ github.token }}
         run: |
           PIN="${{ needs.plan.outputs.pin }}"
           curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "$PIN"
@@ -264,6 +271,9 @@ jobs:
       # verdict and the >= 20 % criterion over the union. No model call.
       - name: Install the pinned Almide for the survive A/B merge
         if: ${{ contains(needs.plan.outputs.conditions, 'survive') }}
+        env:
+          # install.sh verifies the release attestation with `gh attestation verify`, which needs a token
+          GH_TOKEN: ${{ github.token }}
         run: |
           curl -fsSL https://raw.githubusercontent.com/almide/almide/main/tools/install.sh | sh -s -- "${{ needs.plan.outputs.pin }}"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
