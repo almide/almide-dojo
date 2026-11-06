@@ -12,5 +12,5 @@ Behavior:
 
 Notes:
 
-- Use `string.chars(s)` to get a `List[String]` of individual characters.
+- Use `string.to_list(s)` to get a `List[String]` of individual characters.
 - Use `list.count(xs, predicate)` or `list.filter` + `list.len` to count matches.

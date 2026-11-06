@@ -15,4 +15,4 @@ Notes:
 
 - A stack-based approach works: push opening brackets, pop on closing brackets.
 - You can use a `List[String]` as a stack with `list.push` / `list.last` / `list.drop_end`.
-- Use `string.chars(s)` to iterate.
+- Use `string.to_list(s)` to iterate.

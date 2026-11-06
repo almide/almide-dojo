@@ -12,5 +12,5 @@ Behavior:
 Notes:
 
 - Use `string.split(s, " ")` to split into words.
-- Use `list.fold` with `map.get_or` and `map.set` to build the frequency map.
+- Use `list.fold` with `map.get(m, w) ?? 0` and `map.set` to build the frequency map.
 - Empty strings from splitting should be filtered out with `list.filter`.
