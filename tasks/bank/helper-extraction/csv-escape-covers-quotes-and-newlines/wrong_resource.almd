@@ -1,7 +1,7 @@
 // Plausible wrong patch: the helper scans the characters once for any
 // special one. Same output — but even a plain field is split into characters.
 fn escape(field: String) -> String =
-  if string.chars(field) |> list.any((c) => c == "," or c == "\"" or c == "\n") then "\"" + string.replace(field, "\"", "\"\"") + "\""
+  if string.to_list(field) |> list.any((c) => c == "," or c == "\"" or c == "\n") then "\"" + string.replace(field, "\"", "\"\"") + "\""
   else field
 
 fn to_line(fields: List[String]) -> String = fields |> list.map((f) => escape(f)) |> list.join(",")

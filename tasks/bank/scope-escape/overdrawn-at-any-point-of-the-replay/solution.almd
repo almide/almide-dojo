@@ -19,7 +19,7 @@ fn final_balances(txs: List[Tx]) -> Map[String, Int] =
   txs |> list.fold(map.new(), (m, tx) => apply(m, tx))
 
 fn render(m: Map[String, Int]) -> String =
-  map.entries(m) |> list.map(((a, n)) => a + "=" + int.to_string(n)) |> list.join(",")
+  map.to_list(m) |> list.map(((a, n)) => a + "=" + int.to_string(n)) |> list.join(",")
 
 fn statement(txs: List[Tx]) -> String = render(final_balances(txs))
 
@@ -29,7 +29,7 @@ fn overdrawn(txs: List[Tx]) -> String = {
   let (_, seen) = txs |> list.fold((map.new(), []), (st, tx) => {
     let (m, names) = st
     let next = apply(m, tx)
-    let fresh = map.entries(next)
+    let fresh = map.to_list(next)
       |> list.filter(((a, n)) => n < 0 and not list.contains(names, a))
       |> list.map(((a, _)) => a)
     (next, names + fresh)

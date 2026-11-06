@@ -17,4 +17,4 @@ fn balance_go(cs: List[String], stack: List[String]) -> Bool = match cs {
     else balance_go(rest, stack),
 }
 
-fn is_balanced(s: String) -> Bool = balance_go(string.chars(s), [])
+fn is_balanced(s: String) -> Bool = balance_go(string.to_list(s), [])

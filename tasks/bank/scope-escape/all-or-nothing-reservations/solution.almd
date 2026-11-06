@@ -25,7 +25,7 @@ fn reserve(stock: Map[String, Int], rs: List[String]) -> String = {
     let (left, f, x) = st
     let need = totals(parse_request(r))
     if map.all(need, (s, q) => (map.get(left, s) ?? 0) >= q)
-    then (map.fold(need, left, (m, s, q) => map.set(m, s, (map.get(m, s) ?? 0) - q)), f + 1, x)
+    then (map.fold(need, left, (m, (s, q)) => map.set(m, s, (map.get(m, s) ?? 0) - q)), f + 1, x)
     else (left, f, x + 1)
   })
   "filled=" + int.to_string(filled) + ",refused=" + int.to_string(refused)

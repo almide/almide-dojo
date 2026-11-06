@@ -3,7 +3,7 @@ type User = { name: String, email: String, age: Int }
 
 fn validate(u: User) -> Result[User, String] = {
   guard u.name != "" else err("name is empty")
-  guard string.count(u.email, "@") == 1 and not string.starts_with(u.email, "@") and not string.ends_with(u.email, "@") else err("bad email: " + u.email)
+  guard string.count_matches(u.email, "@") == 1 and not string.starts_with(u.email, "@") and not string.ends_with(u.email, "@") else err("bad email: " + u.email)
   guard u.age >= 0 and u.age <= 150 else err("bad age: " + int.to_string(u.age))
   ok(u)
 }

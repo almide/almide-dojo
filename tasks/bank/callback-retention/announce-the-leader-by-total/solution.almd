@@ -7,14 +7,14 @@ fn totals(entries: List[Entry]) -> Map[String, Int] =
 
 // "name:points", highest total first, ties alphabetical.
 fn standings(entries: List[Entry]) -> List[String] =
-  map.entries(totals(entries))
+  map.to_list(totals(entries))
     |> list.sort_by(((name, _)) => name)
     |> list.sort_by(((_, pts)) => 0 - pts)
     |> list.map(((name, pts)) => name + ":" + int.to_string(pts))
 
 // The leader is computed now; the closure keeps only (name, points).
 fn announcer(entries: List[Entry]) -> (String) -> String = {
-  let ranked = map.entries(totals(entries))
+  let ranked = map.to_list(totals(entries))
     |> list.sort_by(((name, _)) => name)
     |> list.sort_by(((_, pts)) => 0 - pts)
   match list.first(ranked) {

@@ -10,7 +10,7 @@ fn seen(rolls: List[Int], v: Int) -> Bool = map.contains(counts(rolls), v)
 // closure, so the closure captures the whole count table.
 fn mode_reporter(rolls: List[Int]) -> (String) -> String = {
   let table = counts(rolls)
-  (label) => match map.entries(table) |> list.sort_by(((v, _)) => v) |> list.sort_by(((_, n)) => 0 - n) |> list.first {
+  (label) => match map.to_list(table) |> list.sort_by(((v, _)) => v) |> list.sort_by(((_, n)) => 0 - n) |> list.first {
     some((v, n)) => label + ": mode " + int.to_string(v) + " x" + int.to_string(n),
     none => label + ": no rolls",
   }

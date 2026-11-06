@@ -19,7 +19,7 @@ fn final_balances(txs: List[Tx]) -> Map[String, Int] =
   txs |> list.fold(map.new(), (m, tx) => apply(m, tx))
 
 fn render(m: Map[String, Int]) -> String =
-  map.entries(m) |> list.map(((a, n)) => a + "=" + int.to_string(n)) |> list.join(",")
+  map.to_list(m) |> list.map(((a, n)) => a + "=" + int.to_string(n)) |> list.join(",")
 
 fn statement(txs: List[Tx]) -> String = render(final_balances(txs))
 
@@ -27,7 +27,7 @@ fn statement(txs: List[Tx]) -> String = render(final_balances(txs))
 // negative at the END. An account that dipped and recovered is missed, and the
 // order is first appearance, not first going negative.
 fn overdrawn(txs: List[Tx]) -> String = {
-  let neg = map.entries(final_balances(txs))
+  let neg = map.to_list(final_balances(txs))
     |> list.filter(((_, n)) => n < 0)
     |> list.map(((a, _)) => a)
   if list.is_empty(neg) then "none" else list.join(neg, ",")

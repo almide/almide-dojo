@@ -15,6 +15,6 @@ fn counts(xs: List[Int], w: Int) -> Map[Int, Int] =
   })
 
 fn histogram(xs: List[Int], w: Int) -> List[String] =
-  map.entries(counts(xs, w))
+  map.to_list(counts(xs, w))
     |> list.sort_by(((b, _)) => b)
     |> list.map(((b, n)) => label(b, w) + " " + int.to_string(n))

@@ -17,7 +17,7 @@ fn digit(c: String) -> Int =
   }
 
 fn roman(s: String) -> Int! = {
-  let cs = string.chars(s)
+  let cs = string.to_list(s)
   guard not list.is_empty(cs) else err("empty numeral")
   match list.find(cs, (c) => digit(c) == 0) {
     some(c) => err("bad numeral char ${c} in ${s}"),
@@ -28,11 +28,11 @@ fn roman(s: String) -> Int! = {
     some(p) => err("bad subtractive pair ${p.0}${p.1} in ${s}"),
     none => ok(()),
   }!
-  match list.find(["V", "L", "D"], (c) => string.count(s, c) > 1) {
+  match list.find(["V", "L", "D"], (c) => string.count_matches(s, c) > 1) {
     some(c) => err("repeated ${c} in ${s}"),
     none => ok(()),
   }!
-  match list.find(["I", "X", "C", "M"], (c) => string.count(s, c) > 3) {
+  match list.find(["I", "X", "C", "M"], (c) => string.count_matches(s, c) > 3) {
     some(c) => err("more than three ${c} in a row in ${s}"),
     none => ok(()),
   }!

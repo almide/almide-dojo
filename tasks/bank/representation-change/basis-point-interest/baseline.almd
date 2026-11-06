@@ -6,7 +6,7 @@ fn account(name: String, cents: Int, rate: Float) -> Account = Account { name: n
 
 // One month of interest in cents: rounded to the nearest cent, halves away from
 // zero (so an overdraft is charged a negative amount).
-fn interest(a: Account) -> Int = float.to_int(float.round(int.to_float(a.cents) * a.rate / 100.0))
+fn interest(a: Account) -> Int = int.from_saturating(float.round(float.from(a.cents) * a.rate / 100.0))
 
 fn accrue(accs: List[Account]) -> List[Account] =
   accs |> list.map((a) => Account { ...a, cents: a.cents + interest(a) })

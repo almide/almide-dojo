@@ -50,7 +50,7 @@ fn leading(terms: List[String]) -> String =
         let (c, e) = t
         map.set(m, e, (map.get(m, e) ?? 0) + c)
       })
-      let live = map.entries(combined) |> list.filter(((_, c)) => c != 0) |> list.sort_by(((e, _)) => 0 - e)
+      let live = map.to_list(combined) |> list.filter(((_, c)) => c != 0) |> list.sort_by(((e, _)) => 0 - e)
       match list.first(live) {
         some((e, c)) => "deg=" + int.to_string(e) + ",lead=" + int.to_string(c),
         none => "zero",

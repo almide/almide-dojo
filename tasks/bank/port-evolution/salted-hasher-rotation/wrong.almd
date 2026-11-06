@@ -8,9 +8,9 @@ protocol Hasher {
 
 // A deterministic digest: hex of a position-weighted sum of code points.
 fn digest(s: String) -> String =
-  string.chars(s)
+  string.to_list(s)
     |> list.enumerate
-    |> list.fold(7, (acc, p) => (acc * 31 + (p.0 + 1) * (string.codepoint(p.1) ?? 0)) % 1000003)
+    |> list.fold(7, (acc, p) => (acc * 31 + (p.0 + 1) * (string.to_codepoint(p.1) ?? 0)) % 1000003)
     |> int.to_hex
 
 // The original scheme: the bare digest of the password.

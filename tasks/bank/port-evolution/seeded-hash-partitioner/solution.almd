@@ -11,7 +11,7 @@ fn ByLength.bucket(p: ByLength, key: String, n: Int) -> Int = string.len(key) % 
 type Hashed: Partitioner = { seed: Int }
 
 fn hash(seed: Int, key: String) -> Int =
-  string.to_bytes(key) |> list.fold(seed, (h, c) => (h * 31 + c) % 1000003)
+  bytes.to_list(bytes.from_string(key)) |> list.fold(seed, (h, c) => (h * 31 + c) % 1000003)
 
 fn Hashed.bucket(p: Hashed, key: String, n: Int) -> Int = {
   let h = hash(p.seed, key)

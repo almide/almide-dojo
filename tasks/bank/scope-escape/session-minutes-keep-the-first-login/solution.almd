@@ -37,6 +37,6 @@ fn usage(lines: List[String]) -> String =
           none => st,
         }
       })
-      map.entries(spent) |> list.sort_by(((u, _)) => u) |> list.map(((u, m)) => u + "=" + int.to_string(m)) |> list.join(",")
+      map.to_list(spent) |> list.sort_by(((u, _)) => u) |> list.map(((u, m)) => u + "=" + int.to_string(m)) |> list.join(",")
     },
   }

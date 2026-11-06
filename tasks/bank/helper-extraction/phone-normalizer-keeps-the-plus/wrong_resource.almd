@@ -1,7 +1,7 @@
 // Plausible wrong patch: the helper filters the cosmetic characters out one
 // character at a time. Same result — but a string per character.
 fn clean(n: String) -> String =
-  string.chars(n) |> list.filter((c) => c != " " and c != "-" and c != "(" and c != ")") |> list.join("")
+  string.to_list(n) |> list.filter((c) => c != " " and c != "-" and c != "(" and c != ")") |> list.join("")
 
 fn same_number(a: String, b: String) -> Bool = clean(a) == clean(b)
 

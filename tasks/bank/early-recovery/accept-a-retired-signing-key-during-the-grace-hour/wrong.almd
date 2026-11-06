@@ -7,7 +7,7 @@ type MsgErr: Eq, Repr = | BadLine(Int) | UnknownKey(Int, String) | RetiredKey(In
 type Inbox: Eq, Repr = { messages: List[String], notes: List[String] }
 
 fn sign(body: String, secret: Int) -> Int =
-  string.to_bytes(body) |> list.fold(secret, (h, b) => (h * 31 + b) % 100003)
+  bytes.to_list(bytes.from_string(body)) |> list.fold(secret, (h, b) => (h * 31 + b) % 100003)
 
 fn parse(line: String, no: Int) -> Raw!MsgErr = {
   let w = string.split(line, " ")

@@ -36,7 +36,7 @@ fn largest_dir(lines: List[String]) -> String =
         let d = dir_of(f.path)
         map.set(m, d, (map.get(m, d) ?? 0) + f.size)
       })
-      let ranked = map.entries(sizes) |> list.sort_by(((d, _)) => d) |> list.sort_by(((_, s)) => 0 - s)
+      let ranked = map.to_list(sizes) |> list.sort_by(((d, _)) => d) |> list.sort_by(((_, s)) => 0 - s)
       match list.first(ranked) {
         some((d, s)) => d + "=" + int.to_string(s),
         none => "none",

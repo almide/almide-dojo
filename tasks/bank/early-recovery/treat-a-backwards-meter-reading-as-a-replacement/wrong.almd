@@ -19,7 +19,7 @@ fn advance(m: Meter, id: String, reading: Int) -> Meter! = {
 }
 
 fn consume(start: Map[String, Int], lines: List[String]) -> Map[String, Meter]! = {
-  var meters: Map[String, Meter] = map.from_list(map.entries(start) |> list.map((e) => (e.0, Meter { last: e.1, total: 0, replaced: 0 })))
+  var meters: Map[String, Meter] = map.from_list(map.to_list(start) |> list.map((e) => (e.0, Meter { last: e.1, total: 0, replaced: 0 })))
   for line in lines {
     let r = read_line(line)!
     let m = match map.get(meters, r.0) {

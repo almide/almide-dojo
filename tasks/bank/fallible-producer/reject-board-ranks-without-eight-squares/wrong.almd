@@ -6,7 +6,7 @@
 fn is_piece(c: String) -> Bool = string.contains("KQRBNPkqrbnp", c)
 
 fn check_rank(k: Int, rank: String) -> List[String]! = {
-  let cs = string.chars(rank)
+  let cs = string.to_list(rank)
   match list.find(cs, (c) => not is_piece(c) and not (string.is_digit(c) and c != "0" and c != "9")) {
     some(c) => err("bad square ${c} in rank ${int.to_string(k)}"),
     none => ok(()),

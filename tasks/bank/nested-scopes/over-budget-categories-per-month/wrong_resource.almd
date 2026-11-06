@@ -18,7 +18,7 @@ fn spent(m: Month) -> Int = m.expenses |> list.fold(0, (a, e) => {
 fn budget_report(limits: Map[String, Int], months: List[Month]) -> List[String] = {
   let all = months |> list.map((m) => (m.name, totals(m.expenses)))
   all |> list.map(((name, ts)) => {
-    let over = map.entries(ts)
+    let over = map.to_list(ts)
       |> list.filter(((cat, t)) => match map.get(limits, cat) {
         some(lim) => t > lim,
         none => false,
