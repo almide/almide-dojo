@@ -6,7 +6,7 @@
 // trailing dot (the root) is allowed and dropped: "example.com." == "example.com".
 fn check_label(host: String, label: String) -> String! = {
   guard label != "" else err("empty label in ${host}")
-  let bad = string.chars(label) |> list.find((c) => not (string.is_lower(c) or string.is_digit(c) or c == "-"))
+  let bad = string.to_list(label) |> list.find((c) => not (string.is_lower(c) or string.is_digit(c) or c == "-"))
   match bad {
     some(c) => err("bad character ${c} in ${host}"),
     none => ok(()),

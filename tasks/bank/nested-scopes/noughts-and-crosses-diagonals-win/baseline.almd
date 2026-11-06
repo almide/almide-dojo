@@ -1,6 +1,6 @@
 // Noughts-and-crosses boards, one text each: nine cells row by row, "X",
 // "O" or "." ("XOX.O.X.."). A line is a row, a column OR a diagonal.
-fn cells(board: String) -> List[String] = string.chars(board) |> list.take(9)
+fn cells(board: String) -> List[String] = string.to_list(board) |> list.take(9)
 
 fn moves(board: String) -> Int = cells(board) |> list.count((c) => c != ".")
 

@@ -11,7 +11,7 @@ fn checksum_ok(vals: List[Int]) -> Bool =
   (vals |> list.enumerate |> list.fold(0, (acc, p) => acc + (10 - p.0) * p.1)) % 11 == 0
 
 fn read_isbn(raw: String) -> String!IsbnErr = {
-  let cs = string.chars(raw) |> list.filter((c) => c != "-")
+  let cs = string.to_list(raw) |> list.filter((c) => c != "-")
   guard list.len(cs) == 10 else err(BadLength(raw))
   let vals = cs |> list.enumerate |> list.map((p) => match value(p.1, p.0) {
     some(v) => ok(v),

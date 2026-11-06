@@ -86,7 +86,7 @@ fn hints_block(diag: String) -> String = {
   if list.is_empty(lines) then ""
   else
     "\n\n## Likely fix patterns (curated from past failures)\n\n" +
-    string.join(lines, "\n")
+    list.join(lines, "\n")
 }
 
 test "extract_all_codes finds multiple distinct codes" {

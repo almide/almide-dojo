@@ -29,7 +29,7 @@ fn allocate(budget_cents: Int, lines: List[String]) -> List[String]! = {
   let total = plan |> list.fold(0.0, (acc, s) => acc + s.pct)
   guard total == 100.0 else err("shares add up to ${float.to_fixed(total, 1)}%, not 100%")
   plan |> list.map((s) => {
-    let cents = float.to_int(float.floor(float.from_int(budget_cents) * s.pct / 100.0))
+    let cents = int.from_saturating(float.floor(float.from(budget_cents) * s.pct / 100.0))
     "${s.team}: ${int.to_string(cents)}"
   })
 }

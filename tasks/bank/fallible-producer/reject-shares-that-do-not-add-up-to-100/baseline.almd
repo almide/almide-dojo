@@ -25,7 +25,7 @@ fn parse_plan(lines: List[String]) -> List[Share]! =
 fn allocate(budget_cents: Int, lines: List[String]) -> List[String]! = {
   let plan = parse_plan(lines)!
   plan |> list.map((s) => {
-    let cents = float.to_int(float.floor(float.from_int(budget_cents) * s.pct / 100.0))
+    let cents = int.from_saturating(float.floor(float.from(budget_cents) * s.pct / 100.0))
     "${s.team}: ${int.to_string(cents)}"
   })
 }

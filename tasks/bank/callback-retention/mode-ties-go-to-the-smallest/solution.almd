@@ -8,7 +8,7 @@ fn seen(rolls: List[Int], v: Int) -> Bool = map.contains(counts(rolls), v)
 
 // The mode is chosen now (count desc, then value asc); the closure keeps it.
 fn mode_reporter(rolls: List[Int]) -> (String) -> String = {
-  let best = map.entries(counts(rolls)) |> list.fold(none, (acc, e) => {
+  let best = map.to_list(counts(rolls)) |> list.fold(none, (acc, e) => {
     let (v, n) = e
     match acc {
       some((bv, bn)) => if n > bn or (n == bn and v < bv) then some(e) else acc,

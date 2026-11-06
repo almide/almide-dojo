@@ -22,6 +22,6 @@ fn link_count(g: Graph) -> Int = (map.values(g.adj) |> list.fold(0, (acc, ns) =>
 
 // Every link once as "a-b" with a < b, sorted.
 fn links(g: Graph) -> List[String] =
-  map.entries(g.adj)
+  map.to_list(g.adj)
     |> list.flat_map((e) => e.1 |> list.filter((n) => e.0 < n) |> list.map((n) => e.0 + "-" + n))
     |> list.sort

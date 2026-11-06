@@ -4,7 +4,7 @@
 fn is_end(c: String) -> Bool = c == "." or c == "!" or c == "?"
 
 fn sentences(par: String) -> Int = {
-  let (n, open) = string.chars(par) |> list.fold((0, false), (st, c) => {
+  let (n, open) = string.to_list(par) |> list.fold((0, false), (st, c) => {
     let (count, has_text) = st
     if is_end(c) then (if has_text then (count + 1, false) else st)
     else if string.is_alpha(c) then (count, true)
@@ -19,7 +19,7 @@ fn paragraphs(text: String) -> List[String] = string.split(text, "\n\n") |> list
 // unfinished tail), so "..." counts three times.
 fn sentence_counts(docs: List[String]) -> List[String] =
   docs |> list.map((d) => paragraphs(d) |> list.map((p) => {
-    let ends = string.chars(p) |> list.count((c) => is_end(c))
-    let tail = string.chars(p) |> list.reverse |> list.take_while((c) => not is_end(c)) |> list.any((c) => string.is_alpha(c))
+    let ends = string.to_list(p) |> list.count((c) => is_end(c))
+    let tail = string.to_list(p) |> list.reverse |> list.take_while((c) => not is_end(c)) |> list.any((c) => string.is_alpha(c))
     int.to_string(ends + (if tail then 1 else 0))
   }) |> list.join(","))

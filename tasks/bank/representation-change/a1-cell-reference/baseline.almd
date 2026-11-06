@@ -4,11 +4,11 @@ type Cell: Eq, Repr = { at: String, value: Int }
 
 fn cell(at: String, value: Int) -> Cell = Cell { at: at, value: value }
 
-fn letters_of(at: String) -> String = string.chars(at) |> list.take_while(string.is_alpha) |> list.join("")
+fn letters_of(at: String) -> String = string.to_list(at) |> list.take_while(string.is_alpha) |> list.join("")
 
 // A = 1, Z = 26, AA = 27, ...
 fn col_of(at: String) -> Int =
-  string.chars(letters_of(at)) |> list.fold(0, (acc, ch) => acc * 26 + (string.codepoint(ch) ?? 64) - 64)
+  string.to_list(letters_of(at)) |> list.fold(0, (acc, ch) => acc * 26 + (string.to_codepoint(ch) ?? 64) - 64)
 
 fn row_of(at: String) -> Int = int.parse(string.drop(at, string.len(letters_of(at)))) ?? 0
 

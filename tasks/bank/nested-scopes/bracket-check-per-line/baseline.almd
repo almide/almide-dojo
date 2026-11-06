@@ -20,7 +20,7 @@ fn scan(chars: List[String], i: Int, stack: List[(Int, String)]) -> Result[List[
   }
 
 fn balanced(line: String) -> Bool =
-  match scan(string.chars(line), 0, []) {
+  match scan(string.to_list(line), 0, []) {
     ok(st) => list.is_empty(st),
     err(_) => false,
   }

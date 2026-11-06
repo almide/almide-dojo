@@ -2,7 +2,7 @@
 // component. A missing component counts as 0, so "1.2" and "1.2.0" are equal.
 
 fn digits_only(p: String) -> Bool =
-  p != "" and (string.chars(p) |> list.all((c) => string.is_digit(c)))
+  p != "" and (string.to_list(p) |> list.all((c) => string.is_digit(c)))
 
 fn parse(v: String) -> Result[List[Int], String] = {
   let parts = string.split(v, ".")

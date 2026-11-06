@@ -1,6 +1,6 @@
 // Plausible wrong patch: the helper lowercases character by character. Same
 // answers — but it allocates a character list and a string per character.
-fn lower(s: String) -> String = string.chars(s) |> list.map((c) => string.to_lower(c)) |> list.join("")
+fn lower(s: String) -> String = string.to_list(s) |> list.map((c) => string.to_lower(c)) |> list.join("")
 
 fn contains_ci(hay: String, needle: String) -> Bool = string.contains(lower(hay), lower(needle))
 

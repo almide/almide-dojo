@@ -15,13 +15,13 @@ fn counts(xs: List[Int], w: Int) -> Map[Int, Int] =
   })
 
 fn histogram(xs: List[Int], w: Int) -> List[String] =
-  map.entries(counts(xs, w))
+  map.to_list(counts(xs, w))
     |> list.sort_by(((b, _)) => b)
     |> list.map(((b, n)) => label(b, w) + " " + int.to_string(n))
 
 // The fullest bucket; ties go to the lowest bucket. The counts stay local.
 fn busiest(xs: List[Int], w: Int) -> String = {
-  let ranked = map.entries(counts(xs, w))
+  let ranked = map.to_list(counts(xs, w))
     |> list.sort_by(((b, _)) => b)
     |> list.sort_by(((_, n)) => 0 - n)
   match list.first(ranked) {

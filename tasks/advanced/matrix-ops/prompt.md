@@ -29,4 +29,4 @@ Notes:
 
 - Use `list.map` and nested `list.map` for element-wise operations.
 - For transpose, use `list.range(0, ncols)` to iterate column indices.
-- Use `list.get(xs, i) |> option.unwrap_or(0)` for indexed access.
+- Use `list.get(xs, i) ?? 0` for indexed access.

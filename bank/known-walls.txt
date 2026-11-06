@@ -1,0 +1,5 @@
+# Bank solutions the pinned compiler (v0.69.0) declines on --target wasm.
+# <family>/<task>	<the wall reason ALMIDE_WALL_REASON=1 prints>
+# Both rendered and agreed on v0.65.0. scripts/check-bank.sh fails when a listed task renders.
+port-evolution/natural-order-comparator	structural emit: Unsupported("ty-mismatch:Scalar(Str)-vs-Unit")
+representation-change/tag-string-to-set	structural emit: Unsupported("list-unique-elem:Set(ETy(0))")

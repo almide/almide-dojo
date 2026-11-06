@@ -1,7 +1,7 @@
 // Plausible wrong patch: the helper escapes character by character. Same text
 // — but one allocation per character.
 fn esc(s: String) -> String =
-  string.chars(s) |> list.map((c) => match c {
+  string.to_list(s) |> list.map((c) => match c {
     "&" => "&amp;",
     "<" => "&lt;",
     ">" => "&gt;",

@@ -7,6 +7,6 @@ fn weight_sum(p: Payout) -> Int = p.partners |> list.fold(0, (acc, x) => acc + x
 
 // Each partner's share, proportional to their weight (weights >= 0, sum > 0).
 fn shares(p: Payout) -> List[(String, Float)] =
-  p.partners |> list.map((x) => (x.0, p.total * int.to_float(x.1) / int.to_float(weight_sum(p))))
+  p.partners |> list.map((x) => (x.0, p.total * float.from(x.1) / float.from(weight_sum(p))))
 
 fn statement(p: Payout) -> List[String] = shares(p) |> list.map((s) => s.0 + ": " + float.to_fixed(s.1, 2))

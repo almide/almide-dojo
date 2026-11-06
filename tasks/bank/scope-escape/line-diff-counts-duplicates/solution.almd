@@ -17,11 +17,11 @@ fn counts(lines: List[String]) -> Map[String, Int] =
 fn diffstat(old: List[String], new_lines: List[String]) -> String = {
   let a = counts(old)
   let b = counts(new_lines)
-  let added = map.entries(b) |> list.fold(0, (acc, e) => {
+  let added = map.to_list(b) |> list.fold(0, (acc, e) => {
     let (l, n) = e
     acc + int.max(0, n - (map.get(a, l) ?? 0))
   })
-  let removed = map.entries(a) |> list.fold(0, (acc, e) => {
+  let removed = map.to_list(a) |> list.fold(0, (acc, e) => {
     let (l, n) = e
     acc + int.max(0, n - (map.get(b, l) ?? 0))
   })

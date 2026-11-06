@@ -17,23 +17,23 @@ fn ty(t: Ty) -> String = match t {
 }
 
 fn sig(s: Sig) -> String =
-  "func " + s.name + "(" + (s.params |> list.map((p) => p.name + " " + ty(p.ty)) |> string.join(", ")) + ") " + ty(s.ret)
+  "func " + s.name + "(" + (s.params |> list.map((p) => p.name + " " + ty(p.ty)) |> list.join(", ")) + ") " + ty(s.ret)
 
 fn signatures(t: PTask) -> String =
-  t.sigs |> list.map((s) => "    " + sig(s)) |> string.join("
+  t.sigs |> list.map((s) => "    " + sig(s)) |> list.join("
 ")
 
 fn lit(t: PTask, v: Val, vt: Ty) -> String = match v {
   VInt(n) => int.to_string(n),
   VBool(b) => if b then "true" else "false",
   VStr(s) => spec.c_quote(s),
-  VList(xs) => ty(vt) + "{" + (xs |> list.map((x) => lit(t, x, spec.elem(vt))) |> string.join(", ")) + "}",
+  VList(xs) => ty(vt) + "{" + (xs |> list.map((x) => lit(t, x, spec.elem(vt))) |> list.join(", ")) + "}",
   VCall(name, args) => {
     let params = match spec.find_sig(t.sigs, name) {
       some(sg) => sg.params,
       none => [],
     }
-    name + "(" + (list.zip_with(args, params, (a, p) => lit(t, a, p.ty)) |> string.join(", ")) + ")"
+    name + "(" + (list.zip_with(args, params, (a, p) => lit(t, a, p.ty)) |> list.join(", ")) + ")"
   },
 }
 
@@ -41,7 +41,7 @@ fn driver(t: PTask) -> String = {
   let n = list.len(t.cases)
   let checks = t.cases
     |> list.map((c) => "\tmsrCheck(" + spec.c_quote(spec.case_label(c)) + ", " + lit(t, c.call, spec.case_ty(t.sigs, c)) + ", " + lit(t, c.expected, spec.case_ty(t.sigs, c)) + ")")
-    |> string.join("\n")
+    |> list.join("\n")
   // Equality is on the %v rendering: for the set's types (ints, bools,
   // strings, nested int slices) it is exact, and a nil slice equals an
   // empty one, as Go code treats them.

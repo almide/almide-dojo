@@ -13,5 +13,5 @@ Notes:
 
 - Implement iterative or recursive binary search.
 - Use `list.get(xs, i)` which returns `Option[Int]`.
-- Use `option.unwrap_or(opt, default)` to safely unwrap.
+- Use `opt ?? default` to safely unwrap.
 - Use `list.len(xs)` to get the list length.

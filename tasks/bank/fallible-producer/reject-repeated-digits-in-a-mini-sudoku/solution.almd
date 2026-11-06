@@ -7,7 +7,7 @@ type GridErr: Eq, Repr =
   | Duplicate(Int, Int, Int)
 
 fn parse_row(r: Int, line: String) -> List[Int]!GridErr = {
-  let cs = string.chars(line)
+  let cs = string.to_list(line)
   guard list.len(cs) == 4 else err(Ragged(r, list.len(cs)))
   cs |> list.enumerate |> list.map((p) => {
     let c = p.1

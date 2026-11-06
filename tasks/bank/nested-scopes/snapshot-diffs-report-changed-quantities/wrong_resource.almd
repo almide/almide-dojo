@@ -15,7 +15,7 @@ fn quantity(s: String, item: String) -> Int = map.get(parse_snapshot(s), item) ?
 fn diffs(pairs: List[(String, String)]) -> List[String] = {
   let parsed = pairs |> list.map(((before, after)) => (parse_snapshot(before), parse_snapshot(after)))
   parsed |> list.map(((b, a)) => {
-    let changed = map.entries(a) |> list.filter_map(((k, q)) => match map.get(b, k) {
+    let changed = map.to_list(a) |> list.filter_map(((k, q)) => match map.get(b, k) {
       some(old) => if old != q then some("~" + k) else none,
       none => some("+" + k),
     })

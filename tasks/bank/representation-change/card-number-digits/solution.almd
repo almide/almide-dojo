@@ -6,7 +6,7 @@ fn card(holder: String, text: String) -> Card = Card { holder: holder, digits: s
 fn last4(c: Card) -> String = string.take_end(c.digits, 4)
 
 fn group4(s: String) -> String =
-  string.chars(s) |> list.chunk(4) |> list.map((g) => list.join(g, "")) |> list.join(" ")
+  string.to_list(s) |> list.chunk(4) |> list.map((g) => list.join(g, "")) |> list.join(" ")
 
 fn grouped(c: Card) -> String = group4(c.digits)
 

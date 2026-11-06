@@ -11,7 +11,7 @@ fn top_failure(codes: List[Int]) -> (String) -> String = {
   let fails = codes |> list.filter((c) => not is_success(c))
   (service) => {
     let counts = fails |> list.fold(map.new(), (m, c) => map.set(m, c, (map.get(m, c) ?? 0) + 1))
-    match map.entries(counts) |> list.sort_by(((c, _)) => c) |> list.sort_by(((_, n)) => 0 - n) |> list.first {
+    match map.to_list(counts) |> list.sort_by(((c, _)) => c) |> list.sort_by(((_, n)) => 0 - n) |> list.first {
       some((c, n)) => service + ": " + int.to_string(c) + " x" + int.to_string(n),
       none => service + ": all good",
     }

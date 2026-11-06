@@ -10,7 +10,7 @@ fn normalize(n: Int, raw: String) -> String! = {
   let t = string.trim(raw)
   let plus = string.starts_with(t, "+")
   let body = if plus then string.drop(t, 1) else t
-  let cs = string.chars(body)
+  let cs = string.to_list(body)
   match list.find(cs, (c) => not string.is_digit(c) and c != " " and c != "-") {
     some(c) => err("line ${int.to_string(n)}: bad phone ${t}"),
     none => ok(()),

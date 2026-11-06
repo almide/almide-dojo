@@ -4,13 +4,13 @@ type Contact: Eq, Repr = { name: String, phone: Phone }
 
 fn is_sep(ch: String) -> Bool = ch == " " or ch == "-" or ch == "." or ch == "(" or ch == ")"
 
-fn strip_seps(s: String) -> String = string.chars(s) |> list.filter((ch) => not is_sep(ch)) |> list.join("")
+fn strip_seps(s: String) -> String = string.to_list(s) |> list.filter((ch) => not is_sep(ch)) |> list.join("")
 
 fn phone(text: String) -> Phone = {
   let t = string.trim(text)
   match string.strip_prefix(t, "+") {
     some(rest) => {
-      let cc_text = string.chars(rest) |> list.take_while((ch) => not is_sep(ch)) |> list.join("")
+      let cc_text = string.to_list(rest) |> list.take_while((ch) => not is_sep(ch)) |> list.join("")
       Phone { cc: int.parse(cc_text) ?? 0, number: strip_seps(string.drop(rest, string.len(cc_text))) }
     },
     none => {

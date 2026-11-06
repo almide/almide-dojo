@@ -4,12 +4,12 @@
 type Rgb: Eq, Repr = { r: Int, g: Int, b: Int }
 type Swatch: Eq, Repr = { name: String, color: Rgb }
 
-fn hexval(s: String) -> Int = int.from_hex(s) ?? 0
+fn hexval(s: String) -> Int = int.parse_radix(s, 16) ?? 0
 
 // Accepts "#RGB" or "#RRGGBB" in any case.
 fn swatch(name: String, text: String) -> Swatch = {
   let t = string.to_lower(string.drop(text, 1))
-  let six = if string.len(t) == 3 then string.chars(t) |> list.map((c) => c + c) |> list.join("") else t
+  let six = if string.len(t) == 3 then string.to_list(t) |> list.map((c) => c + c) |> list.join("") else t
   let at = (i) => hexval(string.slice(six, 2 * i, 2 * i + 2))
   Swatch { name: name, color: Rgb { r: at(0), g: at(1), b: at(2) } }
 }
