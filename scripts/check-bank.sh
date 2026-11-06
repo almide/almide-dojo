@@ -56,6 +56,11 @@ FAMILIES="bank/families.txt"
 [ -f "$FAMILIES" ] || { echo "::error::$FAMILIES not found"; exit 2; }
 command -v almide >/dev/null || { echo "::error::almide not on PATH"; exit 2; }
 FAMILY_SLUGS="$(grep -vE '^[[:space:]]*(#|$)' "$FAMILIES" | cut -f1)"
+# bank/known-walls.txt: solutions the pinned compiler's wasm leg declines (a
+# wall), each with the reason it prints. A listed wall is reported unscored but
+# is not an error under BANK_REQUIRE_WASM_RENDER. A listed task that renders is
+# an error, so the list can only shrink.
+KNOWN_WALLS="$(grep -vE '^[[:space:]]*(#|$)' bank/known-walls.txt 2>/dev/null | cut -f1)"
 HAVE_RES=0; RES_STATE="$(bash scripts/resource-oracle.sh --armed 2>/dev/null)" && HAVE_RES=1
 if [ "$HAVE_RES" = 0 ] && [ "${BANK_REQUIRE_RESOURCE:-0}" = 1 ]; then echo "::error::BANK_REQUIRE_RESOURCE=1 but the compiler is $RES_STATE"; exit 2; fi
 HAVE_WASM=0; command -v wasmtime >/dev/null && HAVE_WASM=1
@@ -132,11 +137,18 @@ check_task() {
   fi
   # (f) cross-target agreement
   if [ "$HAVE_WASM" = 1 ]; then
-    run_triple "$dir" solution --target wasm || err "$name: solution passes natively but not on --target wasm"
-    # A wasm "v1 wall" SKIPs the file and exits 0: that is NOT agreement, it was never run.
-    if grep -q '^SKIP .*v1 wall' "$TMP/$(echo "$name" | tr / _)-solution-all--target wasm.almd.log" 2>/dev/null; then
+    run_triple "$dir" solution --target wasm; rc=$?
+    # A wasm wall never runs the file: that is NOT agreement. Up to v0.65 the
+    # compiler printed `SKIP … v1 wall` and exited 0; from v0.69 it prints
+    # `WALL …` and exits non-zero ("no test ran"). Either is a wall, not a failure.
+    if grep -qE '^SKIP .*v1 wall|^WALL ' "$TMP/$(echo "$name" | tr / _)-solution-all--target wasm.almd.log" 2>/dev/null; then
       : > "$TMP/walled-$(echo "$name" | tr / _)"
-      [ "${BANK_REQUIRE_WASM_RENDER:-0}" = 1 ] && err "$name: the solution hits a wasm v1 wall — the cross-target leg is skipped, not scored"
+      if ! grep -qxF -- "$name" <<<"$KNOWN_WALLS" && [ "${BANK_REQUIRE_WASM_RENDER:-0}" = 1 ]; then
+        err "$name: the solution hits a wasm wall — the cross-target leg is skipped, not scored"
+      fi
+    else
+      [ "$rc" = 0 ] || err "$name: solution passes natively but not on --target wasm"
+      if grep -qxF -- "$name" <<<"$KNOWN_WALLS"; then err "$name: renders on wasm now — remove it from bank/known-walls.txt"; fi
     fi
   fi
   [ "$fail" = 0 ] && [ -n "${BANK_VERBOSE:-}" ] && echo "ok   $name"
@@ -152,7 +164,7 @@ n=${#dirs[@]}
 # The tasks are independent: BANK_JOBS of them at a time (default: every core).
 JOBS="${BANK_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)}"
 if [ "$n" -gt 0 ]; then
-  export BANK FAMILIES FAMILY_SLUGS HAVE_RES HAVE_WASM TMP
+  export BANK FAMILIES FAMILY_SLUGS KNOWN_WALLS HAVE_RES HAVE_WASM TMP
   export -f err run_pair run_triple meta check_task
   printf '%s\n' "${dirs[@]}" | xargs -P "$JOBS" -I{} bash -c 'check_task "$1"' _ {} || fail=1
 fi
