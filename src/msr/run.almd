@@ -121,7 +121,7 @@ fn parse_opts(args: List[String], acc: Opts) -> Opts! = match args {
 fn parse_conditions(names: List[String]) -> List[String]! = {
   let unknown = names |> list.filter((n) => not list.contains(CONDITIONS, n))
   if not list.is_empty(unknown) then
-    err("unknown condition(s) " + string.join(unknown, ", ") + " (known: " + string.join(CONDITIONS, ", ") + ")")
+    err("unknown condition(s) " + list.join(unknown, ", ") + " (known: " + list.join(CONDITIONS, ", ") + ")")
   else if not list.contains(names, COND_SHIPPED) then
     err("--conditions must include `" + COND_SHIPPED + "`: it is the cross-language grid and the A arm of the effect A/B")
   else ok(CONDITIONS |> list.filter((c) => list.contains(names, c)))
@@ -173,8 +173,8 @@ effect fn load_task(name: String) -> PTask! = {
 effect fn task_set_names() -> List[String]! = {
   let raw = fs.read_text(TASK_SET)!
   let v = json.parse(raw)!
-  let items = json.get_array(v, "include") ?? []
-  let names = items |> list.filter_map((it) => json.get_string(it, "task"))
+  let items = value.get_array(v, "include") ?? []
+  let names = items |> list.filter_map((it) => value.get_string(it, "task"))
   guard not list.is_empty(names) else err(TASK_SET + " has no include list")
   ok(names)
 }
@@ -182,7 +182,7 @@ effect fn task_set_names() -> List[String]! = {
 effect fn task_set_revision() -> String = {
   let raw = fs.read_text(TASK_SET) ?? ""
   match json.parse(raw) {
-    ok(v) => json.get_string(v, "revision") ?? "",
+    ok(v) => value.get_string(v, "revision") ?? "",
     err(_) => "",
   }
 }
@@ -191,7 +191,7 @@ effect fn load_tasks(selected: List[String]) -> List[PTask]! = {
   let all = task_set_names()!
   let names = if list.is_empty(selected) then all else selected
   let unknown = names |> list.filter((n) => not list.contains(all, n))
-  guard list.is_empty(unknown) else err("not in " + TASK_SET + ": " + string.join(unknown, ", "))
+  guard list.is_empty(unknown) else err("not in " + TASK_SET + ": " + list.join(unknown, ", "))
   ok((names |> list.map((n) => load_task(n)!))!)
 }
 
@@ -217,7 +217,7 @@ fn user_prompt(p: Plugin, t: PTask) -> String =
 // placeholder. Hashing it pins what every language's prompt shares — a
 // changed behavior text moves this hash, a changed plugin does not.
 fn neutral_prompt(t: PTask) -> String =
-  prompt_body("<Language>", t.sigs |> list.map((sg) => "    " + spec.sig_neutral(sg)) |> string.join("\n"), t.behavior, list.len(t.sigs) == 1)
+  prompt_body("<Language>", t.sigs |> list.map((sg) => "    " + spec.sig_neutral(sg)) |> list.join("\n"), t.behavior, list.len(t.sigs) == 1)
 
 fn retry_prompt(display: String, original: String, prev_code: String, diag: String) -> String =
   "Original task:\n\n" + original + "\n\n" +
@@ -237,7 +237,7 @@ effect fn probe_one(p: Plugin) -> Probe = {
   let found = p.versions |> list.map(((label, cmd)) => {
     let exe = list.first(cmd) ?? label
     let args = list.drop(cmd, 1)
-    match process.exec_status(exe, args) {
+    match process.output(process.ProcessCommand { cmd: exe, args: args }) {
       ok(st) => if st.code == 0 then (label, (string.trim(st.stdout + st.stderr) |> string.split("\n") |> list.first) ?? "")
         else (label, ""),
       err(_) => (label, ""),
@@ -252,13 +252,13 @@ effect fn probe_one(p: Plugin) -> Probe = {
 effect fn probe_all(names: List[String]) -> List[Probe]! = {
   let known = plugins.names()
   let unknown = names |> list.filter((n) => not list.contains(known, n))
-  guard list.is_empty(unknown) else err("unknown language(s): " + string.join(unknown, ", ") + " (known: " + string.join(known, ", ") + ")")
+  guard list.is_empty(unknown) else err("unknown language(s): " + list.join(unknown, ", ") + " (known: " + list.join(known, ", ") + ")")
   let chosen = plugins.all() |> list.filter((p) => list.is_empty(names) or list.contains(names, p.name))
   ok((chosen |> list.map((p) => probe_one(p)!))!)
 }
 
 fn toolchain_line(pr: Probe) -> String =
-  if pr.available then pr.versions |> list.map(((_, v)) => v) |> string.join("; ")
+  if pr.available then pr.versions |> list.map(((_, v)) => v) |> list.join("; ")
   else "not measured: " + pr.missing + " missing"
 
 // ── One attempt: write the files, run the steps ──
@@ -277,7 +277,7 @@ effect fn write_files(dir: String, files: List[(String, String)]) -> Unit! = {
   let _written = (files |> list.map(((rel, content)) => {
     let full = dir + "/" + rel
     fs.mkdir_p(path.dirname(full))!
-    fs.write(full, content)!
+    fs.write_text(full, content)!
   }))!
   ok(())
 }
@@ -286,7 +286,7 @@ effect fn run_step(dir: String, st: Step) -> StepOut = {
   // `sh -c 'cd "$0" && exec "$@"' <dir> <cmd> <args...>`: the step runs in
   // the attempt's directory; exec_status_timeout has no cwd parameter.
   let args = ["-c", "cd \"$0\" && exec \"$@\"", dir, st.cmd] + st.args
-  match process.exec_status_timeout("sh", args, st.timeout_ms) {
+  match process.output(process.ProcessCommand { cmd: "sh", args: args, timeout_ms: st.timeout_ms }) {
     ok(r) => StepOut { kind: st.kind, code: r.code, output: r.stdout + r.stderr },
     err(e) => StepOut { kind: st.kind, code: -1, output: e },
   }
@@ -314,7 +314,7 @@ effect fn judge(p: Plugin, t: PTask, dir: String, code: String) -> LAttempt! = {
 }
 
 effect fn write_log(dir: String, a: LAttempt) -> Unit =
-  match fs.write(dir + "/attempt.log", (if a.passed then "PASS\n" else "FAIL (" + a.kind + ")\n") + a.diagnostic) {
+  match fs.write_text(dir + "/attempt.log", (if a.passed then "PASS\n" else "FAIL (" + a.kind + ")\n") + a.diagnostic) {
     ok(_) => (),
     err(_) => (),
   }
@@ -497,7 +497,7 @@ fn arm_json(cells: List[LResult], planned: Int) -> Value = {
     ("passed", value.int(list.count(got, (r) => r.success))),
     ("one_shot", value.int(list.count(got, (r) => r.success and r.retries == 0))),
     ("retries", value.int(got |> list.map((r) => r.retries) |> list.sum)),
-    ("final_pass", value.str(rate(list.count(got, (r) => r.success), planned - list.len(got), planned))),
+    ("final_pass", value.string(rate(list.count(got, (r) => r.success), planned - list.len(got), planned))),
   ])
 }
 
@@ -510,17 +510,17 @@ fn conditions_json(conditions: List[String], probes: List[Probe], tasks: List[PT
   value.array(planned |> list.map((c) => {
     let langs = if c == COND_SHIPPED then probes |> list.map((pr) => pr.plugin.name) else ["almide"]
     let base = [
-      ("name", value.str(c)),
-      ("issue", value.str("almide-dojo#2")),
-      ("languages", value.array(langs |> list.map(value.str))),
-      ("almide_notes", value.str(what_of(c))),
-      ("effect_enforcement", value.str("unchanged: the pinned compiler judges every arm (it has no switch that relaxes effect errors to warnings)")),
+      ("name", value.string(c)),
+      ("issue", value.string("almide-dojo#2")),
+      ("languages", value.array(langs |> list.map(value.string))),
+      ("almide_notes", value.string(what_of(c))),
+      ("effect_enforcement", value.string("unchanged: the pinned compiler judges every arm (it has no switch that relaxes effect errors to warnings)")),
     ]
     let hashes = match alm {
       some(pr) => {
         let p = plugin_for(pr.plugin, c)
         [("almide_prompts", prompt_hashes({ ...pr, plugin: p }, tasks))] +
-          (if c == COND_SHIPPED then [] else [("notes_lines_changed", value.array(removed_lines(pr.plugin.notes, p.notes) |> list.map(value.str)))])
+          (if c == COND_SHIPPED then [] else [("notes_lines_changed", value.array(removed_lines(pr.plugin.notes, p.notes) |> list.map(value.string)))])
       },
       none => [],
     }
@@ -538,16 +538,16 @@ fn ab_json(conditions: List[String], probes: List[Probe], tasks: List[PTask], a_
       let bb = almide_arm(b_cells, b)
       let v = ab_verdict(planned, a, bb, b)
       value.object([
-        ("issue", value.str("almide-dojo#2")),
-        ("language", value.str("almide")),
-        ("a", value.str(COND_SHIPPED)),
-        ("b", value.str(b)),
+        ("issue", value.string("almide-dojo#2")),
+        ("language", value.string("almide")),
+        ("a", value.string(COND_SHIPPED)),
+        ("b", value.string(b)),
         ("planned_tasks", value.int(planned)),
         ("verdict", value.object([
-          ("id", value.str(v.id)),
+          ("id", value.string(v.id)),
           ("comparable", value.bool(v.comparable)),
           ("conclusive", value.bool(v.conclusive)),
-          ("reasons", value.array(v.reasons |> list.map(value.str))),
+          ("reasons", value.array(v.reasons |> list.map(value.string))),
         ])),
         (COND_SHIPPED, arm_json(a, planned)),
         (b, arm_json(bb, planned)),
@@ -586,13 +586,13 @@ fn render_ab(conditions: List[String], probes: List[Probe], tasks: List[PTask], 
       "\n## Effect-declaration A/B (almide-dojo#2) — Almide only\n\n" +
         "> **A/B verdict: `" + v.id + "`** — certified as a comparison: **" + (if v.comparable then "yes" else "no") +
         "**; the bank discriminated: **" + (if v.conclusive then "yes" else "no") + "**\n" +
-        (v.reasons |> list.map((r) => "> - " + r + "\n") |> string.join("")) + "\n" +
+        (v.reasons |> list.map((r) => "> - " + r + "\n") |> list.join("")) + "\n" +
         "Arm A is the Almide row above (the same cells). Arm B re-asks the same " + int.to_string(planned) +
         " tasks with the only change being the Almide notes; the pinned compiler still enforces effects in both arms, and the other languages have no effect system to remove.\n\n" +
         "| arm | what the model is told | reached | final pass (of " + int.to_string(planned) + ") | 1-shot (of " + int.to_string(planned) + ") | retries |\n|---|---|---|---|---|---|\n" +
         ab_row(COND_SHIPPED, a, planned) + "\n" + ab_row(b, bb, planned) + "\n\n" +
         "| task | `" + COND_SHIPPED + "` | `" + b + "` |\n|---|---|---|\n" +
-        (tasks |> list.map((t) => "| `" + t.name + "` | " + find_in(a, t.name) + " | " + find_in(bb, t.name) + " |") |> string.join("\n")) + "\n"
+        (tasks |> list.map((t) => "| `" + t.name + "` | " + find_in(a, t.name) + " | " + find_in(bb, t.name) + " |") |> list.join("\n")) + "\n"
     },
   }
 
@@ -624,7 +624,7 @@ fn verdict_core(attempted: List[(String, String)], planned: Int, results: List[L
     if not any_reached then ["no cell reached the model: nothing was measured"]
     else if not complete then
       ["the languages saw different task counts, so their rates share no denominator and this run is not a comparison: " +
-        string.join(short, ", ") + " of " + int.to_string(planned) + " planned"] + sat
+        list.join(short, ", ") + " of " + int.to_string(planned) + " planned"] + sat
     else sat
   cellstate.verdict(any_reached, complete, saturated, reasons)
 }
@@ -646,14 +646,14 @@ fn verdict_block(v: Verdict) -> String = cellstate.verdict_block(v, verdict_head
 fn verdict_json(v: Verdict, planned: Int, cells: List[LResult], probes: List[Probe]) -> Value = {
   let saturated = is_saturated(cells)
   value.object([
-    ("id", value.str(v.id)),
+    ("id", value.string(v.id)),
     ("comparable", value.bool(v.comparable)),
     ("conclusive", value.bool(v.conclusive)),
     ("planned_tasks", value.int(planned)),
     ("planned_cells", value.int(list.len(cells))),
     // The four states partition the planned cells; a reader can add them up.
     ("cells", value.object(CELL_STATES |> list.map((s) => (s, value.int(count_state(cells, probes, saturated, s)))))),
-    ("reasons", value.array(v.reasons |> list.map(value.str))),
+    ("reasons", value.array(v.reasons |> list.map(value.string))),
   ])
 }
 
@@ -695,23 +695,23 @@ effect fn compiler_pin() -> String = {
 
 fn prompt_hashes(pr: Probe, tasks: List[PTask]) -> Value = {
   let sys = system_prompt(pr.plugin)
-  let all = tasks |> list.map((t) => user_prompt(pr.plugin, t)) |> string.join("\n--\n")
+  let all = tasks |> list.map((t) => user_prompt(pr.plugin, t)) |> list.join("\n--\n")
   value.object([
-    ("system_sha256", value.str(hash.sha256_hex(sys))),
-    ("prompts_sha256", value.str(hash.sha256_hex(sys + "\n--\n" + all))),
+    ("system_sha256", value.string(hash.sha256_hex(bytes.from_string(sys)))),
+    ("prompts_sha256", value.string(hash.sha256_hex(bytes.from_string(sys + "\n--\n" + all)))),
     ("notes_bytes", value.int(string.len(pr.plugin.notes))),
   ])
 }
 
 fn language_entry(pr: Probe, tasks: List[PTask]) -> Value = {
-  let base = [("name", value.str(pr.plugin.name)), ("measured", value.bool(pr.available))]
+  let base = [("name", value.string(pr.plugin.name)), ("measured", value.bool(pr.available))]
   if pr.available then
     value.object(base + [
-      ("toolchain", value.object(pr.versions |> list.map(((k, v)) => (k, value.str(v))))),
+      ("toolchain", value.object(pr.versions |> list.map(((k, v)) => (k, value.string(v))))),
       ("prompts", prompt_hashes(pr, tasks)),
-      ("steps", value.array(pr.plugin.steps |> list.map((s) => value.str(s.cmd + " " + string.join(s.args, " "))))),
+      ("steps", value.array(pr.plugin.steps |> list.map((s) => value.string(s.cmd + " " + list.join(s.args, " "))))),
     ])
-  else value.object(base + [("reason", value.str(pr.missing + " missing"))])
+  else value.object(base + [("reason", value.string(pr.missing + " missing"))])
 }
 
 // The HTTP read timeout this process ran under, as the manifest must state
@@ -723,17 +723,17 @@ effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask
   let provider = llm.provider_of(o.model)
   value.object([
     ("verdict", verdict_json(v, list.len(tasks), cells, probes)),
-    ("lane", value.str("cross-language")),
-    ("label", value.str(o.label)),
-    ("date", value.str(date)),
+    ("lane", value.string("cross-language")),
+    ("label", value.string(o.label)),
+    ("date", value.string(date)),
     ("harness", value.object([
-      ("repo", value.str("almide/almide-dojo")),
-      ("commit", value.str(git_head()!)),
+      ("repo", value.string("almide/almide-dojo")),
+      ("commit", value.string(git_head()!)),
       ("dirty", value.bool(git_dirty()!)),
     ])),
     ("compiler", value.object([
-      ("pin", value.str(compiler_pin()!)),
-      ("version", value.str(match process.exec("almide", ["--version"]) { ok(v) => string.trim(list.get(string.split(string.trim(v), "\n"), 0) ?? ""), err(_) => "" })),
+      ("pin", value.string(compiler_pin()!)),
+      ("version", value.string(match process.exec("almide", ["--version"]) { ok(v) => string.trim(list.get(string.split(string.trim(v), "\n"), 0) ?? ""), err(_) => "" })),
     ])),
     // What was ASKED FOR, then what the provider actually wrote into the
     // request body. The second half is `sampling`, measured by a preflight
@@ -743,27 +743,27 @@ effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask
     // below), and a reader deciding whether the run is reproducible needs
     // the wire half, not the asked half.
     ("model", value.object([
-      ("spec", value.str(o.model)),
-      ("provider", value.str(provider)),
+      ("spec", value.string(o.model)),
+      ("provider", value.string(provider)),
       ("temperature_requested", value.float(TEMPERATURE)),
       ("seed_requested", value.int(llm.SEED)),
       ("transport_attempts", value.int(TRANSPORT_ATTEMPTS)),
-      ("http_timeout_secs", value.str(http_timeout_secs()!)),
+      ("http_timeout_secs", value.string(http_timeout_secs()!)),
     ] + sampling)),
     ("retries", value.int(o.retries)),
     // The cross-language grid's condition, then every condition the run
     // planned (almide-dojo#2) and the A/B's own verdict and arms.
-    ("condition", value.object([("effects", value.str(COND_SHIPPED))])),
+    ("condition", value.object([("effects", value.string(COND_SHIPPED))])),
     ("conditions", conditions_json(o.conditions, probes, tasks)),
     ("effect_ab", ab_json(o.conditions, probes, tasks, cells, ab_cells)),
     ("task_set", value.object([
-      ("path", value.str(TASK_SET)),
-      ("revision", value.str(task_set_revision()!)),
-      ("sha256", value.str(task_set_sha)),
-      ("tasks", value.array(tasks |> list.map((t) => value.str(t.name)))),
-      ("neutral_prompts_sha256", value.str(hash.sha256_hex(tasks |> list.map(neutral_prompt) |> string.join("\n--\n")))),
+      ("path", value.string(TASK_SET)),
+      ("revision", value.string(task_set_revision()!)),
+      ("sha256", value.string(task_set_sha)),
+      ("tasks", value.array(tasks |> list.map((t) => value.string(t.name)))),
+      ("neutral_prompts_sha256", value.string(hash.sha256_hex(bytes.from_string(tasks |> list.map(neutral_prompt) |> list.join("\n--\n"))))),
     ])),
-    ("retry_template_sha256", value.str(hash.sha256_hex(retry_prompt("<Language>", "", "", "")))),
+    ("retry_template_sha256", value.string(hash.sha256_hex(bytes.from_string(retry_prompt("<Language>", "", "", ""))))),
     ("languages", value.array(probes |> list.map((pr) => language_entry(pr, tasks)))),
   ])
 }
@@ -772,17 +772,17 @@ effect fn manifest(o: Opts, date: String, probes: List[Probe], tasks: List[PTask
 
 fn result_json(r: LResult, state: String) -> Value =
   value.object([
-    ("language", value.str(r.language)),
-    ("condition", value.str(r.condition)),
-    ("task", value.str(r.task)),
-    ("state", value.str(state)),
+    ("language", value.string(r.language)),
+    ("condition", value.string(r.condition)),
+    ("task", value.string(r.task)),
+    ("state", value.string(state)),
     ("success", value.bool(r.success)),
     ("retries", value.int(r.retries)),
-    ("reason", value.str(r.reason)),
+    ("reason", value.string(r.reason)),
     ("attempts", value.array(r.attempts |> list.map((a) => value.object([
       ("passed", value.bool(a.passed)),
-      ("kind", value.str(a.kind)),
-      ("diagnostic_head", value.str(string.take(a.diagnostic, 200))),
+      ("kind", value.string(a.kind)),
+      ("diagnostic_head", value.string(string.take(a.diagnostic, 200))),
     ])))),
   ])
 
@@ -823,7 +823,7 @@ fn task_row(t: PTask, probes: List[Probe], results: List[LResult], saturated: Bo
         _ => if r.success then (if r.retries == 0 then "pass" else "pass@" + int.to_string(r.retries)) else "FAIL",
       },
     })
-  "| `" + t.name + "` | " + string.join(cells, " | ") + " |"
+  "| `" + t.name + "` | " + list.join(cells, " | ") + " |"
 }
 
 fn render_table(o: Opts, date: String, revision: String, probes: List[Probe], tasks: List[PTask], results: List[LResult], ab_cells: List[LResult], v: Verdict) -> String = {
@@ -838,13 +838,13 @@ fn render_table(o: Opts, date: String, revision: String, probes: List[Probe], ta
     "- **planned tasks**: " + planned + " (msr/task-set.json rev " + revision + ") — every rate below has this as its denominator\n" +
     "- **retries**: " + int.to_string(o.retries) + "\n" +
     "- **conditions**: `" + COND_SHIPPED + "` (every language)" +
-      (extra_conditions(o.conditions, probes) |> list.map((c) => ", `" + c + "` (Almide only — the effect-declaration A/B below)") |> string.join("")) + "\n" +
+      (extra_conditions(o.conditions, probes) |> list.map((c) => ", `" + c + "` (Almide only — the effect-declaration A/B below)") |> list.join("")) + "\n" +
     "- **manifest**: manifest.json next to this file (`verdict`, and the per-cell states in results.json)\n\n"
   let summary = "| language | toolchain | reached | absent | final pass (of " + planned + ") | 1-shot (of " + planned + ") | retries |\n|---|---|---|---|---|---|---|\n" +
-    (probes |> list.map((pr) => language_row(pr, tasks, results)) |> string.join("\n")) + "\n"
-  let per_task = "\n## Per task\n\n| task | " + (probes |> list.map((pr) => pr.plugin.display) |> string.join(" | ")) + " |\n" +
-    "|---|" + (probes |> list.map((_) => "---|") |> string.join("")) + "\n" +
-    (tasks |> list.map((t) => task_row(t, probes, results, saturated)) |> string.join("\n")) + "\n\n" +
+    (probes |> list.map((pr) => language_row(pr, tasks, results)) |> list.join("\n")) + "\n"
+  let per_task = "\n## Per task\n\n| task | " + (probes |> list.map((pr) => pr.plugin.display) |> list.join(" | ")) + " |\n" +
+    "|---|" + (probes |> list.map((_) => "---|") |> list.join("")) + "\n" +
+    (tasks |> list.map((t) => task_row(t, probes, results, saturated)) |> list.join("\n")) + "\n\n" +
     "Cell states (almide/almide#1963): `pass` / `pass@N` / `FAIL` = `" +
     (if saturated then ST_SATURATED + "` (every measured cell in this run passed, so no cell discriminates)" else ST_MEASURED + "`") +
     "; `not-run` = planned, but the model was never answered (see `reason` in results.json); " +
@@ -866,7 +866,7 @@ effect fn cmd_prompt(o: Opts) -> Unit! = {
   let lang = list.get(o.rest, 1) ?? ""
   let task = list.get(o.rest, 2) ?? ""
   let cond = list.get(o.rest, 3) ?? COND_SHIPPED
-  guard list.contains(CONDITIONS, cond) else err("unknown condition `" + cond + "` (known: " + string.join(CONDITIONS, ", ") + ")")
+  guard list.contains(CONDITIONS, cond) else err("unknown condition `" + cond + "` (known: " + list.join(CONDITIONS, ", ") + ")")
   match plugins.find(lang) {
     none => {
       println("unknown language: " + lang)
@@ -900,7 +900,7 @@ effect fn cmd_run(o: Opts) -> Unit! = {
   // behalf. A dead key or an unknown model name also fails HERE, before a
   // single task has been scored 0 against an empty completion.
   let sampling = llm.probe_sampling(o.model, TEMPERATURE)!
-  let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
+  let date = datetime.format(datetime.now(), "%Y-%m-%d")
   let dir = run_dir(o.out, date, o.model, o.label)
   let raw_dir = dir + "/raw"
   fs.mkdir_p(raw_dir)!
@@ -915,7 +915,7 @@ effect fn cmd_run(o: Opts) -> Unit! = {
     println("Harness error: no task reached the model; nothing written")
     process.exit(2)
   }
-  let task_set_sha = hash.sha256_hex(fs.read_text(TASK_SET) ?? "")
+  let task_set_sha = hash.sha256_hex(bytes.from_string(fs.read_text(TASK_SET) ?? ""))
   // The full planned grid, not just the cells the run produced: a language
   // with no toolchain has no results at all, and omitting its row is the same
   // silence as printing a 0.
@@ -928,14 +928,14 @@ effect fn cmd_run(o: Opts) -> Unit! = {
   let ab_cells = extra_conditions(o.conditions, probes) |> list.flat_map((c) => condition_grid(probes, tasks, results, c))
   let ab_sat = arm_saturated(almide_arm(cells, COND_SHIPPED), ab_cells)
   let m = manifest(o, date, probes, tasks, task_set_sha, v, cells, ab_cells, sampling)!
-  fs.write(dir + "/manifest.json", json.stringify_pretty(m) + "\n")!
-  fs.write(dir + "/results.json", json.stringify_pretty(value.object([
+  fs.write_text(dir + "/manifest.json", json.stringify_pretty(m) + "\n")!
+  fs.write_text(dir + "/results.json", json.stringify_pretty(value.object([
     ("results", value.array(
       (cells |> list.map((r) => result_json(r, state_of(probe_available(probes, r.language), r, saturated)))) +
       (ab_cells |> list.map((r) => result_json(r, state_of(probe_available(probes, r.language), r, ab_sat)))))),
   ])) + "\n")!
   let table = render_table(o, date, task_set_revision()!, probes, tasks, cells, ab_cells, v)
-  fs.write(dir + "/table.md", table)!
+  fs.write_text(dir + "/table.md", table)!
   println("")
   println(table)
   println("Written: " + dir + "/{manifest.json, results.json, table.md}")
@@ -959,7 +959,7 @@ let MANIFEST_RECORD_ENV = "MSR_MANIFEST_RECORD"
 
 effect fn record_manifest_path(record: String, manifest: String) -> Unit! = {
   guard record != "" else ok(())
-  fs.append(record, manifest + "\n")!
+  fs.append_text(record, manifest + "\n")!
   ok(())
 }
 
@@ -980,16 +980,16 @@ fn attempt_stub() -> LAttempt = LAttempt { code: "", kind: "", diagnostic: "", p
 
 effect fn read_cells(dir: String) -> List[LResult]! = {
   let v = json.parse(fs.read_text(dir + "/results.json")!)!
-  let items = json.get_array(v, "results") ?? []
+  let items = value.get_array(v, "results") ?? []
   ok(items |> list.map((it) => LResult {
-    language: json.get_string(it, "language") ?? "",
+    language: value.get_string(it, "language") ?? "",
     // A run written before the A/B existed has no field: its cells are all shipped.
-    condition: json.get_string(it, "condition") ?? COND_SHIPPED,
-    task: json.get_string(it, "task") ?? "",
-    success: json.get_bool(it, "success") ?? false,
-    retries: json.get_int(it, "retries") ?? 0,
-    attempts: if list.is_empty(json.get_array(it, "attempts") ?? []) then [] else [attempt_stub()],
-    reason: json.get_string(it, "reason") ?? "",
+    condition: value.get_string(it, "condition") ?? COND_SHIPPED,
+    task: value.get_string(it, "task") ?? "",
+    success: value.get_bool(it, "success") ?? false,
+    retries: value.get_int(it, "retries") ?? 0,
+    attempts: if list.is_empty(value.get_array(it, "attempts") ?? []) then [] else [attempt_stub()],
+    reason: value.get_string(it, "reason") ?? "",
   }))
 }
 
@@ -997,18 +997,18 @@ effect fn cmd_verdict(o: Opts) -> Unit! = {
   let dir = list.get(o.rest, 1) ?? ""
   guard dir != "" else err("usage: almide run src/msr/run.almd -- verdict <run-dir>")
   let m = json.parse(fs.read_text(dir + "/manifest.json")!)!
-  let attempted = (json.get_array(m, "languages") ?? [])
-    |> list.filter((l) => json.get_bool(l, "measured") ?? false)
+  let attempted = (value.get_array(m, "languages") ?? [])
+    |> list.filter((l) => value.get_bool(l, "measured") ?? false)
     |> list.map((l) => {
-      let n = json.get_string(l, "name") ?? ""
+      let n = value.get_string(l, "name") ?? ""
       (n, match plugins.find(n) { some(p) => p.display, none => n })
     })
-  let planned = match json.get_path(m, json.field(json.root(), "task_set")) {
-    some(ts) => list.len(json.get_array(ts, "tasks") ?? []),
+  let planned = match value.get_path(m, value.key(value.root(), "task_set")) {
+    some(ts) => list.len(value.get_array(ts, "tasks") ?? []),
     none => 0,
   }
-  let stamped = match json.get_path(m, json.field(json.root(), "verdict")) {
-    some(vd) => json.get_string(vd, "id") ?? "",
+  let stamped = match value.get_path(m, value.key(value.root(), "verdict")) {
+    some(vd) => value.get_string(vd, "id") ?? "",
     none => "",
   }
   // The cross-language verdict is over the shipped grid only: the A/B's B arm
@@ -1034,7 +1034,7 @@ effect fn cmd_verdict(o: Opts) -> Unit! = {
   b_arms |> list.map((b) => {
     let abv = ab_verdict(planned, almide_arm(cells, COND_SHIPPED), almide_arm(all_cells, b), b)
     println("effect A/B (almide-dojo#2) " + COND_SHIPPED + " vs " + b + ": `" + abv.id + "`" +
-      (if list.is_empty(abv.reasons) then "" else " — " + string.join(abv.reasons, "; ")))
+      (if list.is_empty(abv.reasons) then "" else " — " + list.join(abv.reasons, "; ")))
   })
   if v.comparable then ok(()) else process.exit(1)
 }
@@ -1339,7 +1339,7 @@ test "a run whose languages saw different task counts is refused as a comparison
   let v = verdict_core(langs, tasks4, uneven)
   assert_eq(v.id, "not-comparable")
   assert(not v.comparable)
-  assert(string.contains(string.join(v.reasons, " "), "Almide 3/4"))
+  assert(string.contains(list.join(v.reasons, " "), "Almide 3/4"))
   // A language with no toolchain is NOT part of the comparison, so it cannot
   // make a run non-comparable by being absent.
   let complete = [t_cell("almide", "a", true, true), t_cell("almide", "b", true, true),
@@ -1513,7 +1513,7 @@ test "the A/B is refused as a comparison when its arms saw different task counts
   let a = [t_cell("almide", "a", true, true), t_cell("almide", "b", false, true)]
   let v = ab_verdict(2, a, [t_bcell("a", true, true), t_bcell("b", false, false)], COND_UNMENTIONED)
   assert_eq(v.id, "not-comparable")
-  assert(string.contains(string.join(v.reasons, " "), "unmentioned 1/2"))
+  assert(string.contains(list.join(v.reasons, " "), "unmentioned 1/2"))
   let sat = ab_verdict(2, [t_cell("almide", "a", true, true), t_cell("almide", "b", true, true)],
                        [t_bcell("a", true, true), t_bcell("b", true, true)], COND_UNMENTIONED)
   assert_eq(sat.id, ST_SATURATED)

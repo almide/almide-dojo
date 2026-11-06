@@ -11,8 +11,8 @@
 // Usage: almide run src/l1_loop.almd -- [ledger-path] [runs-dir]
 //        (defaults: ../almide/proofs/l1-verdicts.toml, runs)
 // Writes dashboards/l1-loop.md and prints the same report.
+import env
 import fs
-import args
 import regex
 
 type Verdict = { id: String, change: String, landed: String, prediction: String, measured: String }
@@ -31,8 +31,8 @@ type RunPoint = { date: String, model: String, total: Int, with_retry: Int }
 // is why the ledger's dates arrived quote-wrapped and no run ever sorted
 // before a landing date.
 fn quoted(line: String) -> String =
-  match regex.captures("\"([^\"]*)\"", line) {
-    some(gs) => list.get(gs, 1) ?? "",
+  match regex.captures(regex.new("\"([^\"]*)\""), line) {
+    some(gs) => option.flatten(list.get(gs, 1)) ?? "",
     none => "",
   }
 
@@ -63,8 +63,8 @@ effect fn parse_ledger(path: String) -> List[Verdict] = {
 }
 
 fn field(pattern: String, text: String) -> Option[String] =
-  match regex.captures(pattern, text) {
-    some(gs) => list.get(gs, 1),
+  match regex.captures(regex.new(pattern), text) {
+    some(gs) => option.flatten(list.get(gs, 1)),
     none => none,
   }
 
@@ -176,8 +176,8 @@ fn row(v: Verdict, points: List[RunPoint]) -> String = {
 }
 
 effect fn main() -> Unit = {
-  let ledger = args.positional_at(0) ?? "../almide/proofs/l1-verdicts.toml"
-  let runs_dir = args.positional_at(1) ?? "runs"
+  let ledger = list.get(env.args(), 0) ?? "../almide/proofs/l1-verdicts.toml"
+  let runs_dir = list.get(env.args(), 1) ?? "runs"
   let verdicts = parse_ledger(ledger)!
   let points = scan_runs(runs_dir)!
   let header = [
@@ -193,5 +193,5 @@ effect fn main() -> Unit = {
   let rows = verdicts |> list.map((v) => row(v, points))
   let report = (header + rows) |> list.join("\n")
   println(report)
-  fs.write("dashboards/l1-loop.md", report + "\n")!
+  fs.write_text("dashboards/l1-loop.md", report + "\n")!
 }

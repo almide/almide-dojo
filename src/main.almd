@@ -144,9 +144,9 @@ effect fn call_model(model: String, user_prompt: String) -> Result[String, Strin
 // which we translate into a successful `AttemptResult { success: false }`.
 
 effect fn compile_and_test(task: Task, solution: String, attempt: Int) -> Result[AttemptResult, String] = {
-  let tmp = env.temp_dir() + "/dojo-" + task.name + "-" + int.to_string(attempt) + ".almd"
+  let tmp = fs.temp_dir() + "/dojo-" + task.name + "-" + int.to_string(attempt) + ".almd"
   let combined = solution + "\n\n" + task.tests
-  match fs.write(tmp, combined) {
+  match fs.write_text(tmp, combined) {
     err(_) => err("failed to write temp file: " + tmp)
     ok(_) => {
       // Best-effort auto-fix before test: adds missing imports, rewrites let-in,
@@ -173,7 +173,7 @@ effect fn compile_and_test(task: Task, solution: String, attempt: Int) -> Result
 effect fn bank_oracles(task: Task, tmp: String, solution: String) -> Result[AttemptResult, String] = {
   let all = tmp + ".all.almd"
   let fixed = fs.read_text(tmp)!
-  match fs.write(all, fixed + "\n\n" + task.hidden) {
+  match fs.write_text(all, fixed + "\n\n" + task.hidden) {
     err(_) => err("failed to write temp file: " + all)
     ok(_) => match process.exec("almide", ["test", all]) {
       err(_) => ok(AttemptResult { success: false, code: solution, diagnostic: SILENT_VIOLATION })
@@ -222,14 +222,14 @@ effect fn resource_oracle(task: Task, program: String, solution: String) -> Resu
 let SURVIVE_TIMEOUT_SECS = "300"
 
 effect fn in_dir(dir: String, cmd: String, args: List[String]) -> Result[process.ProcessStatus, String] =
-  process.exec_status("sh", ["-c", "cd \"$0\" && exec \"$@\"", dir, cmd] + args)
+  process.output(process.ProcessCommand { cmd: "sh", args: ["-c", "cd \"$0\" && exec \"$@\"", dir, cmd] + args })
 
 effect fn survive_gate(task: Task, solution: String, attempt: Int) -> Result[AttemptResult, String] = {
-  let dir = env.temp_dir() + "/dojo-survive-" + task.name + "-" + int.to_string(attempt)
+  let dir = fs.temp_dir() + "/dojo-survive-" + task.name + "-" + int.to_string(attempt)
   let edit = dir + ".edit.almd"
   fs.mkdir_p(dir)!
-  fs.write(dir + "/prog.almd", task.baseline + "\n\n" + task.tests)!
-  fs.write(edit, solution + "\n\n" + task.tests)!
+  fs.write_text(dir + "/prog.almd", task.baseline + "\n\n" + task.tests)!
+  fs.write_text(edit, solution + "\n\n" + task.tests)!
   match process.exec("almide", ["fix", edit]) {
     ok(_) => {}
     err(_) => {}
@@ -254,10 +254,10 @@ effect fn judge_attempt(cond: String, task: Task, solution: String, attempt: Int
 effect fn survive_probe() -> Result[String, String] = survive_probe_with("almide")
 
 effect fn survive_probe_with(almide: String) -> Result[String, String] = {
-  let dir = env.temp_dir() + "/dojo-survive-probe"
+  let dir = fs.temp_dir() + "/dojo-survive-probe"
   fs.mkdir_p(dir)!
-  fs.write(dir + "/a.almd", "fn f() -> Int = 1\n")!
-  fs.write(dir + "/b.txt", "fn f() -> Int = 2\n")!
+  fs.write_text(dir + "/a.almd", "fn f() -> Int = 1\n")!
+  fs.write_text(dir + "/b.txt", "fn f() -> Int = 2\n")!
   match in_dir(dir, almide, ["survive", "a.almd", "--with", "b.txt", "--as", "text", "--json"]) {
     err(e) => err(e)
     ok(st) =>
@@ -363,14 +363,14 @@ fn model_slug(model: String) -> String =
 // `sub` keeps an A/B arm's per-task reports apart from the control arm's:
 // "" for the lane itself, the arm name otherwise.
 effect fn write_metrics(result: RunResult, sub: String) -> Result[String, String] = {
-  let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
+  let date = datetime.format(datetime.now(), "%Y-%m-%d")
   let slug = model_slug(result.model)
   let dir = "runs/" + date + "/" + slug + (if sub == "" then "" else "/" + sub)
   match fs.mkdir_p(dir) {
     err(_) => err("failed to create " + dir)
     ok(_) => {
       let path = dir + "/" + result.task + ".md"
-      match fs.write(path, render.render_report(result)) {
+      match fs.write_text(path, render.render_report(result)) {
         err(_) => err("failed to write " + path)
         ok(_) => ok(path)
       }
@@ -537,7 +537,7 @@ effect fn write_summary(date: String, model: String, results: List[RunResult]) -
       let path = dir + "/summary.md"
       let compiler = compiler_version() ?? ""
       let timeout = http_timeout_secs() ?? ""
-      match fs.write(path, render.render_summary(date, model, compiler, timeout, results)) {
+      match fs.write_text(path, render.render_summary(date, model, compiler, timeout, results)) {
         err(_) => err("failed to write " + path)
         ok(_) => ok(path)
       }
@@ -570,7 +570,7 @@ effect fn run_all(model: String) -> Unit = {
             println("Harness error: no task reached the model (" + int.to_string(list.len(results)) + " tasks, 0 answered); no summary written")
             process.exit(2)
           } else {
-            let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
+            let date = datetime.format(datetime.now(), "%Y-%m-%d")
             run_all_finish(date, model, results)!
           }
         }
@@ -653,7 +653,7 @@ effect fn run_bank(model: String, conditions: List[String]) -> Unit = {
       ""
     },
   }
-  if with_survive then println("survive A/B: conditions " + string.join(conditions, ",") + " — " + probe) else {}
+  if with_survive then println("survive A/B: conditions " + list.join(conditions, ",") + " — " + probe) else {}
   match list_bank_tasks() {
     err(e) => {
       println("Failed to list bank tasks: " + e)
@@ -695,7 +695,7 @@ effect fn run_bank(model: String, conditions: List[String]) -> Unit = {
             println("Harness error: no bank task reached the model (" + int.to_string(list.len(results)) + " tasks, 0 answered); no summary written")
             process.exit(2)
           } else {
-            let date = datetime.format(env.unix_timestamp(), "%Y-%m-%d")
+            let date = datetime.format(datetime.now(), "%Y-%m-%d")
             let dir = "runs/" + date + "/" + model_slug(model)
             fs.mkdir_p(dir)!
             // BANK_RUN_LABEL keeps repetitions and smokes apart in one run
@@ -706,7 +706,7 @@ effect fn run_bank(model: String, conditions: List[String]) -> Unit = {
             let scope = shard_note + if limit > 0 then "- **scope**: first " + int.to_string(list.len(tasks)) + " of " + int.to_string(list.len(all_tasks)) + " bank tasks (BANK_LIMIT) — a smoke, not the bank\n" else "- **scope**: all " + int.to_string(list.len(all_tasks)) + " bank tasks\n"
             let compiler = compiler_version() ?? ""
             let timeout = http_timeout_secs() ?? ""
-            fs.write(path, bank_counts(date, results) + scope + "\n" + render.render_summary(date, model, compiler, timeout, results))!
+            fs.write_text(path, bank_counts(date, results) + scope + "\n" + render.render_summary(date, model, compiler, timeout, results))!
             println("Bank summary: " + path)
             if with_survive then {
               let planned = tasks
@@ -782,32 +782,32 @@ effect fn write_survive_ab(date: String, model: String, label: String, limit: In
   let compiler = compiler_version()!
   let pin = compiler_pin()!
   let run = [
-    ("date", value.str(date)),
-    ("label", value.str(label)),
+    ("date", value.string(date)),
+    ("label", value.string(label)),
     ("model", value.object([
-      ("spec", value.str(model)),
-      ("provider", value.str(llm.provider_of(model))),
+      ("spec", value.string(model)),
+      ("provider", value.string(llm.provider_of(model))),
       ("temperature_requested", value.float(0.0)),
       ("transport_attempts", value.int(1)),
-      ("http_timeout_secs", value.str(http_timeout_secs()!)),
+      ("http_timeout_secs", value.string(http_timeout_secs()!)),
     ])),
     ("compiler", value.object([
-      ("pin", value.str(pin)),
-      ("version", value.str(compiler)),
-      ("survive", value.str(probe)),
+      ("pin", value.string(pin)),
+      ("version", value.string(compiler)),
+      ("survive", value.string(probe)),
     ])),
     ("harness", value.object([
-      ("repo", value.str("almide/almide-dojo")),
-      ("commit", value.str(git_line(["rev-parse", "HEAD"])!)),
+      ("repo", value.string("almide/almide-dojo")),
+      ("commit", value.string(git_line(["rev-parse", "HEAD"])!)),
       ("dirty", value.bool(git_line(["status", "--porcelain", "--", "src", "tasks"])! != "")),
     ])),
     ("selection", value.object([
       ("limit", value.int(limit)),
-      ("shard", value.str(shard)),
+      ("shard", value.string(shard)),
     ])),
   ]
-  fs.write(dir + "/manifest.json", json.stringify_pretty(survive_ab.manifest(run, DEFAULT_MAX_RETRIES, planned, cells)) + "\n")!
-  fs.write(dir + "/table.md", survive_ab.render_table(ab_title(date, label), ab_facts(model, compiler, pin, probe, notes), DEFAULT_MAX_RETRIES, planned, cells))!
+  fs.write_text(dir + "/manifest.json", json.stringify_pretty(survive_ab.manifest(run, DEFAULT_MAX_RETRIES, planned, cells)) + "\n")!
+  fs.write_text(dir + "/table.md", survive_ab.render_table(ab_title(date, label), ab_facts(model, compiler, pin, probe, notes), DEFAULT_MAX_RETRIES, planned, cells))!
   ok(dir)
 }
 
@@ -816,7 +816,7 @@ effect fn write_survive_ab(date: String, model: String, label: String, limit: In
 // table.md}, re-deciding the verdict and the criterion over the union. It
 // refuses shards that measured different models or compilers: that union is
 // not one A/B. No model call.
-fn jfield(v: Value, key: String) -> Value = json.get_path(v, json.field(json.root(), key)) ?? value.null()
+fn jfield(v: Value, key: String) -> Value = value.get_path(v, value.key(value.root(), key)) ?? value.null()
 
 effect fn merge_survive_ab(root: String) -> Unit = {
   let out = root + "/survive-ab"
@@ -831,32 +831,32 @@ effect fn merge_survive_ab(root: String) -> Unit = {
     process.exit(2)
   } else {}
   let ms = (paths |> list.map((p) => json.parse(fs.read_text(p)!)!))!
-  let models = ms |> list.map((m) => json.get_string(jfield(m, "model"), "spec") ?? "") |> list.unique
-  let compilers = ms |> list.map((m) => json.get_string(jfield(m, "compiler"), "version") ?? "") |> list.unique
+  let models = ms |> list.map((m) => value.get_string(jfield(m, "model"), "spec") ?? "") |> list.unique
+  let compilers = ms |> list.map((m) => value.get_string(jfield(m, "compiler"), "version") ?? "") |> list.unique
   if list.len(models) != 1 or list.len(compilers) != 1 then {
-    println("refused: the manifests under " + root + " measured " + string.join(models, ", ") + " with " + string.join(compilers, ", ") + " — one A/B is one model and one compiler")
+    println("refused: the manifests under " + root + " measured " + list.join(models, ", ") + " with " + list.join(compilers, ", ") + " — one A/B is one model and one compiler")
     process.exit(2)
   } else {}
   let first = list.first(ms) ?? value.null()
-  let tasks = ms |> list.flat_map((m) => (json.get_array(jfield(m, "task_set"), "tasks") ?? []) |> list.filter_map((t) => value.as_string(t) |> result.to_option))
+  let tasks = ms |> list.flat_map((m) => (value.get_array(jfield(m, "task_set"), "tasks") ?? []) |> list.filter_map((t) => value.as_string(t) |> result.to_option))
   let cells = ms |> list.flat_map(survive_ab.cells_from_manifest)
-  let retries = json.get_int(jfield(first, "budget"), "retries") ?? DEFAULT_MAX_RETRIES
+  let retries = value.get_int(jfield(first, "budget"), "retries") ?? DEFAULT_MAX_RETRIES
   let model = list.first(models) ?? ""
   let compiler = list.first(compilers) ?? ""
   let comp = jfield(first, "compiler")
   let run = [
-    ("date", value.str(json.get_string(first, "date") ?? "")),
-    ("label", value.str("merged")),
-    ("merged_from", value.array(paths |> list.map(value.str))),
+    ("date", value.string(value.get_string(first, "date") ?? "")),
+    ("label", value.string("merged")),
+    ("merged_from", value.array(paths |> list.map(value.string))),
     ("model", jfield(first, "model")),
     ("compiler", comp),
   ]
   fs.mkdir_p(out)!
-  fs.write(out + "/manifest.json", json.stringify_pretty(survive_ab.manifest(run, retries, tasks, cells)) + "\n")!
-  let facts = ab_facts(model, compiler, json.get_string(comp, "pin") ?? "", json.get_string(comp, "survive") ?? "",
+  fs.write_text(out + "/manifest.json", json.stringify_pretty(survive_ab.manifest(run, retries, tasks, cells)) + "\n")!
+  let facts = ab_facts(model, compiler, value.get_string(comp, "pin") ?? "", value.get_string(comp, "survive") ?? "",
     ["**merged**: " + int.to_string(list.len(paths)) + " manifest(s) under `" + root + "`"])
-  let table = survive_ab.render_table(ab_title(json.get_string(first, "date") ?? "", "merged"), facts, retries, tasks, cells)
-  fs.write(out + "/table.md", table)!
+  let table = survive_ab.render_table(ab_title(value.get_string(first, "date") ?? "", "merged"), facts, retries, tasks, cells)
+  fs.write_text(out + "/table.md", table)!
   println(table)
   println("Written: " + out + "/{manifest.json, table.md}")
 }
@@ -866,7 +866,7 @@ fn bank_condition_spec(rest: List[String], env_spec: String) -> Result[String, S
   match rest {
     [] => ok(env_spec),
     ["--conditions", v] => ok(v),
-    _ => err("usage: bank <provider:model> [--conditions control[,survive]] (got " + string.join(rest, " ") + ")"),
+    _ => err("usage: bank <provider:model> [--conditions control[,survive]] (got " + list.join(rest, " ") + ")"),
   }
 
 fn bank_conditions(rest: List[String], env_spec: String) -> Result[List[String], String] =

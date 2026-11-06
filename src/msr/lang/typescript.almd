@@ -18,25 +18,25 @@ fn ty(t: Ty) -> String = match t {
 }
 
 fn sig(s: Sig) -> String =
-  "function " + s.name + "(" + (s.params |> list.map((p) => p.name + ": " + ty(p.ty)) |> string.join(", ")) + "): " + ty(s.ret)
+  "function " + s.name + "(" + (s.params |> list.map((p) => p.name + ": " + ty(p.ty)) |> list.join(", ")) + "): " + ty(s.ret)
 
 fn signatures(t: PTask) -> String =
-  t.sigs |> list.map((s) => "    " + sig(s)) |> string.join("
+  t.sigs |> list.map((s) => "    " + sig(s)) |> list.join("
 ")
 
 fn lit(t: PTask, v: Val) -> String = match v {
   VInt(n) => int.to_string(n),
   VBool(b) => if b then "true" else "false",
   VStr(s) => spec.c_quote(s),
-  VList(xs) => "[" + (xs |> list.map((x) => lit(t, x)) |> string.join(", ")) + "]",
-  VCall(name, args) => name + "(" + (args |> list.map((a) => lit(t, a)) |> string.join(", ")) + ")",
+  VList(xs) => "[" + (xs |> list.map((x) => lit(t, x)) |> list.join(", ")) + "]",
+  VCall(name, args) => name + "(" + (args |> list.map((a) => lit(t, a)) |> list.join(", ")) + ")",
 }
 
 fn driver(t: PTask) -> String = {
   let n = list.len(t.cases)
   let checks = t.cases
     |> list.map((c) => "__msrCheck(" + spec.c_quote(spec.case_label(c)) + ", " + lit(t, c.call) + ", " + lit(t, c.expected) + ");")
-    |> string.join("\n")
+    |> list.join("\n")
   // JSON equality: exact for numbers, booleans, strings and nested arrays.
   // console/process are declared here so the check needs no @types/node
   // and no DOM lib (`--types ""` keeps any ambient @types out of the run).

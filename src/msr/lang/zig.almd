@@ -30,11 +30,11 @@ fn sig(s: Sig) -> String = {
   let params = s.params |> list.map((p) => p.name + ": " + const_ty(p.ty))
   let all = if spec.is_heap(s.ret) then ["allocator: std.mem.Allocator"] + params else params
   let ret = if spec.is_heap(s.ret) then "!" + owned_ty(s.ret) else owned_ty(s.ret)
-  "pub fn " + s.name + "(" + string.join(all, ", ") + ") " + ret
+  "pub fn " + s.name + "(" + list.join(all, ", ") + ") " + ret
 }
 
 fn signatures(t: PTask) -> String =
-  t.sigs |> list.map((s) => "    " + sig(s)) |> string.join("
+  t.sigs |> list.map((s) => "    " + sig(s)) |> list.join("
 ")
 
 // A literal of type `ty` in argument or expected position: strings are
@@ -43,7 +43,7 @@ fn lit(t: PTask, v: Val, ty: Ty) -> String = match v {
   VInt(n) => int.to_string(n),
   VBool(b) => if b then "true" else "false",
   VStr(s) => spec.c_quote(s),
-  VList(xs) => "&[_]" + const_ty(spec.elem(ty)) + "{ " + (xs |> list.map((x) => lit(t, x, spec.elem(ty))) |> string.join(", ")) + " }",
+  VList(xs) => "&[_]" + const_ty(spec.elem(ty)) + "{ " + (xs |> list.map((x) => lit(t, x, spec.elem(ty))) |> list.join(", ")) + " }",
   VCall(_, _) => call(t, v),
 }
 
@@ -60,7 +60,7 @@ fn call(t: PTask, v: Val) -> String = match v {
     }
     let rendered = list.zip_with(args, params, (a, p) => lit(t, a, p.ty))
     let all = if heap then ["a"] + rendered else rendered
-    (if heap then "try " else "") + "sol." + name + "(" + string.join(all, ", ") + ")"
+    (if heap then "try " else "") + "sol." + name + "(" + list.join(all, ", ") + ")"
   },
   _ => spec.neutral(v),
 }
@@ -95,7 +95,7 @@ fn driver(t: PTask) -> String = {
       let ty = spec.case_ty(t.sigs, c)
       "    " + check_fn(ty) + "(&failed, " + spec.c_quote(spec.case_label(c)) + ", " + call(t, c.call) + ", " + lit(t, c.expected, ty) + ");"
     })
-    |> string.join("\n")
+    |> list.join("\n")
   """
     // ── msr driver (generated) ──
     const std = @import("std");
