@@ -11,6 +11,8 @@
 #
 #   native  ALMIDE_ALLOC_COUNT=1       -> `__ALMD_ALLOC allocs=… peak=…`
 #   wasm    ALMIDE_WASM_ALLOC_COUNT=1  -> `__ALMD_WASM_ALLOC allocs=… heap_end=…`
+#   (a release compiler honours both only when the command line names them
+#   with `--allow-switch`, almide/almide#4129)
 #
 # The metric (`resource_metric`) is `peak` (native peak / wasm heap_end: live
 # storage) or `allocs` (allocation count: routing). The oracle compares GROWTH
@@ -50,11 +52,11 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 counter() {
   local target="$1" f="$2" metric="$3" out rc line key
   if [ "$target" = wasm ]; then
-    out="$(cd "$TMP" && ALMIDE_WASM_ALLOC_COUNT=1 "$ALMIDE" run "$f" --target wasm 2>&1 >/dev/null)"; rc=$?
+    out="$(cd "$TMP" && ALMIDE_WASM_ALLOC_COUNT=1 "$ALMIDE" run "$f" --target wasm --allow-switch ALMIDE_WASM_ALLOC_COUNT 2>&1 >/dev/null)"; rc=$?
     line="$(printf '%s\n' "$out" | grep -E '^__ALMD_WASM_ALLOC allocs=' | tail -1)"
     [ "$metric" = peak ] && key=heap_end || key=allocs
   else
-    out="$(cd "$TMP" && ALMIDE_ALLOC_COUNT=1 "$ALMIDE" run "$f" 2>&1 >/dev/null)"; rc=$?
+    out="$(cd "$TMP" && ALMIDE_ALLOC_COUNT=1 "$ALMIDE" run "$f" --allow-switch ALMIDE_ALLOC_COUNT 2>&1 >/dev/null)"; rc=$?
     line="$(printf '%s\n' "$out" | grep -E '^__ALMD_ALLOC allocs=' | tail -1)"
     [ "$metric" = peak ] && key=peak || key=allocs
   fi
