@@ -1,0 +1,323 @@
+# bounded-total
+
+- **model**: `cf:@cf/meta/llama-3.1-8b-instruct`
+- **state**: `measured`
+- **success**: no
+- **retries**: 3
+- **category**: compile-error
+- **diagnostic code**: `E012`
+
+## Attempts
+
+### Attempt 1 (FAIL)
+
+```almide
+fn safe_total(xs: List[Int]) -> Int = {
+  fn sum(xs: List[Int], i: Int) -> Int = {
+    if list.is_empty(xs) then 0 else xs.get(i) ?? 0 + sum(xs, i + 1)
+  }
+  fan.bounded(compute.ms(100)) {
+    sum(xs, 0)
+  } ?? -1
+}
+```
+
+**Diagnostic:**
+
+```
+error: `fn` cannot be declared inside a function body
+  --> /tmp/dojo-bounded-total-0.almd:2:3
+  in nested fn
+  here: fn sum(xs: List[Int], i: Int) -> Int = {
+  hint: Move it to the top level (thread any captured locals as parameters), or bind a lambda: `let row = (label, ns) => ...`
+  try:
+      fn row(label: String, ns: Int, total: Int) -> Unit =
+          println("${label}: ${ns / total}")
+  |
+2 |   fn sum(xs: List[Int], i: Int) -> Int = {
+  |   ^^
+error[E007]: fan.bounded can only be used inside an effect fn
+  --> /tmp/dojo-bounded-total-0.almd:5:3
+  in fan.bounded
+  here: fan.bounded(compute.ms(100)) {
+  hint: Mark the enclosing function as `effect fn`
+  |
+5 |   fan.bounded(compute.ms(100)) {
+  |   ^^^
+error[E001]: type mismatch in call to assert_eq(): expected Int but got Result[Int, ?0]
+  --> /tmp/dojo-bounded-total-0.almd:12:19
+  in call to assert_eq()
+  here: assert_eq(r, ok(6))
+  hint: Fix the expression type or change the expected type
+   |
+12 |   assert_eq(r, ok(6))
+   |                   ^
+error[E001]: type mismatch in call to assert_eq(): expected Int but got Result[Int, ?2]
+  --> /tmp/dojo-bounded-total-0.almd:16:19
+  in call to assert_eq()
+  here: assert_eq(r, ok(0))
+  hint: Fix the expression type or change the expected type
+   |
+16 |   assert_eq(r, ok(0))
+   |                   ^
+error[E001]: type mismatch in call to assert_eq(): expected Int but got Result[Int, ?3]
+  --> /tmp/dojo-bounded-total-0.almd:20:19
+  in call to assert_eq()
+  here: assert_eq(r, ok(0))
+  hint: Fix the expression type or change the expected type
+   |
+20 |   assert_eq(r, ok(0))
+   |                   ^
+
+5 error(s) found
+FAILED: /tmp/dojo-bounded-total-0.almd
+  parse error: `fn` cannot be declared inside a function body
+note: this failure is the wasm leg's verdict; the native re-run that checks it could not build:
+  Compile error for /tmp/dojo-bounded-total-0.almd:
+  compile failed
+
+0 via WASM, 0 via native fallback, 1 failed (of 1 files)
+
+```
+
+### Attempt 2 (FAIL)
+
+```almide
+effect fn safe_total(xs: List[Int]) -> Int = {
+  fn sum(xs: List[Int], i: Int) -> Int = {
+    if list.is_empty(xs) then 0 else xs.get(i) ?? 0 + sum(xs, i + 1)
+  }
+  fan.bounded(compute.ms(100)) {
+    sum(xs, 0)
+  } ?? -1
+}
+```
+
+**Diagnostic:**
+
+```
+error: `fn` cannot be declared inside a function body
+  --> /tmp/dojo-bounded-total-1.almd:2:3
+  in nested fn
+  here: fn sum(xs: List[Int], i: Int) -> Int = {
+  hint: Move it to the top level (thread any captured locals as parameters), or bind a lambda: `let row = (label, ns) => ...`
+  try:
+      fn row(label: String, ns: Int, total: Int) -> Unit =
+          println("${label}: ${ns / total}")
+  |
+2 |   fn sum(xs: List[Int], i: Int) -> Int = {
+  |   ^^
+
+1 error(s) found
+FAILED: /tmp/dojo-bounded-total-1.almd
+  parse error: `fn` cannot be declared inside a function body
+note: this failure is the wasm leg's verdict; the native re-run that checks it could not build:
+  Compile error for /tmp/dojo-bounded-total-1.almd:
+  compile failed
+
+0 via WASM, 0 via native fallback, 1 failed (of 1 files)
+
+```
+
+### Attempt 3 (FAIL)
+
+```almide
+effect fn safe_total(xs: List[Int]) -> Int = {
+  fn sum(xs: List[Int], i: Int) -> Int = {
+    if list.is_empty(xs) then 0 else xs.get(i) ?? 0 + sum(xs, i + 1)
+  }
+  fan.bounded(compute.ms(100)) {
+    sum(xs, 0)
+  } ?? -1
+}
+
+effect fn safe_total(xs: List[Int]) -> Int = {
+  fan.bounded(compute.ms(100)) {
+    fn sum(xs: List[Int], i: Int) -> Int = {
+      if list.is_empty(xs) then 0 else xs.get(i) ?? 0 + sum(xs, i + 1)
+    }
+    sum(xs, 0)
+  } ?? -1
+```
+
+**Diagnostic:**
+
+```
+error: `fn` cannot be declared inside a function body
+  --> /tmp/dojo-bounded-total-2.almd:2:3
+  in nested fn
+  here: fn sum(xs: List[Int], i: Int) -> Int = {
+  hint: Move it to the top level (thread any captured locals as parameters), or bind a lambda: `let row = (label, ns) => ...`
+  try:
+      fn row(label: String, ns: Int, total: Int) -> Unit =
+          println("${label}: ${ns / total}")
+  |
+2 |   fn sum(xs: List[Int], i: Int) -> Int = {
+  |   ^^
+error: `fn` cannot be declared inside a function body
+  --> /tmp/dojo-bounded-total-2.almd:12:5
+  in nested fn
+  here: fn sum(xs: List[Int], i: Int) -> Int = {
+  hint: Move it to the top level (thread any captured locals as parameters), or bind a lambda: `let row = (label, ns) => ...`
+  try:
+      fn row(label: String, ns: Int, total: Int) -> Unit =
+          println("${label}: ${ns / total}")
+   |
+12 |     fn sum(xs: List[Int], i: Int) -> Int = {
+   |     ^^
+error: Expected expression at line 18:1 (got Test 'test')
+  --> /tmp/dojo-bounded-total-2.almd:18:1
+  here: test "bounded total small" {
+  hint: The parser expected a different token here. The message names what it wanted; check the token just BEFORE this position too — an unclosed delimiter or an idiom from another language usually breaks the shape one token earlier (grammar reference: docs/GRAMMAR.md).
+   |
+18 | test "bounded total small" {
+   | ^
+error[E012]: duplicate function 'safe_total'
+  at line 10
+  in fn safe_total
+  here: effect fn safe_total(xs: List[Int]) -> Int = {
+  hint: Rename one of the definitions, or remove the earlier one. Almide requires each function name to be unique within a module.
+   |
+ 1 | effect fn safe_total(xs: List[Int]) -> Int = {
+   | ------------------------------------- first definition of 'safe_total' here
+...
+10 | effect fn safe_total(xs: List[Int]) -> Int = {
+   | ^
+error[E001]: type mismatch in call to assert_eq(): expected Int but got Result[Int, ?0]
+  --> /tmp/dojo-bounded-total-2.almd:20:19
+  in call to assert_eq()
+  here: assert_eq(r, ok(6))
+  hint: Fix the expression type or change the expected type
+   |
+20 |   assert_eq(r, ok(6))
+   |                   ^
+error[E001]: type mismatch in fn 'safe_total': expected Int but got Unit
+  --> /tmp/dojo-bounded-total-2.almd:20:3
+  in fn 'safe_total'
+  here: assert_eq(r, ok(6))
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Int:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type Int
+   |
+20 |   assert_eq(r, ok(6))
+   |   ^^^^^^^^^^^^^^^^^^^
+error[E041]: implicit propagation of this binding's value was removed — this value is a Result (ADR-0008)
+  --> /tmp/dojo-bounded-total-2.almd:19:11
+  in implicit propagation
+  here: let r = safe_total([1, 2, 3])
+  hint: The auto-? of the 0.54 deprecation window (E041) is gone: a fallible call yields a Result VALUE in every position. Write `expr!` to propagate, or consume the Result as a value (`??`, `?`, match ok/err).
+  try:
+      !
+   |
+19 |   let r = safe_total([1, 2, 3])
+   |           ^^^^^^^^^^^^^^^^^^^^^
+
+7 error(s) found
+FAILED: /tmp/dojo-bounded-total-2.almd
+  parse error: `fn` cannot be declared inside a function body
+  parse error: `fn` cannot be declared inside a function body
+  parse error: Expected expression at line 18:1 (got Test 'test')
+note: this failure is the wasm leg's verdict; the native re-run that checks it could not build:
+  Compile error for /tmp/dojo-bounded-total-2.almd:
+  compile failed
+
+0 via WASM, 0 via native fallback, 1 failed (of 1 files)
+
+```
+
+### Attempt 4 (FAIL)
+
+```almide
+effect fn safe_total(xs: List[Int]) -> Int = {
+  fn sum(xs: List[Int], i: Int) -> Int = {
+    if list.is_empty(xs) then 0 else xs.get(i) ?? 0 + sum(xs, i + 1)
+  }
+  safe_total = fan.bounded(compute.ms(100)) {
+    sum(xs, 0)
+  } ?? -1
+}
+
+effect fn safe_total(xs: List[Int]) -> Int = {
+  fn sum(xs: List[Int], i: Int) -> Int = {
+    if list.is_empty(xs) then 0 else xs.get(i) ?? 0 + sum(xs, i + 1)
+  }
+  fan.bounded(compute.ms(100)) {
+    sum(xs, 0)
+  } ?? -1
+}
+```
+
+**Diagnostic:**
+
+```
+error: `fn` cannot be declared inside a function body
+  --> /tmp/dojo-bounded-total-3.almd:2:3
+  in nested fn
+  here: fn sum(xs: List[Int], i: Int) -> Int = {
+  hint: Move it to the top level (thread any captured locals as parameters), or bind a lambda: `let row = (label, ns) => ...`
+  try:
+      fn row(label: String, ns: Int, total: Int) -> Unit =
+          println("${label}: ${ns / total}")
+  |
+2 |   fn sum(xs: List[Int], i: Int) -> Int = {
+  |   ^^
+error: `fn` cannot be declared inside a function body
+  --> /tmp/dojo-bounded-total-3.almd:11:3
+  in nested fn
+  here: fn sum(xs: List[Int], i: Int) -> Int = {
+  hint: Move it to the top level (thread any captured locals as parameters), or bind a lambda: `let row = (label, ns) => ...`
+  try:
+      fn row(label: String, ns: Int, total: Int) -> Unit =
+          println("${label}: ${ns / total}")
+   |
+11 |   fn sum(xs: List[Int], i: Int) -> Int = {
+   |   ^^
+error[E012]: duplicate function 'safe_total'
+  at line 10
+  in fn safe_total
+  here: effect fn safe_total(xs: List[Int]) -> Int = {
+  hint: Rename one of the definitions, or remove the earlier one. Almide requires each function name to be unique within a module.
+   |
+ 1 | effect fn safe_total(xs: List[Int]) -> Int = {
+   | ------------------------------------- first definition of 'safe_total' here
+...
+10 | effect fn safe_total(xs: List[Int]) -> Int = {
+   | ^
+error[E003]: cannot assign to undefined binding 'safe_total'
+  --> /tmp/dojo-bounded-total-3.almd:7:9
+  in safe_total = ...
+  here: } ?? -1
+  hint: No `let`/`var` named 'safe_total' is in scope to assign to. Declare it first: `var safe_total = ...`
+  |
+7 |   } ?? -1
+  |         ^
+error[E001]: type mismatch in fn 'safe_total': expected Int but got Unit
+  --> /tmp/dojo-bounded-total-3.almd:7:9
+  in fn 'safe_total'
+  here: } ?? -1
+  hint: Fix the expression type or change the expected type
+  try:
+      // fn body ends with a statement (returns Unit); add a final expression that evaluates to Int:
+      //   let tmp = <computation>
+      //   tmp                            // <-- the returned value
+      // Or inline:
+      //   <expression>                   // must have type Int
+  |
+7 |   } ?? -1
+  |         ^
+
+5 error(s) found
+FAILED: /tmp/dojo-bounded-total-3.almd
+  parse error: `fn` cannot be declared inside a function body
+  parse error: `fn` cannot be declared inside a function body
+note: this failure is the wasm leg's verdict; the native re-run that checks it could not build:
+  Compile error for /tmp/dojo-bounded-total-3.almd:
+  compile failed
+
+0 via WASM, 0 via native fallback, 1 failed (of 1 files)
+
+```
