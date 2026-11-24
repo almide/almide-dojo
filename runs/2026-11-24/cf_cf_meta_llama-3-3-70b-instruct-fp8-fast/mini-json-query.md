@@ -1,0 +1,156 @@
+# mini-json-query
+
+- **model**: `cf:@cf/meta/llama-3.3-70b-instruct-fp8-fast`
+- **state**: `measured`
+- **success**: yes
+- **retries**: 1
+- **category**: pass-retry
+
+## Attempts
+
+### Attempt 1 (FAIL)
+
+```almide
+type JVal =
+  | JNull
+  | JBool(Bool)
+  | JNum(Int)
+  | JStr(String)
+  | JArr(List[JVal])
+  | JObj(List[(String, JVal)])
+
+fn jget(obj: JVal, key: String) -> Option[JVal] =
+  match obj {
+    JObj(xs) =>
+      list.find(xs, (x) => string.equals(x.0, key)) |> option.map((x) => x.1)
+    _ => none
+  }
+
+fn jcount(val: JVal) -> Int =
+  match val {
+    JNull | JBool(_) | JNum(_) | JStr(_) => 1
+    JArr(xs) => list.sum(xs, (x) => jcount(x))
+    JObj(xs) => list.sum(xs, (x) => jcount(x.1))
+  }
+
+fn jflatten_strings(val: JVal) -> List[String] =
+  match val {
+    JStr(s) => [s]
+    JArr(xs) => list.flat_map(xs, (x) => jflatten_strings(x))
+    JObj(xs) => list.flat_map(xs, (x) => jflatten_strings(x.1))
+    _ => []
+  }
+
+effect fn main() -> Unit = {}
+```
+
+**Diagnostic:**
+
+```
+error[E002]: undefined function 'string.equals'
+  --> /tmp/dojo-mini-json-query-0.almd:12:28
+  in call to string.equals()
+  here: list.find(xs, (x) => string.equals(x.0, key)) |> option.map((x) => x.1)
+  hint: No function 'equals' in module 'string'. See docs/CHEATSHEET.md for available functions
+   |
+12 |       list.find(xs, (x) => string.equals(x.0, key)) |> option.map((x) => x.1)
+   |                            ^^^^^^^^^^^^^
+error[E004]: list.sum() expects 1 argument(s) but got 2
+  --> /tmp/dojo-mini-json-query-0.almd:19:44
+  in call to list.sum()
+  here: JArr(xs) => list.sum(xs, (x) => jcount(x))
+  hint: Check the number of arguments
+  try:
+      // list.sum() takes 1 arg(s) — you passed 2
+      list.sum(<xs: List[A]>)
+   |
+19 |     JArr(xs) => list.sum(xs, (x) => jcount(x))
+   |                                            ^
+error: type 'JVal' does not implement protocol 'Numeric'
+  --> /tmp/dojo-mini-json-query-0.almd:19:44
+  in call to list.sum()
+  here: JArr(xs) => list.sum(xs, (x) => jcount(x))
+  hint: Add `: Numeric` to the type declaration: type JVal: Numeric = ...
+   |
+19 |     JArr(xs) => list.sum(xs, (x) => jcount(x))
+   |                                            ^
+error[E004]: list.sum() expects 1 argument(s) but got 2
+  --> /tmp/dojo-mini-json-query-0.almd:20:44
+  in call to list.sum()
+  here: JObj(xs) => list.sum(xs, (x) => jcount(x.1))
+  hint: Check the number of arguments
+  try:
+      // list.sum() takes 1 arg(s) — you passed 2
+      list.sum(<xs: List[A]>)
+   |
+20 |     JObj(xs) => list.sum(xs, (x) => jcount(x.1))
+   |                                            ^
+error: type '(String, JVal)' does not implement protocol 'Numeric'
+  --> /tmp/dojo-mini-json-query-0.almd:20:44
+  in call to list.sum()
+  here: JObj(xs) => list.sum(xs, (x) => jcount(x.1))
+  hint: 'Numeric' is satisfied only by the types that declare it; pass a value of such a type (for example by mapping each element first)
+   |
+20 |     JObj(xs) => list.sum(xs, (x) => jcount(x.1))
+   |                                            ^
+error[E001]: type mismatch in match arm: expected Int but got JVal — Int is the declared return type, and the arm at line 18 produces it
+  --> /tmp/dojo-mini-json-query-0.almd:19:17
+  in match arm
+  here: JArr(xs) => list.sum(xs, (x) => jcount(x))
+  hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
+   |
+19 |     JArr(xs) => list.sum(xs, (x) => jcount(x))
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error[E001]: type mismatch in match arm: expected Int but got (String, JVal) — Int is the declared return type, and the arm at line 18 produces it
+  --> /tmp/dojo-mini-json-query-0.almd:20:17
+  in match arm
+  here: JObj(xs) => list.sum(xs, (x) => jcount(x.1))
+  hint: All match arms must share the same type. Change the mismatched arm to return the same type as the others, or change the first arm
+   |
+20 |     JObj(xs) => list.sum(xs, (x) => jcount(x.1))
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+7 error(s) found
+FAILED: /tmp/dojo-mini-json-query-0.almd
+Compile error for /tmp/dojo-mini-json-query-0.almd:
+compile failed
+
+0 via WASM, 0 via native fallback, 1 failed (of 1 files)
+
+```
+
+### Attempt 2 (PASS)
+
+```almide
+type JVal =
+  | JNull
+  | JBool(Bool)
+  | JNum(Int)
+  | JStr(String)
+  | JArr(List[JVal])
+  | JObj(List[(String, JVal)])
+
+fn jget(obj: JVal, key: String) -> Option[JVal] =
+  match obj {
+    JObj(xs) =>
+      list.find(xs, (x) => x.0 == key) |> option.map((x) => x.1)
+    _ => none
+  }
+
+fn jcount(val: JVal) -> Int =
+  match val {
+    JNull | JBool(_) | JNum(_) | JStr(_) => 1
+    JArr(xs) => list.sum(list.map(xs, (x) => jcount(x)))
+    JObj(xs) => list.sum(list.map(xs, (x) => jcount(x.1)))
+  }
+
+fn jflatten_strings(val: JVal) -> List[String] =
+  match val {
+    JStr(s) => [s]
+    JArr(xs) => list.flat_map(xs, (x) => jflatten_strings(x))
+    JObj(xs) => list.flat_map(xs, (x) => jflatten_strings(x.1))
+    _ => []
+  }
+
+effect fn main() -> Unit = {}
+```
